@@ -1,0 +1,425 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                String       @id @default(uuid())
+  email             String       @unique
+  password          String
+  role              String       @default("FOUNDER") // FOUNDER, COFOUNDER, INVESTOR, MENTOR, DEVELOPER, DESIGNER, MARKETER, ADMIN
+  isVerified        Boolean      @default(false)
+  verificationBadge String?      // "Verified Founder", "Verified Startup", "Verified Investor", "Verified Mentor"
+  isSuspended       Boolean      @default(false)
+  isAdmin           Boolean      @default(false)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  profile           Profile?
+  startups          Startup[]    @relation("FounderStartups")
+  startupMembers    StartupMember[]
+  posts             Post[]
+  comments          Comment[]
+  likes             Like[]
+  savedItems        SavedItem[]
+  
+  sentConnections     Connection[] @relation("SentConnections")
+  receivedConnections Connection[] @relation("ReceivedConnections")
+  
+  sentMessages        Message[]    @relation("SentMessages")
+  receivedMessages    Message[]    @relation("ReceivedMessages")
+  
+  investorProfile     Investor?
+  mentorProfile       Mentor?
+  
+  sentMentorships     MentorshipRequest[] @relation("FounderMentorships")
+  receivedMentorships MentorshipRequest[] @relation("MentorRequests")
+  
+  applications        OpportunityApplication[]
+  notifications       Notification[] @relation("UserNotifications")
+  sentNotifications   Notification[] @relation("SenderNotifications")
+  reportsSubmitted    Report[]       @relation("ReporterUser")
+  verificationRequests VerificationRequest[]
+  raisedSolutions     RaisedSolution[]
+  hostedMeetings      VideoMeeting[]        @relation("HostMeetings")
+  guestMeetings       VideoMeeting[]        @relation("GuestMeetings")
+  sentProposals       StartupProposal[]     @relation("SentProposals")
+  receivedProposals   StartupProposal[]     @relation("ReceivedProposals")
+  startupFollows      StartupFollow[]
+}
+
+model Profile {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName          String
+  headline          String?
+  location          String?
+  bio               String?
+  avatar            String?
+  education         String?
+  portfolioUrl      String?
+  githubUrl         String?
+  linkedinUrl       String?
+  websiteUrl        String?
+  skills            String?
+  startupInterests  String?
+  industries        String?
+  preferredRole     String?
+  availability      String?   @default("Full-time")
+  startupExperience String?
+  achievements      String?
+  openTo            String?
+  profileCompletion Int       @default(40)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Startup {
+  id                String    @id @default(uuid())
+  founderId         String
+  founder           User      @relation("FounderStartups", fields: [founderId], references: [id], onDelete: Cascade)
+  name              String
+  logo              String?
+  oneLineDescription String
+  problem           String
+  solution          String
+  targetCustomers   String?
+  industry          String
+  businessModel     String?
+  stage             String    @default("Idea")
+  location          String?
+  requiredSkills    String?
+  fundingStatus     String?   @default("Bootstrapped")
+  fundingRequired   String?
+  currentTraction   String?
+  website           String?
+  demoLink          String?
+  pitchDeckUrl      String?
+  images            String?
+  visibility        String    @default("PUBLIC")
+  isConfidential    Boolean   @default(false)
+  isVerified        Boolean   @default(false)
+  likesCount        Int       @default(0)
+  viewsCount        Int       @default(0)
+  followersCount    Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  members           StartupMember[]
+  opportunities     StartupOpportunity[]
+  posts             Post[]
+  likes             Like[]
+  verifications     VerificationRequest[]
+  follows           StartupFollow[]
+}
+
+model StartupMember {
+  id        String   @id @default(uuid())
+  startupId String
+  startup   Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @default("Team Member")
+  joinedAt  DateTime @default(now())
+
+  @@unique([startupId, userId])
+}
+
+model StartupOpportunity {
+  id            String   @id @default(uuid())
+  startupId     String
+  startup       Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  role          String
+  requiredSkills String
+  commitment    String   @default("Full-time")
+  compensation  String   @default("Paid + Equity")
+  location      String   @default("Remote")
+  workplaceType String   @default("Remote")
+  description   String
+  status        String   @default("OPEN")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  applications  OpportunityApplication[]
+}
+
+model OpportunityApplication {
+  id            String             @id @default(uuid())
+  opportunityId String
+  opportunity   StartupOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  applicantId   String
+  applicant     User               @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  coverLetter   String?
+  resumeUrl     String?
+  status        String             @default("PENDING")
+  createdAt     DateTime           @default(now())
+
+  @@unique([opportunityId, applicantId])
+}
+
+model Connection {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("SentConnections", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("ReceivedConnections", fields: [receiverId], references: [id], onDelete: Cascade)
+  status     String   @default("PENDING")
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([senderId, receiverId])
+}
+
+model Post {
+  id            String    @id @default(uuid())
+  authorId      String
+  author        User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  startupId     String?
+  startup       Startup?  @relation(fields: [startupId], references: [id], onDelete: SetNull)
+  postType      String    @default("UPDATE")
+  title         String?
+  content       String
+  images        String?
+  links         String?
+  likesCount    Int       @default(0)
+  commentsCount Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  comments      Comment[]
+  likes         Like[]
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String?
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  startupId String?
+  startup   Startup? @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model SavedItem {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemType  String
+  itemId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, itemType, itemId])
+}
+
+model Conversation {
+  id             String    @id @default(uuid())
+  participant1Id String
+  participant2Id String
+  lastMessage    String?
+  lastMessageAt  DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  messages       Message[]
+
+  @@unique([participant1Id, participant2Id])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId     String
+  receiver       User         @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  content        String
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+}
+
+model Investor {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization    String
+  investorType    String
+  industries      String
+  preferredStages String
+  minCheckSize    String?
+  maxCheckSize    String?
+  location        String
+  website         String?
+  portfolio       String?
+  about           String
+  isVerified      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Mentor {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expertise       String
+  industries      String
+  yearsExperience Int      @default(5)
+  availableHours  String   @default("2-4 hrs/month")
+  mentoringTopics String
+  about           String
+  isVerified      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  requests        MentorshipRequest[]
+}
+
+model MentorshipRequest {
+  id        String   @id @default(uuid())
+  mentorId  String
+  mentor    Mentor   @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  founderId String
+  founder   User     @relation("FounderMentorships", fields: [founderId], references: [id], onDelete: Cascade)
+  mentorUser User    @relation("MentorRequests", fields: [mentorUserId], references: [id], onDelete: Cascade)
+  mentorUserId String
+  topic     String
+  message   String
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  senderId  String?
+  sender    User?    @relation("SenderNotifications", fields: [senderId], references: [id], onDelete: SetNull)
+  type      String
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  reporterId  String
+  reporter    User     @relation("ReporterUser", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetType  String
+  targetId    String
+  reason      String
+  description String?
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+}
+
+model VerificationRequest {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startupId       String?
+  startup         Startup? @relation(fields: [startupId], references: [id], onDelete: SetNull)
+  type            String
+  businessDetails String
+  website         String?
+  documentUrl     String?
+  status          String   @default("PENDING")
+  adminNotes      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model StartupFollow {
+  id        String   @id @default(uuid())
+  startupId String
+  startup   Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([startupId, userId])
+}
+
+model StartupProposal {
+  id               String   @id @default(uuid())
+  senderId         String
+  sender           User     @relation("SentProposals", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId       String
+  receiver         User     @relation("ReceivedProposals", fields: [receiverId], references: [id], onDelete: Cascade)
+  ideaTitle        String
+  pitchDescription String
+  proposedRole     String
+  proposedEquity   String   @default("50/50")
+  status           String   @default("PENDING") // PENDING, ACCEPTED, DECLINED
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model VideoMeeting {
+  id              String   @id @default(uuid())
+  hostId          String
+  host            User     @relation("HostMeetings", fields: [hostId], references: [id], onDelete: Cascade)
+  guestId         String
+  guest           User     @relation("GuestMeetings", fields: [guestId], references: [id], onDelete: Cascade)
+  title           String
+  scheduledAt     DateTime @default(now())
+  durationMinutes Int      @default(30)
+  roomCode        String   @unique
+  status          String   @default("SCHEDULED") // SCHEDULED, ACTIVE, COMPLETED, CANCELLED
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model FailedStartup {
+  id              String           @id @default(uuid())
+  name            String
+  industry        String
+  peakFunding     String
+  yearsActive     String
+  logo            String?
+  summary         String
+  whyItFailed     String           // JSON string or rich text explaining failure post-mortem
+  unsolvedProblem String           // Core market friction that still exists
+  lessonsLearned  String
+  solutionsCount  Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  solutions       RaisedSolution[]
+}
+
+model RaisedSolution {
+  id              String        @id @default(uuid())
+  failedStartupId String
+  failedStartup   FailedStartup @relation(fields: [failedStartupId], references: [id], onDelete: Cascade)
+  authorId        String
+  author          User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title           String
+  description     String
+  targetAudience  String?
+  differentiation String?
+  upvotesCount    Int           @default(0)
+  startupId       String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
