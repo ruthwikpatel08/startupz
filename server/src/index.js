@@ -74,6 +74,27 @@ app.get('/api/health/db', async (req, res) => {
   }
 });
 
+// Database Auto-Init & Seed Endpoint (can be called remotely to bootstrap database)
+app.get('/api/health/db/init', async (req, res) => {
+  try {
+    await ensureDatabaseReady();
+    const userCount = await prisma.user.count();
+    const startupCount = await prisma.startup.count();
+    res.json({
+      status: 'ok',
+      message: 'Database schema pushed and seeded successfully.',
+      userCount,
+      startupCount,
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: 'error',
+      message: err.message,
+    });
+  }
+});
+
+
 // Mount Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
