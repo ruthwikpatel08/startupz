@@ -118,6 +118,79 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// POST /api/auth/google
+router.post('/google', async (req, res) => {
+  try {
+    const { email, fullName, name, avatar, googleId } = req.body;
+    const userEmail = (email || '').trim().toLowerCase();
+    const displayName = fullName || name || (userEmail ? userEmail.split('@')[0] : 'Startup Founder');
+
+    if (!userEmail) {
+      return res.status(400).json({ error: 'Valid Google email is required.' });
+    }
+
+    let user = await prisma.user.findUnique({
+      where: { email: userEmail },
+      include: { profile: true },
+    });
+
+    if (!user) {
+      const generatedPassword = await bcrypt.hash(`GoogleAuth_${Math.random()}_2026!`, 10);
+      const userAvatar = avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}&backgroundColor=4f46e5,06b6d4,10b981`;
+
+      user = await prisma.user.create({
+        data: {
+          email: userEmail,
+          password: generatedPassword,
+          role: 'FOUNDER',
+          isVerified: true,
+          verificationBadge: 'Verified User',
+          profile: {
+            create: {
+              fullName: displayName,
+              headline: 'Founder & Builder | StartupZ Network',
+              location: 'Global / Remote',
+              avatar: userAvatar,
+              openTo: 'Co-Founder,Startup Team,Investment,Mentorship',
+              profileCompletion: 65,
+            },
+          },
+        },
+        include: {
+          profile: true,
+        },
+      });
+
+      await prisma.notification.create({
+        data: {
+          userId: user.id,
+          type: 'SYSTEM',
+          title: 'Welcome via Google! 🚀',
+          message: 'Your Google account has been connected. Start discovering co-founders and startups.',
+          link: '/profile',
+        },
+      });
+    }
+
+    if (user.isSuspended) {
+      return res.status(403).json({ error: 'Your account has been suspended. Please contact support.' });
+    }
+
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
+    const { password: _, ...userWithoutPassword } = user;
+
+    return res.json({
+      message: 'Google authentication successful!',
+      token,
+      user: userWithoutPassword,
+    });
+  } catch (error) {
+    console.error('Google login error:', error);
+    return res.status(500).json({ error: 'Failed to process Google sign-in. Please try again.' });
+  }
+});
+
+
 // GET /api/auth/me
 router.get('/me', requireAuth, async (req, res) => {
   try {

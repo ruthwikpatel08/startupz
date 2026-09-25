@@ -32,25 +32,33 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     ...(options.headers as Record<string, string> || {}),
   };
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+    });
 
-  const data = await response.json().catch(() => ({}));
+    const data = await response.json().catch(() => ({}));
 
-  if (!response.ok) {
-    const errorMsg = data.message || data.error || `HTTP error ${response.status}`;
-    throw new Error(errorMsg);
+    if (!response.ok) {
+      const errorMsg = data.message || data.error || `HTTP error ${response.status}`;
+      throw new Error(errorMsg);
+    }
+
+    return data as T;
+  } catch (err: any) {
+    if (err.name === 'TypeError' && (err.message || '').includes('fetch')) {
+      throw new Error('Cloud backend is waking up or updating. Please wait 10-20 seconds or use Continue with Google.');
+    }
+    throw err;
   }
-
-  return data as T;
 }
 
 export const api = {
   // AUTH
   register: (payload: any) => request<any>('/auth/register', { method: 'POST', body: JSON.stringify(payload) }),
   login: (payload: any) => request<any>('/auth/login', { method: 'POST', body: JSON.stringify(payload) }),
+  googleAuth: (payload: any) => request<any>('/auth/google', { method: 'POST', body: JSON.stringify(payload) }),
   getMe: () => request<any>('/auth/me'),
   forgotPassword: (emailOrPayload: any) => {
     const body = typeof emailOrPayload === 'string' ? { email: emailOrPayload } : emailOrPayload;
