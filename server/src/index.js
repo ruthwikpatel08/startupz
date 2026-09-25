@@ -26,11 +26,14 @@ import meetingRoutes from './routes/meetings.js';
 import aiRoutes from './routes/ai.js';
 import failedStartupRoutes from './routes/failedStartups.js';
 
+import { execSync } from 'child_process';
+import { prisma } from './db.js';
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: true,
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -47,6 +50,28 @@ app.get('/api/health', (req, res) => {
     tagline: 'Find the right people. Build the right startup.',
     time: new Date().toISOString(),
   });
+});
+
+// Database Health Check & Diagnostic
+app.get('/api/health/db', async (req, res) => {
+  try {
+    const userCount = await prisma.user.count();
+    const startupCount = await prisma.startup.count();
+    const failedStartupCount = await prisma.failedStartup.count();
+    res.json({
+      status: 'ok',
+      database: 'connected',
+      userCount,
+      startupCount,
+      failedStartupCount,
+      provider: process.env.DATABASE_URL ? (process.env.DATABASE_URL.startsWith('postgres') ? 'postgresql' : 'sqlite') : 'sqlite',
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: 'error',
+      message: err.message,
+    });
+  }
 });
 
 // Mount Routes
@@ -83,6 +108,39 @@ app.use((req, res) => {
   res.status(404).json({ error: `Endpoint ${req.method} ${req.originalUrl} not found.` });
 });
 
-app.listen(PORT, () => {
+async function ensureDatabaseReady() {
+  try {
+    await prisma.user.count();
+    console.log('✅ Database connected and verified.');
+  } catch (err) {
+    console.log('⚠️ Database uninitialized. Running prisma db push...');
+    try {
+      execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+      console.log('✅ Database schema pushed successfully.');
+    } catch (pushErr) {
+      console.error('Failed to run prisma db push automatically:', pushErr.message);
+    }
+  }
+
+  try {
+    const userCount = await prisma.user.count();
+    if (userCount === 0) {
+      console.log('🌱 Database is empty. Seeding initial accounts and startup data...');
+      try {
+        const { main: seedDatabase } = await import('./seed.js');
+        if (seedDatabase) {
+          await seedDatabase();
+        }
+      } catch (seedErr) {
+        console.error('Auto-seed error:', seedErr.message);
+      }
+    }
+  } catch (e) {
+    console.warn('Seed verification check:', e.message);
+  }
+}
+
+app.listen(PORT, async () => {
   console.log(`🚀 StartupZ Server running on http://localhost:${PORT}`);
+  await ensureDatabaseReady();
 });

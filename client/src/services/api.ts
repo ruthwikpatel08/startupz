@@ -1,4 +1,17 @@
-const API_BASE = '/api';
+const getApiBase = (): string => {
+  const envUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+  if (envUrl) {
+    const cleanUrl = envUrl.replace(/\/+$/, '');
+    return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+  }
+  // Fallback to Render backend in production when hosted on Vercel
+  if (typeof window !== 'undefined' && window.location.hostname && !window.location.hostname.includes('localhost')) {
+    return 'https://startupz-90c7.onrender.com/api';
+  }
+  return '/api';
+};
+
+const API_BASE = getApiBase();
 
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem('startupz_token');

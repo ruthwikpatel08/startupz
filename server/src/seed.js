@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from './db.js';
 
-async function main() {
+export async function main() {
   console.log('🌱 Starting StartupZ database seed...');
 
   await prisma.raisedSolution.deleteMany({});
@@ -610,8 +610,10 @@ async function main() {
   console.log('✅ StartupZ database seeded successfully!');
 }
 
-main()
-  .catch(console.error)
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+if (process.argv[1] && process.argv[1].includes('seed.js')) {
+  main()
+    .catch(console.error)
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}
