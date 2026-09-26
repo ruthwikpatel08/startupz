@@ -33,6 +33,7 @@ import {
   BriefcaseBusiness,
   Crown,
   LogIn,
+  ArrowRight,
 } from 'lucide-react';
 import { AIScoutModal } from '../ai/AIScoutModal';
 
@@ -43,10 +44,16 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+
   const [coFoundersDropdownOpen, setCoFoundersDropdownOpen] = useState(false);
   const [opportunitiesDropdownOpen, setOpportunitiesDropdownOpen] = useState(false);
+
+  // Position offsets for fixed viewport dropdown rendering (so dropdowns never get clipped by nav overflow)
+  const [coFoundersPos, setCoFoundersPos] = useState<number>(0);
+  const [opportunitiesPos, setOpportunitiesPos] = useState<number>(0);
 
   // Mobile accordion state
   const [mobileCoFoundersOpen, setMobileCoFoundersOpen] = useState(true);
@@ -58,6 +65,48 @@ export const Navbar: React.FC = () => {
   const coFoundersRef = useRef<HTMLDivElement>(null);
   const opportunitiesRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLFormElement>(null);
+
+  // Instant Search Recommendation Pool
+  const SUGGESTION_POOL = [
+    { term: 'AI & Machine Learning', type: 'Category', icon: Sparkles, url: '/search?q=AI' },
+    { term: 'Co-Founders & Technical Builders', type: 'Network', icon: Users, url: '/cofounders' },
+    { term: 'React & Frontend Developers', type: 'Skill', icon: Search, url: '/search?q=React' },
+    { term: 'Full-Stack Software Engineers', type: 'Skill', icon: Search, url: '/search?q=Engineer' },
+    { term: 'Fintech & Payments', type: 'Industry', icon: Compass, url: '/search?q=Fintech' },
+    { term: 'AgriTech & Sustainability', type: 'Industry', icon: Compass, url: '/search?q=AgriTech' },
+    { term: 'Full-Time Startup Jobs', type: 'Opportunity', icon: Briefcase, url: '/opportunities?type=jobs' },
+    { term: 'Student Internships', type: 'Opportunity', icon: GraduationCap, url: '/opportunities?type=internships' },
+    { term: 'Venture Capital & Angel Investors', type: 'Network', icon: TrendingUp, url: '/cofounders?category=investors' },
+    { term: 'Growth & Demand Marketers', type: 'Network', icon: Megaphone, url: '/cofounders?category=marketers' },
+    { term: 'Problem Statements Vault', type: 'Directory', icon: Globe, url: '/problems' },
+    { term: 'Failed Startup Graveyard', type: 'Directory', icon: Skull, url: '/failed-startups' },
+    { term: 'Startup Mentors & Advisors', type: 'Directory', icon: GraduationCap, url: '/mentors' },
+  ];
+
+  // Filtered suggestions matching typed characters (even 1 letter)
+  const filteredSuggestions = searchQuery.trim().length >= 1
+    ? SUGGESTION_POOL.filter((s) => s.term.toLowerCase().includes(searchQuery.toLowerCase().trim()))
+    : [];
+
+  // Handle Mouse Enter for positioning popout dropdowns
+  const handleCoFoundersMouseEnter = () => {
+    if (coFoundersRef.current) {
+      const rect = coFoundersRef.current.getBoundingClientRect();
+      setCoFoundersPos(rect.left);
+    }
+    setCoFoundersDropdownOpen(true);
+    setOpportunitiesDropdownOpen(false);
+  };
+
+  const handleOpportunitiesMouseEnter = () => {
+    if (opportunitiesRef.current) {
+      const rect = opportunitiesRef.current.getBoundingClientRect();
+      setOpportunitiesPos(rect.left);
+    }
+    setOpportunitiesDropdownOpen(true);
+    setCoFoundersDropdownOpen(false);
+  };
 
   // Close dropdowns on outside click or Escape key
   useEffect(() => {
@@ -72,6 +121,9 @@ export const Navbar: React.FC = () => {
       if (profileRef.current && !profileRef.current.contains(target)) {
         setProfileDropdownOpen(false);
       }
+      if (searchRef.current && !searchRef.current.contains(target)) {
+        setShowSearchSuggestions(false);
+      }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -79,6 +131,7 @@ export const Navbar: React.FC = () => {
         setCoFoundersDropdownOpen(false);
         setOpportunitiesDropdownOpen(false);
         setProfileDropdownOpen(false);
+        setShowSearchSuggestions(false);
       }
     };
 
@@ -96,6 +149,7 @@ export const Navbar: React.FC = () => {
     setProfileDropdownOpen(false);
     setCoFoundersDropdownOpen(false);
     setOpportunitiesDropdownOpen(false);
+    setShowSearchSuggestions(false);
   }, [location.pathname, location.search]);
 
   useEffect(() => {
@@ -109,11 +163,18 @@ export const Navbar: React.FC = () => {
     }
   }, [user, location.pathname]);
 
+  // Open Search Results in a NEW TAB as requested
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      window.open(`/search?q=${encodeURIComponent(searchQuery.trim())}`, '_blank');
+      setShowSearchSuggestions(false);
     }
+  };
+
+  const handleSuggestionClick = (url: string) => {
+    window.open(url, '_blank');
+    setShowSearchSuggestions(false);
   };
 
   const coFoundersDropdownItems = [
@@ -164,19 +225,79 @@ export const Navbar: React.FC = () => {
               </div>
             </Link>
 
-            {/* Global Search Input (Desktop) */}
-            <form onSubmit={handleSearchSubmit} className="hidden xl:flex items-center relative flex-1 max-w-xs">
-              <Search size={16} className="absolute left-3 text-slate-400 pointer-events-none" />
+            {/* Global Search Input with Instant Autocomplete (Desktop - Opens in New Tab) */}
+            <form
+              ref={searchRef}
+              onSubmit={handleSearchSubmit}
+              className="hidden xl:flex items-center relative flex-1 max-w-xs z-30"
+            >
+              <Search size={16} className="absolute left-3 text-slate-400 pointer-events-none z-10" />
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search startups, skills, founders..."
+                onFocus={() => setShowSearchSuggestions(true)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setShowSearchSuggestions(true);
+                }}
+                placeholder="Search platform (opens in new tab)..."
                 className="w-full pl-9 pr-4 py-1.5 rounded-full text-xs bg-slate-100 dark:bg-slate-800/80 border border-transparent focus:border-brand-500 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-500 transition-all"
               />
+
+              {/* Instant Word Recommendation Dropdown */}
+              {showSearchSuggestions && searchQuery.trim().length >= 1 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <span>Instant Recommendations</span>
+                    <span className="text-[9px] text-brand-500 font-semibold">Opens in new tab</span>
+                  </div>
+
+                  <div className="max-h-64 overflow-y-auto space-y-0.5 py-1">
+                    {/* Direct Query Match */}
+                    <button
+                      type="button"
+                      onClick={() => handleSuggestionClick(`/search?q=${encodeURIComponent(searchQuery.trim())}`)}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-brand-50 dark:hover:bg-brand-950/60 flex items-center justify-between text-brand-600 dark:text-brand-400 font-bold"
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <Search size={13} />
+                        <span>Search "{searchQuery}"</span>
+                      </div>
+                      <ArrowRight size={12} />
+                    </button>
+
+                    {/* Filtered Recommendations */}
+                    {filteredSuggestions.map((item, idx) => {
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSuggestionClick(item.url)}
+                          className="w-full text-left px-3 py-2 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-slate-800 dark:text-slate-200 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <Icon size={13} className="text-slate-400 shrink-0" />
+                            <span className="font-semibold">{item.term}</span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 uppercase font-medium shrink-0 ml-2">
+                            {item.type}
+                          </span>
+                        </button>
+                      );
+                    })}
+
+                    {filteredSuggestions.length === 0 && (
+                      <div className="px-3 py-2 text-xs text-slate-400 italic">
+                        Press Enter to search "{searchQuery}" in a new tab...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </form>
 
-            {/* Desktop Navigation Links (Sliding Bar) */}
+            {/* Desktop Navigation Links (Sliding Bar Container) */}
             <nav className="hidden lg:flex items-center gap-1 overflow-x-auto no-scrollbar whitespace-nowrap max-w-2xl py-1 shrink">
               {/* 1. AI-Scout */}
               <button
@@ -201,18 +322,18 @@ export const Navbar: React.FC = () => {
                 <span>Startups</span>
               </Link>
 
-              {/* 3. Co-Founders Dropdown ▼ */}
+              {/* 3. Co-Founders Dropdown Trigger */}
               <div
                 ref={coFoundersRef}
-                className="relative shrink-0"
-                onMouseEnter={() => setCoFoundersDropdownOpen(true)}
+                className="shrink-0"
+                onMouseEnter={handleCoFoundersMouseEnter}
                 onMouseLeave={() => setCoFoundersDropdownOpen(false)}
               >
                 <button
                   type="button"
                   onClick={() => {
+                    handleCoFoundersMouseEnter();
                     setCoFoundersDropdownOpen((prev) => !prev);
-                    setOpportunitiesDropdownOpen(false);
                   }}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     isCoFoundersActive
@@ -231,55 +352,20 @@ export const Navbar: React.FC = () => {
                     }`}
                   />
                 </button>
-
-                {coFoundersDropdownOpen && (
-                  <div className="absolute top-full left-0 pt-1.5 z-50">
-                    <div className="w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 animate-in fade-in zoom-in-95 duration-100">
-                      <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80 mb-1">
-                        Co-Founder Network
-                      </div>
-                      {coFoundersDropdownItems.map((item) => {
-                        const Icon = item.icon;
-                        const isOptionActive =
-                          isCoFoundersActive &&
-                          (currentCategoryParam === item.categoryKey ||
-                            (!currentCategoryParam && item.categoryKey === 'cofounders'));
-                        return (
-                          <Link
-                            key={item.name}
-                            to={item.href}
-                            onClick={() => setCoFoundersDropdownOpen(false)}
-                            className={`flex items-start gap-2.5 px-3 py-2 mx-1.5 rounded-xl text-xs transition-colors ${
-                              isOptionActive
-                                ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-bold'
-                                : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80'
-                            }`}
-                          >
-                            <Icon size={14} className={`mt-0.5 shrink-0 ${isOptionActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
-                            <div className="flex flex-col">
-                              <span className="font-semibold text-xs leading-tight">{item.name}</span>
-                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal leading-normal">{item.description}</span>
-                            </div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* 4. Opportunities Dropdown ▼ */}
+              {/* 4. Opportunities Dropdown Trigger */}
               <div
                 ref={opportunitiesRef}
-                className="relative shrink-0"
-                onMouseEnter={() => setOpportunitiesDropdownOpen(true)}
+                className="shrink-0"
+                onMouseEnter={handleOpportunitiesMouseEnter}
                 onMouseLeave={() => setOpportunitiesDropdownOpen(false)}
               >
                 <button
                   type="button"
                   onClick={() => {
+                    handleOpportunitiesMouseEnter();
                     setOpportunitiesDropdownOpen((prev) => !prev);
-                    setCoFoundersDropdownOpen(false);
                   }}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     isOpportunitiesActive
@@ -298,43 +384,9 @@ export const Navbar: React.FC = () => {
                     }`}
                   />
                 </button>
-
-                {opportunitiesDropdownOpen && (
-                  <div className="absolute top-full left-0 pt-1.5 z-50">
-                    <div className="w-60 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 animate-in fade-in zoom-in-95 duration-100">
-                      <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80 mb-1">
-                        Startup Opportunities
-                      </div>
-                      {opportunitiesDropdownItems.map((item) => {
-                        const Icon = item.icon;
-                        const isOptionActive =
-                          isOpportunitiesActive &&
-                          currentTypeParam === item.typeKey;
-                        return (
-                          <Link
-                            key={item.name}
-                            to={item.href}
-                            onClick={() => setOpportunitiesDropdownOpen(false)}
-                            className={`flex items-start gap-2.5 px-3 py-2 mx-1.5 rounded-xl text-xs transition-colors ${
-                              isOptionActive
-                                ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-bold'
-                                : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80'
-                            }`}
-                          >
-                            <Icon size={14} className={`mt-0.5 shrink-0 ${isOptionActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
-                            <div className="flex flex-col">
-                              <span className="font-semibold text-xs leading-tight">{item.name}</span>
-                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal leading-normal">{item.description}</span>
-                            </div>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* 5. Remaining Items in order: Graveyard, Mentors, Problem Statements, Feed */}
+              {/* 5. Remaining Items: Graveyard, Mentors, Problem Statements */}
               {otherNavLinks.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.href);
@@ -355,8 +407,88 @@ export const Navbar: React.FC = () => {
               })}
             </nav>
 
+            {/* FIXED VIEWPORT DROPDOWNS: Rendered outside overflow container so they NEVER get clipped */}
+            {coFoundersDropdownOpen && (
+              <div
+                className="fixed top-[58px] z-50 animate-in fade-in zoom-in-95 duration-100"
+                style={{ left: `${Math.max(16, coFoundersPos)}px` }}
+                onMouseEnter={() => setCoFoundersDropdownOpen(true)}
+                onMouseLeave={() => setCoFoundersDropdownOpen(false)}
+              >
+                <div className="w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2">
+                  <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80 mb-1">
+                    Co-Founder Network
+                  </div>
+                  {coFoundersDropdownItems.map((item) => {
+                    const Icon = item.icon;
+                    const isOptionActive =
+                      isCoFoundersActive &&
+                      (currentCategoryParam === item.categoryKey ||
+                        (!currentCategoryParam && item.categoryKey === 'cofounders'));
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        onClick={() => setCoFoundersDropdownOpen(false)}
+                        className={`flex items-start gap-2.5 px-3 py-2 mx-1.5 rounded-xl text-xs transition-colors ${
+                          isOptionActive
+                            ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-bold'
+                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                        }`}
+                      >
+                        <Icon size={14} className={`mt-0.5 shrink-0 ${isOptionActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-xs leading-tight">{item.name}</span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal leading-normal">{item.description}</span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {opportunitiesDropdownOpen && (
+              <div
+                className="fixed top-[58px] z-50 animate-in fade-in zoom-in-95 duration-100"
+                style={{ left: `${Math.max(16, opportunitiesPos)}px` }}
+                onMouseEnter={() => setOpportunitiesDropdownOpen(true)}
+                onMouseLeave={() => setOpportunitiesDropdownOpen(false)}
+              >
+                <div className="w-60 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2">
+                  <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80 mb-1">
+                    Startup Opportunities
+                  </div>
+                  {opportunitiesDropdownItems.map((item) => {
+                    const Icon = item.icon;
+                    const isOptionActive =
+                      isOpportunitiesActive &&
+                      currentTypeParam === item.typeKey;
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        onClick={() => setOpportunitiesDropdownOpen(false)}
+                        className={`flex items-start gap-2.5 px-3 py-2 mx-1.5 rounded-xl text-xs transition-colors ${
+                          isOptionActive
+                            ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-bold'
+                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                        }`}
+                      >
+                        <Icon size={14} className={`mt-0.5 shrink-0 ${isOptionActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-xs leading-tight">{item.name}</span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal leading-normal">{item.description}</span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Right Action Icons & Profile */}
-            <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
 
               {/* Theme Toggle */}
               <button
@@ -563,7 +695,7 @@ export const Navbar: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search platform..."
+                placeholder="Search platform (opens in new tab)..."
                 className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 border-none text-slate-900 dark:text-white"
               />
             </form>
@@ -650,7 +782,7 @@ export const Navbar: React.FC = () => {
               )}
             </div>
 
-            {/* Other Nav Links (Memberships, Graveyard, Mentors, Problems, Feed) */}
+            {/* Other Nav Links (Graveyard, Mentors, Problem Statements) */}
             <div className="grid grid-cols-2 gap-2">
               {otherNavLinks.map((item) => {
                 const Icon = item.icon;
@@ -708,7 +840,7 @@ export const Navbar: React.FC = () => {
         )}
       </header>
 
-      {/* AI Scout Modal - Mounted outside sticky/backdrop-blur header */}
+      {/* AI Scout Modal */}
       <AIScoutModal isOpen={aiScoutOpen} onClose={() => setAiScoutOpen(false)} />
     </>
   );
