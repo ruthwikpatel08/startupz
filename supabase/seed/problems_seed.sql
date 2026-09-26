@@ -14,7 +14,9 @@ INSERT INTO categories (id, name) VALUES
   ('c1000000-0000-0000-0000-000000000007', 'Governance & Peace'),
   ('c1000000-0000-0000-0000-000000000008', 'Technology & Innovation'),
   ('c1000000-0000-0000-0000-000000000009', 'Women & Social'),
-  ('c1000000-0000-0000-0000-000000000010', 'Other (Future Tech)')
+  ('c1000000-0000-0000-0000-000000000010', 'Other (Future Tech)'),
+  ('c1000000-0000-0000-0000-000000000011', 'Business & Commerce'),
+  ('c1000000-0000-0000-0000-000000000012', 'Supply Chain & Logistics')
 ON CONFLICT (name) DO NOTHING;
 
 -- 2. Insert Regions

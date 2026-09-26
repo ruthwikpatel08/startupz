@@ -19,6 +19,7 @@ import {
   Briefcase,
   MapPin,
   Flame,
+  X,
 } from 'lucide-react';
 
 interface AIScoutModalProps {
@@ -99,25 +100,37 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="e.g. I need a technical co-founder skilled in Next.js and PyTorch to build a healthtech app..."
-                className="w-full pl-10 pr-28 py-3 text-xs sm:text-sm rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-inner"
+                placeholder="e.g. Next.js dev, AI co-founder, FinTech PM..."
+                className="w-full pl-10 pr-48 sm:pr-52 py-3 text-xs sm:text-sm rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-inner"
               />
               <Search
                 size={18}
                 className="absolute left-3.5 text-slate-400 pointer-events-none"
               />
-              <button
-                onClick={() => handleSearch()}
-                disabled={loading || !query.trim()}
-                className="absolute right-2 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 shadow-sm transition-all disabled:opacity-50 flex items-center gap-1.5"
-              >
-                {loading ? (
-                  <span className="animate-spin text-xs">🌀</span>
-                ) : (
-                  <Sparkles size={14} />
-                )}
-                <span>{loading ? 'Scanning...' : 'Find Matches'}</span>
-              </button>
+              <div className="absolute right-2 flex items-center gap-1.5">
+                <button
+                  onClick={() => handleSearch()}
+                  disabled={loading || !query.trim()}
+                  className="px-3 sm:px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 shadow-sm transition-all disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {loading ? (
+                    <span className="animate-spin text-xs">🌀</span>
+                  ) : (
+                    <Sparkles size={14} />
+                  )}
+                  <span>{loading ? 'Scanning...' : 'Find Matches'}</span>
+                </button>
+                {/* Cross symbol at the last of Find Matches to cancel/close */}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  title="Close AI Scout (Cancel)"
+                  aria-label="Close AI Scout"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
             {/* Quick Inspiration Prompts */}
