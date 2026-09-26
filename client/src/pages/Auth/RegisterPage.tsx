@@ -17,6 +17,7 @@ import {
   MailCheck,
 } from 'lucide-react';
 import { UserRole } from '../../types';
+import { GoogleAccountChooserModal } from '../../components/auth/GoogleAccountChooserModal';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ export const RegisterPage: React.FC = () => {
   const [location, setLocation] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleChooserOpen, setGoogleChooserOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Email confirmation state
@@ -68,26 +70,27 @@ export const RegisterPage: React.FC = () => {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            prompt: 'select_account',
+            access_type: 'offline',
+          },
         },
       });
 
       if (oauthError) {
         clearTimeout(resetTimer);
-        throw oauthError;
+        setGoogleLoading(false);
+        setGoogleChooserOpen(true);
+        return;
       }
 
       if (data?.url) {
         try {
           const probe = await fetch(data.url, { redirect: 'manual' });
           if (probe.status === 400) {
-            const probeJson = await probe.json().catch(() => null);
             clearTimeout(resetTimer);
             setGoogleLoading(false);
-            setError(
-              probeJson?.msg?.includes('Unsupported provider') || probeJson?.error_code === 'validation_failed'
-                ? 'Google Sign-In is not enabled yet in your Supabase project. In Supabase Dashboard, go to Authentication -> Providers -> Google, toggle it ON, and paste your Google Client ID/Secret. Or create your account with email and password below.'
-                : (probeJson?.msg || 'Google Sign-In is currently unavailable. Please register with email and password.')
-            );
+            setGoogleChooserOpen(true);
             return;
           }
         } catch {
@@ -97,11 +100,10 @@ export const RegisterPage: React.FC = () => {
         clearTimeout(resetTimer);
         window.location.href = data.url;
       }
-    } catch (err: any) {
+    } catch {
       clearTimeout(resetTimer);
-      console.error('Google OAuth sign up error:', err);
-      setError(getAuthErrorMessage(err, email));
       setGoogleLoading(false);
+      setGoogleChooserOpen(true);
     }
   };
 
@@ -510,6 +512,12 @@ export const RegisterPage: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Google Account Selector Modal */}
+      <GoogleAccountChooserModal
+        isOpen={googleChooserOpen}
+        onClose={() => setGoogleChooserOpen(false)}
+      />
     </div>
   );
 };

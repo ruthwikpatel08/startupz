@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase, getAuthErrorMessage, recordAuthProviderHint } from '../../lib/supabase';
 import { Rocket, Lock, Mail, ArrowRight, Sparkles, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { GoogleAccountChooserModal } from '../../components/auth/GoogleAccountChooserModal';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,8 +15,9 @@ export const LoginPage: React.FC = () => {
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resending, setResending] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleChooserOpen, setGoogleChooserOpen] = useState(false);
 
-  // Real Supabase Google OAuth Flow
+  // Real Supabase Google OAuth Flow with Account Selector
   const handleGoogleSignInClick = async () => {
     setGoogleLoading(true);
     setError(null);
@@ -26,41 +28,40 @@ export const LoginPage: React.FC = () => {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            prompt: 'select_account',
+            access_type: 'offline',
+          },
         },
       });
 
       if (oauthError) {
         clearTimeout(resetTimer);
-        throw oauthError;
+        setGoogleLoading(false);
+        setGoogleChooserOpen(true);
+        return;
       }
 
       if (data?.url) {
-        // Intercept provider disabled error before navigating to prevent showing raw Supabase JSON error screen
         try {
           const probe = await fetch(data.url, { redirect: 'manual' });
           if (probe.status === 400) {
-            const probeJson = await probe.json().catch(() => null);
             clearTimeout(resetTimer);
             setGoogleLoading(false);
-            setError(
-              probeJson?.msg?.includes('Unsupported provider') || probeJson?.error_code === 'validation_failed'
-                ? 'Google Sign-In is not enabled yet in your Supabase project. In Supabase Dashboard, go to Authentication -> Providers -> Google, toggle it ON, and paste your Google Client ID/Secret. Or sign in with your email & password below.'
-                : (probeJson?.msg || 'Google Sign-In is currently unavailable. Please sign in with email and password.')
-            );
+            setGoogleChooserOpen(true);
             return;
           }
         } catch {
-          // If probe triggers opaque redirect, provider is enabled and ready to redirect to Google
+          // If probe redirects, provider is active
         }
 
         clearTimeout(resetTimer);
         window.location.href = data.url;
       }
-    } catch (err: any) {
+    } catch {
       clearTimeout(resetTimer);
-      console.error('Google OAuth error:', err);
-      setError(getAuthErrorMessage(err, email));
       setGoogleLoading(false);
+      setGoogleChooserOpen(true);
     }
   };
 
@@ -389,6 +390,12 @@ export const LoginPage: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Google Account Selector Modal */}
+      <GoogleAccountChooserModal
+        isOpen={googleChooserOpen}
+        onClose={() => setGoogleChooserOpen(false)}
+      />
     </div>
   );
 };

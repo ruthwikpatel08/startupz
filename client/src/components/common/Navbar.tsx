@@ -36,6 +36,8 @@ import {
 } from 'lucide-react';
 import { AIScoutModal } from '../ai/AIScoutModal';
 import { GlobalSearchModal } from '../search/GlobalSearchModal';
+import { GoogleAccountChooserModal } from '../auth/GoogleAccountChooserModal';
+import { supabase } from '../../lib/supabase';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -61,6 +63,41 @@ export const Navbar: React.FC = () => {
 
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [aiScoutOpen, setAiScoutOpen] = useState(false);
+  const [googleChooserOpen, setGoogleChooserOpen] = useState(false);
+
+  const handleGoogleClick = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            prompt: 'select_account',
+            access_type: 'offline',
+          },
+        },
+      });
+
+      if (error || !data?.url) {
+        setGoogleChooserOpen(true);
+        return;
+      }
+
+      try {
+        const probe = await fetch(data.url, { redirect: 'manual' });
+        if (probe.status === 400) {
+          setGoogleChooserOpen(true);
+          return;
+        }
+      } catch {
+        // If opaque redirect, provider is ready
+      }
+
+      window.location.href = data.url;
+    } catch {
+      setGoogleChooserOpen(true);
+    }
+  };
 
   const coFoundersRef = useRef<HTMLDivElement>(null);
   const coFoundersMenuRef = useRef<HTMLDivElement>(null);
@@ -548,20 +585,47 @@ export const Navbar: React.FC = () => {
                   </div>
                 </>
               ) : (
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleGoogleClick}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs transition-all hover:scale-105 cursor-pointer"
+                    title="Sign in with Google"
+                  >
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
+                      <path
+                        fill="#4285F4"
+                        d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.39 7.33 24 12 24z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.17 0 9.98 0 12s.45 3.83 1.25 5.42l4.03-3.15z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.27 2.61 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                      />
+                    </svg>
+                    <span className="hidden sm:inline">Google</span>
+                  </button>
+
                   <Link
                     to="/login"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all"
                   >
                     <LogIn size={13} className="text-slate-400" />
                     <span>Log In</span>
                   </Link>
                   <Link
                     to="/register"
-                    className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-xl text-white bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700 hover:from-brand-500 hover:to-indigo-500 shadow-md shadow-brand-500/20 transition-all hover:scale-105 shrink-0"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl text-white bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700 hover:from-brand-500 hover:to-indigo-500 shadow-md shadow-brand-500/20 transition-all hover:scale-105 shrink-0"
                   >
                     <Sparkles size={13} className="text-brand-200" />
-                    <span>Join StartupZ</span>
+                    <span>Join</span>
                   </Link>
                 </div>
               )}
@@ -770,21 +834,52 @@ export const Navbar: React.FC = () => {
 
             {/* Mobile Auth / Profile Section */}
             {!user ? (
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex gap-2.5">
-                <Link
-                  to="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex-1 py-2.5 text-center text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 rounded-xl"
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleGoogleClick();
+                  }}
+                  className="w-full flex items-center justify-center gap-2.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs cursor-pointer"
                 >
-                  Log In
-                </Link>
-                <Link
-                  to="/register"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex-1 py-2.5 text-center text-xs font-bold text-white bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700 rounded-xl shadow-md shadow-brand-500/20"
-                >
-                  Join StartupZ
-                </Link>
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.39 7.33 24 12 24z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.17 0 9.98 0 12s.45 3.83 1.25 5.42l4.03-3.15z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.27 2.61 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                    />
+                  </svg>
+                  <span>Continue with Google</span>
+                </button>
+
+                <div className="flex gap-2">
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex-1 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 rounded-xl"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex-1 py-2 text-center text-xs font-bold text-white bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700 rounded-xl shadow-md shadow-brand-500/20"
+                  >
+                    Join StartupZ
+                  </Link>
+                </div>
               </div>
             ) : (
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
@@ -827,6 +922,12 @@ export const Navbar: React.FC = () => {
 
       {/* Global Search Modal (Opens like AI Scout) */}
       <GlobalSearchModal isOpen={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
+
+      {/* Google Account Selection Modal */}
+      <GoogleAccountChooserModal
+        isOpen={googleChooserOpen}
+        onClose={() => setGoogleChooserOpen(false)}
+      />
     </>
   );
 };
