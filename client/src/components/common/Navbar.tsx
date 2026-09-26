@@ -454,7 +454,7 @@ export const Navbar: React.FC = () => {
                             onClick={() => setProfileDropdownOpen(false)}
                             className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                           >
-                            <LayoutDashboard size={15} />
+                            <LayoutDashboard size={15} className="text-brand-500" />
                             <span>Dashboard</span>
                           </Link>
                           <Link
@@ -462,15 +462,39 @@ export const Navbar: React.FC = () => {
                             onClick={() => setProfileDropdownOpen(false)}
                             className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                           >
-                            <UserIcon size={15} />
+                            <UserIcon size={15} className="text-indigo-500" />
                             <span>My Startup Profile</span>
+                          </Link>
+                          <Link
+                            to="/network"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          >
+                            <Users size={15} className="text-cyan-500" />
+                            <span>My Startup Network</span>
+                          </Link>
+                          <Link
+                            to="/memberships"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          >
+                            <Crown size={15} className="text-amber-500" />
+                            <span>Memberships & Plans</span>
+                          </Link>
+                          <Link
+                            to="/feed"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          >
+                            <Share2 size={15} className="text-emerald-500" />
+                            <span>Community Feed</span>
                           </Link>
                           <Link
                             to="/saved"
                             onClick={() => setProfileDropdownOpen(false)}
                             className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                           >
-                            <Bookmark size={15} />
+                            <Bookmark size={15} className="text-purple-500" />
                             <span>Saved Items</span>
                           </Link>
                           {user.isAdmin && (

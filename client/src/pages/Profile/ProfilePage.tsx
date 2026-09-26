@@ -27,6 +27,10 @@ import {
   X,
   Sparkles,
   ThumbsUp,
+  Crown,
+  Share2,
+  Users,
+  ArrowRight,
 } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
@@ -239,6 +243,14 @@ export const ProfilePage: React.FC = () => {
                   </h1>
                   <VerificationBadge badge={profileUser.verificationBadge} isVerified={profileUser.isVerified} />
                   <RoleBadge role={profileUser.role} />
+                  <Link
+                    to="/memberships"
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:scale-105 transition-all shrink-0"
+                    title="View StartupZ Membership Plans"
+                  >
+                    <Crown size={11} className="text-amber-500" />
+                    <span>{isMe ? 'Standard Plan' : 'Verified Member'}</span>
+                  </Link>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">
                   {p.headline || 'Startup Enthusiast & Innovator'}
@@ -385,9 +397,52 @@ export const ProfilePage: React.FC = () => {
 
         </div>
 
-        {/* Right Column: Skills, Preferences, Links */}
+        {/* Right Column: Membership Hub, Skills, Preferences, Links */}
         <div className="space-y-6">
           
+          {/* Membership & Ecosystem Network Hub */}
+          <div className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white border border-slate-800 shadow-lg space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Crown size={18} className="text-amber-400" />
+                <span className="text-xs font-bold text-white">StartupZ Ecosystem Membership</span>
+              </div>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                Standard Plan
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              {isMe
+                ? 'Manage your plan benefits, access AI Scout matching, and connect with startup builders.'
+                : 'Verified active ecosystem member with directory priority and network access.'}
+            </p>
+
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+              <Link
+                to="/memberships"
+                className="flex items-center justify-center gap-1.5 p-2 rounded-xl text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-all"
+              >
+                <Crown size={13} />
+                <span>Memberships</span>
+              </Link>
+              <Link
+                to="/network"
+                className="flex items-center justify-center gap-1.5 p-2 rounded-xl text-xs font-bold text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 transition-all"
+              >
+                <Users size={13} />
+                <span>My Network</span>
+              </Link>
+            </div>
+            <Link
+              to="/feed"
+              className="flex items-center justify-center gap-1.5 w-full p-2 rounded-xl text-xs font-bold text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-all"
+            >
+              <Share2 size={13} />
+              <span>Community Feed Updates</span>
+            </Link>
+          </div>
+
           {/* LinkedIn-style Interactive Skills */}
           <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
             <div className="flex items-center justify-between">

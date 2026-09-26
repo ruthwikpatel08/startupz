@@ -21,6 +21,9 @@ import {
   UserPlus,
   Heart,
   MessageCircle,
+  Crown,
+  Share2,
+  ShieldCheck,
 } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
@@ -112,7 +115,7 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* 2. STATS QUICK ROW */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Link
           to="/cofounders"
           className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group"
@@ -123,50 +126,50 @@ export const DashboardPage: React.FC = () => {
             </div>
             <span className="text-xs font-bold text-slate-400 group-hover:text-brand-600">Browse →</span>
           </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white">Co-Founders</div>
+          <div className="text-lg font-black text-slate-900 dark:text-white">Co-Founders</div>
           <div className="text-xs text-slate-500 mt-0.5">Compatible talent matching</div>
         </Link>
 
         <Link
-          to="/opportunities"
+          to="/network"
           className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="w-9 h-9 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
-              <Briefcase size={18} />
+              <UserPlus size={18} />
             </div>
-            <span className="text-xs font-bold text-slate-400 group-hover:text-cyan-600">View →</span>
+            <span className="text-xs font-bold text-slate-400 group-hover:text-cyan-600">Network →</span>
           </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white">Opportunities</div>
-          <div className="text-xs text-slate-500 mt-0.5">Equity & paid roles</div>
+          <div className="text-lg font-black text-slate-900 dark:text-white">My Network</div>
+          <div className="text-xs text-slate-500 mt-0.5">Connections & Invitations</div>
         </Link>
 
         <Link
-          to="/investors"
+          to="/memberships"
+          className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <Crown size={18} />
+            </div>
+            <span className="text-xs font-bold text-slate-400 group-hover:text-amber-600">Plans →</span>
+          </div>
+          <div className="text-lg font-black text-slate-900 dark:text-white">Memberships</div>
+          <div className="text-xs text-slate-500 mt-0.5">Basic, Pro & Premium</div>
+        </Link>
+
+        <Link
+          to="/feed"
           className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group"
         >
           <div className="flex items-center justify-between mb-2">
             <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <TrendingUp size={18} />
+              <Share2 size={18} />
             </div>
-            <span className="text-xs font-bold text-slate-400 group-hover:text-emerald-600">Pitch →</span>
+            <span className="text-xs font-bold text-slate-400 group-hover:text-emerald-600">Updates →</span>
           </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white">Active VCs</div>
-          <div className="text-xs text-slate-500 mt-0.5">Angel & Seed investors</div>
-        </Link>
-
-        <Link
-          to="/startups/create"
-          className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <div className="w-9 h-9 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center">
-              <Rocket size={18} />
-            </div>
-            <span className="text-xs font-bold text-slate-400 group-hover:text-brand-600">+ New</span>
-          </div>
-          <div className="text-2xl font-black text-slate-900 dark:text-white">Post Idea</div>
-          <div className="text-xs text-slate-500 mt-0.5">Launch new startup profile</div>
+          <div className="text-lg font-black text-slate-900 dark:text-white">Community Feed</div>
+          <div className="text-xs text-slate-500 mt-0.5">Ecosystem posts & launches</div>
         </Link>
       </div>
 
@@ -330,9 +333,41 @@ export const DashboardPage: React.FC = () => {
 
         </div>
 
-        {/* Right Sidebar: Connection Requests, Opportunities, Quick Tools */}
+        {/* Right Sidebar: Membership Plan, Connection Requests, Opportunities */}
         <div className="space-y-6">
           
+          {/* Membership & Plan Status Card */}
+          <div className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white border border-slate-800 shadow-lg space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  <Crown size={18} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Membership Tier</span>
+                  <h4 className="text-sm font-bold text-white">Standard Founder Plan</h4>
+                </div>
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                Active
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Unlimited co-founder connections, 100 AI Scout queries, and directory priority.
+            </p>
+
+            <div className="pt-2 flex items-center justify-between border-t border-slate-800/80">
+              <Link
+                to="/memberships"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors"
+              >
+                <span>View Benefits & Upgrade</span>
+                <ArrowRight size={13} />
+              </Link>
+            </div>
+          </div>
+
           {/* Pending Connection Requests */}
           <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
             <div className="flex items-center justify-between mb-4">
