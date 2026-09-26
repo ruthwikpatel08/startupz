@@ -15,22 +15,46 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const cached = localStorage.getItem('startupz_user');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [token, setToken] = useState<string | null>(localStorage.getItem('startupz_token'));
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(!user && !!token);
 
   const refreshUser = async () => {
+    const currentToken = localStorage.getItem('startupz_token');
+    if (!currentToken) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     try {
-      if (!localStorage.getItem('startupz_token')) {
-        setUser(null);
-        setLoading(false);
-        return;
-      }
       const data = await api.getMe();
-      setUser(data.user);
-    } catch (err) {
-      console.error('Failed to restore auth session:', err);
-      logout();
+      if (data?.user) {
+        setUser(data.user);
+        localStorage.setItem('startupz_user', JSON.stringify(data.user));
+      }
+    } catch (err: any) {
+      console.warn('Backend verification warning:', err?.message || err);
+      // Only logout if the token is explicitly rejected as unauthorized or invalid
+      const msg = (err?.message || '').toLowerCase();
+      if (msg.includes('401') || msg.includes('unauthorized') || msg.includes('jwt') || msg.includes('invalid token')) {
+        logout();
+      } else {
+        // Retain offline or cached session if server is waking up or network unavailable
+        const cached = localStorage.getItem('startupz_user');
+        if (cached) {
+          try {
+            setUser(JSON.parse(cached));
+          } catch {}
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -42,17 +66,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = (newToken: string, newUser: User) => {
     localStorage.setItem('startupz_token', newToken);
+    localStorage.setItem('startupz_user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
   };
 
   const logout = () => {
     localStorage.removeItem('startupz_token');
+    localStorage.removeItem('startupz_user');
     setToken(null);
     setUser(null);
   };
 
   const updateUser = (updatedUser: User) => {
+    localStorage.setItem('startupz_user', JSON.stringify(updatedUser));
     setUser(updatedUser);
   };
 

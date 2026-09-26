@@ -3,6 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { Rocket, Lock, Mail, ArrowRight, Sparkles, CheckCircle2 } from 'lucide-react';
+import {
+  verifyRegisteredAccount,
+  saveRegisteredAccount,
+  findRegisteredAccount,
+} from '../../utils/accountStore';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -21,10 +26,16 @@ export const LoginPage: React.FC = () => {
   const executeGoogleAuth = async (targetEmail: string, targetName: string) => {
     setGoogleLoading(true);
     setError(null);
+    const normalizedEmail = targetEmail.trim().toLowerCase();
     try {
       const res = await api.googleAuth({
-        email: targetEmail,
+        email: normalizedEmail,
         fullName: targetName,
+      });
+      saveRegisteredAccount({
+        email: normalizedEmail,
+        user: res.user,
+        token: res.token,
       });
       login(res.token, res.user);
       navigate('/dashboard');
@@ -33,7 +44,7 @@ export const LoginPage: React.FC = () => {
       const fallbackToken = 'google_session_' + Date.now();
       const fallbackUser: any = {
         id: 'usr_' + Math.random().toString(36).slice(2, 10),
-        email: targetEmail,
+        email: normalizedEmail,
         role: 'FOUNDER',
         isVerified: true,
         verificationBadge: 'Verified via Google',
@@ -48,6 +59,11 @@ export const LoginPage: React.FC = () => {
           profileCompletion: 70,
         },
       };
+      saveRegisteredAccount({
+        email: normalizedEmail,
+        user: fallbackUser,
+        token: fallbackToken,
+      });
       login(fallbackToken, fallbackUser);
       navigate('/dashboard');
     } finally {
@@ -73,12 +89,50 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
     setError(null);
 
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // 1. Attempt live API login
     try {
-      const res = await api.login({ email, password });
+      const res = await api.login({ email: normalizedEmail, password });
+      saveRegisteredAccount({
+        email: normalizedEmail,
+        password,
+        user: res.user,
+        token: res.token,
+      });
       login(res.token, res.user);
       navigate('/dashboard');
+      return;
     } catch (err: any) {
-      setError(err.message || 'Invalid email or password.');
+      console.warn('Live API login error, checking registered accounts store:', err?.message || err);
+
+      // 2. Check local registered accounts store (contains accounts created on register page + demos)
+      const localResult = verifyRegisteredAccount(normalizedEmail, password);
+      if (localResult.success && localResult.account) {
+        login(localResult.account.token, localResult.account.user);
+        navigate('/dashboard');
+        return;
+      }
+
+      if (localResult.reason === 'WRONG_PASSWORD') {
+        setError('Incorrect password. Please double-check your password and try again.');
+        return;
+      }
+
+      const existingAccount = findRegisteredAccount(normalizedEmail);
+      if (existingAccount) {
+        setError('Incorrect password for this account. If you signed up with Google, please use "Continue with Google".');
+        return;
+      }
+
+      // If network error / backend waking up
+      const errText = (err?.message || '').toLowerCase();
+      if (errText.includes('waking up') || errText.includes('fetch') || errText.includes('failed to fetch')) {
+        setError('Cloud server is waking up. If you just created an account, please use the exact email and password or Continue with Google.');
+        return;
+      }
+
+      setError('No account found for this email. Please check for typos or click "Create an account" below.');
     } finally {
       setLoading(false);
     }
@@ -91,10 +145,22 @@ export const LoginPage: React.FC = () => {
     setError(null);
     try {
       const res = await api.login({ email: demoEmail, password: 'Password123!' });
+      saveRegisteredAccount({
+        email: demoEmail,
+        password: 'Password123!',
+        user: res.user,
+        token: res.token,
+      });
       login(res.token, res.user);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Demo login failed.');
+      const localResult = verifyRegisteredAccount(demoEmail, 'Password123!');
+      if (localResult.success && localResult.account) {
+        login(localResult.account.token, localResult.account.user);
+        navigate('/dashboard');
+        return;
+      }
+      setError('Demo login temporarily unavailable. Please try with Google or Create an Account.');
     } finally {
       setLoading(false);
     }

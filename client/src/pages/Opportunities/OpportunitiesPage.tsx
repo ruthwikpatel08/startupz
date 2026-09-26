@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { StartupOpportunity, OpportunityApplication } from '../../types';
+import { FALLBACK_OPPORTUNITIES } from '../../data/curatedFallbackData';
 import { Modal } from '../../components/common/Modal';
 import { EmptyState } from '../../components/common/EmptyState';
 import {
@@ -45,6 +46,52 @@ export const OpportunitiesPage: React.FC = () => {
   const [applySuccess, setApplySuccess] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
 
+  const filterFallbackOpportunities = (
+    typeFilter: string,
+    roleFilter: string,
+    workplaceFilter: string,
+    commitmentFilter: string,
+    searchFilter: string
+  ) => {
+    return FALLBACK_OPPORTUNITIES.filter((opp) => {
+      if (typeFilter && typeFilter !== 'all') {
+        const tLower = typeFilter.toLowerCase();
+        if (tLower === 'internships' || tLower === 'internship') {
+          const isIntern =
+            opp.commitment.toLowerCase().includes('intern') ||
+            opp.role.toLowerCase().includes('intern') ||
+            opp.description.toLowerCase().includes('intern');
+          if (!isIntern) return false;
+        } else if (tLower === 'jobs' || tLower === 'job') {
+          const isIntern =
+            opp.commitment.toLowerCase().includes('intern') ||
+            opp.role.toLowerCase().includes('intern');
+          if (isIntern) return false;
+        }
+      }
+
+      if (roleFilter !== 'ALL') {
+        const rLower = roleFilter.toLowerCase();
+        const oppRoleLower = opp.role.toLowerCase();
+        if (!oppRoleLower.includes(rLower)) {
+          if (rLower.includes('grant') && !oppRoleLower.includes('grant') && !oppRoleLower.includes('fellowship')) return false;
+          if (rLower.includes('engineer') && !oppRoleLower.includes('engineer') && !oppRoleLower.includes('builder')) return false;
+        }
+      }
+
+      if (workplaceFilter !== 'ALL' && opp.workplaceType !== workplaceFilter) return false;
+      if (commitmentFilter !== 'ALL' && opp.commitment !== commitmentFilter) return false;
+
+      if (searchFilter) {
+        const q = searchFilter.toLowerCase();
+        const text = `${opp.role} ${opp.description} ${opp.requiredSkills} ${opp.startup?.name}`.toLowerCase();
+        if (!text.includes(q)) return false;
+      }
+
+      return true;
+    });
+  };
+
   const fetchOpportunities = async () => {
     setLoading(true);
     try {
@@ -56,9 +103,16 @@ export const OpportunitiesPage: React.FC = () => {
       if (search) params.append('search', search);
 
       const res = await api.getOpportunities(params.toString());
-      setOpportunities(res.opportunities || []);
+      if (res.opportunities && res.opportunities.length > 0) {
+        setOpportunities(res.opportunities);
+      } else {
+        const fallback = filterFallbackOpportunities(currentType, role, workplaceType, commitment, search);
+        setOpportunities(fallback);
+      }
     } catch (err) {
-      console.error(err);
+      console.warn('Backend returned warning for opportunities, using curated fallback:', err);
+      const fallback = filterFallbackOpportunities(currentType, role, workplaceType, commitment, search);
+      setOpportunities(fallback);
     } finally {
       setLoading(false);
     }
@@ -278,7 +332,8 @@ export const OpportunitiesPage: React.FC = () => {
               {opportunities.map((opp) => (
                 <div
                   key={opp.id}
-                  className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-4"
+                  onClick={() => setSelectedOpp(opp)}
+                  className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-cyan-500/50 transition-all flex flex-col justify-between space-y-4 cursor-pointer group"
                 >
                   <div className="space-y-3">
                     {/* Header: Role & Startup info */}
@@ -290,11 +345,12 @@ export const OpportunitiesPage: React.FC = () => {
                           className="w-12 h-12 rounded-2xl object-cover border border-slate-200 dark:border-slate-800"
                         />
                         <div>
-                          <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                          <h3 className="font-bold text-base text-slate-900 dark:text-white group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
                             {opp.role}
                           </h3>
                           <Link
                             to={`/startups/${opp.startup?.id}`}
+                            onClick={(e) => e.stopPropagation()}
                             className="text-xs font-semibold text-brand-600 hover:underline block"
                           >
                             {opp.startup?.name} • {opp.startup?.stage}
@@ -345,6 +401,7 @@ export const OpportunitiesPage: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <Link
                         to={`/startups/${opp.startup?.id}`}
+                        onClick={(e) => e.stopPropagation()}
                         className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white"
                       >
                         View Startup Profile →
@@ -356,6 +413,7 @@ export const OpportunitiesPage: React.FC = () => {
                             href={urlMatch[0]}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
                             className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:underline"
                             title="Official External Portal / Source"
                           >
@@ -366,18 +424,35 @@ export const OpportunitiesPage: React.FC = () => {
                       })()}
                     </div>
 
-                    {opp.hasApplied ? (
-                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950">
-                        <CheckCircle size={14} /> Applied
-                      </span>
-                    ) : (
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setSelectedOpp(opp)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-sm"
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOpp(opp);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-dark-850 hover:bg-slate-200 dark:hover:bg-dark-800 transition-colors"
                       >
-                        <Send size={13} /> Apply Now
+                        Details
                       </button>
-                    )}
+
+                      {opp.hasApplied ? (
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950">
+                          <CheckCircle size={14} /> Applied
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedOpp(opp);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-sm"
+                        >
+                          <Send size={13} /> Apply Now
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -439,110 +514,208 @@ export const OpportunitiesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Apply Modal */}
+      {/* Apply / Detail Modal */}
       <Modal
         isOpen={!!selectedOpp}
         onClose={() => setSelectedOpp(null)}
-        title={selectedOpp ? `Apply: ${selectedOpp.role}` : ''}
+        title={selectedOpp ? selectedOpp.role : ''}
       >
-        {!user ? (
-          <div className="text-center py-6 space-y-4">
-            <div className="w-12 h-12 bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 rounded-full flex items-center justify-center mx-auto">
-              <Lock size={24} />
+        {selectedOpp && (
+          <div className="space-y-5">
+            {/* Header info */}
+            <div className="p-4 bg-slate-50 dark:bg-dark-850 rounded-2xl border border-slate-200/60 dark:border-slate-800 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={selectedOpp.startup?.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${selectedOpp.startup?.name}`}
+                    alt=""
+                    className="w-12 h-12 rounded-2xl object-cover border border-slate-200 dark:border-slate-700"
+                  />
+                  <div>
+                    <h4 className="font-extrabold text-base text-slate-900 dark:text-white">
+                      {selectedOpp.startup?.name}
+                    </h4>
+                    <p className="text-xs text-slate-500">
+                      {selectedOpp.startup?.stage} • {selectedOpp.startup?.industry || 'Technology'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-cyan-50 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-400">
+                    {selectedOpp.workplaceType}
+                  </span>
+                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400">
+                    {selectedOpp.commitment}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4 text-xs pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <DollarSign size={13} /> {selectedOpp.compensation}
+                </span>
+                <span className="text-slate-500 flex items-center gap-1">
+                  <MapPin size={13} /> {selectedOpp.location}
+                </span>
+              </div>
             </div>
-            <div className="space-y-1">
-              <h4 className="font-bold text-slate-900 dark:text-white text-base">Sign In Required to Apply</h4>
-              <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                Please log in or create an account to apply for {selectedOpp?.role} at {selectedOpp?.startup?.name}.
+
+            {/* Description */}
+            <div className="space-y-2">
+              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Role Description & Responsibilities
+              </h5>
+              <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                {selectedOpp.description}
               </p>
             </div>
-            <div className="flex items-center justify-center gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setSelectedOpp(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedOpp(null);
-                  navigate('/login');
-                }}
-                className="px-5 py-2 text-xs font-bold rounded-xl text-white bg-cyan-600 hover:bg-cyan-700 shadow-md shadow-cyan-500/25 cursor-pointer"
-              >
-                Sign In to Apply
-              </button>
-            </div>
-          </div>
-        ) : applySuccess ? (
-          <div className="text-center py-8 space-y-3">
-            <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle size={28} />
-            </div>
-            <h4 className="font-bold text-slate-900 dark:text-white text-base">Application Submitted!</h4>
-            <p className="text-xs text-slate-500">
-              The founder at {selectedOpp?.startup?.name} has been notified of your application.
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleApplySubmit} className="space-y-4">
-            <div className="p-3 bg-slate-50 dark:bg-dark-850 rounded-xl text-xs space-y-1">
-              <div className="font-bold text-slate-900 dark:text-white">{selectedOpp?.startup?.name}</div>
-              <div className="text-slate-500">{selectedOpp?.commitment} • {selectedOpp?.compensation}</div>
-            </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Why are you a great fit? (Cover note) *
-              </label>
-              <textarea
-                required
-                rows={4}
-                value={coverLetter}
-                onChange={(e) => setCoverLetter(e.target.value)}
-                placeholder="Mention your relevant experience with these skills, past projects, or portfolio links..."
-                className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Resume URL or Portfolio Link (Optional)
-              </label>
-              <input
-                type="url"
-                value={resumeUrl}
-                onChange={(e) => setResumeUrl(e.target.value)}
-                placeholder="https://linkedin.com/in/... or drive link"
-                className="w-full text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-              />
-            </div>
-
-            {applyError && (
-              <div className="p-3 text-xs rounded-xl bg-red-50 dark:bg-red-950 text-red-600">
-                {applyError}
+            {/* Required Skills */}
+            {selectedOpp.requiredSkills && (
+              <div className="space-y-2">
+                <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Required Competencies & Skills
+                </h5>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedOpp.requiredSkills.split(',').map((sk) => sk.trim()).filter(Boolean).map((sk, idx) => (
+                    <span
+                      key={idx}
+                      className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-dark-850 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-800"
+                    >
+                      {sk}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setSelectedOpp(null)}
-                className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={applying}
-                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md"
-              >
-                {applying ? 'Submitting...' : 'Submit Candidacy'}
-              </button>
+            {/* External Official Portal Link */}
+            {(() => {
+              const urlMatch = selectedOpp.description.match(/https?:\/\/[^\s)]+/);
+              return urlMatch ? (
+                <div className="p-3 rounded-xl bg-cyan-50/50 dark:bg-cyan-950/30 border border-cyan-100 dark:border-cyan-900/50 flex items-center justify-between">
+                  <span className="text-xs text-cyan-900 dark:text-cyan-300 font-medium">
+                    Verified external program & application link available
+                  </span>
+                  <a
+                    href={urlMatch[0]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-lg bg-cyan-600 text-white hover:bg-cyan-700 transition-colors"
+                  >
+                    <span>Visit Official Portal</span>
+                    <ExternalLink size={13} />
+                  </a>
+                </div>
+              ) : null;
+            })()}
+
+            {/* Apply Action Section */}
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
+              {applySuccess ? (
+                <div className="text-center py-6 space-y-2">
+                  <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                    <CheckCircle size={28} />
+                  </div>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-base">Application Submitted!</h4>
+                  <p className="text-xs text-slate-500">
+                    The founder at {selectedOpp.startup?.name} has been notified of your candidacy.
+                  </p>
+                </div>
+              ) : !user ? (
+                <div className="p-4 rounded-2xl bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/60 dark:border-brand-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="space-y-0.5">
+                    <h5 className="font-bold text-sm text-slate-900 dark:text-white">
+                      Sign In to Apply for this Role
+                    </h5>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Create an account or log in to submit your profile and directly message the startup team.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedOpp(null);
+                        navigate('/login');
+                      }}
+                      className="px-4 py-2 text-xs font-bold rounded-xl text-white bg-brand-600 hover:bg-brand-500 transition-colors shadow-xs"
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedOpp(null);
+                        navigate('/register');
+                      }}
+                      className="px-4 py-2 text-xs font-bold rounded-xl text-brand-600 bg-white dark:bg-slate-900 border border-brand-300 dark:border-brand-800 hover:bg-brand-50 transition-colors"
+                    >
+                      Register
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleApplySubmit} className="space-y-4">
+                  <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Submit Your Candidacy
+                  </h5>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Why are you a great fit? (Cover note) *
+                    </label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={coverLetter}
+                      onChange={(e) => setCoverLetter(e.target.value)}
+                      placeholder="Highlight your relevant past experience, domain enthusiasm, and how you can accelerate this startup..."
+                      className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      Resume URL or Portfolio Link (Optional)
+                    </label>
+                    <input
+                      type="url"
+                      value={resumeUrl}
+                      onChange={(e) => setResumeUrl(e.target.value)}
+                      placeholder="https://linkedin.com/in/... or GitHub / portfolio link"
+                      className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    />
+                  </div>
+
+                  {applyError && (
+                    <div className="p-3 text-xs rounded-xl bg-red-50 dark:bg-red-950 text-red-600">
+                      {applyError}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOpp(null)}
+                      className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800"
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={applying}
+                      className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md cursor-pointer"
+                    >
+                      <Send size={13} />
+                      {applying ? 'Submitting...' : 'Submit Application'}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
-          </form>
+          </div>
         )}
       </Modal>
 

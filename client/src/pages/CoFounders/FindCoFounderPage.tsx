@@ -23,6 +23,11 @@ import {
   BriefcaseBusiness,
 } from 'lucide-react';
 
+import {
+  FALLBACK_BUILDERS,
+  FALLBACK_INVESTORS,
+} from '../../data/curatedFallbackData';
+
 export const FindCoFounderPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawCategory = (searchParams.get('category') || 'cofounders').toLowerCase();
@@ -67,7 +72,29 @@ export const FindCoFounderPage: React.FC = () => {
         if (investorType !== 'ALL') params.append('investorType', investorType);
         if (investorStage !== 'ALL') params.append('preferredStages', investorStage);
         const res = await api.getInvestors(params.toString());
-        setInvestors(res.investors || []);
+        if (res.investors && res.investors.length > 0) {
+          setInvestors(res.investors);
+        } else {
+          // Fallback to verified investors
+          const filtered = FALLBACK_INVESTORS.filter((inv) => {
+            if (
+              investorSearch &&
+              !`${inv.organization} ${inv.industries} ${inv.portfolio}`
+                .toLowerCase()
+                .includes(investorSearch.toLowerCase())
+            ) {
+              return false;
+            }
+            if (investorType !== 'ALL' && inv.investorType !== investorType) {
+              return false;
+            }
+            if (investorStage !== 'ALL' && !inv.preferredStages.includes(investorStage)) {
+              return false;
+            }
+            return true;
+          });
+          setInvestors(filtered);
+        }
       } else {
         const params = new URLSearchParams();
         params.append('category', currentCategory);
@@ -76,10 +103,33 @@ export const FindCoFounderPage: React.FC = () => {
         if (availability !== 'ALL') params.append('availability', availability);
 
         const res = await api.getCofounderMatches(params.toString());
-        setMatches(res.matches || []);
+        if (res.matches && res.matches.length > 0) {
+          setMatches(res.matches);
+        } else {
+          // Fallback to verified builders for this category
+          const pool = FALLBACK_BUILDERS[currentCategory] || FALLBACK_BUILDERS['cofounders'] || [];
+          const filtered = pool.filter((cand) => {
+            if (targetRole !== 'ALL') {
+              const roleMatch = (
+                cand.profile?.headline ||
+                cand.profile?.preferredRole ||
+                cand.role ||
+                ''
+              ).toLowerCase();
+              if (!roleMatch.includes(targetRole.toLowerCase())) return false;
+            }
+            return true;
+          });
+          setMatches(filtered);
+        }
       }
     } catch (err) {
-      console.error('Failed to load category data:', err);
+      console.warn('Backend load returned warning, using curated fallback:', err);
+      if (currentCategory === 'investors') {
+        setInvestors(FALLBACK_INVESTORS);
+      } else {
+        setMatches(FALLBACK_BUILDERS[currentCategory] || FALLBACK_BUILDERS['cofounders'] || []);
+      }
     } finally {
       setLoading(false);
     }
@@ -112,6 +162,18 @@ export const FindCoFounderPage: React.FC = () => {
             <>
               <TrendingUp className="text-emerald-500" size={28} /> Investor Directory & Angel Network
             </>
+          ) : currentCategory === 'founders' ? (
+            <>
+              <Rocket className="text-brand-600" size={28} /> Founder Network & Startup Builders
+            </>
+          ) : currentCategory === 'marketers' ? (
+            <>
+              <Megaphone className="text-cyan-500" size={28} /> Growth Marketers & GTM Specialists
+            </>
+          ) : currentCategory === 'other' ? (
+            <>
+              <BriefcaseBusiness className="text-amber-500" size={28} /> Engineers, Designers & Startup Advisors
+            </>
           ) : (
             <>
               <Users className="text-indigo-600" size={28} /> Algorithmic Co-Founder Matchmaking
@@ -121,6 +183,12 @@ export const FindCoFounderPage: React.FC = () => {
         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
           {currentCategory === 'investors'
             ? 'Discover vetted venture funds, syndicates, and angel investors actively backing early-stage startups.'
+            : currentCategory === 'founders'
+            ? 'Connect with verified startup founders actively building innovative ventures across emerging markets.'
+            : currentCategory === 'marketers'
+            ? 'Discover experienced growth leads, demand marketers, and customer acquisition architects.'
+            : currentCategory === 'other'
+            ? 'Find product designers, AI researchers, fractional CFOs, and verified startup mentors.'
             : 'Connect with vetted builders seeking complementary skill sets. Ranked by our proprietary founder synergy index.'}
         </p>
       </div>

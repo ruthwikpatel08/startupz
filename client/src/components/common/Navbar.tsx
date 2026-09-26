@@ -63,7 +63,9 @@ export const Navbar: React.FC = () => {
   const [aiScoutOpen, setAiScoutOpen] = useState(false);
 
   const coFoundersRef = useRef<HTMLDivElement>(null);
+  const coFoundersMenuRef = useRef<HTMLDivElement>(null);
   const opportunitiesRef = useRef<HTMLDivElement>(null);
+  const opportunitiesMenuRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
   const handleToggleCoFounders = (e: React.MouseEvent<HTMLButtonElement | HTMLDivElement>) => {
@@ -88,10 +90,18 @@ export const Navbar: React.FC = () => {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
-      if (coFoundersRef.current && !coFoundersRef.current.contains(target)) {
+      if (
+        coFoundersRef.current &&
+        !coFoundersRef.current.contains(target) &&
+        (!coFoundersMenuRef.current || !coFoundersMenuRef.current.contains(target))
+      ) {
         setCoFoundersDropdownOpen(false);
       }
-      if (opportunitiesRef.current && !opportunitiesRef.current.contains(target)) {
+      if (
+        opportunitiesRef.current &&
+        !opportunitiesRef.current.contains(target) &&
+        (!opportunitiesMenuRef.current || !opportunitiesMenuRef.current.contains(target))
+      ) {
         setOpportunitiesDropdownOpen(false);
       }
       if (profileRef.current && !profileRef.current.contains(target)) {
@@ -291,6 +301,8 @@ export const Navbar: React.FC = () => {
             {/* FIXED VIEWPORT DROPDOWNS: Rendered outside slidebar overflow container so they NEVER get clipped */}
             {coFoundersDropdownOpen && (
               <div
+                ref={coFoundersMenuRef}
+                onMouseDown={(e) => e.stopPropagation()}
                 className="fixed z-50 animate-in fade-in zoom-in-95 duration-100"
                 style={{ left: `${coFoundersPos.left}px`, top: `${coFoundersPos.top}px` }}
               >
@@ -329,6 +341,8 @@ export const Navbar: React.FC = () => {
 
             {opportunitiesDropdownOpen && (
               <div
+                ref={opportunitiesMenuRef}
+                onMouseDown={(e) => e.stopPropagation()}
                 className="fixed z-50 animate-in fade-in zoom-in-95 duration-100"
                 style={{ left: `${opportunitiesPos.left}px`, top: `${opportunitiesPos.top}px` }}
               >
