@@ -63,18 +63,6 @@ export const LandingPage: React.FC = () => {
                 <Compass size={16} />
                 <span>Explore Startups</span>
               </Link>
-              <button
-                type="button"
-                onClick={() => {
-                  window.dispatchEvent(new CustomEvent('launch-rocket'));
-                }}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-extrabold text-cyan-700 dark:text-cyan-300 bg-cyan-50/80 dark:bg-cyan-950/70 hover:bg-cyan-100 dark:hover:bg-cyan-900/70 border border-cyan-200/80 dark:border-cyan-800/80 shadow-md shadow-cyan-500/10 transition-all hover:scale-105 active:scale-95 group cursor-pointer"
-                title="Ignite Rocket Thrusters"
-              >
-                <Rocket size={17} className="text-cyan-500 transform -rotate-45 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                <span>Ignite Rocket</span>
-                <Sparkles size={14} className="text-cyan-400 animate-pulse" />
-              </button>
             </div>
 
             {/* Trust metrics */}

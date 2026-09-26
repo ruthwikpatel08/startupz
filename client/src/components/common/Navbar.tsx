@@ -147,13 +147,10 @@ export const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 gap-3">
             
-            {/* Brand Logo with Interactive Rocket Launch Trigger */}
+            {/* Brand Logo */}
             <Link
               to={user ? '/dashboard' : '/'}
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('launch-rocket'));
-              }}
-              title="StartupZ - Click to Launch Rocket"
+              title="StartupZ"
               className="flex items-center gap-2.5 shrink-0 group cursor-pointer"
             >
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20 group-hover:scale-110 group-active:scale-95 transition-all">
@@ -359,18 +356,6 @@ export const Navbar: React.FC = () => {
 
             {/* Right Action Icons & Profile */}
             <div className="flex items-center gap-2 sm:gap-2.5">
-              {/* Fly Rocket Quick Action */}
-              <button
-                type="button"
-                onClick={() => {
-                  window.dispatchEvent(new CustomEvent('launch-rocket'));
-                }}
-                className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold text-cyan-600 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 border border-cyan-200/80 dark:border-cyan-800/80 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 transition-all hover:scale-105 active:scale-95 shadow-xs"
-                title="Launch Startup Rocket across the page"
-              >
-                <Rocket size={13} className="text-cyan-500 transform -rotate-45" />
-                <span>Fly Rocket</span>
-              </button>
 
               {/* Theme Toggle */}
               <button
