@@ -532,11 +532,12 @@ export const Navbar: React.FC = () => {
 
                         <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               setProfileDropdownOpen(false);
-                              logout();
+                              await logout();
+                              navigate('/');
                             }}
-                            className="flex items-center gap-2.5 w-full text-left px-4 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                            className="flex items-center gap-2.5 w-full text-left px-4 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                           >
                             <LogOut size={15} />
                             <span>Log Out</span>
@@ -786,21 +787,35 @@ export const Navbar: React.FC = () => {
                 </Link>
               </div>
             ) : (
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
-                <Link
-                  to="/startups/create"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex-1 py-2 text-center text-xs font-bold text-white bg-brand-600 rounded-xl"
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                <div className="flex gap-2">
+                  <Link
+                    to="/startups/create"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex-1 py-2 text-center text-xs font-bold text-white bg-brand-600 rounded-xl"
+                  >
+                    + Post Idea
+                  </Link>
+                  <Link
+                    to={`/profile/${user.id}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-xl"
+                  >
+                    Profile
+                  </Link>
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setMobileMenuOpen(false);
+                    await logout();
+                    navigate('/');
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 rounded-xl transition-colors cursor-pointer"
                 >
-                  + Post Idea
-                </Link>
-                <Link
-                  to={`/profile/${user.id}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-xl"
-                >
-                  Profile
-                </Link>
+                  <LogOut size={14} />
+                  <span>Log Out</span>
+                </button>
               </div>
             )}
           </div>

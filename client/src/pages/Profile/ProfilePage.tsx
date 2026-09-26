@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { User, Profile } from '../../types';
+import { fetchUserProfile as fetchUserProfileFromSupabase, upsertUserProfile } from '../../lib/supabase';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { StartupConnectionModal } from '../../components/common/StartupConnectionModal';
@@ -122,35 +123,75 @@ export const ProfilePage: React.FC = () => {
   const fetchUserProfile = async () => {
     if (!targetId) return;
     setLoading(true);
-    try {
-      const data = await api.getUser(targetId);
-      const u = data.user || data;
-      setProfileUser(u);
 
-      if (isMe) {
-        setFormData({
-          avatar: u.profile?.avatar || '',
-          coverImage: u.profile?.coverImage || '',
-          fullName: u.profile?.fullName || '',
-          headline: u.profile?.headline || '',
-          location: u.profile?.location || '',
-          bio: u.profile?.bio || '',
-          skills: u.profile?.skills || '',
-          startupInterests: u.profile?.startupInterests || '',
-          industries: u.profile?.industries || '',
-          preferredRole: u.profile?.preferredRole || '',
-          availability: u.profile?.availability || 'Full-time',
-          startupExperience: u.profile?.startupExperience || '',
-          achievements: u.profile?.achievements || '',
-          education: u.profile?.education || '',
-          githubUrl: u.profile?.githubUrl || '',
-          linkedinUrl: u.profile?.linkedinUrl || '',
-          websiteUrl: u.profile?.websiteUrl || '',
-          openTo: u.profile?.openTo || 'Co-Founder, Startup Team, Mentorship',
-        });
+    if (isMe && currentUser?.profile) {
+      setProfileUser(currentUser);
+      setFormData({
+        avatar: currentUser.profile?.avatar || '',
+        coverImage: currentUser.profile?.coverImage || '',
+        fullName: currentUser.profile?.fullName || '',
+        headline: currentUser.profile?.headline || '',
+        location: currentUser.profile?.location || '',
+        bio: currentUser.profile?.bio || '',
+        skills: currentUser.profile?.skills || '',
+        startupInterests: currentUser.profile?.startupInterests || '',
+        industries: currentUser.profile?.industries || '',
+        preferredRole: currentUser.profile?.preferredRole || '',
+        availability: currentUser.profile?.availability || 'Full-time',
+        startupExperience: currentUser.profile?.startupExperience || '',
+        achievements: currentUser.profile?.achievements || '',
+        education: currentUser.profile?.education || '',
+        githubUrl: currentUser.profile?.githubUrl || '',
+        linkedinUrl: currentUser.profile?.linkedinUrl || '',
+        websiteUrl: currentUser.profile?.websiteUrl || '',
+        openTo: currentUser.profile?.openTo || 'Co-Founder, Startup Team, Mentorship',
+      });
+    }
+
+    try {
+      // 1. Check Supabase profiles table directly for authenticated UUID
+      const sbProfile = await fetchUserProfileFromSupabase(targetId);
+      if (sbProfile) {
+        const u: User = {
+          id: sbProfile.user_id || targetId,
+          email: sbProfile.email || currentUser?.email || '',
+          role: sbProfile.preferred_role || currentUser?.role || 'FOUNDER',
+          isVerified: true,
+          verificationBadge: sbProfile.auth_provider === 'google' ? 'Verified via Google' : 'Verified Member',
+          isSuspended: false,
+          isAdmin: currentUser?.isAdmin || false,
+          createdAt: sbProfile.created_at || new Date().toISOString(),
+          profile: {
+            id: sbProfile.id,
+            userId: sbProfile.user_id || targetId,
+            fullName: sbProfile.full_name || 'Founder',
+            headline: sbProfile.headline || '',
+            location: sbProfile.location || '',
+            bio: sbProfile.bio || '',
+            avatar: sbProfile.avatar || '',
+            skills: sbProfile.skills || '',
+            startupInterests: sbProfile.startup_interests || '',
+            industries: sbProfile.industries || '',
+            preferredRole: sbProfile.preferred_role || '',
+            availability: sbProfile.availability || 'Full-time',
+            startupExperience: sbProfile.startup_experience || '',
+            achievements: sbProfile.achievements || '',
+            education: sbProfile.education || '',
+            githubUrl: sbProfile.github_url || '',
+            linkedinUrl: sbProfile.linkedin_url || '',
+            websiteUrl: sbProfile.website_url || '',
+            openTo: sbProfile.open_to || 'Co-Founder, Startup Team, Mentorship',
+            profileCompletion: sbProfile.profile_completion || 60,
+          },
+        };
+        setProfileUser(u);
+      } else {
+        const data = await api.getUser(targetId);
+        const u = data.user || data;
+        setProfileUser(u);
       }
     } catch (err) {
-      console.error('Failed to fetch user profile:', err);
+      console.warn('Profile fetch warning:', err);
     } finally {
       setLoading(false);
     }
@@ -158,17 +199,56 @@ export const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     fetchUserProfile();
-  }, [targetId]);
+  }, [targetId, currentUser]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setSaveError(null);
     try {
-      const res = await api.updateProfile(formData);
-      setProfileUser(res.user);
+      // 1. Update Supabase public.profiles table
+      if (currentUser?.id) {
+        await upsertUserProfile(currentUser.id, {
+          full_name: formData.fullName,
+          headline: formData.headline,
+          location: formData.location,
+          bio: formData.bio,
+          avatar: formData.avatar,
+          skills: formData.skills,
+          startup_interests: formData.startupInterests,
+          industries: formData.industries,
+          preferred_role: formData.preferredRole,
+          availability: formData.availability,
+          startup_experience: formData.startupExperience,
+          achievements: formData.achievements,
+          education: formData.education,
+          github_url: formData.githubUrl,
+          linkedin_url: formData.linkedinUrl,
+          website_url: formData.websiteUrl,
+          open_to: formData.openTo,
+        });
+      }
+
+      // 2. Optionally mirror to backend API if reachable
+      let updatedUser: User | null = null;
+      try {
+        const res = await api.updateProfile(formData);
+        if (res?.user) updatedUser = res.user;
+      } catch (backendErr) {
+        console.warn('Backend profile mirror warning (non-fatal):', backendErr);
+      }
+
+      const mergedUser: User = updatedUser || {
+        ...(profileUser || currentUser!),
+        profile: {
+          ...(profileUser?.profile || currentUser?.profile!),
+          ...formData,
+        },
+      };
+
+      setProfileUser(mergedUser);
       if (isMe && currentUser) {
-        updateUser(res.user);
+        updateUser(mergedUser);
       }
       setEditOpen(false);
     } catch (err: any) {
