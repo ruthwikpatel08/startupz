@@ -157,6 +157,113 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* 1.5 LATEST PLATFORM UPDATES & CHANGELOG SECTION */}
+      <section className="py-16 bg-gradient-to-r from-brand-900/10 via-indigo-900/10 to-teal-900/10 border-y border-brand-200/40 dark:border-brand-800/40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-10">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 text-xs font-bold uppercase tracking-wider mb-2">
+                <Sparkles size={13} className="text-brand-500 animate-spin" />
+                Latest Platform Upgrades
+              </div>
+              <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
+                What's New on StartupZ
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
+                Explore recent UI enhancements, interactive navigation upgrades, and profile tools deployed across mobile and desktop.
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold shrink-0">
+              <CheckCircle2 size={15} className="text-emerald-500" />
+              Live & Verified Upgrades
+            </div>
+          </div>
+
+          {/* Features Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            {/* 1. Nav Slidebar */}
+            <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+              <div className="w-10 h-10 rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-4">
+                <Globe size={20} />
+              </div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">
+                Mobile & Desktop Nav Slidebar
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Horizontal slidebar navigation from AI-Scout through Problem Statements, optimized for seamless scrolling on both mobile phones and desktop displays.
+              </p>
+            </div>
+
+            {/* 2. Click Dropdowns */}
+            <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+              <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4">
+                <Users size={20} />
+              </div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">
+                Click-to-Toggle Submenus
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Co-Founders & Opportunities categories open reliably on click without layout clipping, cursor hover flickering, or unintended pop-up displacement.
+              </p>
+            </div>
+
+            {/* 3. Search & AI Scout */}
+            <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+              <div className="w-10 h-10 rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-4">
+                <Zap size={20} />
+              </div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">
+                Instant Modal Search & Recommendations
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Search modal styled after AI Scout with 1-letter real-time word recommendations and new-tab search execution.
+              </p>
+            </div>
+
+            {/* 4. Royal Emerald Profile Cover */}
+            <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
+                <ShieldCheck size={20} />
+              </div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">
+                Royal Emerald Cover & Photos
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Custom avatar and cover photo upload settings on profile page, backed by a default Royal Emerald Green background header.
+              </p>
+            </div>
+
+            {/* 5. Memberships */}
+            <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4">
+                <Rocket size={20} />
+              </div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">
+                Tiered Membership Plans
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Basic, Standard, and Premium subscription tiers integrated directly into user dashboard, profile menu, and navigation bar.
+              </p>
+            </div>
+
+            {/* 6. Community Feed & Network */}
+            <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
+              <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4">
+                <Layers size={20} />
+              </div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">
+                Startup Network & Feed
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                Dedicated founder connections management, saved opportunities, and real-time community feed for founder engagement.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       {/* 2. HOW STARTUPZ WORKS */}
       <section className="py-20 bg-slate-50/60 dark:bg-dark-900/40 border-y border-slate-200/80 dark:border-slate-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
