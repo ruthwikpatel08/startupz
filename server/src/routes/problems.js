@@ -11,6 +11,7 @@ import {
   generateProblemSolutions,
   matchUserToProblem,
   categorizeProblemAI,
+  discoverProblemsFromAI,
 } from '../utils/aiClient.js';
 
 const router = express.Router();
@@ -596,6 +597,21 @@ router.post('/:id/analyze', optionalAuth, async (req, res) => {
   } catch (error) {
     console.error('Problem AI analysis error:', error);
     res.status(500).json({ error: 'Failed to generate AI insights for this problem.' });
+  }
+});
+
+/**
+ * POST /api/problems/discover-ai
+ * Discover new authoritative problem statements using Google Gemini AI
+ */
+router.post('/discover-ai', optionalAuth, async (req, res) => {
+  try {
+    const { topic } = req.body;
+    const problems = await discoverProblemsFromAI(topic || 'business, agriculture, and global challenges');
+    res.json({ problems });
+  } catch (error) {
+    console.error('Discover AI problems error:', error);
+    res.status(500).json({ error: 'Failed to discover problems using AI.' });
   }
 });
 

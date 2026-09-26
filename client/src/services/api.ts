@@ -217,5 +217,7 @@ export const api = {
     request<any>(`/problems/${id}/analyze?type=${type}`, { method: 'POST' }),
   categorizeProblemAI: (payload: { title?: string; description: string }) =>
     request<any>('/problems/categorize-ai', { method: 'POST', body: JSON.stringify(payload) }),
+  discoverAIProblems: (topic?: string) =>
+    request<{ problems: any[] }>('/problems/discover-ai', { method: 'POST', body: JSON.stringify({ topic }) }),
 };
 

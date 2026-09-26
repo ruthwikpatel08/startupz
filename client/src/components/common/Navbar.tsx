@@ -81,7 +81,8 @@ export const Navbar: React.FC = () => {
   const isActive = (path?: string) => path ? location.pathname === path : false;
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 transition-colors">
+    <>
+      <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-3">
           
@@ -371,9 +372,10 @@ export const Navbar: React.FC = () => {
           )}
         </div>
       )}
-
-      {/* AI Scout Modal */}
-      <AIScoutModal isOpen={aiScoutOpen} onClose={() => setAiScoutOpen(false)} />
     </header>
+
+    {/* AI Scout Modal - Mounted outside sticky/backdrop-blur header */}
+    <AIScoutModal isOpen={aiScoutOpen} onClose={() => setAiScoutOpen(false)} />
+  </>
   );
 };

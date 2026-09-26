@@ -346,3 +346,79 @@ function generateDeterministicCategorization(title, description) {
     tags: tags.slice(0, 5),
   };
 }
+
+/**
+ * Discover new Problem Statements from Google AI (Gemini)
+ */
+export async function discoverProblemsFromAI(topic = 'business, agriculture, and global challenges') {
+  const ai = getGenAI();
+  const prompt = `You are an expert global development and startup ecosystem researcher.
+Formulate 3 to 5 realistic, urgent, venture-worthy problem statements from authoritative sources (e.g. World Bank, FAO, WEF, CGIAR, OECD) related to: "${topic}".
+
+Return valid JSON with an array named "problems":
+{
+  "problems": [
+    {
+      "title": "string (concise title, 5-150 chars)",
+      "description": "string (rich description detailing root cause, affected populations, economic loss, and required startup innovation)",
+      "sourceUrl": "string (authoritative link e.g. https://www.fao.org or https://www.worldbank.org)",
+      "impactLevel": 9,
+      "categories": ["Business & Commerce", "Agriculture & Farming"],
+      "regions": ["Global", "South Asia"],
+      "tags": ["Agriculture", "AgriTech", "Supply Chain"]
+    }
+  ]
+}`;
+
+  if (ai) {
+    try {
+      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+      const response = await ai.models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+          systemInstruction: SYSTEM_PROMPT,
+          responseMimeType: 'application/json',
+        },
+      });
+
+      const parsed = cleanJsonOutput(response.text);
+      if (parsed && Array.isArray(parsed.problems) && parsed.problems.length > 0) {
+        return parsed.problems;
+      }
+    } catch (err) {
+      console.error('Gemini API call failed for problem discovery:', err.message);
+    }
+  }
+
+  // Authoritative fallback problem statements
+  return [
+    {
+      title: 'Precision Soil Health Diagnostics & Degradation Reversal',
+      description: 'Over 33% of the world\'s soils are moderately to highly degraded due to erosion, nutrient depletion, and chemical acidification (UN FAO). Smallholder and commercial farmers lack accessible, real-time microbial testing to prescribe regenerative bio-fertilizers, leading to 20% lower crop yields.',
+      sourceUrl: 'https://www.fao.org/soils-portal/about',
+      impactLevel: 9,
+      categories: ['Agriculture & Farming', 'Environment/Climate'],
+      regions: ['Global', 'Sub-Saharan Africa', 'South Asia'],
+      tags: ['Soil Health', 'Regenerative Agriculture', 'Biochar', 'AgriTech'],
+    },
+    {
+      title: 'SME Working Capital Bottlenecks & B2B Invoice Delay Settlement',
+      description: 'Delayed payment terms of 60 to 90 days trap over $3 trillion in SME liquidity globally (World Bank & IFC). Small suppliers suffer chronic cash flow crises that force bankruptcies despite profitable order books.',
+      sourceUrl: 'https://www.worldbank.org/en/topic/smefinance',
+      impactLevel: 9,
+      categories: ['Business & Commerce', 'Economy & Inequality'],
+      regions: ['Global', 'North America', 'South Asia', 'Europe'],
+      tags: ['Fintech', 'SME Finance', 'B2B Payments', 'Working Capital'],
+    },
+    {
+      title: 'Autonomous Cold-Chain Logistics for Perishable Agro-Commodities',
+      description: 'Up to 40% of fresh produce spoils between the farm gate and consumer markets in developing nations due to lack of localized off-grid cold storage and real-time transit telematics (FAO & Rockefeller Foundation).',
+      sourceUrl: 'https://www.fao.org/food-loss-and-food-waste',
+      impactLevel: 9,
+      categories: ['Agriculture & Farming', 'Supply Chain & Logistics'],
+      regions: ['Sub-Saharan Africa', 'South Asia', 'Latin America'],
+      tags: ['Cold Storage', 'Food Waste', 'Logistics', 'Farmer Income'],
+    },
+  ];
+}
