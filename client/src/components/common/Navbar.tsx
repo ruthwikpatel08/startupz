@@ -130,11 +130,9 @@ export const Navbar: React.FC = () => {
   ];
 
   const otherNavLinks = [
-    { name: 'Memberships', href: '/memberships', icon: Crown },
     { name: 'Graveyard', href: '/failed-startups', icon: Skull },
     { name: 'Mentors', href: '/mentors', icon: GraduationCap },
     { name: 'Problem Statements', href: '/problems', icon: Globe },
-    { name: 'Feed', href: '/feed', icon: Share2 },
   ];
 
   const isCoFoundersActive = location.pathname.startsWith('/cofounders');
