@@ -4,6 +4,8 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
+import { RocketFlightOverlay } from './components/effects/RocketFlightOverlay';
+import { InteractiveClickSparks } from './components/effects/InteractiveClickSparks';
 
 // Pages
 import { LandingPage } from './pages/LandingPage';
@@ -63,7 +65,9 @@ export const App: React.FC = () => {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
-          <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors selection:bg-brand-500 selection:text-white">
+          <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors selection:bg-brand-500 selection:text-white relative">
+            <InteractiveClickSparks />
+            <RocketFlightOverlay />
             <Navbar />
             <main className="flex-1">
               <Routes>
