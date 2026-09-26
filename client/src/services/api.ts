@@ -204,4 +204,18 @@ export const api = {
   getAdminReports: () => request<any[]>('/admin/reports'),
   updateReportStatus: (id: string, status: string) =>
     request<any>(`/admin/reports/${id}`, { method: 'PUT', body: JSON.stringify({ status }) }),
+
+  // WORLD-WIDE PROBLEM STATEMENTS
+  getProblems: (params?: any) => request<any>(`/problems${buildQuery(params)}`),
+  getProblem: (id: string) => request<any>(`/problems/${id}`),
+  getProblemById: (id: string) => request<any>(`/problems/${id}`),
+  getProblemMeta: () => request<any>('/problems/meta'),
+  createProblem: (payload: any) => request<any>('/problems', { method: 'POST', body: JSON.stringify(payload) }),
+  updateProblem: (id: string, payload: any) => request<any>(`/problems/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  deleteProblem: (id: string) => request<any>(`/problems/${id}`, { method: 'DELETE' }),
+  analyzeProblem: (id: string, type: 'solutions' | 'match') =>
+    request<any>(`/problems/${id}/analyze?type=${type}`, { method: 'POST' }),
+  categorizeProblemAI: (payload: { title?: string; description: string }) =>
+    request<any>('/problems/categorize-ai', { method: 'POST', body: JSON.stringify(payload) }),
 };
+

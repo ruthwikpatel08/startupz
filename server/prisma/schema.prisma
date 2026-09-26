@@ -50,6 +50,7 @@ model User {
   sentProposals       StartupProposal[]     @relation("SentProposals")
   receivedProposals   StartupProposal[]     @relation("ReceivedProposals")
   startupFollows      StartupFollow[]
+  createdProblems     Problem[]             @relation("UserProblems")
 }
 
 model Profile {
@@ -423,3 +424,65 @@ model RaisedSolution {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
+
+model Category {
+  id        String            @id @default(uuid())
+  name      String            @unique
+  problems  ProblemCategory[]
+}
+
+model Region {
+  id        String          @id @default(uuid())
+  name      String          @unique
+  problems  ProblemRegion[]
+}
+
+model Tag {
+  id        String       @id @default(uuid())
+  name      String       @unique
+  problems  ProblemTag[]
+}
+
+model Problem {
+  id          String            @id @default(uuid())
+  title       String
+  description String
+  sourceUrl   String?
+  impactLevel Int?              // 1-10
+  createdBy   String?
+  creator     User?             @relation("UserProblems", fields: [createdBy], references: [id], onDelete: SetNull)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  categories  ProblemCategory[]
+  regions     ProblemRegion[]
+  tags        ProblemTag[]
+}
+
+model ProblemCategory {
+  problemId  String
+  problem    Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([problemId, categoryId])
+}
+
+model ProblemRegion {
+  problemId String
+  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  regionId  String
+  region    Region  @relation(fields: [regionId], references: [id], onDelete: Cascade)
+
+  @@id([problemId, regionId])
+}
+
+model ProblemTag {
+  problemId String
+  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  tagId     String
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([problemId, tagId])
+}
+

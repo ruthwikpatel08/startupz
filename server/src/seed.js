@@ -4,6 +4,13 @@ import { prisma } from './db.js';
 export async function main() {
   console.log('🌱 Starting StartupZ database seed...');
 
+  await prisma.problemTag.deleteMany({});
+  await prisma.problemCategory.deleteMany({});
+  await prisma.problemRegion.deleteMany({});
+  await prisma.problem.deleteMany({});
+  await prisma.tag.deleteMany({});
+  await prisma.category.deleteMany({});
+  await prisma.region.deleteMany({});
   await prisma.raisedSolution.deleteMany({});
   await prisma.failedStartup.deleteMany({});
   await prisma.videoMeeting.deleteMany({});
@@ -606,6 +613,209 @@ export async function main() {
       upvotesCount: 18,
     },
   });
+
+  // ==============================================================================
+  // Seed World-wide Problem Statements, Categories, Regions, and Tags
+  // ==============================================================================
+  console.log('🌍 Seeding World-wide Problem Statements...');
+  const adminUser = userByEmail.get('admin@startupz.com');
+
+  const categoriesList = [
+    'Environment/Climate',
+    'Health & Disease',
+    'Food & Water',
+    'Energy & Infrastructure',
+    'Education & Skills',
+    'Economy & Inequality',
+    'Governance & Peace',
+    'Technology & Innovation',
+    'Women & Social',
+    'Other (Future Tech)',
+  ];
+
+  const categoryMap = new Map();
+  for (const name of categoriesList) {
+    const cat = await prisma.category.create({ data: { name } });
+    categoryMap.set(name, cat.id);
+  }
+
+  const regionsList = [
+    'Global',
+    'Sub-Saharan Africa',
+    'South Asia',
+    'Southeast Asia',
+    'Latin America',
+    'Europe',
+    'North America',
+    'Middle East',
+    'Asia-Pacific',
+  ];
+
+  const regionMap = new Map();
+  for (const name of regionsList) {
+    const reg = await prisma.region.create({ data: { name } });
+    regionMap.set(name, reg.id);
+  }
+
+  const tagsList = [
+    'Climate Change', 'Carbon', 'Emissions', 'Clean Energy', 'SDG 13',
+    'Clean Water', 'Sanitation', 'Rural Health', 'Filtration', 'SDG 6',
+    'Hunger', 'Agriculture', 'Food Security', 'Supply Chain', 'SDG 2',
+    'Infectious Diseases', 'Pandemics', 'Diagnostics', 'Public Health', 'SDG 3',
+    'Education', 'Literacy', 'Digital Divide', 'EdTech', 'SDG 4',
+    'Poverty', 'Financial Inclusion', 'Microfinance', 'Gig Economy', 'SDG 10',
+    'Digital Inclusion', 'AI for Good', 'Connectivity', 'Broadband', 'SDG 9',
+    'Gender Equality', 'Women Founders', 'Safety', 'Economic Empowerment', 'SDG 5',
+    'Renewable Energy', 'Solar', 'Battery Storage', 'Smart Grid', 'SDG 7',
+    'Mental Health', 'Depression', 'Therapy Access', 'Wellness',
+  ];
+
+  const tagMap = new Map();
+  for (const name of tagsList) {
+    const tag = await prisma.tag.create({ data: { name } });
+    tagMap.set(name, tag.id);
+  }
+
+  const problemsData = [
+    {
+      title: 'Limit global warming to 1.5°C (Paris Agreement goal)',
+      description: 'According to the IPCC and Paris Agreement, limiting global warming to 1.5°C requires cutting global greenhouse gas emissions by 45% by 2030 and reaching net zero by 2050. Without rapid and deep transformations across energy, industry, transport, and food systems, catastrophic climate disruptions, extreme weather events, and ecosystem collapses will severely jeopardize human civilization. Startups innovating in carbon capture, grid decarbonization, industrial electrification, and climate intelligence are urgently required.',
+      sourceUrl: 'https://unfccc.int/process-and-meetings/the-paris-agreement',
+      impactLevel: 10,
+      categories: ['Environment/Climate', 'Energy & Infrastructure'],
+      regions: ['Global', 'Europe', 'North America'],
+      tags: ['Climate Change', 'Carbon', 'Emissions', 'Clean Energy', 'SDG 13'],
+    },
+    {
+      title: 'Ensure clean water and sanitation for all',
+      description: 'Over 2 billion people worldwide live in water-stressed countries, and approximately 2.3 billion lack basic sanitation facilities. Water contamination triggers widespread waterborne diseases such as cholera, dysentery, and typhoid, heavily affecting children under five. Affordable decentralized water purification, smart IoT leak detection, atmospheric water generators, and biological waste treatment technologies can radically change lives in vulnerable rural and peri-urban communities.',
+      sourceUrl: 'https://www.who.int/water-sanitation-health',
+      impactLevel: 9,
+      categories: ['Food & Water', 'Health & Disease'],
+      regions: ['Sub-Saharan Africa', 'South Asia', 'Latin America', 'Global'],
+      tags: ['Clean Water', 'Sanitation', 'Rural Health', 'Filtration', 'SDG 6'],
+    },
+    {
+      title: 'End hunger and malnutrition by 2030',
+      description: 'As highlighted by the UN FAO, over 828 million people suffer from chronic hunger, exacerbated by climate shocks, conflict, and post-harvest losses of up to 40% in emerging economies. Transforming food systems through precision agriculture, drought-resistant bio-solutions, localized cold-chain logistics, and alternative protein production is essential to achieving Zero Hunger (UN SDG 2).',
+      sourceUrl: 'https://www.fao.org/state-of-food-security-nutrition',
+      impactLevel: 9,
+      categories: ['Food & Water', 'Economy & Inequality'],
+      regions: ['Sub-Saharan Africa', 'South Asia', 'Global'],
+      tags: ['Hunger', 'Agriculture', 'Food Security', 'Supply Chain', 'SDG 2'],
+    },
+    {
+      title: 'Reduce threat of infectious and re-emerging diseases',
+      description: 'Infectious disease outbreaks and antimicrobial resistance (AMR) threaten global public health and economic stability. Vector-borne pathogens like Dengue, malaria, and novel viral strains spread faster due to urbanization and climate disruption. Urgent solutions are required in AI-powered syndromic surveillance, rapid point-of-care diagnostics, decentralized cold chains for vaccines, and novel antimicrobial alternatives.',
+      sourceUrl: 'https://www.who.int/emergencies/diseases/en',
+      impactLevel: 9,
+      categories: ['Health & Disease', 'Technology & Innovation'],
+      regions: ['Global', 'Southeast Asia', 'Sub-Saharan Africa'],
+      tags: ['Infectious Diseases', 'Pandemics', 'Diagnostics', 'Public Health', 'SDG 3'],
+    },
+    {
+      title: 'Improve quality and access to education',
+      description: 'More than 250 million children and youth remain out of school, and hundreds of millions more lack foundational literacy and numeracy due to underfunded infrastructure and teacher shortages. High-quality offline-first personalized learning platforms, AI tutoring assistants tailored to local dialects, and accessible vocational upskilling programs are needed to democratize human potential.',
+      sourceUrl: 'https://www.unesco.org/en/education',
+      impactLevel: 8,
+      categories: ['Education & Skills', 'Technology & Innovation'],
+      regions: ['South Asia', 'Sub-Saharan Africa', 'Latin America', 'Global'],
+      tags: ['Education', 'Literacy', 'Digital Divide', 'EdTech', 'SDG 4'],
+    },
+    {
+      title: 'Reduce wealth and income inequality',
+      description: 'The top 1% of the world\'s population holds nearly half of all global wealth, while billions struggle to access fair banking, credit, and dignified livelihoods. Fintech innovations in micro-lending, transparent decentralized financial rails, cooperative ownership tools, and equitable marketplace protocols can bridge the economic divide and unlock upward mobility.',
+      sourceUrl: 'https://www.worldbank.org/en/topic/inequality',
+      impactLevel: 8,
+      categories: ['Economy & Inequality', 'Governance & Peace'],
+      regions: ['Global', 'Latin America', 'South Asia'],
+      tags: ['Poverty', 'Financial Inclusion', 'Microfinance', 'Gig Economy', 'SDG 10'],
+    },
+    {
+      title: 'Ensure ICT/AI access works for everyone',
+      description: 'Approximately 2.6 billion people remain completely offline, missing the benefits of digital education, telehealth, and economic opportunities. Moreover, the rapid rise of Artificial Intelligence risks exacerbating the cognitive and economic divide if compute and advanced AI tools are not made accessible, open, and multilingual. Next-gen satellite internet, edge-computing AI devices, and open-source models optimized for low-bandwidth environments can bridge this divide.',
+      sourceUrl: 'https://www.itu.int/hub/2023/11/facts-and-figures-2023',
+      impactLevel: 8,
+      categories: ['Technology & Innovation', 'Education & Skills'],
+      regions: ['Global', 'South Asia', 'Sub-Saharan Africa'],
+      tags: ['Digital Inclusion', 'AI for Good', 'Connectivity', 'Broadband', 'SDG 9'],
+    },
+    {
+      title: 'Empower women and gender equality',
+      description: 'Achieving full gender equality could add $12 trillion to global GDP by 2025. Yet women face disproportionate barriers in access to capital, personal safety, healthcare, and equal workplace representation. Startups addressing women\'s health (FemTech), digital safety networks, collateral-free credit scoring for female micro-entrepreneurs, and transparent wage parity systems can drive profound societal progress.',
+      sourceUrl: 'https://www.unwomen.org/en/digital-library/publications',
+      impactLevel: 8,
+      categories: ['Women & Social', 'Economy & Inequality'],
+      regions: ['Global', 'South Asia', 'Middle East', 'Sub-Saharan Africa'],
+      tags: ['Gender Equality', 'Women Founders', 'Safety', 'Economic Empowerment', 'SDG 5'],
+    },
+    {
+      title: 'Provide affordable, sustainable energy for all',
+      description: 'Over 675 million people still have no access to electricity, mostly in Sub-Saharan Africa and rural Asia, relying on polluting kerosene and biomass. Affordable mini-grids, pay-as-you-go solar systems, distributed energy storage, and smart microgrid orchestration can leapfrog traditional carbon-intensive utility grids and power economic resilience.',
+      sourceUrl: 'https://www.iea.org/reports/sdg7-data-and-projections',
+      impactLevel: 9,
+      categories: ['Energy & Infrastructure', 'Environment/Climate'],
+      regions: ['Sub-Saharan Africa', 'South Asia', 'Global'],
+      tags: ['Renewable Energy', 'Solar', 'Battery Storage', 'Smart Grid', 'SDG 7'],
+    },
+    {
+      title: 'Improve global mental health',
+      description: 'Over 280 million people worldwide suffer from depression, and nearly 1 billion live with a mental disorder. Stigma, severe shortage of certified practitioners, and high costs leave more than 75% of people in low- and middle-income countries without any mental healthcare support. Evidence-based digital therapeutics, accessible peer-support ecosystems, and empathetic AI behavioral coaching can provide timely interventions at scale.',
+      sourceUrl: 'https://www.who.int/news-room/fact-sheets/detail/depression',
+      impactLevel: 8,
+      categories: ['Health & Disease', 'Women & Social'],
+      regions: ['Global', 'North America', 'Europe', 'Asia-Pacific'],
+      tags: ['Mental Health', 'Depression', 'Therapy Access', 'Wellness', 'SDG 3'],
+    },
+  ];
+
+  for (const prob of problemsData) {
+    const createdProb = await prisma.problem.create({
+      data: {
+        title: prob.title,
+        description: prob.description,
+        sourceUrl: prob.sourceUrl,
+        impactLevel: prob.impactLevel,
+        createdBy: adminUser ? adminUser.id : null,
+      },
+    });
+
+    for (const catName of prob.categories) {
+      const catId = categoryMap.get(catName);
+      if (catId) {
+        await prisma.problemCategory.create({
+          data: {
+            problemId: createdProb.id,
+            categoryId: catId,
+          },
+        });
+      }
+    }
+
+    for (const regName of prob.regions) {
+      const regId = regionMap.get(regName);
+      if (regId) {
+        await prisma.problemRegion.create({
+          data: {
+            problemId: createdProb.id,
+            regionId: regId,
+          },
+        });
+      }
+    }
+
+    for (const tagName of prob.tags) {
+      const tagId = tagMap.get(tagName);
+      if (tagId) {
+        await prisma.problemTag.create({
+          data: {
+            problemId: createdProb.id,
+            tagId: tagId,
+          },
+        });
+      }
+    }
+  }
 
   console.log('✅ StartupZ database seeded successfully!');
 }

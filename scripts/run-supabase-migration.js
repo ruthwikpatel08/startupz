@@ -11,20 +11,42 @@ const serverEnvPath = path.resolve(__dirname, '../server/.env');
 if (fs.existsSync(serverEnvPath)) {
   dotenv.config({ path: serverEnvPath });
 }
-const migrationPath = path.resolve(__dirname, '../supabase/migrations/001_initial_schema.sql');
+const migrationsDir = path.resolve(__dirname, '../supabase/migrations');
+const seedDir = path.resolve(__dirname, '../supabase/seed');
 
 async function runMigration() {
   console.log('====================================================');
   console.log('🚀 StartupZ: Supabase Cloud PostgreSQL Migration Runner');
   console.log('====================================================\n');
 
-  if (!fs.existsSync(migrationPath)) {
-    console.error(`❌ Migration file not found at: ${migrationPath}`);
+  if (!fs.existsSync(migrationsDir)) {
+    console.error(`❌ Migrations directory not found at: ${migrationsDir}`);
     process.exit(1);
   }
 
-  const sql = fs.readFileSync(migrationPath, 'utf8');
-  console.log(`📄 Loaded migration SQL from: ${migrationPath} (${Math.round(sql.length / 1024)} KB)`);
+  const migrationFiles = fs.readdirSync(migrationsDir)
+    .filter((f) => f.endsWith('.sql'))
+    .sort();
+
+  console.log(`📄 Found ${migrationFiles.length} migration file(s) in: ${migrationsDir}`);
+
+  let combinedSql = '';
+  for (const file of migrationFiles) {
+    const filePath = path.join(migrationsDir, file);
+    const content = fs.readFileSync(filePath, 'utf8');
+    console.log(`   - Loaded: ${file} (${Math.round(content.length / 1024)} KB)`);
+    combinedSql += `\n-- Migration: ${file}\n` + content + '\n';
+  }
+
+  // Also include problems_seed.sql if available
+  const problemsSeedPath = path.join(seedDir, 'problems_seed.sql');
+  if (fs.existsSync(problemsSeedPath)) {
+    const seedContent = fs.readFileSync(problemsSeedPath, 'utf8');
+    console.log(`   - Loaded Seed: problems_seed.sql (${Math.round(seedContent.length / 1024)} KB)`);
+    combinedSql += '\n-- Seed: problems_seed.sql\n' + seedContent + '\n';
+  }
+
+  const sql = combinedSql;
 
   const connectionString =
     process.env.SUPABASE_DB_URL ||

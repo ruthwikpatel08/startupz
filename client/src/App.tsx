@@ -28,6 +28,10 @@ import { GlobalSearchPage } from './pages/Search/GlobalSearchPage';
 import { AdminDashboardPage } from './pages/Admin/AdminDashboardPage';
 import { FailedStartupsPage } from './pages/FailedStartups/FailedStartupsPage';
 import { VideoMeetingRoomPage } from './pages/Meetings/VideoMeetingRoomPage';
+import { ProblemsPage } from './pages/Problems/ProblemsPage';
+import { ProblemDetailPage } from './pages/Problems/ProblemDetailPage';
+import { ManageProblemsPage } from './pages/Admin/ManageProblemsPage';
+import { ProblemFormPage } from './pages/Admin/ProblemFormPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean }> = ({
   children,
@@ -77,6 +81,8 @@ export const App: React.FC = () => {
                 <Route path="/mentors" element={<MentorsPage />} />
                 <Route path="/feed" element={<StartupFeedPage />} />
                 <Route path="/failed-startups" element={<FailedStartupsPage />} />
+                <Route path="/problems" element={<ProblemsPage />} />
+                <Route path="/problems/:id" element={<ProblemDetailPage />} />
                 <Route path="/profile/:id" element={<ProfilePage />} />
                 <Route path="/search" element={<GlobalSearchPage />} />
 
@@ -146,6 +152,30 @@ export const App: React.FC = () => {
                   element={
                     <ProtectedRoute adminOnly>
                       <AdminDashboardPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/problems"
+                  element={
+                    <ProtectedRoute adminOnly>
+                      <ManageProblemsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/problems/create"
+                  element={
+                    <ProtectedRoute adminOnly>
+                      <ProblemFormPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/problems/:id/edit"
+                  element={
+                    <ProtectedRoute adminOnly>
+                      <ProblemFormPage />
                     </ProtectedRoute>
                   }
                 />

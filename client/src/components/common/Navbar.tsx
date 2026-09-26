@@ -27,6 +27,7 @@ import {
   Skull,
   Sparkles,
   Bot,
+  Globe,
 } from 'lucide-react';
 import { AIScoutModal } from '../ai/AIScoutModal';
 
@@ -66,16 +67,18 @@ export const Navbar: React.FC = () => {
   };
 
   const navLinks = [
-    { name: 'Feed', href: '/feed', icon: Share2 },
+    { name: 'AI - Scout', isAiScout: true, icon: Sparkles },
     { name: 'Startups', href: '/startups', icon: Compass },
-    { name: 'Co-Founders', href: '/cofounders', icon: Users },
+    { name: 'Co - Founders', href: '/cofounders', icon: Users },
     { name: 'Opportunities', href: '/opportunities', icon: Briefcase },
     { name: 'Investors', href: '/investors', icon: TrendingUp },
-    { name: 'Mentors', href: '/mentors', icon: GraduationCap },
     { name: 'Graveyard', href: '/failed-startups', icon: Skull },
+    { name: 'Mentors', href: '/mentors', icon: GraduationCap },
+    { name: 'Problem Statements', href: '/problems', icon: Globe },
+    { name: 'Feed', href: '/feed', icon: Share2 },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path?: string) => path ? location.pathname === path : false;
 
   return (
     <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 transition-colors">
@@ -95,7 +98,7 @@ export const Navbar: React.FC = () => {
           </Link>
 
           {/* Global Search Input (Desktop) */}
-          <form onSubmit={handleSearchSubmit} className="hidden lg:flex items-center relative flex-1 max-w-xs">
+          <form onSubmit={handleSearchSubmit} className="hidden xl:flex items-center relative flex-1 max-w-xs">
             <Search size={16} className="absolute left-3 text-slate-400 pointer-events-none" />
             <input
               type="text"
@@ -107,21 +110,34 @@ export const Navbar: React.FC = () => {
           </form>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-1 lg:space-x-1.5">
+          <nav className="hidden lg:flex items-center space-x-1 overflow-x-auto">
             {navLinks.map((item) => {
               const Icon = item.icon;
+              if (item.isAiScout) {
+                return (
+                  <button
+                    key={item.name}
+                    onClick={() => setAiScoutOpen(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 border border-purple-200/80 dark:border-purple-800/80 hover:bg-purple-100 dark:hover:bg-purple-900/60 shadow-xs transition-all hover:scale-105 shrink-0"
+                    title="AI People Finder Bot"
+                  >
+                    <Sparkles size={13} className="text-purple-500 animate-pulse" />
+                    <span>{item.name}</span>
+                  </button>
+                );
+              }
               const active = isActive(item.href);
               return (
                 <Link
                   key={item.name}
-                  to={item.href}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  to={item.href!}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
                     active
                       ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60'
                       : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
                   }`}
                 >
-                  <Icon size={15} />
+                  <Icon size={14} />
                   <span>{item.name}</span>
                 </Link>
               );
@@ -173,16 +189,6 @@ export const Navbar: React.FC = () => {
                 >
                   <Bookmark size={17} />
                 </Link>
-
-                {/* AI Scout Button */}
-                <button
-                  onClick={() => setAiScoutOpen(true)}
-                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/70 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/60 shadow-xs transition-all hover:scale-105"
-                  title="AI People Finder Bot"
-                >
-                  <Sparkles size={13} className="text-purple-500 animate-pulse" />
-                  <span>AI Scout</span>
-                </button>
 
                 {/* Post Startup Action */}
                 <Link
@@ -319,10 +325,25 @@ export const Navbar: React.FC = () => {
           <div className="grid grid-cols-2 gap-2 pt-2">
             {navLinks.map((item) => {
               const Icon = item.icon;
+              if (item.isAiScout) {
+                return (
+                  <button
+                    key={item.name}
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setAiScoutOpen(true);
+                    }}
+                    className="flex items-center gap-2 p-2.5 rounded-xl text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50"
+                  >
+                    <Sparkles size={16} className="text-purple-500" />
+                    <span>AI - Scout</span>
+                  </button>
+                );
+              }
               return (
                 <Link
                   key={item.name}
-                  to={item.href}
+                  to={item.href!}
                   className="flex items-center gap-2 p-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
                   <Icon size={16} className="text-brand-500" />

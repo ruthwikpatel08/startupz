@@ -24,8 +24,9 @@ router.get('/', requireAuth, async (req, res) => {
     const investorIds = savedItems.filter((s) => s.itemType === 'INVESTOR').map((s) => s.itemId);
     const opportunityIds = savedItems.filter((s) => s.itemType === 'OPPORTUNITY').map((s) => s.itemId);
     const postIds = savedItems.filter((s) => s.itemType === 'POST').map((s) => s.itemId);
+    const problemIds = savedItems.filter((s) => s.itemType === 'PROBLEM').map((s) => s.itemId);
 
-    const [startups, users, investors, opportunities, posts] = await Promise.all([
+    const [startups, users, investors, opportunities, posts, problems] = await Promise.all([
       prisma.startup.findMany({
         where: { id: { in: startupIds } },
         include: { founder: { select: { profile: { select: { fullName: true, avatar: true } } } } },
@@ -46,6 +47,14 @@ router.get('/', requireAuth, async (req, res) => {
         where: { id: { in: postIds } },
         include: { author: { select: { profile: { select: { fullName: true, avatar: true } } } } },
       }),
+      prisma.problem.findMany({
+        where: { id: { in: problemIds } },
+        include: {
+          categories: { include: { category: true } },
+          regions: { include: { region: true } },
+          tags: { include: { tag: true } },
+        },
+      }),
     ]);
 
     const startupMap = new Map(startups.map((s) => [s.id, s]));
@@ -53,6 +62,7 @@ router.get('/', requireAuth, async (req, res) => {
     const investorMap = new Map(investors.map((i) => [i.id, i]));
     const oppMap = new Map(opportunities.map((o) => [o.id, o]));
     const postMap = new Map(posts.map((p) => [p.id, p]));
+    const problemMap = new Map(problems.map((p) => [p.id, p]));
 
     const populatedItems = savedItems.map((item) => {
       let data = null;
@@ -61,6 +71,17 @@ router.get('/', requireAuth, async (req, res) => {
       if (item.itemType === 'INVESTOR') data = investorMap.get(item.itemId);
       if (item.itemType === 'OPPORTUNITY') data = oppMap.get(item.itemId);
       if (item.itemType === 'POST') data = postMap.get(item.itemId);
+      if (item.itemType === 'PROBLEM') {
+        const prob = problemMap.get(item.itemId);
+        if (prob) {
+          data = {
+            ...prob,
+            categories: prob.categories.map((c) => c.category.name),
+            regions: prob.regions.map((r) => r.region.name),
+            tags: prob.tags.map((t) => t.tag.name),
+          };
+        }
+      }
 
       return {
         id: item.id,
@@ -77,8 +98,8 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/saved
-router.post('/', requireAuth, async (req, res) => {
+// Helper for toggle save
+async function handleToggleSave(req, res) {
   try {
     const { itemType, itemId } = req.body;
 
@@ -114,6 +135,12 @@ router.post('/', requireAuth, async (req, res) => {
   } catch (error) {
     return res.status(500).json({ error: 'Failed to update saved item.' });
   }
-});
+}
+
+// POST /api/saved
+router.post('/', requireAuth, handleToggleSave);
+
+// POST /api/saved/toggle
+router.post('/toggle', requireAuth, handleToggleSave);
 
 export default router;

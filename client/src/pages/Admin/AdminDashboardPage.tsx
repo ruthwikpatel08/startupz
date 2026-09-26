@@ -214,6 +214,13 @@ export const AdminDashboardPage: React.FC = () => {
           <AlertTriangle size={15} />
           <span>Reports ({reports.length})</span>
         </button>
+
+        <Link
+          to="/admin/problems"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/60 dark:hover:text-brand-400 transition-all ml-auto"
+        >
+          <span>Manage Problem Statements &rarr;</span>
+        </Link>
       </div>
 
       {/* Tab Panels */}

@@ -71,16 +71,30 @@ Think of StartupZ as **LinkedIn + Product Hunt + AngelList + algorithmic co-foun
 - **Telemetry & Metrics**: Total users, registered startups, active connections, and open reports.
 - **Governance**: Suspend/unsuspend users, award **Verified Founder**, **Verified Startup**, and **Verified Investor** badges, and resolve moderation reports.
 
+### 14. World-wide Problem Statements (`/problems`) 🌍
+- **Authoritative Global Challenges**: Curated library of verified real-world crises sourced from the UN Sustainable Development Goals (SDGs), WHO, WEF, and World Bank.
+- **Full-Text Search & Multi-Faceted Filters**: Instant filtering by 10 global category domains (Environment/Climate, Food & Water, Health & Disease, etc.), geographic regions, impact level (1-10 scale), and keywords/tags.
+- **Problem Detail Views (`/problems/:id`)**: Rich problem overviews, official research citations, affected communities, and direct calls to action.
+- **Google Gemini GenAI Intelligence**:
+  - **Venture Solution Suggestions**: Generates 2-3 innovative, venture-scalable startup concepts with required skills and 1-click startup creation.
+  - **Founder–Problem Compatibility Matcher**: Algorithmic scoring (0-100%) and personalized AI reasoning comparing a founder's real skills and interests against challenge requirements.
+  - **AI Auto-Categorize & Tagging**: Admin helper to automatically classify problems.
+- **Save & Collaboration**: Bookmark problem statements to user profile and find co-founders possessing complementary skills to tackle the challenge.
+- **Internationalization (i18n)**: Multi-language switchable support (English, Español, हिन्दी).
+- **Admin Management Portal (`/admin/problems`)**: Full CRUD dashboard with metrics, validation (Zod), and secure access control.
+
 ---
 
 ## 🛠️ Technology Stack
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v3, Lucide Icons, React Router DOM v7 |
-| **Backend** | Node.js, Express.js (REST API, JWT Authentication, Multer file upload) |
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v3, Lucide Icons, React Router DOM v7, Zod |
+| **Backend** | Node.js, Express.js (REST API, JWT Authentication, Zod validation, Multer file upload) |
+| **AI / GenAI** | Google Gemini GenAI SDK (`@google/genai`) with server-side structured JSON schemas |
 | **Database** | Supabase Cloud PostgreSQL (Dual-compatible with local Prisma SQLite `dev.db`) |
-| **Schema & Migrations** | `/supabase/migrations/001_initial_schema.sql` + `scripts/run-supabase-migration.js` |
+| **Schema & Migrations** | `/supabase/migrations/001_initial_schema.sql`, `/supabase/migrations/002_create_problems_tables.sql`, `/supabase/seed/problems_seed.sql` |
+
 
 ---
 

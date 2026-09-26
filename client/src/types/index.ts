@@ -248,10 +248,11 @@ export interface Like {
 export interface SavedItem {
   id: string;
   userId: string;
-  itemType: 'STARTUP' | 'USER' | 'INVESTOR' | 'OPPORTUNITY' | 'POST';
+  itemType: 'STARTUP' | 'USER' | 'INVESTOR' | 'OPPORTUNITY' | 'POST' | 'PROBLEM' | string;
   itemId: string;
   createdAt: string;
   details?: any;
+  data?: any;
 }
 
 export interface Conversation {
@@ -366,3 +367,65 @@ export interface VerificationRequest {
   adminNotes?: string | null;
   createdAt: string;
 }
+
+export interface ProblemCategory {
+  id: string;
+  name: string;
+}
+
+export interface ProblemRegion {
+  id: string;
+  name: string;
+}
+
+export interface ProblemTag {
+  id: string;
+  name: string;
+}
+
+export interface Problem {
+  id: string;
+  title: string;
+  description: string;
+  sourceUrl?: string | null;
+  source_url?: string | null;
+  impactLevel: number;
+  impact_level?: number;
+  categories: string[];
+  regions: string[];
+  tags: string[];
+  categoryIds?: string[];
+  regionIds?: string[];
+  tagIds?: string[];
+  isSaved?: boolean;
+  createdBy?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  creator?: {
+    id: string;
+    email: string;
+    fullName?: string;
+    avatar?: string | null;
+  } | null;
+}
+
+export interface AISolutionIdea {
+  title: string;
+  description: string;
+}
+
+export interface AISolutionsResult {
+  ideas: AISolutionIdea[];
+  needed_skills: string[];
+}
+
+export interface AIMatchResult {
+  matchScore: number;
+  reason: string;
+}
+
+export interface AICategorizeResult {
+  categories: string[];
+  tags: string[];
+}
+

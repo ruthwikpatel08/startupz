@@ -14,6 +14,8 @@ import {
   Trash2,
   ArrowRight,
   MapPin,
+  Globe,
+  Flame,
 } from 'lucide-react';
 
 export const SavedItemsPage: React.FC = () => {
@@ -25,8 +27,9 @@ export const SavedItemsPage: React.FC = () => {
     setLoading(true);
     try {
       const typeParam = filterType === 'ALL' ? undefined : filterType;
-      const data = await api.getSavedItems(typeParam);
-      setSavedItems(data || []);
+      const res: any = await api.getSavedItems(typeParam);
+      const items = Array.isArray(res) ? res : res?.savedItems || [];
+      setSavedItems(items);
     } catch (err) {
       console.error('Failed to load saved items:', err);
     } finally {
@@ -49,6 +52,7 @@ export const SavedItemsPage: React.FC = () => {
 
   const tabs = [
     { key: 'ALL', label: 'All Saved' },
+    { key: 'PROBLEM', label: 'Problem Statements', icon: Globe },
     { key: 'STARTUP', label: 'Startups', icon: Compass },
     { key: 'USER', label: 'People & Co-Founders', icon: Users },
     { key: 'INVESTOR', label: 'Investors', icon: TrendingUp },
@@ -184,6 +188,30 @@ export const SavedItemsPage: React.FC = () => {
                     </div>
                   )}
 
+                  {item.itemType === 'PROBLEM' && (
+                    <div>
+                      <div className="flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-400 font-bold mb-1">
+                        <Flame size={12} />
+                        <span>Impact {d.impactLevel || d.impact_level || 8}/10</span>
+                      </div>
+                      <h3 className="font-bold text-base text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors line-clamp-1">
+                        {d.title || 'World-wide Problem'}
+                      </h3>
+                      <p className="text-xs text-slate-500 line-clamp-2 mt-1">
+                        {d.description}
+                      </p>
+                      {d.categories && d.categories.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {d.categories.slice(0, 2).map((c: string, idx: number) => (
+                            <span key={idx} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {item.itemType === 'POST' && (
                     <div>
                       <h4 className="font-bold text-xs text-slate-900 dark:text-white">
@@ -200,7 +228,9 @@ export const SavedItemsPage: React.FC = () => {
                 <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800">
                   <Link
                     to={
-                      item.itemType === 'STARTUP'
+                      item.itemType === 'PROBLEM'
+                        ? `/problems/${item.itemId}`
+                        : item.itemType === 'STARTUP'
                         ? `/startups/${item.itemId}`
                         : item.itemType === 'USER'
                         ? `/profile/${item.itemId}`
