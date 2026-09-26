@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api';
 import { StartupOpportunity, OpportunityApplication } from '../../types';
 import { Modal } from '../../components/common/Modal';
@@ -15,9 +15,13 @@ import {
   CheckCircle,
   ExternalLink,
   Building,
+  GraduationCap,
 } from 'lucide-react';
 
 export const OpportunitiesPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentType = (searchParams.get('type') || 'ALL').toLowerCase();
+
   const [activeTab, setActiveTab] = useState<'EXPLORE' | 'MY_APPLICATIONS'>('EXPLORE');
   const [opportunities, setOpportunities] = useState<StartupOpportunity[]>([]);
   const [myApplications, setMyApplications] = useState<OpportunityApplication[]>([]);
@@ -41,6 +45,7 @@ export const OpportunitiesPage: React.FC = () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
+      if (currentType && currentType !== 'all') params.append('type', currentType);
       if (role !== 'ALL') params.append('role', role);
       if (workplaceType !== 'ALL') params.append('workplaceType', workplaceType);
       if (commitment !== 'ALL') params.append('commitment', commitment);
@@ -67,7 +72,7 @@ export const OpportunitiesPage: React.FC = () => {
   useEffect(() => {
     fetchOpportunities();
     fetchMyApplications();
-  }, [role, workplaceType, commitment, search]);
+  }, [currentType, role, workplaceType, commitment, search]);
 
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,7 +104,7 @@ export const OpportunitiesPage: React.FC = () => {
 
   const roles = ['ALL', 'Grant / Fellowship', 'Accelerator / Program', 'Engineer', 'Scientist / Researcher', 'Co-Founder', 'Developer', 'Designer', 'Product'];
   const workplaces = ['ALL', 'Remote', 'Hybrid', 'On-site'];
-  const commitments = ['ALL', 'Full-time', 'Part-time', 'Grant / Fellowship', 'Grant / Incubation', 'National Challenge Grant', 'Contract'];
+  const commitments = ['ALL', 'Internship', 'Full-time', 'Part-time', 'Grant / Fellowship', 'Grant / Incubation', 'National Challenge Grant', 'Contract'];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -111,7 +116,7 @@ export const OpportunitiesPage: React.FC = () => {
             <Briefcase className="text-cyan-600" size={28} /> Startup Roles & Opportunities
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Join early-stage startups as a founding engineer, design lead, or growth partner.
+            Join early-stage startups as an intern, founding engineer, design lead, or growth partner.
           </p>
         </div>
 
@@ -141,6 +146,45 @@ export const OpportunitiesPage: React.FC = () => {
 
       {activeTab === 'EXPLORE' ? (
         <>
+          {/* Opportunity Type Filter Pills */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
+              Opportunity Type:
+            </label>
+            <div className="flex flex-wrap gap-2.5">
+              {[
+                { label: 'All Opportunities', value: 'ALL' },
+                { label: 'Internships', value: 'internships' },
+                { label: 'Jobs', value: 'jobs' },
+              ].map((t) => {
+                const isSelected =
+                  (t.value === 'ALL' && (!currentType || currentType === 'all')) ||
+                  currentType === t.value;
+                return (
+                  <button
+                    key={t.value}
+                    onClick={() => {
+                      const params = new URLSearchParams(searchParams);
+                      if (t.value === 'ALL') {
+                        params.delete('type');
+                      } else {
+                        params.set('type', t.value);
+                      }
+                      setSearchParams(params);
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                      isSelected
+                        ? 'bg-brand-600 text-white shadow-md shadow-brand-500/25 ring-2 ring-brand-500/30'
+                        : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-brand-400'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Filters Bar */}
           <div className="p-4 rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="relative">

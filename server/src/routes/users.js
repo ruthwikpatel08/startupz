@@ -119,54 +119,100 @@ router.get('/', optionalAuth, async (req, res) => {
   }
 });
 
-// GET /api/users/matching/cofounders - Co-Founder Matching Engine
-router.get('/matching/cofounders', requireAuth, async (req, res) => {
+// GET /api/users/matching/cofounders - Co-Founder & Category Matching Engine
+router.get('/matching/cofounders', optionalAuth, async (req, res) => {
   try {
-    const { targetRole, industry, availability } = req.query;
+    const { targetRole, industry, availability, category } = req.query;
 
-    const currentUser = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      include: {
-        profile: true,
-        startups: true,
-      },
-    });
+    let currentUser = null;
+    if (req.user) {
+      currentUser = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        include: {
+          profile: true,
+          startups: true,
+        },
+      });
+    }
 
-    const myProfile = currentUser.profile || {};
+    const myProfile = currentUser?.profile || {};
     const mySkills = (myProfile.skills || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
     const myIndustries = (myProfile.industries || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
 
+    const where = {
+      isSuspended: false,
+    };
+    if (req.user) {
+      where.id = { not: req.user.id };
+    }
+
+    if (category && category !== 'ALL') {
+      const catLower = category.toLowerCase();
+      if (catLower === 'founders' || catLower === 'founder') {
+        where.OR = [
+          { role: 'FOUNDER' },
+          { profile: { openTo: { contains: 'Founder' } } },
+          { startups: { some: {} } },
+        ];
+      } else if (catLower === 'cofounders' || catLower === 'cofounder') {
+        where.OR = [
+          { role: 'COFOUNDER' },
+          { profile: { openTo: { contains: 'Co-Founder' } } },
+          { profile: { preferredRole: { contains: 'Co-Founder' } } },
+        ];
+      } else if (catLower === 'marketers' || catLower === 'marketer') {
+        where.OR = [
+          { role: 'MARKETER' },
+          { profile: { skills: { contains: 'Marketing' } } },
+          { profile: { skills: { contains: 'Growth' } } },
+          { profile: { preferredRole: { contains: 'Market' } } },
+        ];
+      } else if (catLower === 'investors' || catLower === 'investor') {
+        where.OR = [
+          { role: 'INVESTOR' },
+          { investorProfile: { isNot: null } },
+        ];
+      } else if (catLower === 'other') {
+        where.OR = [
+          { role: { in: ['DEVELOPER', 'DESIGNER', 'MENTOR', 'ADMIN'] } },
+          { profile: { skills: { contains: 'Design' } } },
+          { profile: { skills: { contains: 'Engineer' } } },
+        ];
+      }
+    } else {
+      where.OR = [
+        { profile: { openTo: { contains: 'Co-Founder' } } },
+        { role: { in: ['FOUNDER', 'COFOUNDER', 'DEVELOPER', 'MARKETER', 'DESIGNER'] } },
+      ];
+    }
+
     const candidates = await prisma.user.findMany({
-      where: {
-        id: { not: req.user.id },
-        isSuspended: false,
-        profile: {
-          openTo: { contains: 'Co-Founder' },
-        },
-      },
+      where,
       include: {
         profile: true,
         startups: {
           select: { id: true, name: true, stage: true, industry: true },
         },
+        investorProfile: true,
       },
-      take: 40,
-    });
-
-    const connections = await prisma.connection.findMany({
-      where: {
-        OR: [
-          { senderId: req.user.id },
-          { receiverId: req.user.id },
-        ],
-      },
+      take: 60,
     });
 
     const connMap = new Map();
-    connections.forEach((c) => {
-      const otherId = c.senderId === req.user.id ? c.receiverId : c.senderId;
-      connMap.set(otherId, { status: c.status, isSender: c.senderId === req.user.id, connectionId: c.id });
-    });
+    if (req.user) {
+      const connections = await prisma.connection.findMany({
+        where: {
+          OR: [
+            { senderId: req.user.id },
+            { receiverId: req.user.id },
+          ],
+        },
+      });
+      connections.forEach((c) => {
+        const otherId = c.senderId === req.user.id ? c.receiverId : c.senderId;
+        connMap.set(otherId, { status: c.status, isSender: c.senderId === req.user.id, connectionId: c.id });
+      });
+    }
 
     const scoredCandidates = candidates.map((cand) => {
       const p = cand.profile || {};

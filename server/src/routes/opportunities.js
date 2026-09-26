@@ -7,7 +7,7 @@ const router = express.Router();
 // GET /api/opportunities
 router.get('/', optionalAuth, async (req, res) => {
   try {
-    const { role, workplaceType, commitment, compensation, search, page = 1, limit = 12 } = req.query;
+    const { role, workplaceType, commitment, compensation, search, type, page = 1, limit = 12 } = req.query;
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
     const skip = (pageNum - 1) * limitNum;
@@ -15,6 +15,28 @@ router.get('/', optionalAuth, async (req, res) => {
     const where = { status: 'OPEN' };
 
     const orConditions = [];
+
+    if (type && type !== 'ALL') {
+      const tLower = type.toLowerCase();
+      if (tLower === 'internships' || tLower === 'internship') {
+        orConditions.push(
+          { commitment: { contains: 'Intern' } },
+          { role: { contains: 'Intern' } },
+          { description: { contains: 'intern' } },
+        );
+      } else if (tLower === 'jobs' || tLower === 'job') {
+        orConditions.push(
+          { commitment: 'Full-time' },
+          { commitment: 'Part-time' },
+          { role: { contains: 'Engineer' } },
+          { role: { contains: 'Lead' } },
+          { role: { contains: 'Architect' } },
+          { role: { contains: 'Scientist' } },
+          { role: { contains: 'Specialist' } },
+          { role: { contains: 'Researcher' } },
+        );
+      }
+    }
 
     if (role && role !== 'ALL') {
       const rLower = role.toLowerCase();
