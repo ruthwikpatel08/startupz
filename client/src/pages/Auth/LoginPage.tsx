@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase, getAuthErrorMessage, recordAuthProviderHint } from '../../lib/supabase';
-import { Rocket, Lock, Mail, ArrowRight, Sparkles, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { supabase, getAuthErrorMessage, recordAuthProviderHint, resolveEmailOrUsername } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
+import { Rocket, Lock, Mail, ArrowRight, Sparkles, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw, UserCheck } from 'lucide-react';
 import { GoogleAccountChooserModal } from '../../components/auth/GoogleAccountChooserModal';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const { loginWithPasswordOrUsername } = useAuth();
 
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -65,7 +67,7 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  // Real Supabase Email + Password Sign In Flow
+  // Sign In with Email, Gmail, or Username and Password
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGoogleLoading(false);
@@ -73,25 +75,25 @@ export const LoginPage: React.FC = () => {
     setError(null);
     setResendSuccess(false);
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const cleanIdentifier = identifier.trim();
+    if (!cleanIdentifier) {
+      setError('Please enter your Gmail, username, or email address.');
+      setLoading(false);
+      return;
+    }
+
+    if (!password) {
+      setError('Please enter your password to proceed.');
+      setLoading(false);
+      return;
+    }
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: normalizedEmail,
-        password,
-      });
-
-      if (signInError) {
-        throw signInError;
-      }
-
-      if (data.session) {
-        recordAuthProviderHint(normalizedEmail, 'email');
-        navigate('/dashboard');
-      }
+      await loginWithPasswordOrUsername(cleanIdentifier, password);
+      navigate('/dashboard');
     } catch (err: any) {
-      console.warn('Supabase Auth signInWithPassword error:', err);
-      const friendlyMessage = getAuthErrorMessage(err, normalizedEmail);
+      console.warn('Sign-in error:', err);
+      const friendlyMessage = getAuthErrorMessage(err, cleanIdentifier);
       setError(friendlyMessage);
     } finally {
       setLoading(false);
@@ -100,9 +102,9 @@ export const LoginPage: React.FC = () => {
 
   // Resend email verification link via Supabase Auth
   const handleResendVerification = async () => {
-    const targetEmail = email.trim().toLowerCase();
+    const targetEmail = await resolveEmailOrUsername(identifier.trim());
     if (!targetEmail) {
-      setError('Please enter your email address in the field below to resend the confirmation link.');
+      setError('Please enter your email or Gmail in the field below to resend the confirmation link.');
       return;
     }
     setResending(true);
@@ -127,13 +129,12 @@ export const LoginPage: React.FC = () => {
 
   // Demo account quick filler for evaluators
   const handleSelectDemoAccount = (demoEmail: string) => {
-    setEmail(demoEmail);
+    setIdentifier(demoEmail);
     setPassword('Password123!');
     setError(null);
   };
 
   const isEmailUnconfirmed = error?.includes('verify your email') || error?.includes('verification link');
-  const isGoogleAccount = error?.includes('Continue with Google');
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -244,7 +245,7 @@ export const LoginPage: React.FC = () => {
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-white dark:bg-dark-900 px-3 text-slate-400 font-semibold tracking-wider text-[11px]">
-                Or sign in with email
+                Or sign in with password
               </span>
             </div>
           </div>
@@ -259,32 +260,21 @@ export const LoginPage: React.FC = () => {
 
                 {/* Helpful troubleshooting options */}
                 <div className="pt-2 border-t border-rose-200/60 dark:border-rose-900/60 space-y-1.5 text-[11px]">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <span className="text-slate-600 dark:text-slate-400">
-                      Created account recently?
-                    </span>
-                    <button
-                      type="button"
-                      disabled={resending}
-                      onClick={handleResendVerification}
-                      className="font-bold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer disabled:opacity-50"
-                    >
-                      {resending ? 'Sending...' : 'Resend verification email'}
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <span className="text-slate-600 dark:text-slate-400">
-                      Signed up using Google?
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleGoogleSignInClick}
-                      className="font-bold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
-                    >
-                      Continue with Google →
-                    </button>
-                  </div>
+                  {isEmailUnconfirmed && (
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="text-slate-600 dark:text-slate-400">
+                        Email not confirmed?
+                      </span>
+                      <button
+                        type="button"
+                        disabled={resending}
+                        onClick={handleResendVerification}
+                        className="font-bold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer disabled:opacity-50"
+                      >
+                        {resending ? 'Sending...' : 'Resend verification email'}
+                      </button>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <span className="text-slate-600 dark:text-slate-400">
@@ -309,21 +299,25 @@ export const LoginPage: React.FC = () => {
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Email Address
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                <span>Email, Gmail, or Username</span>
+                <span className="text-[10px] text-slate-400 font-normal lowercase">proceed by password</span>
               </label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3.5 top-3 text-slate-400" />
                 <input
-                  type="email"
+                  type="text"
                   required
-                  value={email}
+                  value={identifier}
                   disabled={loading}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@startup.com"
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder="e.g. yourname@gmail.com, ruthwik, or user"
                   className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60"
                 />
               </div>
+              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                Enter your Gmail, username, or email address to sign in with your password.
+              </p>
             </div>
 
             <div>

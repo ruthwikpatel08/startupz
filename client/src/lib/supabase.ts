@@ -209,6 +209,56 @@ export async function upsertUserProfile(
 }
 
 /**
+ * Resolves an identifier (which can be a Gmail address, custom email, or username)
+ * into a valid email string for authentication.
+ */
+export async function resolveEmailOrUsername(identifier: string): Promise<string> {
+  const clean = (identifier || '').trim().toLowerCase();
+  if (!clean) return '';
+  if (clean.includes('@')) {
+    return clean;
+  }
+
+  // Known username / demo handle mappings
+  const knownMap: Record<string, string> = {
+    'admin': 'admin@startupz.com',
+    'ruthwik': 'ruthwikpatel08@gmail.com',
+    'ruthwikpatel': 'ruthwikpatel08@gmail.com',
+    'ruthwikpatel08': 'ruthwikpatel08@gmail.com',
+    'legacyplayer': 'legacyplayer04@gmail.com',
+    'legacyplayer04': 'legacyplayer04@gmail.com',
+    'founder': 'sarah.chen@gmail.com',
+    'sarah': 'sarah.chen@gmail.com',
+    'sarahchen': 'sarah.chen@gmail.com',
+    'developer': 'david@startupz.com',
+    'investor': 'marcus@horizonvc.com',
+    'mentor': 'elena@biotechventures.com',
+  };
+
+  if (knownMap[clean]) {
+    return knownMap[clean];
+  }
+
+  // 1. Try finding in Supabase public.profiles table by full_name or email prefix
+  try {
+    const { data: matchedProfiles } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .or(`email.ilike.${clean}@%,full_name.ilike.${clean},full_name.ilike.%${clean}%`)
+      .limit(1);
+
+    if (matchedProfiles && matchedProfiles.length > 0 && matchedProfiles[0].email) {
+      return matchedProfiles[0].email.toLowerCase();
+    }
+  } catch (err) {
+    console.warn('Profile username lookup notice:', err);
+  }
+
+  // 2. Default: If a username without @ is entered, treat as a Gmail handle (e.g. "ruthwikpatel08" -> "ruthwikpatel08@gmail.com")
+  return `${clean}@gmail.com`;
+}
+
+/**
  * Centralized Supabase Auth error message translator.
  * Converts raw internal Supabase Auth errors into user-friendly production messages.
  */
@@ -216,37 +266,27 @@ export function getAuthErrorMessage(err: any, email?: string): string {
   if (!err) return 'An unexpected error occurred. Please try again.';
 
   const msg = (err.message || err.error_description || String(err)).toLowerCase();
-  const normalizedEmail = (email || '').trim().toLowerCase();
 
   // 1. Email not confirmed
   if (msg.includes('email not confirmed') || msg.includes('not confirmed') || msg.includes('unconfirmed')) {
     return 'Please verify your email before signing in. Check your inbox for the confirmation link.';
   }
 
-  // 2. Google OAuth / Provider conflict check
-  const providerHint = normalizedEmail ? getAuthProviderHint(normalizedEmail) : null;
-  if (providerHint === 'google' && (msg.includes('invalid login credentials') || msg.includes('invalid_grant'))) {
-    return 'This email is registered with Google. Please click "Continue with Google" to sign in.';
-  }
-
-  // 3. Invalid credentials
+  // 2. Invalid credentials (do NOT block with "registered with Google" - allow user to proceed with password)
   if (
     msg.includes('invalid login credentials') ||
     msg.includes('invalid_grant') ||
     msg.includes('invalid email or password')
   ) {
-    return 'Incorrect email or password. Please verify your details or use "Forgot password?".';
+    return 'Incorrect email, username, or password. Please verify your details or use "Forgot password?".';
   }
 
-  // 4. User already registered
+  // 3. User already registered
   if (msg.includes('user already registered') || msg.includes('already exists') || msg.includes('duplicate')) {
-    if (providerHint === 'google') {
-      return 'An account with this email already exists using Google. Please click "Continue with Google" to sign in.';
-    }
     return 'An account with this email already exists. Please log in with your credentials.';
   }
 
-  // 5. Password requirements
+  // 4. Password requirements
   if (msg.includes('password') && (msg.includes('short') || msg.includes('at least') || msg.includes('characters'))) {
     return 'Password must be at least 6 characters long.';
   }

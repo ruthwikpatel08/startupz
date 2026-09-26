@@ -37,6 +37,7 @@ import {
 import { AIScoutModal } from '../ai/AIScoutModal';
 import { GlobalSearchModal } from '../search/GlobalSearchModal';
 import { GoogleAccountChooserModal } from '../auth/GoogleAccountChooserModal';
+import { QuickLoginModal } from '../auth/QuickLoginModal';
 import { supabase } from '../../lib/supabase';
 
 export const Navbar: React.FC = () => {
@@ -64,6 +65,7 @@ export const Navbar: React.FC = () => {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [aiScoutOpen, setAiScoutOpen] = useState(false);
   const [googleChooserOpen, setGoogleChooserOpen] = useState(false);
+  const [quickLoginOpen, setQuickLoginOpen] = useState(false);
 
   const handleGoogleClick = async () => {
     try {
@@ -613,13 +615,14 @@ export const Navbar: React.FC = () => {
                     <span className="hidden sm:inline">Google</span>
                   </button>
 
-                  <Link
-                    to="/login"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all"
+                  <button
+                    type="button"
+                    onClick={() => setQuickLoginOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all cursor-pointer"
                   >
                     <LogIn size={13} className="text-slate-400" />
                     <span>Log In</span>
-                  </Link>
+                  </button>
                   <Link
                     to="/register"
                     className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl text-white bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700 hover:from-brand-500 hover:to-indigo-500 shadow-md shadow-brand-500/20 transition-all hover:scale-105 shrink-0"
@@ -865,13 +868,16 @@ export const Navbar: React.FC = () => {
                 </button>
 
                 <div className="flex gap-2">
-                  <Link
-                    to="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex-1 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 rounded-xl"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setQuickLoginOpen(true);
+                    }}
+                    className="flex-1 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 rounded-xl cursor-pointer"
                   >
                     Log In
-                  </Link>
+                  </button>
                   <Link
                     to="/register"
                     onClick={() => setMobileMenuOpen(false)}
@@ -922,6 +928,13 @@ export const Navbar: React.FC = () => {
 
       {/* Global Search Modal (Opens like AI Scout) */}
       <GlobalSearchModal isOpen={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
+
+      {/* Quick Login Modal (Gmail, Username, Email + Password) */}
+      <QuickLoginModal
+        isOpen={quickLoginOpen}
+        onClose={() => setQuickLoginOpen(false)}
+        onOpenGoogleChooser={() => setGoogleChooserOpen(true)}
+      />
 
       {/* Google Account Selection Modal */}
       <GoogleAccountChooserModal

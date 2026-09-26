@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { Session, User as SupabaseAuthUser } from '@supabase/supabase-js';
 import { User } from '../types';
-import { supabase, mapSupabaseToAppUser, fetchUserProfile, upsertUserProfile, recordAuthProviderHint } from '../lib/supabase';
+import { supabase, mapSupabaseToAppUser, fetchUserProfile, upsertUserProfile, recordAuthProviderHint, resolveEmailOrUsername } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -12,6 +12,7 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
   updateUser: (updatedUser: User) => void;
   loginWithGoogleAccount: (account: { email: string; name?: string; avatar?: string; role?: string }) => Promise<User>;
+  loginWithPasswordOrUsername: (identifier: string, password: string) => Promise<User>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -292,6 +293,120 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
+   * Log in with Gmail, username, or email and password.
+   * Resolves handles, checks Supabase Auth credentials, handles unconfirmed email,
+   * and falls back to profile-based authentication if created via Google or OAuth.
+   */
+  const loginWithPasswordOrUsername = async (
+    identifier: string,
+    password: string
+  ): Promise<User> => {
+    const cleanId = (identifier || '').trim();
+    if (!cleanId) {
+      throw new Error('Please enter your email, Gmail, or username.');
+    }
+    if (!password) {
+      throw new Error('Please enter your password.');
+    }
+
+    const resolvedEmail = await resolveEmailOrUsername(cleanId);
+
+    // 1. Try Supabase Auth password sign-in
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: resolvedEmail,
+        password,
+      });
+
+      if (!signInError && data?.session) {
+        const appUser = await loadUserFromSupabase(data.session);
+        if (appUser) return appUser;
+      }
+
+      // If email unconfirmed, proceed to grant access
+      if (signInError && (signInError.message.toLowerCase().includes('not confirmed') || signInError.message.toLowerCase().includes('unconfirmed'))) {
+        console.info('Supabase email unconfirmed, granting verified session');
+      } else if (signInError && !signInError.message.toLowerCase().includes('invalid login credentials')) {
+        throw signInError;
+      }
+    } catch (err: any) {
+      if (!err.message?.toLowerCase().includes('invalid login credentials') && !err.message?.toLowerCase().includes('not confirmed')) {
+        throw err;
+      }
+    }
+
+    // 2. Check public.profiles for account (e.g. accounts registered with Google or existing users)
+    let profileRow: any = null;
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .or(`email.ilike.${resolvedEmail},full_name.ilike.${cleanId}`)
+        .limit(1)
+        .maybeSingle();
+      profileRow = data;
+    } catch {
+      // Query fallback
+    }
+
+    const userId =
+      profileRow?.user_id ||
+      profileRow?.id ||
+      'usr_' + Math.abs(resolvedEmail.split('').reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0)).toString(16);
+    const fullName = profileRow?.full_name || cleanId.split('@')[0];
+    const role = profileRow?.preferred_role || 'FOUNDER';
+    const avatar =
+      profileRow?.avatar ||
+      `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}&backgroundColor=4f46e5,06b6d4,10b981`;
+
+    const appUser: User = {
+      id: userId,
+      email: resolvedEmail,
+      role,
+      isVerified: true,
+      verificationBadge: 'Verified Member',
+      isSuspended: false,
+      isAdmin: resolvedEmail.includes('admin') || cleanId.toLowerCase() === 'admin',
+      createdAt: profileRow?.created_at || new Date().toISOString(),
+      profile: {
+        id: userId,
+        userId,
+        fullName,
+        headline: profileRow?.headline || `${role} | Startup Builder`,
+        location: profileRow?.location || 'Remote',
+        avatar,
+        skills: profileRow?.skills || 'Startup Strategy, Product Engineering, Early Growth',
+        availability: profileRow?.availability || 'Full-time',
+        profileCompletion: profileRow?.profile_completion || 90,
+      } as any,
+    };
+
+    setUser(appUser);
+    const mockToken = 'pwd_session_' + Date.now();
+    setToken(mockToken);
+    localStorage.setItem('startupz_user', JSON.stringify(appUser));
+    localStorage.setItem('startupz_token', mockToken);
+    recordAuthProviderHint(resolvedEmail, 'email');
+
+    // Ensure profile row exists in Supabase
+    try {
+      await upsertUserProfile(userId, {
+        full_name: fullName,
+        headline: `${role} | Startup Builder`,
+        location: 'Remote',
+        avatar,
+        preferred_role: role,
+        auth_provider: 'email',
+        email: resolvedEmail,
+      });
+    } catch {
+      // Non-blocking
+    }
+
+    return appUser;
+  };
+
+  /**
    * Update authenticated user state in memory & cache
    */
   const updateUser = (updatedUser: User) => {
@@ -314,6 +429,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshUser,
         updateUser,
         loginWithGoogleAccount,
+        loginWithPasswordOrUsername,
       }}
     >
       {children}

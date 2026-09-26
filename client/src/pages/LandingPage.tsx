@@ -15,12 +15,15 @@ import {
   Layers,
   Zap,
   Globe,
+  Lock,
 } from 'lucide-react';
 import { GoogleAccountChooserModal } from '../components/auth/GoogleAccountChooserModal';
+import { QuickLoginModal } from '../components/auth/QuickLoginModal';
 import { supabase } from '../lib/supabase';
 
 export const LandingPage: React.FC = () => {
   const [googleChooserOpen, setGoogleChooserOpen] = useState(false);
+  const [quickLoginOpen, setQuickLoginOpen] = useState(false);
 
   const handleGoogleClick = async () => {
     try {
@@ -86,7 +89,7 @@ export const LandingPage: React.FC = () => {
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 flex-wrap">
               <button
                 type="button"
                 onClick={handleGoogleClick}
@@ -111,6 +114,15 @@ export const LandingPage: React.FC = () => {
                   />
                 </svg>
                 <span>Continue with Google</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setQuickLoginOpen(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <Lock size={15} className="text-brand-500 shrink-0" />
+                <span>Sign In (Password)</span>
               </button>
 
               <Link
@@ -652,6 +664,15 @@ export const LandingPage: React.FC = () => {
                 <span>Continue with Google</span>
               </button>
 
+              <button
+                type="button"
+                onClick={() => setQuickLoginOpen(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl text-sm font-bold text-white bg-brand-700/80 hover:bg-brand-700 border border-white/20 transition-all hover:scale-105 cursor-pointer"
+              >
+                <Lock size={15} />
+                <span>Sign In (Password)</span>
+              </button>
+
               <Link
                 to="/register"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl text-sm font-bold text-white bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 transition-all hover:scale-105"
@@ -659,16 +680,17 @@ export const LandingPage: React.FC = () => {
                 <span>Get Started Free</span>
                 <ArrowRight size={16} />
               </Link>
-              <Link
-                to="/login"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl text-sm font-bold text-white bg-brand-700/60 hover:bg-brand-700/80 border border-white/20 transition-colors"
-              >
-                <span>Sign In</span>
-              </Link>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Quick Login Modal (Gmail, Username, Email + Password) */}
+      <QuickLoginModal
+        isOpen={quickLoginOpen}
+        onClose={() => setQuickLoginOpen(false)}
+        onOpenGoogleChooser={() => setGoogleChooserOpen(true)}
+      />
 
       {/* Google Account Selector Modal */}
       <GoogleAccountChooserModal
