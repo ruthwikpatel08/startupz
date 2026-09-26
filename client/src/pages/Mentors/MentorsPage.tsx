@@ -17,6 +17,7 @@ import {
   Award,
   BookOpen,
   UserPlus,
+  ExternalLink,
 } from 'lucide-react';
 
 export const MentorsPage: React.FC = () => {
@@ -224,6 +225,18 @@ export const MentorsPage: React.FC = () => {
                             {mentorName}
                           </h3>
                           <VerificationBadge badge="Verified Mentor" isVerified={mentor.isVerified} size="sm" />
+                          {mentor.website && (
+                            <a
+                              href={mentor.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-slate-400 hover:text-amber-500 transition-colors p-0.5 rounded"
+                              title="Official Advisory Portal / Website"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink size={13} />
+                            </a>
+                          )}
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{headline}</p>
                       </div>

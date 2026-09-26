@@ -16,6 +16,7 @@ import {
   Bookmark,
   DollarSign,
   Layers,
+  ExternalLink,
 } from 'lucide-react';
 
 export const InvestorsPage: React.FC = () => {
@@ -188,6 +189,18 @@ export const InvestorsPage: React.FC = () => {
                           {inv.organization}
                         </h3>
                         <VerificationBadge type={inv.isVerified ? 'Verified Investor' : null} />
+                        {inv.website && (
+                          <a
+                            href={inv.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-slate-400 hover:text-brand-500 transition-colors p-0.5 rounded"
+                            title="Visit Official Website"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ExternalLink size={13} />
+                          </a>
+                        )}
                       </div>
                       <p className="text-xs text-slate-500">
                         {inv.investorType} • {inv.location}

@@ -308,6 +308,7 @@ export interface Mentor {
   availableHours: string;
   mentoringTopics: string;
   about: string;
+  website?: string | null;
   isVerified: boolean;
   createdAt: string;
   updatedAt?: string;
