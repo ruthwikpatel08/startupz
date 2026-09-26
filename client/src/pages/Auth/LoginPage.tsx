@@ -19,8 +19,10 @@ export const LoginPage: React.FC = () => {
   const handleGoogleSignInClick = async () => {
     setGoogleLoading(true);
     setError(null);
+    const resetTimer = setTimeout(() => setGoogleLoading(false), 5000);
+
     try {
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
@@ -28,10 +30,16 @@ export const LoginPage: React.FC = () => {
       });
 
       if (oauthError) {
+        clearTimeout(resetTimer);
         throw oauthError;
       }
+
+      if (data?.url) {
+        window.location.href = data.url;
+      }
     } catch (err: any) {
-      console.error('Google OAuth initialization error:', err);
+      clearTimeout(resetTimer);
+      console.error('Google OAuth error:', err);
       setError(getAuthErrorMessage(err, email));
       setGoogleLoading(false);
     }
@@ -40,6 +48,7 @@ export const LoginPage: React.FC = () => {
   // Real Supabase Email + Password Sign In Flow
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setGoogleLoading(false);
     setLoading(true);
     setError(null);
     setResendSuccess(false);
@@ -71,20 +80,26 @@ export const LoginPage: React.FC = () => {
 
   // Resend email verification link via Supabase Auth
   const handleResendVerification = async () => {
-    if (!email) return;
+    const targetEmail = email.trim().toLowerCase();
+    if (!targetEmail) {
+      setError('Please enter your email address in the field below to resend the confirmation link.');
+      return;
+    }
     setResending(true);
+    setResendSuccess(false);
     try {
       const { error: resendErr } = await supabase.auth.resend({
         type: 'signup',
-        email: email.trim().toLowerCase(),
+        email: targetEmail,
       });
       if (resendErr) {
-        setError(getAuthErrorMessage(resendErr));
+        setError(getAuthErrorMessage(resendErr, targetEmail));
       } else {
         setResendSuccess(true);
+        setError(null);
       }
     } catch (err: any) {
-      setError(getAuthErrorMessage(err));
+      setError(getAuthErrorMessage(err, targetEmail));
     } finally {
       setResending(false);
     }
@@ -122,47 +137,43 @@ export const LoginPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Demo Accounts Evaluation Helper */}
+        {/* Quick Platform Exploration Links */}
         <div className="p-4 rounded-2xl bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900/60 space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-brand-700 dark:text-brand-300 flex items-center gap-1.5">
-              <Sparkles size={14} /> Demo Accounts (For Evaluation):
+              <Sparkles size={14} /> Explore Platform Without Sign In:
             </span>
-            <span className="text-[10px] text-brand-500 font-mono">Password123!</span>
+            <span className="text-[10px] text-brand-500 font-semibold">100% Free & Open</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => handleSelectDemoAccount('sarah.chen@aiagri.io')}
-              className="text-left p-2 rounded-xl bg-white dark:bg-dark-850 border border-brand-100 dark:border-brand-900 hover:border-brand-500 text-xs transition-all shadow-xs"
+            <Link
+              to="/cofounders"
+              className="text-left p-2 rounded-xl bg-white dark:bg-dark-850 border border-brand-100 dark:border-brand-900 hover:border-brand-500 text-xs transition-all shadow-xs block cursor-pointer"
             >
-              <div className="font-bold text-slate-900 dark:text-white truncate">Sarah Chen</div>
-              <div className="text-[10px] text-brand-600 dark:text-brand-400">Founder @ FarmConnect</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectDemoAccount('marcus.dev@codeflow.dev')}
-              className="text-left p-2 rounded-xl bg-white dark:bg-dark-850 border border-brand-100 dark:border-brand-900 hover:border-brand-500 text-xs transition-all shadow-xs"
+              <div className="font-bold text-slate-900 dark:text-white truncate">Co-Founders Network</div>
+              <div className="text-[10px] text-brand-600 dark:text-brand-400">Founders, devs & advisors →</div>
+            </Link>
+            <Link
+              to="/opportunities"
+              className="text-left p-2 rounded-xl bg-white dark:bg-dark-850 border border-brand-100 dark:border-brand-900 hover:border-brand-500 text-xs transition-all shadow-xs block cursor-pointer"
             >
-              <div className="font-bold text-slate-900 dark:text-white truncate">Marcus Brody</div>
-              <div className="text-[10px] text-cyan-600 dark:text-cyan-400">Staff Full-Stack Dev</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectDemoAccount('elena.investor@apexventures.vc')}
-              className="text-left p-2 rounded-xl bg-white dark:bg-dark-850 border border-brand-100 dark:border-brand-900 hover:border-brand-500 text-xs transition-all shadow-xs"
+              <div className="font-bold text-slate-900 dark:text-white truncate">Opportunities</div>
+              <div className="text-[10px] text-cyan-600 dark:text-cyan-400">Internships & startup jobs →</div>
+            </Link>
+            <Link
+              to="/startups"
+              className="text-left p-2 rounded-xl bg-white dark:bg-dark-850 border border-brand-100 dark:border-brand-900 hover:border-brand-500 text-xs transition-all shadow-xs block cursor-pointer"
             >
-              <div className="font-bold text-slate-900 dark:text-white truncate">Elena Rostova</div>
-              <div className="text-[10px] text-emerald-600 dark:text-emerald-400">Partner @ Apex VC</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectDemoAccount('admin@startupz.com')}
-              className="text-left p-2 rounded-xl bg-white dark:bg-dark-850 border border-brand-100 dark:border-brand-900 hover:border-brand-500 text-xs transition-all shadow-xs"
+              <div className="font-bold text-slate-900 dark:text-white truncate">Explore Startups</div>
+              <div className="text-[10px] text-emerald-600 dark:text-emerald-400">Discover live ventures →</div>
+            </Link>
+            <Link
+              to="/investors"
+              className="text-left p-2 rounded-xl bg-white dark:bg-dark-850 border border-brand-100 dark:border-brand-900 hover:border-brand-500 text-xs transition-all shadow-xs block cursor-pointer"
             >
-              <div className="font-bold text-slate-900 dark:text-white truncate">Alex Vance</div>
-              <div className="text-[10px] text-purple-600 dark:text-purple-400">Platform Admin</div>
-            </button>
+              <div className="font-bold text-slate-900 dark:text-white truncate">Investors & VCs</div>
+              <div className="text-[10px] text-purple-600 dark:text-purple-400">Active funds & angels →</div>
+            </Link>
           </div>
         </div>
 
@@ -220,28 +231,18 @@ export const LoginPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3.5 text-xs rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 space-y-2">
+              <div className="p-3.5 text-xs rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 space-y-2.5">
                 <div className="flex items-start gap-2">
                   <AlertCircle size={16} className="shrink-0 text-rose-500 mt-0.5" />
                   <span className="font-semibold leading-relaxed">{error}</span>
                 </div>
 
-                {/* Helpful contextual actions */}
-                {isGoogleAccount && (
-                  <div className="pt-1">
-                    <button
-                      type="button"
-                      onClick={handleGoogleSignInClick}
-                      className="inline-flex items-center gap-1.5 font-bold text-brand-600 dark:text-brand-400 hover:underline"
-                    >
-                      <span>Click here to Continue with Google</span>
-                      <ArrowRight size={13} />
-                    </button>
-                  </div>
-                )}
-
-                {isEmailUnconfirmed && (
-                  <div className="pt-1 flex items-center gap-2">
+                {/* Helpful troubleshooting options */}
+                <div className="pt-2 border-t border-rose-200/60 dark:border-rose-900/60 space-y-1.5 text-[11px]">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Created account recently?
+                    </span>
                     <button
                       type="button"
                       disabled={resending}
@@ -251,7 +252,32 @@ export const LoginPage: React.FC = () => {
                       {resending ? 'Sending...' : 'Resend verification email'}
                     </button>
                   </div>
-                )}
+
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Signed up using Google?
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleGoogleSignInClick}
+                      className="font-bold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
+                    >
+                      Continue with Google →
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-slate-600 dark:text-slate-400">
+                      Forgot your password?
+                    </span>
+                    <Link
+                      to="/forgot-password"
+                      className="font-bold text-brand-600 dark:text-brand-400 hover:underline"
+                    >
+                      Reset password →
+                    </Link>
+                  </div>
+                </div>
               </div>
             )}
 

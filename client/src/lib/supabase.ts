@@ -251,12 +251,17 @@ export function getAuthErrorMessage(err: any, email?: string): string {
     return 'Password must be at least 6 characters long.';
   }
 
-  // 6. Rate limits
-  if (msg.includes('rate limit') || msg.includes('too many requests') || msg.includes('over_email_send_rate_limit')) {
-    return 'Too many attempts. Please wait a moment before trying again.';
+  // 6. Provider not enabled in Supabase
+  if (msg.includes('unsupported provider') || msg.includes('provider is not enabled') || msg.includes('provider_disabled')) {
+    return 'Google Sign-In is not enabled yet in your Supabase project. In your Supabase Dashboard, go to Authentication -> Providers -> Google and toggle it ON with your Google Client ID/Secret, or sign in with email and password.';
   }
 
-  // 7. Network / Connection errors
+  // 7. Rate limits
+  if (msg.includes('rate limit') || msg.includes('too many requests') || msg.includes('over_email_send_rate_limit')) {
+    return 'Email rate limit exceeded by Supabase. You can confirm your user directly in Supabase Dashboard (Authentication -> Users -> click "..." -> Confirm user), or turn off "Confirm email" in Supabase Auth settings.';
+  }
+
+  // 8. Network / Connection errors
   if (msg.includes('failed to fetch') || msg.includes('network') || msg.includes('timeout')) {
     return 'Unable to reach the authentication service. Please check your internet connection and try again.';
   }

@@ -97,11 +97,15 @@ export const LandingPage: React.FC = () => {
             </div>
 
             {/* Network Nodes Grid */}
+            {/* Network Nodes Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               
               {/* Founder Node */}
-              <div className="p-4 rounded-2xl bg-gradient-to-b from-indigo-50/50 to-white dark:from-dark-850 dark:to-dark-900 border border-indigo-100 dark:border-indigo-900/50 shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3">
+              <Link
+                to="/cofounders?category=founders"
+                className="p-4 rounded-2xl bg-gradient-to-b from-indigo-50/50 to-white dark:from-dark-850 dark:to-dark-900 border border-indigo-100 dark:border-indigo-900/50 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+              >
+                <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                   <Rocket size={18} />
                 </div>
                 <div className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">Founders</div>
@@ -109,48 +113,57 @@ export const LandingPage: React.FC = () => {
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Seeking Founding CTO & GTM Partner</p>
                 <div className="mt-3 flex items-center gap-1.5 text-[11px] text-emerald-600 font-semibold">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                  96% Co-Founder Match
+                  <span>96% Co-Founder Match →</span>
                 </div>
-              </div>
+              </Link>
 
               {/* Developer Node */}
-              <div className="p-4 rounded-2xl bg-gradient-to-b from-cyan-50/50 to-white dark:from-dark-850 dark:to-dark-900 border border-cyan-100 dark:border-cyan-900/50 shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-9 h-9 rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-3">
+              <Link
+                to="/cofounders?category=cofounders"
+                className="p-4 rounded-2xl bg-gradient-to-b from-cyan-50/50 to-white dark:from-dark-850 dark:to-dark-900 border border-cyan-100 dark:border-cyan-900/50 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+              >
+                <div className="w-9 h-9 rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-3 group-hover:bg-cyan-600 group-hover:text-white transition-colors">
                   <Cpu size={18} />
                 </div>
                 <div className="text-xs font-bold text-cyan-600 uppercase tracking-wider mb-1">Developers</div>
                 <h4 className="font-bold text-slate-900 dark:text-white text-sm">Marcus Brody</h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Staff Backend & Rust Engineer</p>
                 <div className="mt-3 inline-block text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-dark-800 px-2 py-0.5 rounded-md">
-                  Open to Founding Equity
+                  Open to Founding Equity →
                 </div>
-              </div>
+              </Link>
 
               {/* Investor Node */}
-              <div className="p-4 rounded-2xl bg-gradient-to-b from-emerald-50/50 to-white dark:from-dark-850 dark:to-dark-900 border border-emerald-100 dark:border-emerald-900/50 shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3">
+              <Link
+                to="/cofounders?category=investors"
+                className="p-4 rounded-2xl bg-gradient-to-b from-emerald-50/50 to-white dark:from-dark-850 dark:to-dark-900 border border-emerald-100 dark:border-emerald-900/50 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+              >
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                   <TrendingUp size={18} />
                 </div>
                 <div className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Investors</div>
                 <h4 className="font-bold text-slate-900 dark:text-white text-sm">Apex Ventures</h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">$250k - $1.5M Pre-Seed Checks</p>
                 <div className="mt-3 inline-block text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded-md">
-                  Active Pitch Ingestion
+                  Active Pitch Ingestion →
                 </div>
-              </div>
+              </Link>
 
               {/* Mentor Node */}
-              <div className="p-4 rounded-2xl bg-gradient-to-b from-amber-50/50 to-white dark:from-dark-850 dark:to-dark-900 border border-amber-100 dark:border-amber-900/50 shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3">
+              <Link
+                to="/mentors"
+                className="p-4 rounded-2xl bg-gradient-to-b from-amber-50/50 to-white dark:from-dark-850 dark:to-dark-900 border border-amber-100 dark:border-amber-900/50 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+              >
+                <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 group-hover:bg-amber-600 group-hover:text-white transition-colors">
                   <GraduationCap size={18} />
                 </div>
                 <div className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">Mentors</div>
                 <h4 className="font-bold text-slate-900 dark:text-white text-sm">James Sterling</h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">2x Exited Founder (Ex-YC W16)</p>
                 <div className="mt-3 inline-block text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/80 px-2 py-0.5 rounded-md">
-                  Founder Coaching Open
+                  Founder Coaching Open →
                 </div>
-              </div>
+              </Link>
 
             </div>
           </div>
@@ -183,82 +196,100 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             
             {/* 1. Nav Slidebar */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
-              <div className="w-10 h-10 rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-4">
+            <Link
+              to="/startups"
+              className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-4 group-hover:bg-brand-600 group-hover:text-white transition-colors">
                 <Globe size={20} />
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">
-                Mobile & Desktop Nav Slidebar
+              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                Mobile & Desktop Nav Slidebar →
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Horizontal slidebar navigation from AI-Scout through Problem Statements, optimized for seamless scrolling on both mobile phones and desktop displays.
               </p>
-            </div>
+            </Link>
 
             {/* 2. Click Dropdowns */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
-              <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4">
+            <Link
+              to="/cofounders"
+              className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                 <Users size={20} />
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">
-                Click-to-Toggle Submenus
+              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                Click-to-Toggle Submenus →
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Co-Founders & Opportunities categories open reliably on click without layout clipping, cursor hover flickering, or unintended pop-up displacement.
               </p>
-            </div>
+            </Link>
 
             {/* 3. Search & AI Scout */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
-              <div className="w-10 h-10 rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-4">
+            <Link
+              to="/search"
+              className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-4 group-hover:bg-cyan-600 group-hover:text-white transition-colors">
                 <Zap size={20} />
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">
-                Instant Modal Search & Recommendations
+              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                Instant Modal Search & Recommendations →
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Search modal styled after AI Scout with 1-letter real-time word recommendations and new-tab search execution.
               </p>
-            </div>
+            </Link>
 
             {/* 4. Royal Emerald Profile Cover */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
+            <Link
+              to="/cofounders?category=cofounders"
+              className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                 <ShieldCheck size={20} />
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">
-                Royal Emerald Cover & Photos
+              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                Royal Emerald Cover & Photos →
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Custom avatar and cover photo upload settings on profile page, backed by a default Royal Emerald Green background header.
               </p>
-            </div>
+            </Link>
 
             {/* 5. Memberships */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4">
+            <Link
+              to="/memberships"
+              className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4 group-hover:bg-amber-600 group-hover:text-white transition-colors">
                 <Rocket size={20} />
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">
-                Tiered Membership Plans
+              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                Tiered Membership Plans →
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Basic, Standard, and Premium subscription tiers integrated directly into user dashboard, profile menu, and navigation bar.
               </p>
-            </div>
+            </Link>
 
             {/* 6. Community Feed & Network */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4">
+            <Link
+              to="/feed"
+              className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+            >
+              <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4 group-hover:bg-purple-600 group-hover:text-white transition-colors">
                 <Layers size={20} />
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">
-                Startup Network & Feed
+              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                Startup Network & Feed →
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Dedicated founder connections management, saved opportunities, and real-time community feed for founder engagement.
               </p>
-            </div>
+            </Link>
 
           </div>
         </div>
@@ -280,37 +311,49 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="relative p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm">
-              <span className="text-3xl font-black text-brand-200 dark:text-brand-900 mb-2 block">01</span>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Publish & Validate</h3>
+            <Link
+              to="/startups"
+              className="relative p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+            >
+              <span className="text-3xl font-black text-brand-200 dark:text-brand-900 mb-2 block group-hover:text-brand-400 transition-colors">01</span>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">Publish & Validate →</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Post your startup idea with Problem, Solution, Stage, and Required Skills. Run AI stress tests before writing code.
               </p>
-            </div>
+            </Link>
 
-            <div className="relative p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm">
-              <span className="text-3xl font-black text-cyan-200 dark:text-cyan-900 mb-2 block">02</span>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Match Co-Founders</h3>
+            <Link
+              to="/cofounders"
+              className="relative p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+            >
+              <span className="text-3xl font-black text-cyan-200 dark:text-cyan-900 mb-2 block group-hover:text-cyan-400 transition-colors">02</span>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">Match Co-Founders →</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Our algorithmic engine matches technical, business, and marketing co-founders based on overlapping skills and shared vision.
               </p>
-            </div>
+            </Link>
 
-            <div className="relative p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm">
-              <span className="text-3xl font-black text-emerald-200 dark:text-emerald-900 mb-2 block">03</span>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Assemble Teammates</h3>
+            <Link
+              to="/opportunities"
+              className="relative p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+            >
+              <span className="text-3xl font-black text-emerald-200 dark:text-emerald-900 mb-2 block group-hover:text-emerald-400 transition-colors">03</span>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Assemble Teammates →</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Publish equity or paid opportunities. Attract passionate engineers, UI/UX designers, and growth hackers ready to ship.
               </p>
-            </div>
+            </Link>
 
-            <div className="relative p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm">
-              <span className="text-3xl font-black text-purple-200 dark:text-purple-900 mb-2 block">04</span>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Pitch & Scale</h3>
+            <Link
+              to="/investors"
+              className="relative p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+            >
+              <span className="text-3xl font-black text-purple-200 dark:text-purple-900 mb-2 block group-hover:text-purple-400 transition-colors">04</span>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">Pitch & Scale →</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Discover active angel syndicates and VCs aligned with your stage and vertical. Send structured pitches with verifiable traction.
               </p>
-            </div>
+            </Link>
           </div>
         </div>
       </section>
@@ -354,9 +397,12 @@ export const LandingPage: React.FC = () => {
               </Link>
             </div>
 
-            <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+            <Link
+              to="/cofounders?category=cofounders"
+              className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-4 hover:shadow-2xl transition-all hover:scale-[1.01] block cursor-pointer group"
+            >
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-xs font-bold text-slate-400">Match Preview</span>
+                <span className="text-xs font-bold text-slate-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">Match Preview →</span>
                 <span className="text-xs font-black px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
                   96% Compatibility
                 </span>
@@ -368,24 +414,27 @@ export const LandingPage: React.FC = () => {
                   className="w-12 h-12 rounded-full object-cover"
                 />
                 <div>
-                  <h4 className="font-bold text-sm text-slate-900 dark:text-white">Marcus Brody</h4>
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">Marcus Brody</h4>
                   <p className="text-xs text-slate-500">Staff Full-Stack & Systems Engineer • Seattle, WA</p>
                 </div>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 italic bg-slate-50 dark:bg-dark-850 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                 "Your skills in AgTech & GTM strongly complement their cloud/Rust background. Both targeting Seed-stage climate ventures."
               </p>
-            </div>
+            </Link>
           </div>
 
           {/* Spotlight 2: Idea Discovery & Opportunities */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="order-2 lg:order-1 p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-4">
+            <Link
+              to="/startups"
+              className="order-2 lg:order-1 p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-4 hover:shadow-2xl transition-all hover:scale-[1.01] block cursor-pointer group"
+            >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-brand-600 dark:text-brand-400">AGTECH MVP</span>
-                <span className="text-xs font-bold text-slate-400">Austin, TX</span>
+                <span className="text-xs font-bold text-slate-400 group-hover:text-brand-600 transition-colors">Austin, TX →</span>
               </div>
-              <h4 className="text-lg font-bold text-slate-900 dark:text-white">FarmConnect</h4>
+              <h4 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">FarmConnect</h4>
               <p className="text-xs text-slate-600 dark:text-slate-300">
                 AI-powered agronomic advisory platform delivering real-time crop disease detection & yield forecasting.
               </p>
@@ -400,7 +449,7 @@ export const LandingPage: React.FC = () => {
                   Seeking $250k
                 </span>
               </div>
-            </div>
+            </Link>
 
             <div className="order-1 lg:order-2 space-y-5">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 text-xs font-bold">
