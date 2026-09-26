@@ -176,8 +176,8 @@ export const Navbar: React.FC = () => {
               />
             </form>
 
-            {/* Desktop Navigation Links */}
-            <nav className="hidden lg:flex items-center space-x-1 overflow-visible">
+            {/* Desktop Navigation Links (Sliding Bar) */}
+            <nav className="hidden lg:flex items-center gap-1 overflow-x-auto no-scrollbar whitespace-nowrap max-w-2xl py-1 shrink">
               {/* 1. AI-Scout */}
               <button
                 onClick={() => setAiScoutOpen(true)}

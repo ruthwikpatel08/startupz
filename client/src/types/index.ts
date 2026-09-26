@@ -33,6 +33,7 @@ export interface Profile {
   location?: string | null;
   bio?: string | null;
   avatar?: string | null;
+  coverImage?: string | null;
   education?: string | null;
   portfolioUrl?: string | null;
   githubUrl?: string | null;

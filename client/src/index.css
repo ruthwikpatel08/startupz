@@ -38,6 +38,15 @@ body {
   background: rgba(107, 114, 128, 0.8);
 }
 
+/* Hide scrollbar for sliding navbars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Glassmorphism helpers */
 .glass {
   background: rgba(255, 255, 255, 0.85);

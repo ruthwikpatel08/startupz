@@ -129,6 +129,8 @@ export const ProfilePage: React.FC = () => {
 
       if (isMe) {
         setFormData({
+          avatar: u.profile?.avatar || '',
+          coverImage: u.profile?.coverImage || '',
           fullName: u.profile?.fullName || '',
           headline: u.profile?.headline || '',
           location: u.profile?.location || '',
@@ -251,9 +253,17 @@ export const ProfilePage: React.FC = () => {
         <div className="rounded-2xl bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 shadow-xs overflow-hidden">
           
           {/* Cover Section */}
-          <div className="h-44 sm:h-56 bg-gradient-to-r from-indigo-700 via-[#4F46E5] to-cyan-600 relative overflow-hidden">
-            {/* Subtle Geometric Pattern Overlay */}
-            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
+          <div className="h-44 sm:h-56 relative overflow-hidden bg-[#064E3B] bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900">
+            {p.coverImage ? (
+              <img
+                src={p.coverImage}
+                alt="Profile Cover Banner"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              /* Royal Green Fallback with Subtle Pattern */
+              <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
+            )}
 
             <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
               {!isMe && (
@@ -775,6 +785,35 @@ export const ProfilePage: React.FC = () => {
       {isMe && (
         <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Edit Profile Details" maxWidth="2xl">
           <form onSubmit={handleSaveProfile} className="space-y-4 font-sans">
+            {/* Photos & Branding */}
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[#E2E8F0] dark:border-slate-700 space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#4F46E5] flex items-center gap-1.5">
+                <Sparkles size={14} /> Profile & Background Photos
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-[#64748B] mb-1">Profile Photo URL (Avatar)</label>
+                  <input
+                    type="url"
+                    value={formData.avatar || ''}
+                    onChange={(e) => setFormData({ ...formData, avatar: e.target.value })}
+                    placeholder="https://images.unsplash.com/... or image link"
+                    className="w-full px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#64748B] mb-1">Background Cover Image URL</label>
+                  <input
+                    type="url"
+                    value={formData.coverImage || ''}
+                    onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
+                    placeholder="Leave blank for Royal Green default background"
+                    className="w-full px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-[#64748B] mb-1">Full Name</label>
