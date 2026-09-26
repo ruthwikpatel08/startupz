@@ -15,7 +15,28 @@ router.get('/', optionalAuth, async (req, res) => {
     const where = {};
 
     if (investorType && investorType !== 'ALL') where.investorType = investorType;
-    if (industry && industry !== 'ALL') where.industries = { contains: industry };
+    if (industry && industry !== 'ALL') {
+      const indLower = industry.toLowerCase();
+      if (indLower.includes('agri') || indLower.includes('agtech')) {
+        where.OR = [
+          { industries: { contains: 'Agri' } },
+          { industries: { contains: 'AgTech' } },
+        ];
+      } else if (indLower.includes('clean') || indLower.includes('climate')) {
+        where.OR = [
+          { industries: { contains: 'Climate' } },
+          { industries: { contains: 'Clean' } },
+          { industries: { contains: 'Energy' } },
+        ];
+      } else if (indLower.includes('ai') || indLower.includes('artificial')) {
+        where.OR = [
+          { industries: { contains: 'AI' } },
+          { industries: { contains: 'Artificial' } },
+        ];
+      } else {
+        where.industries = { contains: industry };
+      }
+    }
     if (stage && stage !== 'ALL') where.preferredStages = { contains: stage };
 
     if (search) {

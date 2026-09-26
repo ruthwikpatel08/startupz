@@ -35,7 +35,22 @@ router.get('/', optionalAuth, async (req, res) => {
     }
 
     if (industry && industry !== 'ALL') {
-      where.industry = industry;
+      const indLower = industry.toLowerCase();
+      if (indLower.includes('agri') || indLower.includes('agtech')) {
+        where.industry = { in: ['AgriTech', 'AgTech', 'Agriculture'] };
+      } else if (indLower.includes('clean') || indLower.includes('climate')) {
+        where.industry = { in: ['CleanTech', 'ClimateTech', 'Energy', 'Sustainability'] };
+      } else if (indLower.includes('health') || indLower.includes('med')) {
+        where.industry = { in: ['HealthTech', 'MedTech', 'Healthcare', 'Biotechnology'] };
+      } else if (indLower.includes('fin')) {
+        where.industry = { in: ['FinTech', 'Financial Services'] };
+      } else if (indLower.includes('ed')) {
+        where.industry = { in: ['EdTech', 'Education'] };
+      } else if (indLower.includes('cyber')) {
+        where.industry = { in: ['CyberSecurity', 'Cybersecurity', 'Security'] };
+      } else {
+        where.industry = { contains: industry };
+      }
     }
 
     if (stage && stage !== 'ALL') {

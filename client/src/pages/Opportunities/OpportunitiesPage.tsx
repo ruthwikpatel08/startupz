@@ -97,9 +97,9 @@ export const OpportunitiesPage: React.FC = () => {
     }
   };
 
-  const roles = ['ALL', 'Developer', 'Designer', 'Marketer', 'Sales', 'Product', 'Co-Founder', 'Engineer'];
+  const roles = ['ALL', 'Grant / Fellowship', 'Accelerator / Program', 'Engineer', 'Scientist / Researcher', 'Co-Founder', 'Developer', 'Designer', 'Product'];
   const workplaces = ['ALL', 'Remote', 'Hybrid', 'On-site'];
-  const commitments = ['ALL', 'Full-time', 'Part-time', 'Contract', 'Advisory'];
+  const commitments = ['ALL', 'Full-time', 'Part-time', 'Grant / Fellowship', 'Grant / Incubation', 'National Challenge Grant', 'Contract'];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -285,13 +285,30 @@ export const OpportunitiesPage: React.FC = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <Link
-                      to={`/startups/${opp.startup?.id}`}
-                      className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white"
-                    >
-                      View Startup Profile →
-                    </Link>
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-3">
+                      <Link
+                        to={`/startups/${opp.startup?.id}`}
+                        className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white"
+                      >
+                        View Startup Profile →
+                      </Link>
+                      {(() => {
+                        const urlMatch = opp.description.match(/https?:\/\/[^\s)]+/);
+                        return urlMatch ? (
+                          <a
+                            href={urlMatch[0]}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:underline"
+                            title="Official External Portal / Source"
+                          >
+                            <span>Official Portal</span>
+                            <ExternalLink size={12} />
+                          </a>
+                        ) : null;
+                      })()}
+                    </div>
 
                     {opp.hasApplied ? (
                       <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950">

@@ -116,9 +116,9 @@ export const ExploreStartupsPage: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const industries = ['ALL', 'AgTech', 'HealthTech', 'ClimateTech', 'EdTech', 'FinTech', 'AI', 'B2B SaaS', 'Consumer'];
-  const stages = ['ALL', 'Idea', 'Validation', 'MVP', 'Early Revenue', 'Growth', 'Fundraising'];
-  const fundingOptions = ['ALL', 'Bootstrapped', 'Seeking Funding', 'Pre-Seed', 'Seed', 'Series A'];
+  const industries = ['ALL', 'AgriTech', 'CleanTech', 'HealthTech', 'FinTech', 'EdTech', 'AI', 'Logistics', 'Accessibility', 'CyberSecurity', 'B2B SaaS', 'Consumer'];
+  const stages = ['ALL', 'Idea', 'Validation', 'MVP', 'Early Revenue', 'Growth', 'Fundraising', 'Public'];
+  const fundingOptions = ['ALL', 'Bootstrapped', 'Seeking Funding', 'Pre-Seed', 'Seed', 'Series A', 'Series B', 'Series C', 'Series D', 'Series E', 'Venture Backed'];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">

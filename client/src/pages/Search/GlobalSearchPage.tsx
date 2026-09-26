@@ -11,8 +11,9 @@ import {
   TrendingUp,
   Share2,
   GraduationCap,
+  Globe,
   ArrowRight,
-  Sparkles,
+  ExternalLink,
 } from 'lucide-react';
 
 export const GlobalSearchPage: React.FC = () => {
@@ -28,20 +29,30 @@ export const GlobalSearchPage: React.FC = () => {
     investors: [],
     mentors: [],
     opportunities: [],
+    problems: [],
     posts: [],
   });
   const [loading, setLoading] = useState(false);
 
   const performSearch = async (q: string, type: string) => {
     if (!q.trim()) {
-      setResults({ users: [], startups: [], investors: [], mentors: [], opportunities: [], posts: [] });
+      setResults({ users: [], startups: [], investors: [], mentors: [], opportunities: [], problems: [], posts: [] });
       return;
     }
 
     setLoading(true);
     try {
       const data = await api.searchAll(q, type);
-      setResults(data.results || { users: [], startups: [], investors: [], mentors: [], opportunities: [], posts: [] });
+      const res = data.results || data || {};
+      setResults({
+        users: res.users || res.people || [],
+        startups: res.startups || [],
+        investors: res.investors || [],
+        mentors: res.mentors || [],
+        opportunities: res.opportunities || [],
+        problems: res.problems || [],
+        posts: res.posts || [],
+      });
     } catch (err) {
       console.error('Search failed:', err);
     } finally {
@@ -69,10 +80,12 @@ export const GlobalSearchPage: React.FC = () => {
 
   const tabs = [
     { key: 'ALL', label: 'All Results' },
-    { key: 'PEOPLE', label: `People (${results.users?.length || 0})`, icon: Users },
+    { key: 'PROBLEMS', label: `Problems (${results.problems?.length || 0})`, icon: Globe },
     { key: 'STARTUPS', label: `Startups (${results.startups?.length || 0})`, icon: Compass },
     { key: 'INVESTORS', label: `Investors (${results.investors?.length || 0})`, icon: TrendingUp },
+    { key: 'MENTORS', label: `Mentors (${results.mentors?.length || 0})`, icon: GraduationCap },
     { key: 'OPPORTUNITIES', label: `Roles (${results.opportunities?.length || 0})`, icon: Briefcase },
+    { key: 'PEOPLE', label: `People (${results.users?.length || 0})`, icon: Users },
     { key: 'POSTS', label: `Posts (${results.posts?.length || 0})`, icon: Share2 },
   ];
 
@@ -82,6 +95,7 @@ export const GlobalSearchPage: React.FC = () => {
     (results.investors?.length || 0) +
     (results.mentors?.length || 0) +
     (results.opportunities?.length || 0) +
+    (results.problems?.length || 0) +
     (results.posts?.length || 0);
 
   return (
@@ -99,7 +113,7 @@ export const GlobalSearchPage: React.FC = () => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search skills (e.g. AI, React), startup names, industries, investors..."
+            placeholder="Search verified problems, startups, investors, mentors, grants..."
             className="w-full pl-12 pr-28 py-3 text-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <button
@@ -119,7 +133,7 @@ export const GlobalSearchPage: React.FC = () => {
             onClick={() => handleTabChange(tab.key)}
             className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 ${
               activeTab === tab.key
-                ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20'
+                ? 'bg-brand-600 text-white shadow-sm'
                 : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500'
             }`}
           >
@@ -128,49 +142,54 @@ export const GlobalSearchPage: React.FC = () => {
         ))}
       </div>
 
-      {/* Results */}
+      {/* Results View */}
       {loading ? (
         <div className="space-y-4">
-          {[1, 2, 3].map((n) => (
-            <div key={n} className="h-32 rounded-3xl bg-slate-100 dark:bg-slate-800/40 animate-pulse" />
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-28 rounded-2xl bg-slate-100 dark:bg-slate-800/40 animate-pulse" />
           ))}
         </div>
       ) : totalResults === 0 && query ? (
         <EmptyState
           icon={Search}
-          title="No results found"
-          description={`We couldn't find any matches for "${query}". Try searching for alternative skills, startup concepts, or locations.`}
+          title="No records found"
+          description={`We couldn't find any results matching "${query}". Try searching for categories like agriculture, climate, AI, or health.`}
+          actionLabel="Clear Search"
+          onAction={() => {
+            setQuery('');
+            setSearchParams({});
+          }}
         />
       ) : (
         <div className="space-y-8">
           
-          {/* People Section */}
-          {(activeTab === 'ALL' || activeTab === 'PEOPLE') && results.users?.length > 0 && (
+          {/* Documented Problems Section */}
+          {(activeTab === 'ALL' || activeTab === 'PROBLEMS') && results.problems?.length > 0 && (
             <div className="space-y-3">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Users size={16} /> People & Co-Founders ({results.users.length})
+                <Globe size={16} /> Verified Problems ({results.problems.length})
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {results.users.map((u: any) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {results.problems.map((prob: any) => (
                   <Link
-                    key={u.id}
-                    to={`/profile/${u.id}`}
-                    className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 transition-all flex items-center gap-3 group"
+                    key={prob.id}
+                    to={`/problems/${prob.id}`}
+                    className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500 transition-all space-y-2 block group"
                   >
-                    <img
-                      src={u.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${u.profile?.fullName || u.email}`}
-                      alt=""
-                      className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1">
-                        <span className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-brand-600 truncate">
-                          {u.profile?.fullName || u.email}
-                        </span>
-                        <VerificationBadge badge={u.verificationBadge} isVerified={u.isVerified} size="sm" />
-                      </div>
-                      <p className="text-[11px] text-slate-500 line-clamp-1">{u.profile?.headline || u.role}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">{u.profile?.location || 'Remote'}</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors line-clamp-1">
+                        {prob.title}
+                      </h3>
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 shrink-0">
+                        Impact: {prob.impactLevel}/10
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                      {prob.description}
+                    </p>
+                    <div className="flex items-center gap-2 pt-1 text-[11px] text-cyan-600 dark:text-cyan-400 font-semibold">
+                      <span>View Problem Statement & Sourced Evidence</span>
+                      <ArrowRight size={12} />
                     </div>
                   </Link>
                 ))}
@@ -182,20 +201,18 @@ export const GlobalSearchPage: React.FC = () => {
           {(activeTab === 'ALL' || activeTab === 'STARTUPS') && results.startups?.length > 0 && (
             <div className="space-y-3">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Compass size={16} /> Startups & Ideas ({results.startups.length})
+                <Compass size={16} /> Startups ({results.startups.length})
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {results.startups.map((s: any) => (
                   <Link
                     key={s.id}
                     to={`/startups/${s.id}`}
-                    className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 transition-all space-y-2 group"
+                    className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 transition-all space-y-2 block"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-brand-600">
-                        {s.name}
-                      </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-950 text-cyan-600">
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-white">{s.name}</h3>
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950 text-brand-600">
                         {s.stage}
                       </span>
                     </div>
@@ -227,8 +244,31 @@ export const GlobalSearchPage: React.FC = () => {
                     <div className="font-bold text-xs text-slate-900 dark:text-white">{inv.organization}</div>
                     <p className="text-[11px] text-slate-500">{inv.investorType}</p>
                     <p className="text-[10px] text-emerald-600 font-bold pt-1">
-                      Check: {inv.minCheckSize || '$25K'} - {inv.maxCheckSize || '$250K'}
+                      Check: {inv.minCheckSize || '$100K'} - {inv.maxCheckSize || '$5M'}
                     </p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Mentors Section */}
+          {(activeTab === 'ALL' || activeTab === 'MENTORS') && results.mentors?.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <GraduationCap size={16} /> Mentors & Programs ({results.mentors.length})
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {results.mentors.map((m: any) => (
+                  <Link
+                    key={m.id}
+                    to="/mentors"
+                    className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all space-y-1.5 block"
+                  >
+                    <div className="font-bold text-xs text-slate-900 dark:text-white">
+                      {m.user?.profile?.fullName || m.expertise}
+                    </div>
+                    <p className="text-[11px] text-slate-500 line-clamp-2">{m.about || m.mentoringTopics}</p>
                   </Link>
                 ))}
               </div>
@@ -239,7 +279,7 @@ export const GlobalSearchPage: React.FC = () => {
           {(activeTab === 'ALL' || activeTab === 'OPPORTUNITIES') && results.opportunities?.length > 0 && (
             <div className="space-y-3">
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Briefcase size={16} /> Startup Opportunities ({results.opportunities.length})
+                <Briefcase size={16} /> Opportunities & Grants ({results.opportunities.length})
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {results.opportunities.map((opp: any) => (
@@ -255,6 +295,36 @@ export const GlobalSearchPage: React.FC = () => {
                       <div className="text-[11px] text-slate-500">{opp.startup?.name} • {opp.compensation}</div>
                     </div>
                     <span className="text-[10px] font-bold text-slate-400">{opp.workplaceType}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* People Section */}
+          {(activeTab === 'ALL' || activeTab === 'PEOPLE') && results.users?.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Users size={16} /> People ({results.users.length})
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {results.users.map((u: any) => (
+                  <Link
+                    key={u.id}
+                    to={`/profile/${u.id}`}
+                    className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 transition-all flex items-center gap-3"
+                  >
+                    <img
+                      src={u.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${u.profile?.fullName || 'User'}`}
+                      alt=""
+                      className="w-10 h-10 rounded-xl object-cover"
+                    />
+                    <div className="min-w-0">
+                      <div className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                        {u.profile?.fullName || 'Anonymous'}
+                      </div>
+                      <p className="text-[11px] text-slate-500 truncate">{u.profile?.headline || u.role}</p>
+                    </div>
                   </Link>
                 ))}
               </div>

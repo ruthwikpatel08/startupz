@@ -14,19 +14,62 @@ router.get('/', optionalAuth, async (req, res) => {
 
     const where = { status: 'OPEN' };
 
-    if (role && role !== 'ALL') where.role = { contains: role };
+    const orConditions = [];
+
+    if (role && role !== 'ALL') {
+      const rLower = role.toLowerCase();
+      if (rLower.includes('grant') || rLower.includes('fellowship')) {
+        orConditions.push(
+          { role: { contains: 'Grant' } },
+          { role: { contains: 'Fellowship' } },
+          { role: { contains: 'Scheme' } },
+          { role: { contains: 'Challenge' } },
+        );
+      } else if (rLower.includes('accelerator') || rLower.includes('program')) {
+        orConditions.push(
+          { role: { contains: 'Accelerator' } },
+          { role: { contains: 'Batch' } },
+          { role: { contains: 'Program' } },
+        );
+      } else if (rLower.includes('engineer') || rLower.includes('developer')) {
+        orConditions.push(
+          { role: { contains: 'Engineer' } },
+          { role: { contains: 'Developer' } },
+          { role: { contains: 'Architect' } },
+        );
+      } else if (rLower.includes('research') || rLower.includes('scientist')) {
+        orConditions.push(
+          { role: { contains: 'Scientist' } },
+          { role: { contains: 'Researcher' } },
+          { role: { contains: 'Research' } },
+        );
+      } else {
+        where.role = { contains: role };
+      }
+    }
+
     if (workplaceType && workplaceType !== 'ALL') where.workplaceType = workplaceType;
     if (commitment && commitment !== 'ALL') where.commitment = commitment;
     if (compensation && compensation !== 'ALL') where.compensation = { contains: compensation };
 
+    if (orConditions.length > 0) {
+      where.OR = orConditions;
+    }
+
     if (search) {
       const q = search.trim();
-      where.OR = [
+      const searchConditions = [
         { role: { contains: q } },
         { requiredSkills: { contains: q } },
         { description: { contains: q } },
         { startup: { name: { contains: q } } },
       ];
+      if (where.OR) {
+        where.AND = [{ OR: where.OR }, { OR: searchConditions }];
+        delete where.OR;
+      } else {
+        where.OR = searchConditions;
+      }
     }
 
     const [total, opportunities] = await Promise.all([
