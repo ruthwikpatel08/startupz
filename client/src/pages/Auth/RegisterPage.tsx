@@ -53,6 +53,8 @@ export const RegisterPage: React.FC = () => {
   const handleGoogleSignUp = async () => {
     setGoogleLoading(true);
     setError(null);
+    const resetTimer = setTimeout(() => setGoogleLoading(false), 5000);
+
     try {
       // Save preliminary role & headline so the OAuth callback can populate the profile
       const oauthMeta = {
@@ -62,15 +64,41 @@ export const RegisterPage: React.FC = () => {
       };
       localStorage.setItem('startupz_oauth_meta', JSON.stringify(oauthMeta));
 
-      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
-      if (oauthError) throw oauthError;
+      if (oauthError) {
+        clearTimeout(resetTimer);
+        throw oauthError;
+      }
+
+      if (data?.url) {
+        try {
+          const probe = await fetch(data.url, { redirect: 'manual' });
+          if (probe.status === 400) {
+            const probeJson = await probe.json().catch(() => null);
+            clearTimeout(resetTimer);
+            setGoogleLoading(false);
+            setError(
+              probeJson?.msg?.includes('Unsupported provider') || probeJson?.error_code === 'validation_failed'
+                ? 'Google Sign-In is not enabled yet in your Supabase project. In Supabase Dashboard, go to Authentication -> Providers -> Google, toggle it ON, and paste your Google Client ID/Secret. Or create your account with email and password below.'
+                : (probeJson?.msg || 'Google Sign-In is currently unavailable. Please register with email and password.')
+            );
+            return;
+          }
+        } catch {
+          // Probe completed
+        }
+
+        clearTimeout(resetTimer);
+        window.location.href = data.url;
+      }
     } catch (err: any) {
+      clearTimeout(resetTimer);
       console.error('Google OAuth sign up error:', err);
       setError(getAuthErrorMessage(err, email));
       setGoogleLoading(false);

@@ -35,6 +35,25 @@ export const LoginPage: React.FC = () => {
       }
 
       if (data?.url) {
+        // Intercept provider disabled error before navigating to prevent showing raw Supabase JSON error screen
+        try {
+          const probe = await fetch(data.url, { redirect: 'manual' });
+          if (probe.status === 400) {
+            const probeJson = await probe.json().catch(() => null);
+            clearTimeout(resetTimer);
+            setGoogleLoading(false);
+            setError(
+              probeJson?.msg?.includes('Unsupported provider') || probeJson?.error_code === 'validation_failed'
+                ? 'Google Sign-In is not enabled yet in your Supabase project. In Supabase Dashboard, go to Authentication -> Providers -> Google, toggle it ON, and paste your Google Client ID/Secret. Or sign in with your email & password below.'
+                : (probeJson?.msg || 'Google Sign-In is currently unavailable. Please sign in with email and password.')
+            );
+            return;
+          }
+        } catch {
+          // If probe triggers opaque redirect, provider is enabled and ready to redirect to Google
+        }
+
+        clearTimeout(resetTimer);
         window.location.href = data.url;
       }
     } catch (err: any) {
