@@ -19,7 +19,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(() => {
     try {
       const cached = localStorage.getItem('startupz_user');
-      return cached ? JSON.parse(cached) : null;
+      if (!cached) return null;
+      const parsed = JSON.parse(cached);
+      if (parsed && typeof parsed === 'object' && parsed.id && parsed.email) {
+        return parsed;
+      }
+      return null;
     } catch {
       return null;
     }
