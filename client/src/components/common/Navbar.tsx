@@ -55,20 +55,36 @@ export const Navbar: React.FC = () => {
 
   const coFoundersRef = useRef<HTMLDivElement>(null);
   const opportunitiesRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdowns on outside click
+  // Close dropdowns on outside click or Escape key
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (coFoundersRef.current && !coFoundersRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (coFoundersRef.current && !coFoundersRef.current.contains(target)) {
         setCoFoundersDropdownOpen(false);
       }
-      if (opportunitiesRef.current && !opportunitiesRef.current.contains(event.target as Node)) {
+      if (opportunitiesRef.current && !opportunitiesRef.current.contains(target)) {
         setOpportunitiesDropdownOpen(false);
       }
+      if (profileRef.current && !profileRef.current.contains(target)) {
+        setProfileDropdownOpen(false);
+      }
     };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setCoFoundersDropdownOpen(false);
+        setOpportunitiesDropdownOpen(false);
+        setProfileDropdownOpen(false);
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
@@ -99,16 +115,16 @@ export const Navbar: React.FC = () => {
   };
 
   const coFoundersDropdownItems = [
-    { name: 'Founders', href: '/cofounders?category=founders', description: 'Active founders building startups', icon: Rocket },
-    { name: 'Co-Founders', href: '/cofounders?category=cofounders', description: 'Builders seeking synergy', icon: Users },
-    { name: 'Marketers', href: '/cofounders?category=marketers', description: 'Growth & demand leads', icon: Megaphone },
-    { name: 'Investors', href: '/cofounders?category=investors', description: 'Venture funds & angel backers', icon: TrendingUp },
-    { name: 'Other', href: '/cofounders?category=other', description: 'Engineers, designers & advisors', icon: BriefcaseBusiness },
+    { name: 'Founders', categoryKey: 'founders', href: '/cofounders?category=founders', description: 'Active founders building startups', icon: Rocket },
+    { name: 'Co-Founders', categoryKey: 'cofounders', href: '/cofounders?category=cofounders', description: 'Builders seeking synergy', icon: Users },
+    { name: 'Marketers', categoryKey: 'marketers', href: '/cofounders?category=marketers', description: 'Growth & demand leads', icon: Megaphone },
+    { name: 'Investors', categoryKey: 'investors', href: '/cofounders?category=investors', description: 'Venture funds & angel backers', icon: TrendingUp },
+    { name: 'Other', categoryKey: 'other', href: '/cofounders?category=other', description: 'Engineers, designers & advisors', icon: BriefcaseBusiness },
   ];
 
   const opportunitiesDropdownItems = [
-    { name: 'Internships', href: '/opportunities?type=internships', description: 'Hands-on startup training roles', icon: GraduationCap },
-    { name: 'Jobs', href: '/opportunities?type=jobs', description: 'Full-time & part-time positions', icon: Briefcase },
+    { name: 'Internships', typeKey: 'internships', href: '/opportunities?type=internships', description: 'Hands-on startup training roles', icon: GraduationCap },
+    { name: 'Jobs', typeKey: 'jobs', href: '/opportunities?type=jobs', description: 'Full-time & part-time positions', icon: Briefcase },
   ];
 
   const otherNavLinks = [
@@ -163,7 +179,7 @@ export const Navbar: React.FC = () => {
             </form>
 
             {/* Desktop Navigation Links */}
-            <nav className="hidden lg:flex items-center space-x-1 overflow-x-auto">
+            <nav className="hidden lg:flex items-center space-x-1 overflow-visible">
               {/* 1. AI-Scout */}
               <button
                 onClick={() => setAiScoutOpen(true)}
@@ -188,7 +204,12 @@ export const Navbar: React.FC = () => {
               </Link>
 
               {/* 3. Co-Founders Dropdown ▼ */}
-              <div ref={coFoundersRef} className="relative shrink-0">
+              <div
+                ref={coFoundersRef}
+                className="relative shrink-0"
+                onMouseEnter={() => setCoFoundersDropdownOpen(true)}
+                onMouseLeave={() => setCoFoundersDropdownOpen(false)}
+              >
                 <button
                   type="button"
                   onClick={() => {
@@ -214,41 +235,48 @@ export const Navbar: React.FC = () => {
                 </button>
 
                 {coFoundersDropdownOpen && (
-                  <div className="absolute left-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80 mb-1">
-                      Co-Founder Network
+                  <div className="absolute top-full left-0 pt-1.5 z-50">
+                    <div className="w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 animate-in fade-in zoom-in-95 duration-100">
+                      <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80 mb-1">
+                        Co-Founder Network
+                      </div>
+                      {coFoundersDropdownItems.map((item) => {
+                        const Icon = item.icon;
+                        const isOptionActive =
+                          isCoFoundersActive &&
+                          (currentCategoryParam === item.categoryKey ||
+                            (!currentCategoryParam && item.categoryKey === 'cofounders'));
+                        return (
+                          <Link
+                            key={item.name}
+                            to={item.href}
+                            onClick={() => setCoFoundersDropdownOpen(false)}
+                            className={`flex items-start gap-2.5 px-3 py-2 mx-1.5 rounded-xl text-xs transition-colors ${
+                              isOptionActive
+                                ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-bold'
+                                : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                            }`}
+                          >
+                            <Icon size={14} className={`mt-0.5 shrink-0 ${isOptionActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-xs leading-tight">{item.name}</span>
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal leading-normal">{item.description}</span>
+                            </div>
+                          </Link>
+                        );
+                      })}
                     </div>
-                    {coFoundersDropdownItems.map((item) => {
-                      const Icon = item.icon;
-                      const isOptionActive =
-                        isCoFoundersActive &&
-                        (currentCategoryParam === item.name.toLowerCase() ||
-                          (!currentCategoryParam && item.name === 'Co-Founders'));
-                      return (
-                        <Link
-                          key={item.name}
-                          to={item.href}
-                          onClick={() => setCoFoundersDropdownOpen(false)}
-                          className={`flex items-start gap-2.5 px-3 py-2 mx-1.5 rounded-xl text-xs transition-colors ${
-                            isOptionActive
-                              ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-bold'
-                              : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80'
-                          }`}
-                        >
-                          <Icon size={14} className={`mt-0.5 shrink-0 ${isOptionActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-xs leading-tight">{item.name}</span>
-                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal leading-normal">{item.description}</span>
-                          </div>
-                        </Link>
-                      );
-                    })}
                   </div>
                 )}
               </div>
 
               {/* 4. Opportunities Dropdown ▼ */}
-              <div ref={opportunitiesRef} className="relative shrink-0">
+              <div
+                ref={opportunitiesRef}
+                className="relative shrink-0"
+                onMouseEnter={() => setOpportunitiesDropdownOpen(true)}
+                onMouseLeave={() => setOpportunitiesDropdownOpen(false)}
+              >
                 <button
                   type="button"
                   onClick={() => {
@@ -274,34 +302,36 @@ export const Navbar: React.FC = () => {
                 </button>
 
                 {opportunitiesDropdownOpen && (
-                  <div className="absolute left-0 mt-2 w-60 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-                    <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80 mb-1">
-                      Startup Opportunities
+                  <div className="absolute top-full left-0 pt-1.5 z-50">
+                    <div className="w-60 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 animate-in fade-in zoom-in-95 duration-100">
+                      <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80 mb-1">
+                        Startup Opportunities
+                      </div>
+                      {opportunitiesDropdownItems.map((item) => {
+                        const Icon = item.icon;
+                        const isOptionActive =
+                          isOpportunitiesActive &&
+                          currentTypeParam === item.typeKey;
+                        return (
+                          <Link
+                            key={item.name}
+                            to={item.href}
+                            onClick={() => setOpportunitiesDropdownOpen(false)}
+                            className={`flex items-start gap-2.5 px-3 py-2 mx-1.5 rounded-xl text-xs transition-colors ${
+                              isOptionActive
+                                ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-bold'
+                                : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                            }`}
+                          >
+                            <Icon size={14} className={`mt-0.5 shrink-0 ${isOptionActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-xs leading-tight">{item.name}</span>
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal leading-normal">{item.description}</span>
+                            </div>
+                          </Link>
+                        );
+                      })}
                     </div>
-                    {opportunitiesDropdownItems.map((item) => {
-                      const Icon = item.icon;
-                      const isOptionActive =
-                        isOpportunitiesActive &&
-                        currentTypeParam === item.name.toLowerCase();
-                      return (
-                        <Link
-                          key={item.name}
-                          to={item.href}
-                          onClick={() => setOpportunitiesDropdownOpen(false)}
-                          className={`flex items-start gap-2.5 px-3 py-2 mx-1.5 rounded-xl text-xs transition-colors ${
-                            isOptionActive
-                              ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-bold'
-                              : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80'
-                          }`}
-                        >
-                          <Icon size={14} className={`mt-0.5 shrink-0 ${isOptionActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-xs leading-tight">{item.name}</span>
-                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal leading-normal">{item.description}</span>
-                          </div>
-                        </Link>
-                      );
-                    })}
                   </div>
                 )}
               </div>
@@ -407,7 +437,7 @@ export const Navbar: React.FC = () => {
                   )}
 
                   {/* User Avatar & Dropdown */}
-                  <div className="relative">
+                  <div ref={profileRef} className="relative">
                     <button
                       onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                       className="flex items-center gap-2 p-1 rounded-full border-2 border-brand-500/40 hover:border-brand-500 transition-all focus:outline-none"
@@ -433,6 +463,7 @@ export const Navbar: React.FC = () => {
                         <div className="py-1">
                           <Link
                             to="/dashboard"
+                            onClick={() => setProfileDropdownOpen(false)}
                             className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                           >
                             <LayoutDashboard size={15} />
@@ -440,6 +471,7 @@ export const Navbar: React.FC = () => {
                           </Link>
                           <Link
                             to={`/profile/${user.id}`}
+                            onClick={() => setProfileDropdownOpen(false)}
                             className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                           >
                             <UserIcon size={15} />
@@ -447,6 +479,7 @@ export const Navbar: React.FC = () => {
                           </Link>
                           <Link
                             to="/saved"
+                            onClick={() => setProfileDropdownOpen(false)}
                             className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                           >
                             <Bookmark size={15} />
@@ -455,6 +488,7 @@ export const Navbar: React.FC = () => {
                           {user.isAdmin && (
                             <Link
                               to="/admin"
+                              onClick={() => setProfileDropdownOpen(false)}
                               className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                             >
                               <Shield size={15} />
@@ -465,7 +499,10 @@ export const Navbar: React.FC = () => {
 
                         <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
                           <button
-                            onClick={logout}
+                            onClick={() => {
+                              setProfileDropdownOpen(false);
+                              logout();
+                            }}
                             className="flex items-center gap-2.5 w-full text-left px-4 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
                           >
                             <LogOut size={15} />
@@ -496,7 +533,8 @@ export const Navbar: React.FC = () => {
               {/* Mobile Hamburger Button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                aria-label="Toggle Navigation Menu"
               >
                 {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
@@ -506,7 +544,7 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile Drawer Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden px-4 pt-3 pb-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4 max-h-[85vh] overflow-y-auto">
+          <div className="lg:hidden px-4 pt-3 pb-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4 max-h-[85vh] overflow-y-auto">
             <form onSubmit={handleSearchSubmit} className="relative">
               <Search size={16} className="absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
               <input
@@ -532,6 +570,7 @@ export const Navbar: React.FC = () => {
               </button>
               <Link
                 to="/startups"
+                onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-2 p-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 <Compass size={16} className="text-brand-500" />
@@ -558,6 +597,7 @@ export const Navbar: React.FC = () => {
                     <Link
                       key={item.name}
                       to={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
                       className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 flex items-center gap-1.5"
                     >
                       <item.icon size={12} className="text-slate-400" />
@@ -587,6 +627,7 @@ export const Navbar: React.FC = () => {
                     <Link
                       key={item.name}
                       to={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
                       className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 flex items-center gap-1.5"
                     >
                       <item.icon size={12} className="text-slate-400" />
@@ -605,6 +646,7 @@ export const Navbar: React.FC = () => {
                   <Link
                     key={item.name}
                     to={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
                     className="flex items-center gap-2 p-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     <Icon size={16} className="text-brand-500" />
@@ -618,12 +660,14 @@ export const Navbar: React.FC = () => {
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
                 <Link
                   to="/startups/create"
+                  onClick={() => setMobileMenuOpen(false)}
                   className="flex-1 py-2 text-center text-xs font-bold text-white bg-brand-600 rounded-xl"
                 >
                   + Post Idea
                 </Link>
                 <Link
                   to={`/profile/${user.id}`}
+                  onClick={() => setMobileMenuOpen(false)}
                   className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-xl"
                 >
                   Profile

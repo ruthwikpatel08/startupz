@@ -25,7 +25,8 @@ import {
 
 export const FindCoFounderPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const currentCategory = (searchParams.get('category') || 'cofounders').toLowerCase();
+  const rawCategory = (searchParams.get('category') || 'cofounders').toLowerCase();
+  const currentCategory = rawCategory === 'co-founders' ? 'cofounders' : rawCategory;
 
   const [matches, setMatches] = useState<User[]>([]);
   const [investors, setInvestors] = useState<Investor[]>([]);
@@ -312,12 +313,12 @@ export const FindCoFounderPage: React.FC = () => {
                   </div>
 
                   <div className="flex flex-wrap gap-1 pt-1">
-                    {inv.industries.split(',').map((ind, idx) => (
+                    {(inv.industries || '').split(',').map((ind) => ind.trim()).filter(Boolean).map((ind, idx) => (
                       <span
                         key={idx}
                         className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                       >
-                        {ind.trim()}
+                        {ind}
                       </span>
                     ))}
                   </div>

@@ -317,12 +317,12 @@ export const OpportunitiesPage: React.FC = () => {
 
                     {/* Required Skills */}
                     <div className="flex flex-wrap gap-1.5 pt-1">
-                      {opp.requiredSkills.split(',').map((sk, idx) => (
+                      {(opp.requiredSkills || '').split(',').map((sk) => sk.trim()).filter(Boolean).map((sk, idx) => (
                         <span
                           key={idx}
                           className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300"
                         >
-                          {sk.trim()}
+                          {sk}
                         </span>
                       ))}
                     </div>
