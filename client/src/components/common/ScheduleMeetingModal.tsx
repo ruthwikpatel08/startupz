@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from './Modal';
 import { api } from '../../services/api';
-import { Video, Calendar, Clock, Copy, Check, ExternalLink, ShieldAlert } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { Video, Calendar, Clock, Copy, Check, ExternalLink, ShieldAlert, Lock } from 'lucide-react';
 
 interface ScheduleMeetingModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
   targetUser,
   onSuccess,
 }) => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [meetingType, setMeetingType] = useState<'instant' | 'scheduled'>('instant');
   const [title, setTitle] = useState('Founder Sync & Collaboration');
@@ -39,6 +41,11 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      onClose();
+      navigate('/login');
+      return;
+    }
     if (!title.trim()) {
       setError('Please provide a meeting title.');
       return;
@@ -105,7 +112,40 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
       title="📹 Video Meeting & Pitch Room"
       maxWidth="lg"
     >
-      {createdRoomCode ? (
+      {!user ? (
+        <div className="py-6 space-y-4 text-center">
+          <div className="w-16 h-16 mx-auto rounded-3xl bg-cyan-100 dark:bg-cyan-950 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
+            <Lock size={32} />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              Sign In Required
+            </h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Please sign in to schedule or host video pitch meetings with {displayName}.
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigate('/login');
+              }}
+              className="px-5 py-2 text-xs font-bold rounded-xl text-white bg-cyan-600 hover:bg-cyan-700 shadow-md shadow-cyan-500/25 cursor-pointer"
+            >
+              Sign In to Meet
+            </button>
+          </div>
+        </div>
+      ) : createdRoomCode ? (
         <div className="py-6 space-y-5 text-center">
           <div className="w-16 h-16 mx-auto rounded-3xl bg-cyan-100 dark:bg-cyan-950 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
             <Video size={32} />

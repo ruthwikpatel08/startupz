@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { FailedStartup, RaisedSolution } from '../../types';
 import { RaiseSolutionModal } from '../../components/common/RaiseSolutionModal';
 import { ConnectModal } from '../../components/common/ConnectModal';
@@ -23,6 +25,8 @@ import {
 } from 'lucide-react';
 
 export const FailedStartupsPage: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [startups, setStartups] = useState<FailedStartup[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -63,6 +67,10 @@ export const FailedStartupsPage: React.FC = () => {
   }, [search, industryFilter]);
 
   const handleUpvote = async (solutionId: string) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     if (upvotedSolutions[solutionId]) return;
     try {
       setUpvotedSolutions((prev) => ({ ...prev, [solutionId]: true }));

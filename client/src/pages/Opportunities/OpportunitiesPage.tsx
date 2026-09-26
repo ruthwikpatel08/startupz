@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { StartupOpportunity, OpportunityApplication } from '../../types';
 import { Modal } from '../../components/common/Modal';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -16,9 +17,12 @@ import {
   ExternalLink,
   Building,
   GraduationCap,
+  Lock,
 } from 'lucide-react';
 
 export const OpportunitiesPage: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentType = (searchParams.get('type') || 'ALL').toLowerCase();
 
@@ -61,6 +65,7 @@ export const OpportunitiesPage: React.FC = () => {
   };
 
   const fetchMyApplications = async () => {
+    if (!user) return;
     try {
       const res = await api.getMyApplications();
       setMyApplications(res.applications || []);
@@ -71,11 +76,18 @@ export const OpportunitiesPage: React.FC = () => {
 
   useEffect(() => {
     fetchOpportunities();
-    fetchMyApplications();
-  }, [currentType, role, workplaceType, commitment, search]);
+    if (user) {
+      fetchMyApplications();
+    }
+  }, [currentType, role, workplaceType, commitment, search, user]);
 
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      setSelectedOpp(null);
+      navigate('/login');
+      return;
+    }
     if (!selectedOpp) return;
     setApplying(true);
     setApplyError(null);
@@ -433,7 +445,38 @@ export const OpportunitiesPage: React.FC = () => {
         onClose={() => setSelectedOpp(null)}
         title={selectedOpp ? `Apply: ${selectedOpp.role}` : ''}
       >
-        {applySuccess ? (
+        {!user ? (
+          <div className="text-center py-6 space-y-4">
+            <div className="w-12 h-12 bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 rounded-full flex items-center justify-center mx-auto">
+              <Lock size={24} />
+            </div>
+            <div className="space-y-1">
+              <h4 className="font-bold text-slate-900 dark:text-white text-base">Sign In Required to Apply</h4>
+              <p className="text-xs text-slate-500 max-w-xs mx-auto">
+                Please log in or create an account to apply for {selectedOpp?.role} at {selectedOpp?.startup?.name}.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedOpp(null)}
+                className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedOpp(null);
+                  navigate('/login');
+                }}
+                className="px-5 py-2 text-xs font-bold rounded-xl text-white bg-cyan-600 hover:bg-cyan-700 shadow-md shadow-cyan-500/25 cursor-pointer"
+              >
+                Sign In to Apply
+              </button>
+            </div>
+          </div>
+        ) : applySuccess ? (
           <div className="text-center py-8 space-y-3">
             <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
               <CheckCircle size={28} />

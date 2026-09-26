@@ -66,6 +66,22 @@ export const CreateStartupPage: React.FC = () => {
     }
   };
 
+  const handleFillSample = () => {
+    setName('EcoPulse AI');
+    setOneLineDescription('Automated edge IoT and satellite intelligence for precision farm irrigation.');
+    setProblem('Smallholder and commercial farms lose over 35% of fresh water through uncalibrated irrigation cycles.');
+    setSolution('Low-cost edge IoT soil telemetry paired with micro-climate satellite AI to deliver hourly irrigation schedules.');
+    setTargetCustomers('Commercial agriculture collectives and greenhouse operators');
+    setIndustry('AgTech');
+    setBusinessModel('B2B SaaS');
+    setStage('MVP');
+    setLocation('Bengaluru / Austin');
+    setRequiredSkills('IoT Firmware, React, Python, Remote Sensing');
+    setFundingStatus('Bootstrapped');
+    setFundingRequired('$250,000');
+    setCurrentTraction('3 live pilot farms, 1,200 acres actively monitored');
+  };
+
   const industries = ['AI', 'AgTech', 'HealthTech', 'ClimateTech', 'EdTech', 'FinTech', 'B2B SaaS', 'Consumer Tech', 'Robotics', 'Other'];
   const stages: StartupStage[] = ['Idea', 'Validation', 'MVP', 'Early Revenue', 'Growth', 'Fundraising'];
   const businessModels = ['B2B SaaS', 'B2C Subscription', 'Marketplace', 'D2C', 'Enterprise', 'Freemium', 'Usage-based API'];
@@ -74,13 +90,23 @@ export const CreateStartupPage: React.FC = () => {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
       {/* Page Title */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-          <Rocket className="text-brand-600" size={28} /> Publish Startup Idea or Venture
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Publish your venture on StartupZ to discover co-founders, early teammates, and investor interest.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+            <Rocket className="text-brand-600" size={28} /> Publish Startup Idea or Venture
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Publish your venture on StartupZ to discover co-founders, early teammates, and investor interest.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleFillSample}
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900/60 transition-all shadow-xs shrink-0 cursor-pointer"
+        >
+          <Sparkles size={14} className="text-brand-500" />
+          <span>Auto-Fill Sample Idea</span>
+        </button>
       </div>
 
       {/* IP Protection Notice */}

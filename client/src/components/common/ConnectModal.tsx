@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Modal } from './Modal';
 import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { User } from '../../types';
-import { Send, CheckCircle } from 'lucide-react';
+import { Send, CheckCircle, Lock } from 'lucide-react';
 
 interface ConnectModalProps {
   user?: User | null;
@@ -19,6 +21,8 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
   const activeUser = user || targetUser;
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,6 +33,11 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentUser) {
+      onClose();
+      navigate('/login');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -53,7 +62,38 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Connect with ${displayName}`}>
-      {sent ? (
+      {!currentUser ? (
+        <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center">
+            <Lock size={24} />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-base font-bold text-slate-900 dark:text-white">Sign In Required to Connect</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+              Join StartupZ or log in to send connection requests and collaborate with {displayName}.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigate('/login');
+              }}
+              className="px-5 py-2 text-xs font-bold rounded-xl text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-500/25 cursor-pointer"
+            >
+              Sign In to Connect
+            </button>
+          </div>
+        </div>
+      ) : sent ? (
         <div className="flex flex-col items-center justify-center py-8 text-center space-y-3">
           <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
             <CheckCircle size={28} />

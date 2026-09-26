@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
@@ -27,6 +28,8 @@ import {
 
 export const StartupDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [startup, setStartup] = useState<Startup | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,6 +53,10 @@ export const StartupDetailPage: React.FC = () => {
   }, [id]);
 
   const handleLike = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     if (!startup) return;
     try {
       const res = await api.likeStartup(startup.id);
@@ -60,6 +67,10 @@ export const StartupDetailPage: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     if (!startup) return;
     try {
       const res = await api.toggleSave('STARTUP', startup.id);
@@ -70,6 +81,10 @@ export const StartupDetailPage: React.FC = () => {
   };
 
   const handleFollow = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     if (!startup) return;
     try {
       const res = await api.followStartup(startup.id);

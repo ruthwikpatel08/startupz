@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { Investor, Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
 import { SendPitchModal } from '../../components/common/SendPitchModal';
@@ -20,6 +22,8 @@ import {
 } from 'lucide-react';
 
 export const InvestorsPage: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [userStartups, setUserStartups] = useState<Startup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,12 +59,18 @@ export const InvestorsPage: React.FC = () => {
   useEffect(() => {
     fetchInvestors();
     // Fetch current user startups for pitch modal
-    api.getMe()
-      .then((data) => setUserStartups(data.user?.startups || []))
-      .catch(() => {});
-  }, [investorType, stage, industry, search]);
+    if (user) {
+      api.getMe()
+        .then((data) => setUserStartups(data.user?.startups || []))
+        .catch(() => {});
+    }
+  }, [investorType, stage, industry, search, user]);
 
   const handleToggleSave = async (id: string) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     try {
       const res = await api.toggleSave('INVESTOR', id);
       setInvestors((prev) =>

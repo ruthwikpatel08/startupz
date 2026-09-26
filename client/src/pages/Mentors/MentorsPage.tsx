@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { Mentor } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -21,6 +23,8 @@ import {
 } from 'lucide-react';
 
 export const MentorsPage: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -63,6 +67,10 @@ export const MentorsPage: React.FC = () => {
   }, [search, expertise, industry]);
 
   const handleOpenRequest = (mentor: Mentor) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     setSelectedMentor(mentor);
     const topics = mentor.mentoringTopics ? mentor.mentoringTopics.split(',').map((t) => t.trim()) : [];
     setRequestTopic(topics[0] || 'Fundraising Strategy');

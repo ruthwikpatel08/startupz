@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Modal } from './Modal';
 import { api } from '../../services/api';
-import { Rocket, Sparkles, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { Rocket, Sparkles, CheckCircle2, ShieldAlert, Lock } from 'lucide-react';
 
 interface StartupConnectionModalProps {
   isOpen: boolean;
@@ -16,6 +18,8 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
   targetUser,
   onSuccess,
 }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [ideaTitle, setIdeaTitle] = useState('');
   const [pitchDescription, setPitchDescription] = useState('');
   const [proposedRole, setProposedRole] = useState('Technical Co-Founder');
@@ -33,6 +37,11 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      onClose();
+      navigate('/login');
+      return;
+    }
     if (!ideaTitle.trim() || !pitchDescription.trim()) {
       setError('Please provide a startup title and pitch description.');
       return;
@@ -78,7 +87,40 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
       title="🚀 Propose Co-Founding a Startup"
       maxWidth="lg"
     >
-      {success ? (
+      {!user ? (
+        <div className="py-6 text-center space-y-4">
+          <div className="w-12 h-12 mx-auto rounded-full bg-brand-50 dark:bg-brand-950/60 flex items-center justify-center text-brand-600 dark:text-brand-400">
+            <Lock size={24} />
+          </div>
+          <div className="space-y-1">
+            <h4 className="text-base font-bold text-slate-900 dark:text-white">
+              Sign In Required
+            </h4>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Please sign in to send a formal startup co-founder proposal to {displayName}.
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigate('/login');
+              }}
+              className="px-5 py-2 text-xs font-bold rounded-xl text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-500/25 cursor-pointer"
+            >
+              Sign In to Propose
+            </button>
+          </div>
+        </div>
+      ) : success ? (
         <div className="py-8 text-center space-y-3">
           <div className="w-14 h-14 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 size={32} />

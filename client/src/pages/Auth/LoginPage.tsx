@@ -170,8 +170,23 @@ export const LoginPage: React.FC = () => {
         <div className="p-8 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3 text-xs rounded-xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900">
-                {error}
+              <div className="p-3 text-xs rounded-xl bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 space-y-1.5">
+                <div className="font-semibold">{error}</div>
+                <div className="text-[11px] text-slate-600 dark:text-slate-300">
+                  Haven't registered yet?{' '}
+                  <Link to="/register" className="font-bold text-brand-600 dark:text-brand-400 hover:underline">
+                    Create an account
+                  </Link>
+                  {' '}or use{' '}
+                  <button
+                    type="button"
+                    onClick={handleGoogleSignInClick}
+                    className="font-bold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer"
+                  >
+                    Continue with Google
+                  </button>
+                  .
+                </div>
               </div>
             )}
 

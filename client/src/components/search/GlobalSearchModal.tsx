@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Modal } from '../common/Modal';
 import {
   Search,
@@ -23,6 +24,7 @@ interface GlobalSearchModalProps {
 }
 
 export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, onClose }) => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -63,13 +65,13 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.open(`/search?q=${encodeURIComponent(searchQuery.trim())}`, '_blank');
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       onClose();
     }
   };
 
   const handleSelectOption = (url: string) => {
-    window.open(url, '_blank');
+    navigate(url);
     onClose();
   };
 
@@ -85,7 +87,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Type any word, skill, startup or founder (opens in new tab)..."
+            placeholder="Type any word, skill, startup or founder..."
             className="w-full pl-11 pr-10 py-3 text-sm rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-brand-500/30 focus:border-brand-500 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all font-medium"
           />
           {searchQuery && (
@@ -112,10 +114,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
                 type="button"
                 onClick={() => {
                   setSearchQuery(tag);
-                  window.open(`/search?q=${encodeURIComponent(tag)}`, '_blank');
+                  navigate(`/search?q=${encodeURIComponent(tag)}`);
                   onClose();
                 }}
-                className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950 text-slate-700 dark:text-slate-300 hover:text-brand-600 transition-colors"
+                className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950 text-slate-700 dark:text-slate-300 hover:text-brand-600 transition-colors cursor-pointer"
               >
                 + {tag}
               </button>
@@ -127,9 +129,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
         <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
           <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-wider">
             <span>{searchQuery.trim().length >= 1 ? 'Instant Matching Words' : 'Suggested Direct Links'}</span>
-            <span className="text-[10px] text-brand-500 font-semibold flex items-center gap-1">
-              <ExternalLink size={11} /> Opens in new tab
-            </span>
           </div>
 
           <div className="space-y-1 max-h-64 overflow-y-auto pr-1">

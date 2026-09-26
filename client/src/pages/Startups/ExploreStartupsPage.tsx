@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -23,6 +24,8 @@ import {
 } from 'lucide-react';
 
 export const ExploreStartupsPage: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [startups, setStartups] = useState<Startup[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -66,6 +69,10 @@ export const ExploreStartupsPage: React.FC = () => {
   const handleLike = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     try {
       const res = await api.likeStartup(id);
       setStartups((prev) =>
@@ -81,6 +88,10 @@ export const ExploreStartupsPage: React.FC = () => {
   const handleSave = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     try {
       const res = await api.toggleSave('STARTUP', id);
       setStartups((prev) =>
@@ -94,6 +105,10 @@ export const ExploreStartupsPage: React.FC = () => {
   const handleFollow = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     try {
       const res = await api.followStartup(id);
       setStartups((prev) =>

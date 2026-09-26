@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Modal } from './Modal';
 import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { FailedStartup } from '../../types';
-import { Lightbulb, Sparkles, CheckCircle2, ShieldAlert, ArrowRight } from 'lucide-react';
+import { Lightbulb, Sparkles, CheckCircle2, ShieldAlert, ArrowRight, Lock } from 'lucide-react';
 
 interface RaiseSolutionModalProps {
   isOpen: boolean;
@@ -17,6 +19,8 @@ export const RaiseSolutionModal: React.FC<RaiseSolutionModalProps> = ({
   failedStartup,
   onSuccess,
 }) => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [targetAudience, setTargetAudience] = useState('');
@@ -29,6 +33,11 @@ export const RaiseSolutionModal: React.FC<RaiseSolutionModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      onClose();
+      navigate('/login');
+      return;
+    }
     if (!title.trim() || !description.trim()) {
       setError('Please provide a solution title and detailed description.');
       return;
@@ -75,7 +84,40 @@ export const RaiseSolutionModal: React.FC<RaiseSolutionModalProps> = ({
       title={`💡 Raise a Solution for ${failedStartup.name}'s Problem`}
       maxWidth="xl"
     >
-      {success ? (
+      {!user ? (
+        <div className="py-6 space-y-4 text-center">
+          <div className="w-14 h-14 mx-auto rounded-full bg-amber-50 dark:bg-amber-950/60 flex items-center justify-center text-amber-600 dark:text-amber-400">
+            <Lock size={28} />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              Sign In Required
+            </h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Please sign in to publish your solution to this failed startup challenge and collaborate with builders.
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigate('/login');
+              }}
+              className="px-5 py-2 text-xs font-bold rounded-xl text-white bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-500/25 cursor-pointer"
+            >
+              Sign In to Submit Solution
+            </button>
+          </div>
+        </div>
+      ) : success ? (
         <div className="py-8 text-center space-y-3">
           <div className="w-14 h-14 mx-auto rounded-full bg-amber-100 dark:bg-amber-950 flex items-center justify-center text-amber-600 dark:text-amber-400">
             <CheckCircle2 size={32} />

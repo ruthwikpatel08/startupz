@@ -26,10 +26,11 @@ import {
   Flag,
   UserPlus,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export const StartupFeedPage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +75,10 @@ export const StartupFeedPage: React.FC = () => {
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     if (!postContent.trim()) {
       setComposerError('Please write something before publishing.');
       return;
@@ -103,6 +108,10 @@ export const StartupFeedPage: React.FC = () => {
   };
 
   const handleLikePost = async (postId: string) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     try {
       const res = await api.likePost(postId);
       setPosts((prev) =>
@@ -118,6 +127,10 @@ export const StartupFeedPage: React.FC = () => {
   };
 
   const handleToggleSave = async (postId: string) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     try {
       const res = await api.toggleSave('POST', postId);
       setPosts((prev) =>
@@ -131,6 +144,10 @@ export const StartupFeedPage: React.FC = () => {
   };
 
   const handleAddComment = async (postId: string) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     const text = (commentInputs[postId] || '').trim();
     if (!text) return;
 
