@@ -31,6 +31,8 @@ import {
   TrendingUp,
   Megaphone,
   BriefcaseBusiness,
+  Crown,
+  LogIn,
 } from 'lucide-react';
 import { AIScoutModal } from '../ai/AIScoutModal';
 
@@ -128,6 +130,7 @@ export const Navbar: React.FC = () => {
   ];
 
   const otherNavLinks = [
+    { name: 'Memberships', href: '/memberships', icon: Crown },
     { name: 'Graveyard', href: '/failed-startups', icon: Skull },
     { name: 'Mentors', href: '/mentors', icon: GraduationCap },
     { name: 'Problem Statements', href: '/problems', icon: Globe },
@@ -499,18 +502,20 @@ export const Navbar: React.FC = () => {
                   </div>
                 </>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   <Link
                     to="/login"
-                    className="px-3.5 py-1.5 text-xs font-semibold rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all"
                   >
-                    Log In
+                    <LogIn size={13} className="text-slate-400" />
+                    <span>Log In</span>
                   </Link>
                   <Link
                     to="/register"
-                    className="px-4 py-1.5 text-xs font-bold rounded-xl text-white bg-brand-600 hover:bg-brand-500 shadow-sm shadow-brand-500/20 transition-all hover:scale-105"
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-xl text-white bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700 hover:from-brand-500 hover:to-indigo-500 shadow-md shadow-brand-500/20 transition-all hover:scale-105 shrink-0"
                   >
-                    Join StartupZ
+                    <Sparkles size={13} className="text-brand-200" />
+                    <span>Join StartupZ</span>
                   </Link>
                 </div>
               )}
@@ -623,7 +628,7 @@ export const Navbar: React.FC = () => {
               )}
             </div>
 
-            {/* Other Nav Links (Graveyard, Mentors, Problems, Feed) */}
+            {/* Other Nav Links (Memberships, Graveyard, Mentors, Problems, Feed) */}
             <div className="grid grid-cols-2 gap-2">
               {otherNavLinks.map((item) => {
                 const Icon = item.icon;
@@ -641,7 +646,25 @@ export const Navbar: React.FC = () => {
               })}
             </div>
 
-            {user && (
+            {/* Mobile Auth / Profile Section */}
+            {!user ? (
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex gap-2.5">
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex-1 py-2.5 text-center text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 rounded-xl"
+                >
+                  Log In
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex-1 py-2.5 text-center text-xs font-bold text-white bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700 rounded-xl shadow-md shadow-brand-500/20"
+                >
+                  Join StartupZ
+                </Link>
+              </div>
+            ) : (
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex gap-2">
                 <Link
                   to="/startups/create"

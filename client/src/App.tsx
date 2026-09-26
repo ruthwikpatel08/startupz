@@ -33,6 +33,7 @@ import { ProblemsPage } from './pages/Problems/ProblemsPage';
 import { ProblemDetailPage } from './pages/Problems/ProblemDetailPage';
 import { ManageProblemsPage } from './pages/Admin/ManageProblemsPage';
 import { ProblemFormPage } from './pages/Admin/ProblemFormPage';
+import { MembershipsPage } from './pages/Memberships/MembershipsPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean }> = ({
   children,
@@ -87,6 +88,7 @@ export const App: React.FC = () => {
                 <Route path="/problems/:id" element={<ProblemDetailPage />} />
                 <Route path="/profile/:id" element={<ProfilePage />} />
                 <Route path="/search" element={<GlobalSearchPage />} />
+                <Route path="/memberships" element={<MembershipsPage />} />
 
                 {/* Video Meeting Room */}
                 <Route
