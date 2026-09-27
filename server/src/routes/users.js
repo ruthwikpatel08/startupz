@@ -145,9 +145,19 @@ router.get('/matching/cofounders', optionalAuth, async (req, res) => {
 
     const where = {
       isSuspended: false,
+      NOT: [
+        { role: 'STARTUP' },
+        { email: { startsWith: 'contact@' } },
+        { email: { startsWith: 'advisory@' } },
+        { email: { contains: 'demo' } },
+        { email: { contains: '@startupz.com' } },
+      ],
     };
     if (req.user) {
       where.id = { not: req.user.id };
+      if (req.user.email) {
+        where.email = { not: req.user.email };
+      }
     }
 
     if (category && category !== 'ALL') {

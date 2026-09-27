@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { api } from '../../services/api';
+import { api, isDemoRecord } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { StartupOpportunity, OpportunityApplication } from '../../types';
 import { FALLBACK_OPPORTUNITIES } from '../../data/curatedFallbackData';
@@ -103,7 +103,8 @@ export const OpportunitiesPage: React.FC = () => {
       if (search) params.append('search', search);
 
       const res = await api.getOpportunities(params.toString());
-      setOpportunities(res.opportunities || []);
+      const clean = (res.opportunities || []).filter((o: any) => !isDemoRecord(o));
+      setOpportunities(clean);
     } catch (err) {
       console.warn('Backend returned warning for opportunities:', err);
       setOpportunities([]);

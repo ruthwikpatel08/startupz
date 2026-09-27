@@ -120,8 +120,29 @@ export const GlobalSearchPage: React.FC = () => {
         apiUsers = apiUsers.filter((u: any) => !isDemoRecord(u));
       }
 
+      const seenUserEmails = new Set<string>();
+      const seenUserIds = new Set<string>();
+      const seenUsernames = new Set<string>();
+      const cleanUsers: any[] = [];
+      for (const u of apiUsers) {
+        if (isDemoRecord(u)) continue;
+        const uEmail = (u.email || '').toLowerCase().trim();
+        const uId = (u.id || u.profile?.userId || '').trim();
+        const uName = (u.profile?.username || (uEmail ? uEmail.split('@')[0] : '')).toLowerCase().trim();
+
+        if (uEmail && seenUserEmails.has(uEmail)) continue;
+        if (uId && seenUserIds.has(uId)) continue;
+        if (uName && seenUsernames.has(uName)) continue;
+
+        if (uEmail) seenUserEmails.add(uEmail);
+        if (uId) seenUserIds.add(uId);
+        if (uName) seenUsernames.add(uName);
+
+        cleanUsers.push(u);
+      }
+
       setResults({
-        users: apiUsers,
+        users: cleanUsers,
         startups: apiStartups.filter((s: any) => !isDemoRecord(s)),
         investors: apiInvestors.filter((i: any) => !isDemoRecord(i)),
         mentors: apiMentors.filter((m: any) => !isDemoRecord(m)),

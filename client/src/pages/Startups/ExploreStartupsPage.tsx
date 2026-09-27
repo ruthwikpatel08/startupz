@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { api } from '../../services/api';
+import { api, isDemoRecord } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
@@ -51,7 +51,8 @@ export const ExploreStartupsPage: React.FC = () => {
       if (location) params.append('location', location);
 
       const res = await api.getStartups(params.toString());
-      setStartups(res.startups || []);
+      const clean = (res.startups || []).filter((s: any) => !isDemoRecord(s));
+      setStartups(clean);
     } catch (err) {
       console.error(err);
     } finally {

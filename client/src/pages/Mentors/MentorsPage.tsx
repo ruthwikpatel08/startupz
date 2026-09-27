@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../../services/api';
+import { api, isDemoRecord } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Mentor } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
@@ -51,7 +51,8 @@ export const MentorsPage: React.FC = () => {
       if (industry !== 'ALL') params.append('industry', industry);
 
       const res = await api.getMentors(params.toString());
-      setMentors(res.mentors || []);
+      const clean = (res.mentors || []).filter((m: any) => !isDemoRecord(m));
+      setMentors(clean);
     } catch (err) {
       console.error('Failed to load mentors:', err);
     } finally {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../../services/api';
+import { api, isDemoRecord } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Investor, Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
@@ -48,7 +48,39 @@ export const InvestorsPage: React.FC = () => {
       if (search) params.append('search', search);
 
       const res = await api.getInvestors(params.toString());
-      setInvestors(res.investors || []);
+      const rawList = res.investors || [];
+      const seenEmails = new Set<string>();
+      const seenIds = new Set<string>();
+      const seenOrgs = new Set<string>();
+      const cleanList: Investor[] = [];
+
+      for (const inv of rawList) {
+        if (isDemoRecord(inv)) continue;
+
+        const invEmail = (inv.user?.email || '').toLowerCase().trim();
+        const invId = (inv.id || inv.userId || inv.user?.id || '').trim();
+        const invOrg = (inv.organization || '').toLowerCase().trim();
+
+        // Hide current logged in user from their own directory view
+        if (user) {
+          const curEmail = (user.email || '').toLowerCase().trim();
+          const curId = (user.id || '').trim();
+          if (curEmail && invEmail && curEmail === invEmail) continue;
+          if (curId && invId && curId === invId) continue;
+        }
+
+        if (invEmail && seenEmails.has(invEmail)) continue;
+        if (invId && seenIds.has(invId)) continue;
+        if (invOrg && seenOrgs.has(invOrg)) continue;
+
+        if (invEmail) seenEmails.add(invEmail);
+        if (invId) seenIds.add(invId);
+        if (invOrg) seenOrgs.add(invOrg);
+
+        cleanList.push(inv);
+      }
+
+      setInvestors(cleanList);
     } catch (err) {
       console.error(err);
     } finally {

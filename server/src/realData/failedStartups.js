@@ -17,7 +17,7 @@ export const realFailedStartups = [
     lessonsLearned: '1) Healthcare and life sciences startups require transparent peer-reviewed clinical validation, not "fake it till you make it" Silicon Valley culture; 2) Governance matters—boards must include independent medical and scientific domain experts; 3) Regulatory compliance with CLIA and FDA is non-negotiable for patient safety.',
     solutions: [
       {
-        authorEmail: 'demo.founder@startupz.com',
+        authorEmail: 'ruthwikpatel08@gmail.com',
         title: 'Decentralized Microfluidic Immunoassays with Peer-Reviewed Open Validation',
         description: 'Instead of attempting 200 tests in a single black box, engineer narrow, focused point-of-care microfluidic cartridges for single biomarker targets (e.g. troponin for cardiac arrest, HbA1c for diabetes) backed by open multi-center hospital clinical trials.',
         targetAudience: 'Primary care clinics, emergency departments, and rural diagnostic outposts',
@@ -38,7 +38,7 @@ export const realFailedStartups = [
     lessonsLearned: '1) Asset-heavy real estate arbitrage cannot be valued like a pure software company; 2) Management agreements and revenue-share models with property owners are vastly superior to signing direct long-term lease liabilities; 3) Sustainable unit economics in core markets must precede hyper-expansion.',
     solutions: [
       {
-        authorEmail: 'demo.founder@startupz.com',
+        authorEmail: 'ruthwikpatel08@gmail.com',
         title: 'Asset-Light Hospitality Management Model for Commercial Real Estate',
         description: 'Operate flexible workspaces strictly via performance-fee management contracts with commercial landlords—similar to the hotel industry (e.g. Marriott)—eliminating fixed master lease liabilities entirely.',
         targetAudience: 'Commercial building landlords and distributed enterprise teams',
@@ -59,7 +59,7 @@ export const realFailedStartups = [
     lessonsLearned: '1) Heavy infrastructure networks requiring cross-industry hardware standardization are vulnerable if major OEMs refuse to participate; 2) Battery swapping succeeds in closed, standardized commercial fleets (two-wheelers and commercial taxis) rather than heterogeneous consumer passenger sedans; 3) Fast-charging standards (CCS/NACS) advanced faster than mechanical battery swap economics.',
     solutions: [
       {
-        authorEmail: 'demo.founder@startupz.com',
+        authorEmail: 'ruthwikpatel08@gmail.com',
         title: 'Standardized Swapping for Commercial 2-Wheeler and 3-Wheeler Fleets',
         description: 'Deploy low-cost modular battery swapping cabinets exclusively for standardized commercial electric delivery fleets (e.g. Yulu, Sun Mobility) where battery packs weigh under 12 kg and require no multimillion-dollar hydraulic robotics.',
         targetAudience: 'Gig delivery workers, last-mile e-commerce fleets, urban transit authorities',
@@ -80,7 +80,7 @@ export const realFailedStartups = [
     lessonsLearned: '1) Never base an entire capital-intensive hardware business model on an assumed commodity supply crunch; 2) Technological differentiation must withstand relentless cost reductions from standard commodity manufacturing scale; 3) Capex efficiency is paramount in renewable energy hardware.',
     solutions: [
       {
-        authorEmail: 'demo.founder@startupz.com',
+        authorEmail: 'ruthwikpatel08@gmail.com',
         title: 'Ultra-Lightweight Flexible Perovskite-Silicon Tandem Films',
         description: 'Manufacture roll-to-roll lightweight flexible solar skins that paste onto industrial factory roofs using existing adhesive laminators without heavy racking hardware.',
         targetAudience: 'Warehouse owners, commercial logistics hubs, lightweight steel industrial sheds',
@@ -101,7 +101,7 @@ export const realFailedStartups = [
     lessonsLearned: '1) Consumer content platforms must embrace virality, social sharing, and community engagement rather than locking content behind rigid DRM; 2) High production budget cannot substitute for organic product-market fit; 3) Understand user habits—mobile users consume short-form video in an interactive social context, not paid linear Hollywood prestige format.',
     solutions: [
       {
-        authorEmail: 'demo.founder@startupz.com',
+        authorEmail: 'ruthwikpatel08@gmail.com',
         title: 'Interactive Community Micro-Dramas with Direct Creator Monetization',
         description: 'Platform for serialized 1-minute episodic micro-dramas (ReelShort / DramaBox model) where users unlock cliffhanger episodes via micro-transactions or community engagement, with full TikTok/Reels clip syndication.',
         targetAudience: 'Mobile episodic entertainment viewers and indie screenwriters',
@@ -122,7 +122,7 @@ export const realFailedStartups = [
     lessonsLearned: '1) Revenue and unit economics must justify your cash burn rate; 2) Vanity marketing cannot compensate for lack of distribution leverage; 3) Competing directly with platform defaults (Shop Pay, Apple Pay) without a proprietary merchant wedge is fatal in FinTech.',
     solutions: [
       {
-        authorEmail: 'demo.founder@startupz.com',
+        authorEmail: 'ruthwikpatel08@gmail.com',
         title: 'Post-Purchase Upsell and Identity Vault for Independent Merchants',
         description: 'Instead of fighting to replace the checkout button, provide a post-purchase one-click upsell and unified return/loyalty portal that integrates seamlessly with existing payment gateways without replacing Shopify or Stripe checkout.',
         targetAudience: 'D2C brand stores and independent omnichannel retailers',
@@ -143,7 +143,7 @@ export const realFailedStartups = [
     lessonsLearned: '1) Applying advanced robotics to an inherently simple, solved consumer process (cooking a pizza) introduces massive failure points without improving consumer willingness to pay; 2) Keep robotics stationary in controlled commissary environments rather than moving vehicles; 3) Automation must reduce operational costs, not multiply maintenance complexity.',
     solutions: [
       {
-        authorEmail: 'demo.founder@startupz.com',
+        authorEmail: 'ruthwikpatel08@gmail.com',
         title: 'Stationary Robotic Automated Kiosks for High-Footfall Transit Hubs',
         description: 'Deploy compact, stationary 50-sq-ft robotic pizza and bowl assembly kiosks in airports, universities, and hospitals where 24/7 labor is difficult to staff, operating in stationary cleanrooms without vehicular stress.',
         targetAudience: 'Airport terminals, hospital cafeterias, university student unions',
@@ -164,7 +164,7 @@ export const realFailedStartups = [
     lessonsLearned: '1) Construction is fundamentally localized—hyper-vertical integration across regional code jurisdictions introduces catastrophic operational complexity; 2) Software integration cannot paper over on-site subcontractor and permitting realities; 3) Focus on component standardization (e.g. modular bathroom pods) rather than attempting to manufacture entire buildings in a single monolithic factory.',
     solutions: [
       {
-        authorEmail: 'demo.founder@startupz.com',
+        authorEmail: 'ruthwikpatel08@gmail.com',
         title: 'Standardized Modular Utility Pods (Bath & Kitchen Cores)',
         description: 'Instead of prefabricating the entire building shell, manufacture plug-and-play standardized MEP (mechanical, electrical, plumbing) bathroom and kitchen pods that ship to any traditional concrete or steel job site, eliminating 70% of on-site trade labor bottlenecks.',
         targetAudience: 'Commercial general contractors, affordable housing developers, hotel developers',

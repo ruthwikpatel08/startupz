@@ -25,32 +25,51 @@ function buildQuery(params?: any): string {
   return qs ? `?${qs}` : '';
 }
 
+const REAL_ACCOUNT_EMAILS = [
+  'ruthwikpatel08@gmail.com',
+  'legacyplayer04@gmail.com',
+  'lavanyadav0206@gmail.com',
+];
+
 export function isDemoRecord(item: any): boolean {
   if (!item) return false;
   const str = JSON.stringify(item).toLowerCase();
   
+  // Real registered users must never be filtered
+  if (REAL_ACCOUNT_EMAILS.some((email) => str.includes(email.toLowerCase()))) {
+    return false;
+  }
+
   return (
     str.includes('[demo account]') ||
     str.includes('demo account') ||
-    str.includes('sarah.chen@aiagri.io') ||
-    str.includes('marcus.dev@codeflow.dev') ||
-    str.includes('david.kim@hyperbuild.co') ||
-    str.includes('demo.founder@startupz.com') ||
-    str.includes('maya.design@pixelcraft.studio') ||
-    str.includes('priya.growth@marketscale.io') ||
-    str.includes('elena.investor@apexventures.vc') ||
+    str.includes('contact@') ||
+    str.includes('advisory@') ||
+    str.includes('demo.') ||
     str.includes('admin@startupz.com') ||
+    str.includes('@startupz.com') ||
+    str.includes('sarah.chen') ||
+    str.includes('marcus.dev') ||
+    str.includes('david.kim') ||
+    str.includes('maya.design') ||
+    str.includes('priya.growth') ||
+    str.includes('elena.investor') ||
+    str.includes('dr.aravind') ||
+    str.includes('healthventures') ||
     str.includes('@codeflow.dev') ||
     str.includes('@hyperbuild.co') ||
     str.includes('@aiagri.io') ||
     str.includes('@pixelcraft.studio') ||
     str.includes('@marketscale.io') ||
-    str.includes('advisory@') ||
+    str.includes('@apexventures.vc') ||
     str.includes('bitspilanitbi') ||
     str.includes('cieiiithyderabad') ||
     str.includes('berkeleyskydeck') ||
     str.includes('startxstanford') ||
-    str.includes('creativedestructionlab')
+    str.includes('creativedestructionlab') ||
+    str.includes('masschallenge') ||
+    str.includes('villgro') ||
+    str.includes('nexus startup hub')
   );
 }
 

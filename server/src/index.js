@@ -101,6 +101,20 @@ app.get('/api/health/db/init', async (req, res) => {
 });
 
 
+// Maintenance Endpoint: Purge all demo data from database
+app.all('/api/health/purge-demo-data', async (req, res) => {
+  try {
+    const result = await purgeDemoDatabase();
+    res.json({
+      status: 'ok',
+      message: 'Demo data purged successfully.',
+      ...result,
+    });
+  } catch (err) {
+    res.status(500).json({ status: 'error', message: err.message });
+  }
+});
+
 // Mount Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -136,6 +150,64 @@ app.use((req, res) => {
   res.status(404).json({ error: `Endpoint ${req.method} ${req.originalUrl} not found.` });
 });
 
+async function purgeDemoDatabase() {
+  const realEmails = ['ruthwikpatel08@gmail.com', 'legacyplayer04@gmail.com', 'lavanyadav0206@gmail.com'];
+  
+  // 1. Delete all demo startups, opportunities, and interactions
+  await prisma.opportunityApplication.deleteMany({});
+  await prisma.startupOpportunity.deleteMany({});
+  await prisma.startupMember.deleteMany({});
+  await prisma.startupFollow.deleteMany({});
+  await prisma.startup.deleteMany({});
+  await prisma.investor.deleteMany({});
+  await prisma.mentor.deleteMany({});
+  await prisma.comment.deleteMany({});
+  await prisma.like.deleteMany({});
+  await prisma.post.deleteMany({});
+  await prisma.connection.deleteMany({});
+  await prisma.startupProposal.deleteMany({});
+  await prisma.videoMeeting.deleteMany({});
+
+  // 2. Delete non-real / demo user accounts (including all 43 startup team accounts)
+  const deletedUsers = await prisma.user.deleteMany({
+    where: {
+      NOT: {
+        email: { in: realEmails },
+      },
+      OR: [
+        { role: 'STARTUP' },
+        { email: { startsWith: 'contact@' } },
+        { email: { startsWith: 'advisory@' } },
+        { email: { contains: 'demo' } },
+        { email: { contains: 'sarah.chen' } },
+        { email: { contains: 'marcus.dev' } },
+        { email: { contains: 'david.kim' } },
+        { email: { contains: 'codeflow' } },
+        { email: { contains: 'aiagri' } },
+        { email: { contains: 'hyperbuild' } },
+        { email: { contains: 'pixelcraft' } },
+        { email: { contains: 'marketscale' } },
+        { email: { contains: 'apexventures' } },
+        { email: { contains: 'healthventures' } },
+        { email: { contains: 'dr.aravind' } },
+        { email: { contains: 'admin@startupz.com' } },
+        { email: { contains: '@startupz.com' } },
+      ],
+    },
+  });
+
+  const remainingUsers = await prisma.user.count();
+  const remainingStartups = await prisma.startup.count();
+  const remainingOpportunities = await prisma.startupOpportunity.count();
+
+  return {
+    deletedUsers: deletedUsers.count,
+    remainingUsers,
+    remainingStartups,
+    remainingOpportunities,
+  };
+}
+
 async function ensureDatabaseReady() {
   try {
     await prisma.user.count();
@@ -155,7 +227,7 @@ async function ensureDatabaseReady() {
     const userCount = await prisma.user.count();
     const problemCount = await prisma.problem.count().catch(() => 0);
     if (userCount === 0 || problemCount === 0) {
-      console.log('🌱 Database needs seed data (users or problems). Seeding initial accounts, startups, and problem statements...');
+      console.log('🌱 Database needs seed data (users or problems). Seeding initial accounts and problem statements...');
       try {
         const { main: seedDatabase } = await import('./seed.js');
         if (seedDatabase) {
@@ -165,8 +237,11 @@ async function ensureDatabaseReady() {
         console.error('Auto-seed error:', seedErr.message);
       }
     }
+
+    // Always run demo purge to guarantee clean state
+    await purgeDemoDatabase();
   } catch (e) {
-    console.warn('Seed verification check:', e.message);
+    console.warn('Startup verification notice:', e.message);
   }
 }
 
