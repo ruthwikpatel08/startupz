@@ -150,6 +150,7 @@ export async function upsertUserProfile(
     location: string;
     bio: string;
     avatar: string;
+    cover_image: string;
     skills: string;
     startup_interests: string;
     industries: string;

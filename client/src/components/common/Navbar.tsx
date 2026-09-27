@@ -465,15 +465,36 @@ export const Navbar: React.FC = () => {
                     <Users size={17} />
                   </Link>
 
-                  {/* Saved Items */}
+                  {/* Saved Items (Desktop only - removed on mobile view as requested) */}
                   <Link
                     to="/saved"
                     aria-label="Saved items"
-                    className={`p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
+                    className={`hidden sm:inline-flex p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
                       isActive('/saved') ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60' : ''
                     }`}
                   >
                     <Bookmark size={17} />
+                  </Link>
+
+                  {/* Profile Bar at Top in Mobile View */}
+                  <Link
+                    to={`/profile/${user.id}`}
+                    aria-label="My Profile Bar"
+                    className={`sm:hidden flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold transition-all shadow-xs shrink-0 ${
+                      location.pathname.startsWith('/profile')
+                        ? 'bg-indigo-50 dark:bg-indigo-950/80 border-indigo-300 dark:border-indigo-800 text-[#4F46E5] dark:text-indigo-300'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-indigo-400'
+                    }`}
+                  >
+                    <img
+                      src={user.profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
+                      alt=""
+                      className="w-5 h-5 rounded-full object-cover"
+                    />
+                    <span className="font-semibold text-[11px] truncate max-w-[80px]">
+                      {user.profile?.fullName?.split(' ')[0] || 'Profile'}
+                    </span>
+                    <Edit3 size={11} className="text-[#4F46E5] dark:text-indigo-400 shrink-0" />
                   </Link>
 
                   {/* Post Startup Action */}
@@ -496,8 +517,8 @@ export const Navbar: React.FC = () => {
                     </Link>
                   )}
 
-                  {/* User Avatar & Dropdown */}
-                  <div ref={profileRef} className="relative">
+                  {/* User Avatar & Dropdown (Desktop) */}
+                  <div ref={profileRef} className="relative hidden sm:block">
                     <button
                       onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                       className="flex items-center gap-2 p-1 rounded-full border-2 border-brand-500/40 hover:border-brand-500 transition-all focus:outline-none"

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
@@ -37,7 +37,49 @@ import {
   FolderKanban,
   Check,
   ChevronRight,
+  Camera,
+  Image as ImageIcon,
+  ShieldCheck,
+  Upload,
+  RefreshCw,
 } from 'lucide-react';
+
+function resizeImageToDataUrl(file: File, maxDimension = 1200, quality = 0.85): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new window.Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(e.target?.result as string);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      img.onerror = () => resolve(e.target?.result as string);
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = (err) => reject(err);
+    reader.readAsDataURL(file);
+  });
+}
 
 export const ProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -104,6 +146,101 @@ export const ProfilePage: React.FC = () => {
       handleOpenEdit();
     }
   }, [searchParams, isMe, profileUser]);
+
+  // Gallery upload, permission, and photo keeping states
+  const avatarFileInputRef = useRef<HTMLInputElement>(null);
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
+  const [galleryPermissionOpen, setGalleryPermissionOpen] = useState(false);
+  const [targetImageType, setTargetImageType] = useState<'avatar' | 'cover'>('avatar');
+  const [confirmPhotoModalOpen, setConfirmPhotoModalOpen] = useState(false);
+  const [previewPhotoUrl, setPreviewPhotoUrl] = useState<string>('');
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false);
+  const [photoSavedNotice, setPhotoSavedNotice] = useState<string | null>(null);
+
+  const handleRequestGalleryPermission = (type: 'avatar' | 'cover') => {
+    setTargetImageType(type);
+    setGalleryPermissionOpen(true);
+  };
+
+  const handleGrantGalleryPermission = () => {
+    setGalleryPermissionOpen(false);
+    setTimeout(() => {
+      if (targetImageType === 'avatar') {
+        avatarFileInputRef.current?.click();
+      } else {
+        coverFileInputRef.current?.click();
+      }
+    }, 100);
+  };
+
+  const handleFilePicked = async (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'cover') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const dataUrl = await resizeImageToDataUrl(file, type === 'cover' ? 1400 : 800, 0.85);
+      setTargetImageType(type);
+      setPreviewPhotoUrl(dataUrl);
+      setConfirmPhotoModalOpen(true);
+    } catch (err) {
+      console.error('Failed to read image:', err);
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const handleConfirmKeepPhoto = async () => {
+    if (!previewPhotoUrl || !currentUser?.id) return;
+    setIsSavingPhoto(true);
+    try {
+      const fieldKey = targetImageType === 'avatar' ? 'avatar' : 'cover_image';
+      const formKey = targetImageType === 'avatar' ? 'avatar' : 'coverImage';
+
+      // 1. Update Supabase profiles table immediately
+      await upsertUserProfile(currentUser.id, {
+        [fieldKey]: previewPhotoUrl,
+      });
+
+      // 2. Mirror to backend if possible
+      try {
+        await api.updateProfile({
+          [formKey]: previewPhotoUrl,
+        });
+      } catch {
+        // Backend mirror non-critical
+      }
+
+      // 3. Update local states
+      setFormData((prev: any) => ({
+        ...prev,
+        [formKey]: previewPhotoUrl,
+      }));
+
+      const updatedUser: User = {
+        ...(profileUser || currentUser),
+        profile: {
+          ...((profileUser || currentUser).profile || ({} as Profile)),
+          [formKey]: previewPhotoUrl,
+        },
+      };
+
+      setProfileUser(updatedUser);
+      updateUser(updatedUser);
+
+      setConfirmPhotoModalOpen(false);
+      setPreviewPhotoUrl('');
+      setPhotoSavedNotice(
+        targetImageType === 'avatar'
+          ? 'Profile photo updated and saved successfully!'
+          : 'Background cover updated and saved successfully!'
+      );
+      setTimeout(() => setPhotoSavedNotice(null), 4000);
+    } catch (err) {
+      console.error('Failed to save photo:', err);
+    } finally {
+      setIsSavingPhoto(false);
+    }
+  };
 
   // Modals
   const [connectOpen, setConnectOpen] = useState(false);
@@ -286,6 +423,7 @@ export const ProfilePage: React.FC = () => {
           location: formData.location,
           bio: formData.bio,
           avatar: formData.avatar,
+          cover_image: formData.coverImage,
           skills: formData.skills,
           startup_interests: formData.startupInterests,
           industries: formData.industries,
@@ -428,13 +566,23 @@ export const ProfilePage: React.FC = () => {
                 </button>
               )}
               {isMe && (
-                <button
-                  onClick={handleOpenEdit}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white text-slate-900 text-xs font-bold transition-all shadow-md hover:bg-slate-100 active:scale-95 cursor-pointer"
-                >
-                  <Edit3 size={14} className="text-[#4F46E5]" />
-                  <span>Edit Profile</span>
-                </button>
+                <>
+                  <button
+                    onClick={() => handleRequestGalleryPermission('cover')}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/40 hover:bg-black/60 text-white backdrop-blur-md text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer"
+                    title="Change background cover image from gallery"
+                  >
+                    <Camera size={14} />
+                    <span className="hidden xs:inline">Change Cover</span>
+                  </button>
+                  <button
+                    onClick={handleOpenEdit}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white text-slate-900 text-xs font-bold transition-all shadow-md hover:bg-slate-100 active:scale-95 cursor-pointer"
+                  >
+                    <Edit3 size={14} className="text-[#4F46E5]" />
+                    <span>Edit Profile</span>
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -459,11 +607,11 @@ export const ProfilePage: React.FC = () => {
                   )}
                   {isMe && (
                     <button
-                      onClick={handleOpenEdit}
+                      onClick={() => handleRequestGalleryPermission('avatar')}
                       className="absolute bottom-0 right-0 p-2 rounded-full bg-[#4F46E5] text-white shadow-lg hover:bg-[#4338CA] active:scale-90 transition-transform cursor-pointer"
-                      title="Edit Profile Details"
+                      title="Upload profile photo from gallery"
                     >
-                      <Edit3 size={14} />
+                      <Camera size={14} />
                     </button>
                   )}
                 </div>
@@ -584,6 +732,19 @@ export const ProfilePage: React.FC = () => {
 
           </div>
         </div>
+
+        {/* Photo Saved Success Banner */}
+        {photoSavedNotice && (
+          <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center justify-between shadow-sm animate-in fade-in duration-200">
+            <span className="flex items-center gap-2">
+              <CheckCircle2 size={16} className="text-emerald-600" />
+              <span>{photoSavedNotice}</span>
+            </span>
+            <button onClick={() => setPhotoSavedNotice(null)} className="text-emerald-700 hover:text-emerald-900 cursor-pointer">
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
         {/* 2. TWO-COLUMN LAYOUT (DESKTOP) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -978,29 +1139,71 @@ export const ProfilePage: React.FC = () => {
         <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Edit Profile Details" maxWidth="2xl">
           <form onSubmit={handleSaveProfile} className="space-y-4 font-sans">
             {/* Photos & Branding */}
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[#E2E8F0] dark:border-slate-700 space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#4F46E5] flex items-center gap-1.5">
-                <Sparkles size={14} /> Profile & Background Photos
-              </h4>
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[#E2E8F0] dark:border-slate-700 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#4F46E5] flex items-center gap-1.5">
+                  <Sparkles size={14} /> Profile & Background Photos
+                </h4>
+                <span className="text-[11px] text-slate-500 font-medium">Add from device gallery</span>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[#64748B] mb-1">Profile Photo URL (Avatar)</label>
+                {/* Avatar Uploader */}
+                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 space-y-2.5">
+                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                    Profile Photo (Avatar)
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={formData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.fullName || 'User'}`}
+                      alt=""
+                      className="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-xs shrink-0"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRequestGalleryPermission('avatar')}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#4F46E5] dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800 hover:bg-indigo-100 transition-all cursor-pointer"
+                    >
+                      <Camera size={14} />
+                      <span>Upload from Gallery</span>
+                    </button>
+                  </div>
                   <input
                     type="url"
                     value={formData.avatar || ''}
                     onChange={(e) => setFormData({ ...formData, avatar: e.target.value })}
-                    placeholder="https://images.unsplash.com/... or image link"
-                    className="w-full px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
+                    placeholder="Or paste image URL"
+                    className="w-full px-3 py-1.5 rounded-lg text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[#64748B] mb-1">Background Cover Image URL</label>
+
+                {/* Cover Uploader */}
+                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 space-y-2.5">
+                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                    Background Cover Image
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <div className="w-16 h-12 rounded-lg bg-emerald-900 overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0">
+                      {formData.coverImage ? (
+                        <img src={formData.coverImage} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-r from-emerald-800 to-teal-800" />
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRequestGalleryPermission('cover')}
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer"
+                    >
+                      <ImageIcon size={14} />
+                      <span>Upload from Gallery</span>
+                    </button>
+                  </div>
                   <input
                     type="url"
                     value={formData.coverImage || ''}
                     onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
-                    placeholder="Leave blank for Royal Green default background"
-                    className="w-full px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
+                    placeholder="Or paste cover URL"
+                    className="w-full px-3 py-1.5 rounded-lg text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white"
                   />
                 </div>
               </div>
@@ -1182,6 +1385,132 @@ export const ProfilePage: React.FC = () => {
         targetId={profileUser.id}
         targetTitle={displayName}
       />
+
+      {/* Hidden File Inputs for Device Gallery Picking */}
+      <input
+        type="file"
+        ref={avatarFileInputRef}
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => handleFilePicked(e, 'avatar')}
+      />
+      <input
+        type="file"
+        ref={coverFileInputRef}
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => handleFilePicked(e, 'cover')}
+      />
+
+      {/* 1. GALLERY PERMISSION MODAL */}
+      <Modal
+        isOpen={galleryPermissionOpen}
+        onClose={() => setGalleryPermissionOpen(false)}
+        title="Permission Required"
+        maxWidth="md"
+      >
+        <div className="text-center space-y-4 py-2 font-sans">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-[#4F46E5] mx-auto flex items-center justify-center shadow-inner">
+            <Camera size={32} />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              Access Device Photo Gallery
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed px-2">
+              StartupZ requires your permission to access your device gallery/photos to select a{' '}
+              <span className="font-bold text-[#4F46E5]">
+                {targetImageType === 'avatar' ? 'profile photo' : 'background cover image'}
+              </span>
+              . You will review the selected image before it is kept and saved.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => setGalleryPermissionOpen(false)}
+              className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleGrantGalleryPermission}
+              className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-all shadow-md shadow-indigo-500/20 active:scale-95 cursor-pointer"
+            >
+              Allow & Open Gallery
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 2. CONFIRM & KEEP PHOTO MODAL */}
+      <Modal
+        isOpen={confirmPhotoModalOpen}
+        onClose={() => {
+          if (!isSavingPhoto) {
+            setConfirmPhotoModalOpen(false);
+            setPreviewPhotoUrl('');
+          }
+        }}
+        title={`Confirm & Keep ${targetImageType === 'avatar' ? 'Profile Photo' : 'Background Cover'}`}
+        maxWidth="md"
+      >
+        <div className="space-y-4 py-2 font-sans">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Review your selected image. Only after your permission and confirmation will this photo be kept on your profile.
+          </p>
+
+          <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden">
+            {targetImageType === 'avatar' ? (
+              <img
+                src={previewPhotoUrl}
+                alt="Selected Avatar Preview"
+                className="w-36 h-36 rounded-full object-cover border-4 border-white dark:border-slate-900 shadow-xl"
+              />
+            ) : (
+              <img
+                src={previewPhotoUrl}
+                alt="Selected Cover Preview"
+                className="w-full h-44 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shadow-md"
+              />
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              disabled={isSavingPhoto}
+              onClick={() => {
+                setConfirmPhotoModalOpen(false);
+                setPreviewPhotoUrl('');
+                handleRequestGalleryPermission(targetImageType);
+              }}
+              className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              Choose Another
+            </button>
+            <button
+              type="button"
+              disabled={isSavingPhoto}
+              onClick={handleConfirmKeepPhoto}
+              className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 transition-all shadow-md shadow-emerald-600/20 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              {isSavingPhoto ? (
+                <>
+                  <RefreshCw size={14} className="animate-spin" />
+                  <span>Saving Photo...</span>
+                </>
+              ) : (
+                <>
+                  <Check size={15} />
+                  <span>Proceed & Keep Image</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
