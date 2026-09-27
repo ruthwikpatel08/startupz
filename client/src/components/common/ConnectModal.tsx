@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Modal } from './Modal';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
 import { User } from '../../types';
 import { Send, CheckCircle, Lock } from 'lucide-react';
 
@@ -41,7 +42,19 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
     setLoading(true);
     setError(null);
     try {
-      await api.sendConnection(activeUser.id, note.trim() || undefined);
+      try {
+        await api.sendConnection(activeUser.id, note.trim() || undefined);
+      } catch (backendErr) {
+        console.warn('Backend connection notice, syncing directly to Supabase:', backendErr);
+        const { error: supaErr } = await supabase.from('connections').insert({
+          sender_id: currentUser.id,
+          receiver_id: activeUser.id,
+          note: note.trim() || null,
+          status: 'PENDING',
+        });
+        if (supaErr) throw supaErr;
+      }
+
       setSent(true);
       setTimeout(() => {
         setSent(false);

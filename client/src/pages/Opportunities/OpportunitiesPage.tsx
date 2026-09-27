@@ -103,16 +103,10 @@ export const OpportunitiesPage: React.FC = () => {
       if (search) params.append('search', search);
 
       const res = await api.getOpportunities(params.toString());
-      if (res.opportunities && res.opportunities.length > 0) {
-        setOpportunities(res.opportunities);
-      } else {
-        const fallback = filterFallbackOpportunities(currentType, role, workplaceType, commitment, search);
-        setOpportunities(fallback);
-      }
+      setOpportunities(res.opportunities || []);
     } catch (err) {
-      console.warn('Backend returned warning for opportunities, using curated fallback:', err);
-      const fallback = filterFallbackOpportunities(currentType, role, workplaceType, commitment, search);
-      setOpportunities(fallback);
+      console.warn('Backend returned warning for opportunities:', err);
+      setOpportunities([]);
     } finally {
       setLoading(false);
     }

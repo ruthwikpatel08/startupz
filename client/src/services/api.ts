@@ -25,6 +25,57 @@ function buildQuery(params?: any): string {
   return qs ? `?${qs}` : '';
 }
 
+export function isDemoRecord(item: any): boolean {
+  if (!item) return false;
+  const str = JSON.stringify(item).toLowerCase();
+  
+  return (
+    str.includes('[demo account]') ||
+    str.includes('demo account') ||
+    str.includes('sarah.chen@aiagri.io') ||
+    str.includes('marcus.dev@codeflow.dev') ||
+    str.includes('david.kim@hyperbuild.co') ||
+    str.includes('demo.founder@startupz.com') ||
+    str.includes('maya.design@pixelcraft.studio') ||
+    str.includes('priya.growth@marketscale.io') ||
+    str.includes('elena.investor@apexventures.vc') ||
+    str.includes('admin@startupz.com') ||
+    str.includes('@codeflow.dev') ||
+    str.includes('@hyperbuild.co') ||
+    str.includes('@aiagri.io') ||
+    str.includes('@pixelcraft.studio') ||
+    str.includes('@marketscale.io') ||
+    str.includes('advisory@') ||
+    str.includes('bitspilanitbi') ||
+    str.includes('cieiiithyderabad') ||
+    str.includes('berkeleyskydeck') ||
+    str.includes('startxstanford') ||
+    str.includes('creativedestructionlab')
+  );
+}
+
+function sanitizeData(data: any): any {
+  if (!data || typeof data !== 'object') return data;
+  if (Array.isArray(data)) {
+    return data.filter((item) => !isDemoRecord(item));
+  }
+
+  const cleaned = { ...data };
+  const arrayKeys = ['users', 'matches', 'people', 'startups', 'investors', 'mentors', 'opportunities', 'posts', 'results'];
+  
+  for (const key of arrayKeys) {
+    if (Array.isArray(cleaned[key])) {
+      cleaned[key] = cleaned[key].filter((item: any) => !isDemoRecord(item));
+    }
+  }
+
+  if (cleaned.results && typeof cleaned.results === 'object') {
+    cleaned.results = sanitizeData(cleaned.results);
+  }
+
+  return cleaned;
+}
+
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -45,7 +96,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       throw new Error(errorMsg);
     }
 
-    return data as T;
+    return sanitizeData(data) as T;
   } catch (err: any) {
     if (err.name === 'TypeError' && (err.message || '').includes('fetch')) {
       throw new Error('Cloud backend is waking up or updating. Please wait 10-20 seconds or use Continue with Google.');
@@ -59,6 +110,7 @@ export const api = {
   register: (payload: any) => request<any>('/auth/register', { method: 'POST', body: JSON.stringify(payload) }),
   login: (payload: any) => request<any>('/auth/login', { method: 'POST', body: JSON.stringify(payload) }),
   googleAuth: (payload: any) => request<any>('/auth/google', { method: 'POST', body: JSON.stringify(payload) }),
+  syncAuth: (payload: any) => request<any>('/auth/sync', { method: 'POST', body: JSON.stringify(payload) }),
   getMe: () => request<any>('/auth/me'),
   forgotPassword: (emailOrPayload: any) => {
     const body = typeof emailOrPayload === 'string' ? { email: emailOrPayload } : emailOrPayload;

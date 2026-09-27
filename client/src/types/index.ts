@@ -4,6 +4,7 @@ export type UserRole = 'FOUNDER' | 'COFOUNDER' | 'INVESTOR' | 'MENTOR' | 'DEVELO
 export interface User {
   id: string;
   email: string;
+  username?: string | null;
   role: UserRole;
   isVerified: boolean;
   verificationBadge?: string | null;
@@ -29,6 +30,7 @@ export interface Profile {
   id: string;
   userId: string;
   fullName: string;
+  username?: string | null;
   headline?: string | null;
   location?: string | null;
   bio?: string | null;

@@ -231,14 +231,14 @@ export const Navbar: React.FC = () => {
               </div>
             </Link>
 
-            {/* Global Search Button (Desktop) — Opens GlobalSearchModal (like AI Scout) */}
+            {/* Global Search Button (Desktop & Tablet) — Opens GlobalSearchModal */}
             <button
               onClick={() => setSearchModalOpen(true)}
-              className="hidden xl:flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/80 transition-all flex-1 max-w-[220px] text-left cursor-pointer group shrink-0"
+              className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/80 transition-all flex-1 max-w-[200px] text-left cursor-pointer group shrink-0"
             >
-              <Search size={15} className="text-brand-500 group-hover:scale-110 transition-transform shrink-0" />
-              <span className="truncate">Search platform...</span>
-              <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded text-[10px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-400 ml-auto shrink-0 font-mono">
+              <Search size={14} className="text-brand-500 group-hover:scale-110 transition-transform shrink-0" />
+              <span className="truncate">Search usernames...</span>
+              <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded text-[10px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-400 ml-auto shrink-0 font-mono">
                 ⌘K
               </kbd>
             </button>
@@ -420,11 +420,22 @@ export const Navbar: React.FC = () => {
             {/* Right Action Icons & Profile */}
             <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
 
+              {/* Mobile Search Button */}
+              <button
+                type="button"
+                onClick={() => setSearchModalOpen(true)}
+                aria-label="Search platform"
+                className="md:hidden p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Search usernames & platform"
+              >
+                <Search size={17} className="text-brand-500" />
+              </button>
+
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
-                className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
               </button>
@@ -645,8 +656,18 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Horizontal Slidebar (From AI - Scout through Problem Statements) */}
+        {/* Mobile Horizontal Slidebar (From Search & AI - Scout through Problem Statements) */}
         <div className="flex lg:hidden items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap px-3.5 py-2 bg-slate-50/80 dark:bg-slate-900/80 border-t border-slate-200/60 dark:border-slate-800/60 scroll-smooth shrink-0">
+          {/* 0. Search */}
+          <button
+            onClick={() => setSearchModalOpen(true)}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 border border-brand-200/80 dark:border-brand-800/80 shrink-0 shadow-xs cursor-pointer"
+            title="Search Usernames & Platform"
+          >
+            <Search size={12} className="text-brand-500" />
+            <span>Search</span>
+          </button>
+
           {/* 1. AI-Scout */}
           <button
             onClick={() => setAiScoutOpen(true)}

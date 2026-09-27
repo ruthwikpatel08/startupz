@@ -572,51 +572,45 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic mb-6">
-                "I had the agronomy expertise and initial pilot farm connections, but zero deep-learning experience. Within 2 weeks on StartupZ, I connected with Marcus, and we shipped our v1 MVP together."
+                "StartupZ was born out of the direct need for founders, developers, and investors to cut through noise, find genuine co-founders, and build lasting ventures together."
               </p>
               <div className="flex items-center gap-3">
-                <img
-                  src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=80&auto=format&fit=crop&q=80"
-                  alt=""
-                  className="w-10 h-10 rounded-full object-cover"
-                />
+                <div className="w-10 h-10 rounded-full bg-brand-600 flex items-center justify-center text-white font-bold text-sm">
+                  RP
+                </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Sarah Chen</h4>
-                  <p className="text-[11px] text-slate-500">Founder @ FarmConnect</p>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Ruthwik Patel</h4>
+                  <p className="text-[11px] text-slate-500">Founder @ StartupZ</p>
                 </div>
               </div>
             </div>
 
             <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic mb-6">
-                "As an angel investor, filtering generic cold InMails on other platforms was overwhelming. StartupZ's structured problem/solution criteria and traction badges make deal discovery 10x more focused."
+                "Finding a co-founder with aligned vision and complementary technical skills used to take months. On StartupZ, connecting directly with real builders changes everything."
               </p>
               <div className="flex items-center gap-3">
-                <img
-                  src="https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=80&auto=format&fit=crop&q=80"
-                  alt=""
-                  className="w-10 h-10 rounded-full object-cover"
-                />
+                <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                  LP
+                </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Elena Rostova</h4>
-                  <p className="text-[11px] text-slate-500">Partner @ Apex Ventures</p>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Legacy</h4>
+                  <p className="text-[11px] text-slate-500">Tech Co-Founder</p>
                 </div>
               </div>
             </div>
 
             <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic mb-6">
-                "I wanted to mentor early-stage builders without endless back-and-forth scheduling. StartupZ allows founders to submit focused topics like pitch deck audits, making every hour high-impact."
+                "StartupZ's direct proposal and co-founder connection system provides clean, genuine startup signals without the spam. Highly recommended for early builders."
               </p>
               <div className="flex items-center gap-3">
-                <img
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&auto=format&fit=crop&q=80"
-                  alt=""
-                  className="w-10 h-10 rounded-full object-cover"
-                />
+                <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm">
+                  LY
+                </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">James Sterling</h4>
-                  <p className="text-[11px] text-slate-500">2x Exited Founder & Mentor</p>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Lavan Yadav</h4>
+                  <p className="text-[11px] text-slate-500">Investor & Ecosystem Partner</p>
                 </div>
               </div>
             </div>

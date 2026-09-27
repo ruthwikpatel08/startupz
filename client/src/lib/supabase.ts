@@ -109,7 +109,7 @@ export function mapSupabaseToAppUser(
     isVerified: !!authUser.email_confirmed_at || isGoogle,
     verificationBadge: isGoogle ? 'Verified via Google' : (authUser.email_confirmed_at ? 'Verified Member' : null),
     isSuspended: false,
-    isAdmin: metadata.isAdmin === true || metadata.role === 'ADMIN' || authUser.email === 'admin@startupz.com',
+    isAdmin: metadata.isAdmin === true || metadata.role === 'ADMIN' || authUser.email === 'ruthwikpatel08@gmail.com' || authUser.email === 'admin@startupz.com',
     createdAt: authUser.created_at,
     updatedAt: authUser.updated_at,
     profile,
@@ -145,6 +145,7 @@ export async function upsertUserProfile(
   userId: string,
   profileData: Partial<{
     full_name: string;
+    username: string;
     headline: string;
     location: string;
     bio: string;
@@ -167,6 +168,15 @@ export async function upsertUserProfile(
   }>
 ): Promise<any | null> {
   try {
+    // Generate username from email or full_name if not provided
+    if (!profileData.username) {
+      if (profileData.email) {
+        profileData.username = profileData.email.split('@')[0];
+      } else if (profileData.full_name) {
+        profileData.username = profileData.full_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      }
+    }
+
     // Check if profile exists first for clean upsert
     const existing = await fetchUserProfile(userId);
 
@@ -219,32 +229,30 @@ export async function resolveEmailOrUsername(identifier: string): Promise<string
     return clean;
   }
 
-  // Known username / demo handle mappings
+  // Known administrator / core account mappings
   const knownMap: Record<string, string> = {
     'admin': 'admin@startupz.com',
     'ruthwik': 'ruthwikpatel08@gmail.com',
     'ruthwikpatel': 'ruthwikpatel08@gmail.com',
     'ruthwikpatel08': 'ruthwikpatel08@gmail.com',
+    'legacy': 'legacyplayer04@gmail.com',
     'legacyplayer': 'legacyplayer04@gmail.com',
     'legacyplayer04': 'legacyplayer04@gmail.com',
-    'founder': 'sarah.chen@gmail.com',
-    'sarah': 'sarah.chen@gmail.com',
-    'sarahchen': 'sarah.chen@gmail.com',
-    'developer': 'david@startupz.com',
-    'investor': 'marcus@horizonvc.com',
-    'mentor': 'elena@biotechventures.com',
+    'lavan': 'lavanyadav0206@gmail.com',
+    'lavanyadav': 'lavanyadav0206@gmail.com',
+    'lavanyadav0206': 'lavanyadav0206@gmail.com',
   };
 
   if (knownMap[clean]) {
     return knownMap[clean];
   }
 
-  // 1. Try finding in Supabase public.profiles table by full_name or email prefix
+  // 1. Try finding in Supabase public.profiles table by username, full_name or email prefix
   try {
     const { data: matchedProfiles } = await supabase
       .from('profiles')
-      .select('email, full_name')
-      .or(`email.ilike.${clean}@%,full_name.ilike.${clean},full_name.ilike.%${clean}%`)
+      .select('email, full_name, username')
+      .or(`username.ilike.${clean},email.ilike.${clean}@%,full_name.ilike.${clean},full_name.ilike.%${clean}%`)
       .limit(1);
 
     if (matchedProfiles && matchedProfiles.length > 0 && matchedProfiles[0].email) {

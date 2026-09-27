@@ -35,16 +35,16 @@ router.get('/', optionalAuth, async (req, res) => {
 
     if (search) {
       const q = search.trim();
-      profileConditions.push({
-        OR: [
-          { fullName: { contains: q } },
-          { headline: { contains: q } },
-          { bio: { contains: q } },
-          { location: { contains: q } },
-          { skills: { contains: q } },
-          { industries: { contains: q } },
-        ],
-      });
+      where.OR = [
+        { email: { contains: q } },
+        { profile: { fullName: { contains: q } } },
+        { profile: { headline: { contains: q } } },
+        { profile: { bio: { contains: q } } },
+        { profile: { location: { contains: q } } },
+        { profile: { skills: { contains: q } } },
+        { profile: { industries: { contains: q } } },
+        { profile: { preferredRole: { contains: q } } },
+      ];
     }
 
     if (skill) {
@@ -60,7 +60,11 @@ router.get('/', optionalAuth, async (req, res) => {
     }
 
     if (profileConditions.length > 0) {
-      where.profile = { AND: profileConditions };
+      if (where.profile) {
+        where.profile = { AND: [...profileConditions] };
+      } else {
+        where.profile = { AND: profileConditions };
+      }
     }
 
     const [total, users] = await Promise.all([
@@ -152,6 +156,7 @@ router.get('/matching/cofounders', optionalAuth, async (req, res) => {
         where.OR = [
           { role: 'FOUNDER' },
           { profile: { openTo: { contains: 'Founder' } } },
+          { profile: { preferredRole: { contains: 'Founder' } } },
           { startups: { some: {} } },
         ];
       } else if (catLower === 'cofounders' || catLower === 'cofounder') {
@@ -170,19 +175,21 @@ router.get('/matching/cofounders', optionalAuth, async (req, res) => {
       } else if (catLower === 'investors' || catLower === 'investor') {
         where.OR = [
           { role: 'INVESTOR' },
+          { profile: { preferredRole: { contains: 'Investor' } } },
           { investorProfile: { isNot: null } },
         ];
       } else if (catLower === 'other') {
         where.OR = [
-          { role: { in: ['DEVELOPER', 'DESIGNER', 'MENTOR', 'ADMIN'] } },
+          { role: { in: ['DEVELOPER', 'DESIGNER', 'MENTOR', 'ADMIN', 'OTHER'] } },
           { profile: { skills: { contains: 'Design' } } },
           { profile: { skills: { contains: 'Engineer' } } },
+          { profile: { skills: { contains: 'Tech' } } },
         ];
       }
     } else {
       where.OR = [
-        { profile: { openTo: { contains: 'Co-Founder' } } },
-        { role: { in: ['FOUNDER', 'COFOUNDER', 'DEVELOPER', 'MARKETER', 'DESIGNER'] } },
+        { profile: { isNot: null } },
+        { role: { in: ['FOUNDER', 'COFOUNDER', 'DEVELOPER', 'MARKETER', 'DESIGNER', 'INVESTOR', 'MENTOR', 'ADMIN', 'OTHER'] } },
       ];
     }
 

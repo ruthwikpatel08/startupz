@@ -190,6 +190,89 @@ router.post('/google', async (req, res) => {
   }
 });
 
+// POST /api/auth/sync - Ensure any logged-in real user is saved in DB and receives a valid token
+router.post('/sync', async (req, res) => {
+  try {
+    const { id, email, fullName, role = 'FOUNDER', headline, location, avatar } = req.body;
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail) {
+      return res.status(400).json({ error: 'Email is required for synchronization.' });
+    }
+
+    const cleanName = fullName || cleanEmail.split('@')[0];
+    const upperRole = String(role).toUpperCase();
+
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          ...(id ? [{ id }] : []),
+          { email: cleanEmail },
+        ],
+      },
+      include: { profile: true },
+    });
+
+    if (!user) {
+      const generatedPassword = await bcrypt.hash(`AuthSync_${Math.random()}_2026!`, 10);
+      user = await prisma.user.create({
+        data: {
+          id: id || undefined,
+          email: cleanEmail,
+          password: generatedPassword,
+          role: upperRole,
+          isVerified: true,
+          verificationBadge: cleanEmail.includes('admin') ? 'Platform Admin' : 'Verified Member',
+          profile: {
+            create: {
+              fullName: cleanName,
+              headline: headline || `${upperRole.charAt(0) + upperRole.slice(1).toLowerCase()} | Startup Builder`,
+              location: location || 'Remote',
+              avatar: avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanName)}&backgroundColor=4f46e5,06b6d4,10b981`,
+              openTo: 'Co-Founder,Startup Team,Investment',
+              profileCompletion: 85,
+            },
+          },
+        },
+        include: { profile: true },
+      });
+    } else {
+      await prisma.profile.upsert({
+        where: { userId: user.id },
+        create: {
+          userId: user.id,
+          fullName: cleanName,
+          headline: headline || user.profile?.headline || `${upperRole} | Startup Builder`,
+          location: location || user.profile?.location || 'Remote',
+          avatar: avatar || user.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanName)}`,
+          openTo: 'Co-Founder,Startup Team,Investment',
+          profileCompletion: 85,
+        },
+        update: {
+          fullName: cleanName || undefined,
+          headline: headline || undefined,
+          location: location || undefined,
+          avatar: avatar || undefined,
+        },
+      });
+      user = await prisma.user.findUnique({
+        where: { id: user.id },
+        include: { profile: true },
+      });
+    }
+
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
+    const { password: _, ...userWithoutPassword } = user;
+    return res.json({
+      message: 'User synchronized successfully',
+      token,
+      user: userWithoutPassword,
+    });
+  } catch (error) {
+    console.error('Auth sync error:', error);
+    return res.status(500).json({ error: 'Failed to synchronize user session.' });
+  }
+});
+
 
 // GET /api/auth/me
 router.get('/me', requireAuth, async (req, res) => {

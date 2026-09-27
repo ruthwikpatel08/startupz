@@ -7,8 +7,7 @@
  */
 
 export const BUILTIN_DEMO_EMAILS = [
-  'sarah.chen@aiagri.io',
-  'marcus.dev@codeflow.dev',
-  'elena.investor@apexventures.vc',
-  'admin@startupz.com',
+  'ruthwikpatel08@gmail.com',
+  'legacyplayer04@gmail.com',
+  'lavanyadav0206@gmail.com',
 ];

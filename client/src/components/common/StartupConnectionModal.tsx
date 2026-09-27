@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Modal } from './Modal';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
 import { Rocket, Sparkles, CheckCircle2, ShieldAlert, Lock } from 'lucide-react';
 
 interface StartupConnectionModalProps {
@@ -30,10 +31,17 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
 
   if (!targetUser) return null;
 
-  const displayName = targetUser.profile?.fullName || targetUser.email.split('@')[0];
+  const displayName =
+    targetUser.profile?.fullName ||
+    targetUser.fullName ||
+    targetUser.organization ||
+    (targetUser.email ? targetUser.email.split('@')[0] : '') ||
+    targetUser.username ||
+    'Member';
   const avatar =
     targetUser.profile?.avatar ||
-    `https://api.dicebear.com/7.x/initials/svg?seed=${displayName}`;
+    targetUser.avatar ||
+    `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,13 +59,27 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
     setError(null);
 
     try {
-      await api.sendStartupProposal({
-        receiverId: targetUser.id,
-        ideaTitle: ideaTitle.trim(),
-        pitchDescription: pitchDescription.trim(),
-        proposedRole,
-        proposedEquity,
-      });
+      try {
+        await api.sendStartupProposal({
+          receiverId: targetUser.id,
+          ideaTitle: ideaTitle.trim(),
+          pitchDescription: pitchDescription.trim(),
+          proposedRole,
+          proposedEquity,
+        });
+      } catch (backendErr) {
+        console.warn('Backend proposal notice, syncing directly to Supabase:', backendErr);
+        const { error: supaErr } = await supabase.from('startup_proposals').insert({
+          sender_id: user.id,
+          receiver_id: targetUser.id,
+          idea_title: ideaTitle.trim(),
+          pitch_description: pitchDescription.trim(),
+          proposed_role: proposedRole,
+          proposed_equity: proposedEquity,
+          status: 'PENDING',
+        });
+        if (supaErr) throw supaErr;
+      }
 
       setSuccess(true);
       setTimeout(() => {

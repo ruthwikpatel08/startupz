@@ -217,7 +217,7 @@ export const QuickLoginModal: React.FC<QuickLoginModalProps> = ({
             </button>
           </form>
 
-          {/* Quick test accounts for easy evaluator login */}
+          {/* Quick test accounts for real accounts */}
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
             <span className="text-[10px] text-slate-400 font-semibold block mb-1.5">
               Quick Sign In:
@@ -232,17 +232,17 @@ export const QuickLoginModal: React.FC<QuickLoginModalProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => handleQuickFill('sarah.chen@gmail.com')}
+                onClick={() => handleQuickFill('legacyplayer04@gmail.com')}
                 className="text-[10px] px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono transition-colors"
               >
-                sarah.chen@gmail.com
+                legacyplayer04@gmail.com
               </button>
               <button
                 type="button"
-                onClick={() => handleQuickFill('admin')}
+                onClick={() => handleQuickFill('lavanyadav0206@gmail.com')}
                 className="text-[10px] px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono transition-colors"
               >
-                admin
+                lavanyadav0206@gmail.com
               </button>
             </div>
           </div>

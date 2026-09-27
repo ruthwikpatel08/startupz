@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { X, UserPlus, Check, ArrowRight, Sparkles } from 'lucide-react';
+import { X, UserPlus, ArrowRight, Sparkles } from 'lucide-react';
 
 interface GoogleAccountChooserModalProps {
   isOpen: boolean;
@@ -9,7 +9,7 @@ interface GoogleAccountChooserModalProps {
   onSelectAccount?: (email: string) => void;
 }
 
-interface MockGoogleAccount {
+interface RealGoogleAccount {
   email: string;
   name: string;
   role: string;
@@ -17,27 +17,27 @@ interface MockGoogleAccount {
   tag?: string;
 }
 
-const DEFAULT_GOOGLE_ACCOUNTS: MockGoogleAccount[] = [
-  {
-    email: 'legacyplayer04@gmail.com',
-    name: 'Legacy Player',
-    role: 'FOUNDER',
-    tag: 'Primary Account',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-  },
+const REGISTERED_GOOGLE_ACCOUNTS: RealGoogleAccount[] = [
   {
     email: 'ruthwikpatel08@gmail.com',
     name: 'Ruthwik Patel',
-    role: 'DEVELOPER',
-    tag: 'Workspace Account',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+    role: 'FOUNDER',
+    tag: 'Founder & Lead',
+    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=Ruthwik%20Patel&backgroundColor=4f46e5,06b6d4,10b981',
   },
   {
-    email: 'sarah.chen@gmail.com',
-    name: 'Sarah Chen',
+    email: 'legacyplayer04@gmail.com',
+    name: 'Legacy',
     role: 'FOUNDER',
-    tag: 'Founder @ FarmConnect',
-    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80',
+    tag: 'Verified Founder',
+    avatar: 'https://lh3.googleusercontent.com/a/ACg8ocIBc2tvgpVoh9lUYtp3FBYhmXWQqnl0Kgi2vmdN2vm_TDwgtw=s96-c',
+  },
+  {
+    email: 'lavanyadav0206@gmail.com',
+    name: 'lavan yadav',
+    role: 'INVESTOR',
+    tag: 'Verified Investor',
+    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=lavan%20yadav&backgroundColor=4f46e5,06b6d4,10b981',
   },
 ];
 
@@ -51,12 +51,13 @@ export const GoogleAccountChooserModal: React.FC<GoogleAccountChooserModalProps>
   const [customMode, setCustomMode] = useState(false);
   const [customEmail, setCustomEmail] = useState('');
   const [customName, setCustomName] = useState('');
+  const [customRole, setCustomRole] = useState('FOUNDER');
   const [submitting, setSubmitting] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleChoose = async (account: MockGoogleAccount) => {
+  const handleChoose = async (account: RealGoogleAccount) => {
     setSelectedEmail(account.email);
     setSubmitting(true);
     try {
@@ -86,7 +87,7 @@ export const GoogleAccountChooserModal: React.FC<GoogleAccountChooserModalProps>
       await loginWithGoogleAccount({
         email,
         name,
-        role: 'FOUNDER',
+        role: customRole,
       });
       onClose();
       navigate('/dashboard');
@@ -141,16 +142,16 @@ export const GoogleAccountChooserModal: React.FC<GoogleAccountChooserModalProps>
         {/* Title */}
         <div className="px-6 pt-5 pb-3">
           <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-            Choose an account
+            Choose a Google account
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            to continue to <strong className="text-slate-800 dark:text-slate-200">StartupZ</strong>
+            to access real verified network on <strong className="text-slate-800 dark:text-slate-200">StartupZ</strong>
           </p>
         </div>
 
         {/* Account Selector List */}
         <div className="px-3 pb-3 space-y-1">
-          {DEFAULT_GOOGLE_ACCOUNTS.map((acc) => {
+          {REGISTERED_GOOGLE_ACCOUNTS.map((acc) => {
             const isSelected = selectedEmail === acc.email;
             return (
               <button
@@ -212,9 +213,9 @@ export const GoogleAccountChooserModal: React.FC<GoogleAccountChooserModalProps>
                 <UserPlus size={18} />
               </div>
               <div className="flex-1">
-                <span>Use another Google account</span>
+                <span>Sign in with another Google account</span>
                 <span className="text-[10px] text-slate-400 block font-normal">
-                  Sign in with any other Gmail or Google Workspace
+                  Enter your real Gmail or Google Workspace
                 </span>
               </div>
             </button>
@@ -222,16 +223,16 @@ export const GoogleAccountChooserModal: React.FC<GoogleAccountChooserModalProps>
             <form onSubmit={handleCustomSubmit} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 space-y-3 mt-2 border border-slate-200/80 dark:border-slate-700/80">
               <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                 <Sparkles size={14} className="text-brand-500" />
-                <span>Enter Google Account Details</span>
+                <span>Enter Your Real Google Account</span>
               </div>
               <div>
                 <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Gmail / Workspace Email
+                  Gmail / Workspace Address
                 </label>
                 <input
                   type="email"
                   required
-                  placeholder="yourname@gmail.com"
+                  placeholder="e.g. yourname@gmail.com"
                   value={customEmail}
                   onChange={(e) => setCustomEmail(e.target.value)}
                   className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
@@ -239,15 +240,33 @@ export const GoogleAccountChooserModal: React.FC<GoogleAccountChooserModalProps>
               </div>
               <div>
                 <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                  Your Full Name (Optional)
+                  Your Full Name
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Alex Taylor"
+                  placeholder="e.g. Your Name"
                   value={customName}
                   onChange={(e) => setCustomName(e.target.value)}
                   className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
                 />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  Primary Category / Role
+                </label>
+                <select
+                  value={customRole}
+                  onChange={(e) => setCustomRole(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                >
+                  <option value="FOUNDER">Founder (Building a Startup)</option>
+                  <option value="COFOUNDER">Co-Founder (Seeking Synergy)</option>
+                  <option value="INVESTOR">Investor (Angel / VC Backer)</option>
+                  <option value="MARKETER">Marketer (Growth Specialist)</option>
+                  <option value="DEVELOPER">Developer (Engineer / Tech)</option>
+                  <option value="DESIGNER">Designer (UI/UX / Product)</option>
+                  <option value="MENTOR">Mentor (Advisor / Coach)</option>
+                </select>
               </div>
               <div className="flex items-center gap-2 pt-1">
                 <button
@@ -255,7 +274,7 @@ export const GoogleAccountChooserModal: React.FC<GoogleAccountChooserModalProps>
                   disabled={submitting}
                   className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-sm transition-all cursor-pointer"
                 >
-                  {submitting ? 'Signing in...' : 'Sign in with this account'}
+                  {submitting ? 'Signing in...' : 'Sign In & Save to Network'}
                 </button>
                 <button
                   type="button"
@@ -271,7 +290,7 @@ export const GoogleAccountChooserModal: React.FC<GoogleAccountChooserModalProps>
 
         {/* Footer Disclaimer */}
         <div className="p-4 bg-slate-50/70 dark:bg-slate-950/40 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 text-center leading-relaxed">
-          To continue, Google will share your name, email address, and profile picture with StartupZ.
+          Saves your account with username and role to the live StartupZ database.
         </div>
       </div>
     </div>

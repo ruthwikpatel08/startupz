@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { api } from '../../services/api';
+import { api, isDemoRecord } from '../../services/api';
 import { User, Investor } from '../../types';
-import { VerificationBadge } from '../../components/common/Badge';
+import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
+import { StartupConnectionModal } from '../../components/common/StartupConnectionModal';
 import { EmptyState } from '../../components/common/EmptyState';
+import { supabase } from '../../lib/supabase';
 import {
   Users,
   Search,
@@ -21,35 +23,37 @@ import {
   Rocket,
   Megaphone,
   BriefcaseBusiness,
+  X,
 } from 'lucide-react';
-
-import {
-  FALLBACK_BUILDERS,
-  FALLBACK_INVESTORS,
-} from '../../data/curatedFallbackData';
 
 export const FindCoFounderPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const rawCategory = (searchParams.get('category') || 'cofounders').toLowerCase();
+  const rawCategory = (searchParams.get('category') || 'all').toLowerCase();
   const currentCategory = rawCategory === 'co-founders' ? 'cofounders' : rawCategory;
 
-  const [matches, setMatches] = useState<User[]>([]);
+  const [matches, setMatches] = useState<any[]>([]);
   const [investors, setInvestors] = useState<Investor[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters for People
+  // Search input state
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+
+  // Filter States
   const [targetRole, setTargetRole] = useState('ALL');
   const [industry, setIndustry] = useState('ALL');
   const [availability, setAvailability] = useState('ALL');
 
-  // Filters for Investors
+  // Investor specific filters
   const [investorSearch, setInvestorSearch] = useState('');
   const [investorType, setInvestorType] = useState('ALL');
   const [investorStage, setInvestorStage] = useState('ALL');
 
+  // Modals
   const [connectUser, setConnectUser] = useState<any | null>(null);
+  const [startupConnectUser, setStartupConnectUser] = useState<any | null>(null);
 
   const categories = [
+    { label: 'All Members', value: 'all', icon: Users, hint: 'All registered platform members' },
     { label: 'Founders', value: 'founders', icon: Rocket, hint: 'Active founders building startups' },
     { label: 'Co-Founders', value: 'cofounders', icon: Users, hint: 'Builders seeking synergy' },
     { label: 'Marketers', value: 'marketers', icon: Megaphone, hint: 'Growth & demand specialists' },
@@ -71,30 +75,85 @@ export const FindCoFounderPage: React.FC = () => {
         if (investorSearch) params.append('search', investorSearch);
         if (investorType !== 'ALL') params.append('investorType', investorType);
         if (investorStage !== 'ALL') params.append('preferredStages', investorStage);
-        const res = await api.getInvestors(params.toString());
-        if (res.investors && res.investors.length > 0) {
-          setInvestors(res.investors);
-        } else {
-          // Fallback to verified investors
-          const filtered = FALLBACK_INVESTORS.filter((inv) => {
-            if (
-              investorSearch &&
-              !`${inv.organization} ${inv.industries} ${inv.portfolio}`
-                .toLowerCase()
-                .includes(investorSearch.toLowerCase())
-            ) {
-              return false;
-            }
-            if (investorType !== 'ALL' && inv.investorType !== investorType) {
-              return false;
-            }
-            if (investorStage !== 'ALL' && !inv.preferredStages.includes(investorStage)) {
-              return false;
-            }
-            return true;
-          });
-          setInvestors(filtered);
+
+        let loadedInvestors: any[] = [];
+        try {
+          const res = await api.getInvestors(params.toString());
+          if (res.investors && res.investors.length > 0) {
+            loadedInvestors = res.investors;
+          }
+        } catch {
+          // Backend loading fallback
         }
+
+        // Also query live Supabase profiles for real investor accounts
+        try {
+          const { data: supaInvestors } = await supabase
+            .from('profiles')
+            .select('*')
+            .or('preferred_role.ilike.%investor%,skills.ilike.%investor%,skills.ilike.%investing%,headline.ilike.%investor%');
+
+          if (supaInvestors && supaInvestors.length > 0) {
+            const mapped = supaInvestors.map((p) => ({
+              id: p.id || p.user_id,
+              organization: p.full_name || 'Angel Investor',
+              investorType: 'Angel / Early Investor',
+              preferredStages: 'Pre-Seed, Seed',
+              industries: p.industries || p.skills || 'Technology, Artificial Intelligence, SaaS',
+              location: p.location || 'Remote',
+              about: p.bio || p.headline || 'Active startup investor in the StartupZ ecosystem.',
+              isVerified: true,
+              minCheckSize: '$25K',
+              maxCheckSize: '$250K',
+              user: {
+                id: p.user_id,
+                email: p.email,
+                role: 'INVESTOR',
+                profile: {
+                  fullName: p.full_name,
+                  username: p.username || p.email?.split('@')[0],
+                  avatar: p.avatar,
+                  headline: p.headline,
+                  location: p.location,
+                },
+              },
+            }));
+
+            // Merge unique with Supabase real investors FIRST
+            const supaInvIds = new Set(mapped.map((i: any) => i.id || i.user?.id));
+            const backendInvOnly = loadedInvestors.filter(
+              (i: any) => !supaInvIds.has(i.id || i.user?.id) && !isDemoRecord(i)
+            );
+            loadedInvestors = [...mapped, ...backendInvOnly];
+          }
+        } catch (supaErr) {
+          console.warn('Supabase investor query notice:', supaErr);
+        }
+
+        // Apply filters including searchQuery and investorSearch
+        const term = (investorSearch || searchQuery).trim().toLowerCase().replace(/^@/, '');
+        const filtered = loadedInvestors.filter((inv) => {
+          if (isDemoRecord(inv)) return false;
+
+          if (term) {
+            const org = (inv.organization || '').toLowerCase();
+            const ind = (inv.industries || '').toLowerCase();
+            const abt = (inv.about || '').toLowerCase();
+            const un = (inv.user?.profile?.username || inv.user?.email?.split('@')[0] || '').toLowerCase();
+            if (!org.includes(term) && !ind.includes(term) && !abt.includes(term) && !un.includes(term)) {
+              return false;
+            }
+          }
+          if (investorType !== 'ALL' && inv.investorType !== investorType) {
+            return false;
+          }
+          if (investorStage !== 'ALL' && !inv.preferredStages.includes(investorStage)) {
+            return false;
+          }
+          return true;
+        });
+
+        setInvestors(filtered);
       } else {
         const params = new URLSearchParams();
         params.append('category', currentCategory);
@@ -102,34 +161,108 @@ export const FindCoFounderPage: React.FC = () => {
         if (industry !== 'ALL') params.append('industry', industry);
         if (availability !== 'ALL') params.append('availability', availability);
 
-        const res = await api.getCofounderMatches(params.toString());
-        if (res.matches && res.matches.length > 0) {
-          setMatches(res.matches);
-        } else {
-          // Fallback to verified builders for this category
-          const pool = FALLBACK_BUILDERS[currentCategory] || FALLBACK_BUILDERS['cofounders'] || [];
-          const filtered = pool.filter((cand) => {
-            if (targetRole !== 'ALL') {
-              const roleMatch = (
-                cand.profile?.headline ||
-                cand.profile?.preferredRole ||
-                cand.role ||
-                ''
-              ).toLowerCase();
-              if (!roleMatch.includes(targetRole.toLowerCase())) return false;
-            }
-            return true;
-          });
-          setMatches(filtered);
+        let loadedMatches: any[] = [];
+        try {
+          const res = await api.getCofounderMatches(params.toString());
+          if (res.matches && res.matches.length > 0) {
+            loadedMatches = res.matches;
+          }
+        } catch {
+          // Backend load fallback
         }
+
+        // Also query live Supabase profiles table to guarantee real registered users are displayed
+        try {
+          let query = supabase.from('profiles').select('*');
+          if (currentCategory === 'founders') {
+            query = query.or('preferred_role.ilike.%founder%,open_to.ilike.%founder%');
+          } else if (currentCategory === 'cofounders') {
+            query = query.or('preferred_role.ilike.%co-founder%,open_to.ilike.%co-founder%,preferred_role.ilike.%cofounder%');
+          } else if (currentCategory === 'marketers') {
+            query = query.or('preferred_role.ilike.%market%,skills.ilike.%marketing%,skills.ilike.%growth%');
+          } else if (currentCategory === 'other') {
+            query = query.or('preferred_role.ilike.%developer%,preferred_role.ilike.%designer%,preferred_role.ilike.%engineer%,skills.ilike.%engineer%,skills.ilike.%design%,skills.ilike.%tech%');
+          }
+
+          const { data: supaProfiles } = await query;
+          if (supaProfiles && supaProfiles.length > 0) {
+            const mapped = supaProfiles.map((p) => {
+              const uName = p.username || (p.email ? p.email.split('@')[0] : 'user');
+              return {
+                id: p.user_id || p.id,
+                email: p.email,
+                role: (p.preferred_role || 'FOUNDER').toUpperCase(),
+                verificationBadge: p.auth_provider === 'google' ? 'Verified via Google' : 'Verified Member',
+                matchPercentage: 92,
+                matchExplanation: `Verified ${p.preferred_role || 'member'} active on StartupZ with complementary skill synergy.`,
+                profile: {
+                  id: p.id,
+                  userId: p.user_id,
+                  fullName: p.full_name,
+                  username: uName,
+                  headline: p.headline || `${p.preferred_role || 'Startup Builder'} | Network`,
+                  location: p.location || 'Remote',
+                  bio: p.bio,
+                  avatar: p.avatar,
+                  skills: p.skills || 'Startup Strategy, Product Engineering, Early Growth',
+                  preferredRole: p.preferred_role,
+                  availability: p.availability || 'Full-time',
+                  openTo: p.open_to,
+                },
+              };
+            });
+
+            // Merge unique with Supabase real profiles FIRST
+            const supaIds = new Set(mapped.map((m) => m.id));
+            const backendOnly = loadedMatches.filter((m: any) => !supaIds.has(m.id) && !isDemoRecord(m));
+            loadedMatches = [...mapped, ...backendOnly];
+          }
+        } catch (supaErr) {
+          console.warn('Supabase profiles query notice:', supaErr);
+        }
+
+        // Apply searchQuery and targetRole filters
+        const qTerm = searchQuery.trim().toLowerCase().replace(/^@/, '');
+        const filtered = loadedMatches.filter((cand) => {
+          if (isDemoRecord(cand)) return false;
+
+          if (qTerm) {
+            const uname = (cand.profile?.username || cand.email?.split('@')[0] || '').toLowerCase();
+            const fname = (cand.profile?.fullName || '').toLowerCase();
+            const email = (cand.email || '').toLowerCase();
+            const skills = (cand.profile?.skills || '').toLowerCase();
+            const headline = (cand.profile?.headline || '').toLowerCase();
+            const prefRole = (cand.profile?.preferredRole || cand.role || '').toLowerCase();
+
+            const match =
+              uname.includes(qTerm) ||
+              fname.includes(qTerm) ||
+              email.includes(qTerm) ||
+              skills.includes(qTerm) ||
+              headline.includes(qTerm) ||
+              prefRole.includes(qTerm);
+
+            if (!match) return false;
+          }
+
+          if (targetRole !== 'ALL') {
+            const roleMatch = (
+              cand.profile?.headline ||
+              cand.profile?.preferredRole ||
+              cand.role ||
+              ''
+            ).toLowerCase();
+            if (!roleMatch.includes(targetRole.toLowerCase())) return false;
+          }
+          return true;
+        });
+
+        setMatches(filtered);
       }
     } catch (err) {
-      console.warn('Backend load returned warning, using curated fallback:', err);
-      if (currentCategory === 'investors') {
-        setInvestors(FALLBACK_INVESTORS);
-      } else {
-        setMatches(FALLBACK_BUILDERS[currentCategory] || FALLBACK_BUILDERS['cofounders'] || []);
-      }
+      console.error('Failed to load category data:', err);
+      setMatches([]);
+      setInvestors([]);
     } finally {
       setLoading(false);
     }
@@ -137,99 +270,115 @@ export const FindCoFounderPage: React.FC = () => {
 
   useEffect(() => {
     fetchCategoryData();
-  }, [currentCategory, targetRole, industry, availability, investorSearch, investorType, investorStage]);
+  }, [currentCategory, searchQuery, targetRole, industry, availability, investorSearch, investorType, investorStage]);
 
   const targetRoles = [
     { label: 'All Roles', value: 'ALL' },
-    { label: 'Technical Co-Founder', value: 'Technical' },
-    { label: 'Business Co-Founder', value: 'Business' },
-    { label: 'Marketing Co-Founder', value: 'Marketing' },
-    { label: 'Design Co-Founder', value: 'Design' },
-    { label: 'Operations Co-Founder', value: 'Operations' },
-    { label: 'Finance Co-Founder', value: 'Finance' },
+    { label: 'Technical / CTO', value: 'Technical' },
+    { label: 'Product / CEO', value: 'Product' },
+    { label: 'Growth / Marketing', value: 'Marketing' },
+    { label: 'Operations / COO', value: 'Operations' },
+    { label: 'Design / UX', value: 'Design' },
   ];
 
-  const investorTypes = ['ALL', 'Angel', 'Venture Capital', 'Syndicate', 'Accelerator'];
-  const investorStages = ['ALL', 'Pre-Seed', 'Seed', 'Series A', 'Growth'];
+  const industries = ['ALL', 'AgriTech', 'CleanTech', 'HealthTech', 'FinTech', 'EdTech', 'AI', 'Logistics', 'Accessibility', 'CyberSecurity', 'B2B SaaS'];
+  const availabilities = ['ALL', 'Full-time', 'Part-time', 'Evenings/Weekends', 'Advisory'];
+
+  const investorTypes = ['ALL', 'Angel', 'Pre-Seed Fund', 'Seed Fund', 'Venture Capital', 'Family Office', 'Corporate VC', 'Grant / Non-Dilutive'];
+  const investorStages = ['ALL', 'Pre-Seed', 'Seed', 'Series A', 'Series B', 'Grants', 'Idea / Prototype'];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-          {currentCategory === 'investors' ? (
-            <>
-              <TrendingUp className="text-emerald-500" size={28} /> Investor Directory & Angel Network
-            </>
-          ) : currentCategory === 'founders' ? (
-            <>
-              <Rocket className="text-brand-600" size={28} /> Founder Network & Startup Builders
-            </>
-          ) : currentCategory === 'marketers' ? (
-            <>
-              <Megaphone className="text-cyan-500" size={28} /> Growth Marketers & GTM Specialists
-            </>
-          ) : currentCategory === 'other' ? (
-            <>
-              <BriefcaseBusiness className="text-amber-500" size={28} /> Engineers, Designers & Startup Advisors
-            </>
-          ) : (
-            <>
-              <Users className="text-indigo-600" size={28} /> Algorithmic Co-Founder Matchmaking
-            </>
-          )}
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
-          {currentCategory === 'investors'
-            ? 'Discover vetted venture funds, syndicates, and angel investors actively backing early-stage startups.'
-            : currentCategory === 'founders'
-            ? 'Connect with verified startup founders actively building innovative ventures across emerging markets.'
-            : currentCategory === 'marketers'
-            ? 'Discover experienced growth leads, demand marketers, and customer acquisition architects.'
-            : currentCategory === 'other'
-            ? 'Find product designers, AI researchers, fractional CFOs, and verified startup mentors.'
-            : 'Connect with vetted builders seeking complementary skill sets. Ranked by our proprietary founder synergy index.'}
-        </p>
-      </div>
-
-      {/* Category Tabs: Founders, Co-Founders, Marketers, Investors, Other */}
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-          Select Category:
-        </label>
-        <div className="flex flex-wrap gap-2.5">
-          {categories.map((cat) => {
-            const Icon = cat.icon;
-            const isSelected = currentCategory === cat.value;
-            return (
-              <button
-                key={cat.value}
-                onClick={() => handleSelectCategory(cat.value)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                  isSelected
-                    ? 'bg-brand-600 text-white shadow-md shadow-brand-500/25 ring-2 ring-brand-500/30'
-                    : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-brand-400'
-                }`}
-              >
-                <Icon size={14} className={isSelected ? 'text-white' : 'text-slate-400'} />
-                <span>{cat.label}</span>
-              </button>
-            );
-          })}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2.5">
+            <Users className="text-brand-600" size={28} /> Network Directory & Co-Founders
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Real registered founders, co-founders, investors, and startup partners across categories.
+          </p>
         </div>
+
+        <Link
+          to="/profile"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md transition-all shrink-0"
+        >
+          <Sparkles size={16} /> Update My Category Profile
+        </Link>
       </div>
 
-      {/* Category-Specific Toolbar / Filters */}
+      {/* Primary Category Selector Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        {categories.map((cat) => {
+          const Icon = cat.icon;
+          const isSelected = currentCategory === cat.value;
+          return (
+            <button
+              key={cat.value}
+              onClick={() => handleSelectCategory(cat.value)}
+              className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+                isSelected
+                  ? 'bg-brand-500 text-white border-brand-600 shadow-lg shadow-brand-500/25 ring-2 ring-brand-500/30'
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-brand-300 dark:hover:border-slate-700'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className={`p-2 rounded-xl ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
+                  <Icon size={18} />
+                </span>
+                {isSelected && (
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-white/20 text-white">
+                    Active
+                  </span>
+                )}
+              </div>
+              <div>
+                <div className={`font-bold text-sm leading-tight ${isSelected ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
+                  {cat.label}
+                </div>
+                <div className={`text-[10px] mt-0.5 line-clamp-1 ${isSelected ? 'text-brand-100' : 'text-slate-400'}`}>
+                  {cat.hint}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Real User & Username Search Input Bar */}
+      <div className="relative">
+        <Search size={18} className="absolute left-4 top-3.5 text-brand-500 pointer-events-none" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search any user by @username (e.g. ruthwik, legacy, lavan), name, or skills..."
+          className="w-full pl-11 pr-10 py-3 text-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-brand-500 text-slate-900 dark:text-white shadow-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all font-medium"
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+          >
+            <X size={16} />
+          </button>
+        )}
+      </div>
+
+      {/* Category Specific Filters */}
       {currentCategory === 'investors' ? (
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm grid grid-cols-1 sm:grid-cols-3 gap-3">
+        /* Investor Filters */
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="relative">
-            <Search size={16} className="absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
+            <Search size={16} className="absolute left-3.5 top-3 text-slate-400" />
             <input
               type="text"
+              placeholder="Search investor, fund, portfolio..."
               value={investorSearch}
               onChange={(e) => setInvestorSearch(e.target.value)}
-              placeholder="Search investors, thesis, portfolio..."
               className="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
@@ -238,7 +387,7 @@ export const FindCoFounderPage: React.FC = () => {
             <select
               value={investorType}
               onChange={(e) => setInvestorType(e.target.value)}
-              className="w-full py-2 px-3 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+              className="w-full py-2 px-3 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               {investorTypes.map((t) => (
                 <option key={t} value={t}>
@@ -252,7 +401,7 @@ export const FindCoFounderPage: React.FC = () => {
             <select
               value={investorStage}
               onChange={(e) => setInvestorStage(e.target.value)}
-              className="w-full py-2 px-3 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
+              className="w-full py-2 px-3 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               {investorStages.map((st) => (
                 <option key={st} value={st}>
@@ -266,7 +415,7 @@ export const FindCoFounderPage: React.FC = () => {
         /* "I am looking for" Filter Pills Row for People */
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-            I am looking for:
+            Filter by Desired Skill / Role:
           </label>
           <div className="flex flex-wrap gap-2">
             {targetRoles.map((r) => {
@@ -301,247 +450,262 @@ export const FindCoFounderPage: React.FC = () => {
         investors.length === 0 ? (
           <EmptyState
             icon={TrendingUp}
-            title="No investors match your filters"
-            description="Try changing your search terms or clearing your stage and investor type filters."
-            actionLabel="Reset Investor Filters"
-            onAction={() => {
-              setInvestorSearch('');
-              setInvestorType('ALL');
-              setInvestorStage('ALL');
-            }}
+            title="No investors registered in this category yet"
+            description="Be the first to join as an active investor or angel backer on StartupZ!"
+            actionLabel="Join as Investor"
+            onAction={() => handleSelectCategory('founders')}
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {investors.map((inv) => (
-              <div
-                key={inv.id}
-                className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-4"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={
-                          inv.user?.profile?.avatar ||
-                          `https://api.dicebear.com/7.x/initials/svg?seed=${inv.organization}`
-                        }
-                        alt=""
-                        className="w-12 h-12 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shadow-xs"
-                      />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-base text-slate-900 dark:text-white truncate">
-                            {inv.organization}
-                          </h3>
-                          <VerificationBadge type={inv.isVerified ? 'Verified Investor' : null} />
-                          {inv.website && (
-                            <a
-                              href={inv.website}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-slate-400 hover:text-brand-500 transition-colors p-0.5 rounded"
-                              title="Visit Official Website"
-                            >
-                              <ExternalLink size={13} />
-                            </a>
-                          )}
+            {investors.map((inv) => {
+              const targetUserId = inv.user?.id || inv.id;
+              const targetUserObj = inv.user || { id: inv.id, email: '', profile: { fullName: inv.organization } };
+              return (
+                <div
+                  key={inv.id}
+                  className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-4"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={
+                            inv.user?.profile?.avatar ||
+                            `https://api.dicebear.com/7.x/initials/svg?seed=${inv.organization}&backgroundColor=4f46e5,06b6d4,10b981`
+                          }
+                          alt=""
+                          className="w-12 h-12 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shadow-xs"
+                        />
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-bold text-base text-slate-900 dark:text-white truncate">
+                              {inv.organization}
+                            </h3>
+                            {inv.user?.profile?.username && (
+                              <span className="text-xs text-brand-600 dark:text-brand-400 font-mono font-semibold">
+                                @{inv.user.profile.username}
+                              </span>
+                            )}
+                            <RoleBadge role="INVESTOR" size="sm" />
+                            <VerificationBadge badge="Verified Investor" isVerified={true} size="sm" />
+                          </div>
+                          <p className="text-xs text-slate-500">
+                            {inv.investorType} • {inv.location}
+                          </p>
                         </div>
-                        <p className="text-xs text-slate-500">
-                          {inv.investorType} • {inv.location}
-                        </p>
                       </div>
-                    </div>
 
-                    <span className="text-xs font-black px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400">
-                      {inv.minCheckSize && inv.maxCheckSize
-                        ? `${inv.minCheckSize} - ${inv.maxCheckSize}`
-                        : 'Active Checks'}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-3">
-                    {inv.about}
-                  </p>
-
-                  <div className="space-y-1.5 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider">
-                        Stages:
+                      <span className="text-xs font-black px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400">
+                        {inv.minCheckSize && inv.maxCheckSize
+                          ? `${inv.minCheckSize} - ${inv.maxCheckSize}`
+                          : 'Active Capital'}
                       </span>
-                      <span className="text-slate-700 dark:text-slate-200 font-semibold">{inv.preferredStages}</span>
                     </div>
-                    {inv.portfolio && (
+
+                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-3">
+                      {inv.about}
+                    </p>
+
+                    <div className="space-y-1.5 text-xs">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-slate-400 text-[10px] uppercase tracking-wider">
-                          Portfolio:
+                          Stages:
                         </span>
-                        <span className="text-slate-500 truncate">{inv.portfolio}</span>
+                        <span className="text-slate-700 dark:text-slate-200 font-semibold">{inv.preferredStages}</span>
                       </div>
-                    )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {(inv.industries || '').split(',').map((ind) => ind.trim()).filter(Boolean).map((ind, idx) => (
+                        <span
+                          key={idx}
+                          className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                        >
+                          {ind}
+                        </span>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {(inv.industries || '').split(',').map((ind) => ind.trim()).filter(Boolean).map((ind, idx) => (
-                      <span
-                        key={idx}
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-xs text-slate-400 font-medium">{inv.location}</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setStartupConnectUser(targetUserObj)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900 hover:bg-brand-100 transition-colors"
+                        title="Pitch your startup venture"
                       >
-                        {ind}
-                      </span>
-                    ))}
+                        <Rocket size={13} /> Startup Connection
+                      </button>
+                      <button
+                        onClick={() => setConnectUser(targetUserObj)}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-500 transition-all shadow-xs"
+                      >
+                        <UserPlus size={13} /> Connect
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                  <span className="text-xs text-slate-400 font-medium">{inv.location}</span>
-                  <div className="flex items-center gap-2">
-                    {inv.website && (
-                      <a
-                        href={inv.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-800/60 hover:bg-brand-100 transition-colors"
-                      >
-                        <ExternalLink size={13} /> Official Portal
-                      </a>
-                    )}
-                    <Link
-                      to="/investors"
-                      className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-500 transition-all shadow-xs"
-                    >
-                      Pitch Venture
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )
       ) : matches.length === 0 ? (
         /* People Empty State */
         <EmptyState
           icon={Users}
-          title={`No matching ${currentCategory} found`}
-          description="Try selecting a different role or resetting your filters to explore builders across the ecosystem."
-          actionLabel="Reset Role Filter"
-          onAction={() => setTargetRole('ALL')}
+          title={`No real users in "${currentCategory}" category yet`}
+          description="Be the first to join or invite other founders and builders to StartupZ!"
+          actionLabel="View All Members"
+          onAction={() => handleSelectCategory('all')}
         />
       ) : (
         /* People Grid */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {matches.map((cand) => (
-            <div
-              key={cand.id}
-              className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-4"
-            >
-              <div className="space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3.5">
-                    <img
-                      src={
-                        cand.profile?.avatar ||
-                        `https://api.dicebear.com/7.x/initials/svg?seed=${cand.profile?.fullName}`
-                      }
-                      alt=""
-                      className="w-14 h-14 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shadow-xs"
-                    />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Link
-                          to={`/profile/${cand.id}`}
-                          className="font-bold text-base text-slate-900 dark:text-white hover:text-brand-600 truncate block"
-                        >
-                          {cand.profile?.fullName}
-                        </Link>
-                        <VerificationBadge type={cand.verificationBadge} />
+          {matches.map((cand) => {
+            const username = cand.profile?.username || cand.email?.split('@')[0] || 'user';
+            const displayName = cand.profile?.fullName || cand.email?.split('@')[0] || 'Builder';
+            const categoryRole = cand.profile?.preferredRole || cand.role || 'MEMBER';
+
+            return (
+              <div
+                key={cand.id}
+                className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between space-y-4"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3.5">
+                      <img
+                        src={
+                          cand.profile?.avatar ||
+                          `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}&backgroundColor=4f46e5,06b6d4,10b981`
+                        }
+                        alt={displayName}
+                        className="w-14 h-14 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shadow-xs"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link
+                            to={`/profile/${cand.id}`}
+                            className="font-bold text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                          >
+                            {displayName}
+                          </Link>
+                          <span className="text-xs text-brand-600 dark:text-brand-400 font-mono font-semibold">
+                            @{username}
+                          </span>
+                          <RoleBadge role={categoryRole} size="sm" />
+                          <VerificationBadge badge={cand.verificationBadge} isVerified={true} size="sm" />
+                        </div>
+                        <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{cand.profile?.headline}</p>
+                        <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-1">
+                          <span className="flex items-center gap-1">
+                            <MapPin size={11} /> {cand.profile?.location || 'Remote'}
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={11} /> {cand.profile?.availability || 'Full-time'}
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-xs text-slate-500 line-clamp-1">{cand.profile?.headline}</p>
-                      <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
-                        <span className="flex items-center gap-1">
-                          <MapPin size={11} /> {cand.profile?.location || 'Remote'}
-                        </span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Clock size={11} /> {cand.profile?.availability || 'Full-time'}
-                        </span>
-                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className="inline-flex items-center gap-1 text-xs font-black px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 shadow-xs">
+                        <Sparkles size={13} /> {cand.matchPercentage || 92}% Match
+                      </span>
                     </div>
                   </div>
 
-                  <div className="text-right shrink-0">
-                    <span className="inline-flex items-center gap-1 text-xs font-black px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 shadow-xs">
-                      <Sparkles size={13} /> {cand.matchPercentage}% Match
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 text-xs text-indigo-900 dark:text-indigo-200">
-                  <span className="font-bold text-[10px] uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block mb-1">
-                    Synergy Analysis
-                  </span>
-                  <p className="leading-relaxed">{cand.matchExplanation}</p>
-                </div>
-
-                {cand.profile?.bio && (
-                  <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
-                    {cand.profile.bio}
-                  </p>
-                )}
-
-                {cand.profile?.skills && (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {cand.profile.skills.split(',').slice(0, 4).map((sk, idx) => (
-                      <span
-                        key={idx}
-                        className="text-[11px] font-semibold px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                      >
-                        {sk.trim()}
+                  {cand.matchExplanation && (
+                    <div className="p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 text-xs text-indigo-900 dark:text-indigo-200">
+                      <span className="font-bold text-[10px] uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block mb-1">
+                        Category Alignment & Synergy
                       </span>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      <p className="leading-relaxed">{cand.matchExplanation}</p>
+                    </div>
+                  )}
 
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <span className="text-xs text-slate-400 font-medium">
-                  {cand.profile?.startupExperience || 'Early Builder'}
-                </span>
+                  {cand.profile?.bio && (
+                    <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                      {cand.profile.bio}
+                    </p>
+                  )}
 
-                <div className="flex items-center gap-2">
-                  <Link
-                    to={`/profile/${cand.id}`}
-                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  >
-                    View Profile
-                  </Link>
-
-                  {cand.connectionStatus?.status === 'ACCEPTED' ? (
-                    <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950">
-                      <Check size={14} /> Connected
-                    </span>
-                  ) : cand.connectionStatus?.status === 'PENDING' ? (
-                    <span className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-950">
-                      Request Pending
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => setConnectUser(cand)}
-                      className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-sm"
-                    >
-                      <UserPlus size={14} /> Connect
-                    </button>
+                  {cand.profile?.skills && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {cand.profile.skills.split(',').slice(0, 4).map((sk: string, idx: number) => (
+                        <span
+                          key={idx}
+                          className="text-[11px] font-semibold px-2.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                        >
+                          {sk.trim()}
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
+
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-xs text-slate-400 font-medium">
+                    {cand.profile?.startupExperience || 'Active Builder'}
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={`/profile/${cand.id}`}
+                      className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                      View Profile
+                    </Link>
+
+                    {/* Startup Connection Button */}
+                    <button
+                      onClick={() => setStartupConnectUser(cand)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900 hover:bg-brand-100 transition-colors"
+                      title="Propose Co-Founding a Startup"
+                    >
+                      <Rocket size={13} /> Startup Connection
+                    </button>
+
+                    {/* User Connection Button */}
+                    {cand.connectionStatus?.status === 'ACCEPTED' ? (
+                      <span className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950">
+                        <Check size={14} /> Connected
+                      </span>
+                    ) : cand.connectionStatus?.status === 'PENDING' ? (
+                      <span className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-950">
+                        Request Pending
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setConnectUser(cand)}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-sm"
+                      >
+                        <UserPlus size={14} /> Connect
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
+      {/* Connect Modal */}
       <ConnectModal
         isOpen={!!connectUser}
         onClose={() => setConnectUser(null)}
         targetUser={connectUser}
+        onSuccess={fetchCategoryData}
+      />
+
+      {/* Startup Proposal Connection Modal */}
+      <StartupConnectionModal
+        isOpen={!!startupConnectUser}
+        onClose={() => setStartupConnectUser(null)}
+        targetUser={startupConnectUser}
         onSuccess={fetchCategoryData}
       />
     </div>

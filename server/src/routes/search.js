@@ -38,11 +38,14 @@ router.get('/', optionalAuth, async (req, res) => {
             where: {
               isSuspended: false,
               OR: [
+                { email: { contains: query } },
+                { role: { contains: query } },
                 { profile: { fullName: { contains: query } } },
                 { profile: { headline: { contains: query } } },
                 { profile: { skills: { contains: query } } },
                 { profile: { industries: { contains: query } } },
                 { profile: { location: { contains: query } } },
+                { profile: { preferredRole: { contains: query } } },
               ],
             },
             take: limitNum,

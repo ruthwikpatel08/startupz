@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Session, User as SupabaseAuthUser } from '@supabase/supabase-js';
 import { User } from '../types';
 import { supabase, mapSupabaseToAppUser, fetchUserProfile, upsertUserProfile, recordAuthProviderHint, resolveEmailOrUsername } from '../lib/supabase';
+import { api } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -93,6 +94,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setToken(currentSession.access_token);
       localStorage.setItem('startupz_user', JSON.stringify(appUser));
       localStorage.setItem('startupz_token', currentSession.access_token);
+
+      // 6. Sync to backend API for unified token and user persistence
+      try {
+        const syncRes = await api.syncAuth({
+          id: appUser.id,
+          email: appUser.email,
+          fullName: appUser.profile?.fullName,
+          role: appUser.role,
+          headline: appUser.profile?.headline,
+          location: appUser.profile?.location,
+          avatar: appUser.profile?.avatar,
+        });
+        if (syncRes && syncRes.token) {
+          setToken(syncRes.token);
+          localStorage.setItem('startupz_token', syncRes.token);
+        }
+      } catch {
+        // Backend offline / waking up
+      }
 
       return appUser;
     } catch (err) {
@@ -269,15 +289,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     setUser(appUser);
-    const mockToken = 'google_session_' + Date.now();
-    setToken(mockToken);
     localStorage.setItem('startupz_user', JSON.stringify(appUser));
-    localStorage.setItem('startupz_token', mockToken);
     recordAuthProviderHint(cleanEmail, 'google');
 
+    // 1. Sync to Supabase public.profiles
     try {
       await upsertUserProfile(userId, {
         full_name: cleanName,
+        username: cleanEmail.split('@')[0],
         headline: `${role} | Startup Builder`,
         location: 'Remote',
         avatar,
@@ -287,6 +306,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     } catch {
       // Non-blocking sync
+    }
+
+    // 2. Sync to Express Backend API
+    try {
+      const syncRes = await api.syncAuth({
+        id: userId,
+        email: cleanEmail,
+        fullName: cleanName,
+        role,
+        headline: `${role} | Startup Builder`,
+        location: 'Remote',
+        avatar,
+      });
+      if (syncRes && syncRes.token) {
+        setToken(syncRes.token);
+        localStorage.setItem('startupz_token', syncRes.token);
+      } else {
+        const mockToken = 'google_session_' + Date.now();
+        setToken(mockToken);
+        localStorage.setItem('startupz_token', mockToken);
+      }
+    } catch {
+      const mockToken = 'google_session_' + Date.now();
+      setToken(mockToken);
+      localStorage.setItem('startupz_token', mockToken);
     }
 
     return appUser;
@@ -382,16 +426,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     setUser(appUser);
-    const mockToken = 'pwd_session_' + Date.now();
-    setToken(mockToken);
     localStorage.setItem('startupz_user', JSON.stringify(appUser));
-    localStorage.setItem('startupz_token', mockToken);
     recordAuthProviderHint(resolvedEmail, 'email');
 
-    // Ensure profile row exists in Supabase
+    // 1. Ensure profile row exists in Supabase
     try {
       await upsertUserProfile(userId, {
         full_name: fullName,
+        username: resolvedEmail.split('@')[0],
         headline: `${role} | Startup Builder`,
         location: 'Remote',
         avatar,
@@ -401,6 +443,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     } catch {
       // Non-blocking
+    }
+
+    // 2. Sync to Express Backend API
+    try {
+      const syncRes = await api.syncAuth({
+        id: userId,
+        email: resolvedEmail,
+        fullName,
+        role,
+        headline: `${role} | Startup Builder`,
+        location: 'Remote',
+        avatar,
+      });
+      if (syncRes && syncRes.token) {
+        setToken(syncRes.token);
+        localStorage.setItem('startupz_token', syncRes.token);
+      } else {
+        const mockToken = 'pwd_session_' + Date.now();
+        setToken(mockToken);
+        localStorage.setItem('startupz_token', mockToken);
+      }
+    } catch {
+      const mockToken = 'pwd_session_' + Date.now();
+      setToken(mockToken);
+      localStorage.setItem('startupz_token', mockToken);
     }
 
     return appUser;

@@ -127,13 +127,6 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  // Demo account quick filler for evaluators
-  const handleSelectDemoAccount = (demoEmail: string) => {
-    setIdentifier(demoEmail);
-    setPassword('Password123!');
-    setError(null);
-  };
-
   const isEmailUnconfirmed = error?.includes('verify your email') || error?.includes('verification link');
 
   return (
