@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { User, Profile } from '../../types';
@@ -41,13 +41,27 @@ import {
 
 export const ProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const { user: currentUser, updateUser } = useAuth();
   const navigate = useNavigate();
 
-  const isMe = !id || id === currentUser?.id;
-  const targetId = id || currentUser?.id;
-
   const [profileUser, setProfileUser] = useState<User | null>(null);
+
+  const isMe = Boolean(
+    !id ||
+    id === 'me' ||
+    id === currentUser?.id ||
+    id === currentUser?.profile?.id ||
+    (currentUser?.profile?.username && id.toLowerCase() === currentUser.profile.username.toLowerCase()) ||
+    (currentUser?.email && id.toLowerCase() === currentUser.email.toLowerCase()) ||
+    (currentUser?.email && id.toLowerCase() === currentUser.email.split('@')[0].toLowerCase()) ||
+    (currentUser && profileUser && (
+      currentUser.id === profileUser.id ||
+      (currentUser.email && profileUser.email && currentUser.email.toLowerCase() === profileUser.email.toLowerCase())
+    ))
+  );
+
+  const targetId = id && id !== 'me' ? id : currentUser?.id;
   const [connectionsCount, setConnectionsCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
@@ -56,6 +70,40 @@ export const ProfilePage: React.FC = () => {
   const [formData, setFormData] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const handleOpenEdit = () => {
+    const currentP = profileUser?.profile || currentUser?.profile;
+    if (currentP) {
+      setFormData({
+        avatar: currentP.avatar || '',
+        coverImage: currentP.coverImage || '',
+        fullName: currentP.fullName || '',
+        headline: currentP.headline || '',
+        location: currentP.location || '',
+        bio: currentP.bio || '',
+        skills: currentP.skills || '',
+        startupInterests: currentP.startupInterests || '',
+        industries: currentP.industries || '',
+        preferredRole: currentP.preferredRole || '',
+        availability: currentP.availability || 'Full-time',
+        startupExperience: currentP.startupExperience || '',
+        achievements: currentP.achievements || '',
+        education: currentP.education || '',
+        githubUrl: currentP.githubUrl || '',
+        linkedinUrl: currentP.linkedinUrl || '',
+        websiteUrl: currentP.websiteUrl || '',
+        openTo: currentP.openTo || 'Co-Founder, Startup Team, Mentorship',
+      });
+    }
+    setEditOpen(true);
+  };
+
+  // Auto-open edit modal if requested via URL (?edit=true)
+  useEffect(() => {
+    if (searchParams.get('edit') === 'true' && isMe) {
+      handleOpenEdit();
+    }
+  }, [searchParams, isMe, profileUser]);
 
   // Modals
   const [connectOpen, setConnectOpen] = useState(false);
@@ -381,10 +429,10 @@ export const ProfilePage: React.FC = () => {
               )}
               {isMe && (
                 <button
-                  onClick={() => setEditOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white backdrop-blur-md text-xs font-semibold transition-all shadow-sm"
+                  onClick={handleOpenEdit}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white text-slate-900 text-xs font-bold transition-all shadow-md hover:bg-slate-100 active:scale-95 cursor-pointer"
                 >
-                  <Edit3 size={14} />
+                  <Edit3 size={14} className="text-[#4F46E5]" />
                   <span>Edit Profile</span>
                 </button>
               )}
@@ -397,7 +445,7 @@ export const ProfilePage: React.FC = () => {
               
               {/* Profile Photo (Partially Overlapping) */}
               <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 sm:gap-5 w-full md:w-auto">
-                <div className="relative shrink-0">
+                <div className="relative shrink-0 group">
                   {avatar ? (
                     <img
                       src={avatar}
@@ -408,6 +456,15 @@ export const ProfilePage: React.FC = () => {
                     <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-slate-900 shadow-md bg-indigo-50 dark:bg-slate-800 text-[#4F46E5] dark:text-indigo-400 flex items-center justify-center font-bold text-2xl sm:text-4xl">
                       {initials}
                     </div>
+                  )}
+                  {isMe && (
+                    <button
+                      onClick={handleOpenEdit}
+                      className="absolute bottom-0 right-0 p-2 rounded-full bg-[#4F46E5] text-white shadow-lg hover:bg-[#4338CA] active:scale-90 transition-transform cursor-pointer"
+                      title="Edit Profile Details"
+                    >
+                      <Edit3 size={14} />
+                    </button>
                   )}
                 </div>
 
@@ -475,13 +532,22 @@ export const ProfilePage: React.FC = () => {
                 )}
 
                 {isMe && (
-                  <button
-                    onClick={() => setMeetingOpen(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-[#4F46E5] dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800 hover:bg-indigo-100 transition-colors"
-                  >
-                    <Video size={16} />
-                    <span>Host Video Meeting</span>
-                  </button>
+                  <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+                    <button
+                      onClick={handleOpenEdit}
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-all shadow-md shadow-indigo-500/20 active:scale-95 cursor-pointer"
+                    >
+                      <Edit3 size={16} />
+                      <span>Edit Profile</span>
+                    </button>
+                    <button
+                      onClick={() => setMeetingOpen(true)}
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-[#4F46E5] dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800 hover:bg-indigo-100 transition-colors cursor-pointer"
+                    >
+                      <Video size={16} />
+                      <span>Host Meeting</span>
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -594,7 +660,7 @@ export const ProfilePage: React.FC = () => {
                   <p className="text-sm text-[#64748B] dark:text-slate-400 font-medium">No experience details added yet.</p>
                   {isMe && (
                     <button
-                      onClick={() => setEditOpen(true)}
+                      onClick={handleOpenEdit}
                       className="mt-2 text-xs font-bold text-[#4F46E5] hover:underline"
                     >
                       + Add Experience
@@ -628,7 +694,7 @@ export const ProfilePage: React.FC = () => {
                   <p className="text-sm text-[#64748B] dark:text-slate-400 font-medium">No education details listed.</p>
                   {isMe && (
                     <button
-                      onClick={() => setEditOpen(true)}
+                      onClick={handleOpenEdit}
                       className="mt-2 text-xs font-bold text-[#4F46E5] hover:underline"
                     >
                       + Add Education
@@ -892,6 +958,20 @@ export const ProfilePage: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Mobile Floating "Edit Profile" Button for Founder */}
+      {isMe && (
+        <div className="fixed sm:hidden bottom-5 right-5 z-40">
+          <button
+            onClick={handleOpenEdit}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold text-white bg-[#4F46E5] hover:bg-[#4338CA] shadow-2xl shadow-indigo-600/60 border border-indigo-400/40 active:scale-95 transition-all cursor-pointer"
+            aria-label="Edit Profile"
+          >
+            <Edit3 size={15} />
+            <span>Edit Profile</span>
+          </button>
+        </div>
+      )}
 
       {/* EDIT PROFILE MODAL */}
       {isMe && (

@@ -33,6 +33,7 @@ import {
   BriefcaseBusiness,
   Crown,
   LogIn,
+  Edit3,
 } from 'lucide-react';
 import { AIScoutModal } from '../ai/AIScoutModal';
 import { GlobalSearchModal } from '../search/GlobalSearchModal';
@@ -678,6 +679,21 @@ export const Navbar: React.FC = () => {
             <span>AI - Scout</span>
           </button>
 
+          {/* User Profile Quick Link on Mobile Slidebar */}
+          {user && (
+            <Link
+              to={`/profile/${user.id}`}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold shrink-0 shadow-xs transition-all ${
+                location.pathname.startsWith('/profile')
+                  ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-200 dark:border-indigo-800'
+                  : 'text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
+              }`}
+            >
+              <UserIcon size={12} className="text-indigo-500" />
+              <span>My Profile</span>
+            </Link>
+          )}
+
           {/* 2. Startups */}
           <Link
             to="/startups"
@@ -745,6 +761,45 @@ export const Navbar: React.FC = () => {
         {/* Mobile Drawer Navigation */}
         {mobileMenuOpen && (
           <div className="lg:hidden px-4 pt-3 pb-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4 max-h-[85vh] overflow-y-auto">
+            {/* Logged-In User Profile & Edit Card at Top of Mobile Drawer */}
+            {user && (
+              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-brand-50/60 dark:from-slate-800 dark:via-slate-800/90 dark:to-indigo-950/40 border border-indigo-100 dark:border-slate-700/80 shadow-xs space-y-3">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={user.profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
+                    alt={user.profile?.fullName || user.email}
+                    className="w-11 h-11 rounded-full object-cover border-2 border-[#4F46E5]/40 shadow-xs"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                      {user.profile?.fullName || 'Founder'}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                      {user.profile?.username ? `@${user.profile.username}` : user.email}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to={`/profile/${user.id}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-1.5 py-2 px-3 text-center text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl shadow-xs hover:border-[#4F46E5] transition-all"
+                  >
+                    <UserIcon size={13} className="text-[#4F46E5]" />
+                    <span>View Profile</span>
+                  </Link>
+                  <Link
+                    to={`/profile/${user.id}?edit=true`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-1.5 py-2 px-3 text-center text-xs font-bold text-white bg-[#4F46E5] hover:bg-[#4338CA] rounded-xl shadow-xs transition-all"
+                  >
+                    <Edit3 size={13} />
+                    <span>Edit Profile</span>
+                  </Link>
+                </div>
+              </div>
+            )}
+
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
@@ -910,20 +965,27 @@ export const Navbar: React.FC = () => {
               </div>
             ) : (
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                <div className="flex gap-2">
+                <div className="grid grid-cols-3 gap-1.5">
                   <Link
                     to="/startups/create"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex-1 py-2 text-center text-xs font-bold text-white bg-brand-600 rounded-xl"
+                    className="py-2 text-center text-xs font-bold text-white bg-brand-600 rounded-xl"
                   >
                     + Post Idea
                   </Link>
                   <Link
                     to={`/profile/${user.id}`}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-xl"
+                    className="py-2 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-xl"
                   >
                     Profile
+                  </Link>
+                  <Link
+                    to={`/profile/${user.id}?edit=true`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="py-2 text-center text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 rounded-xl"
+                  >
+                    Edit Profile
                   </Link>
                 </div>
                 <button
