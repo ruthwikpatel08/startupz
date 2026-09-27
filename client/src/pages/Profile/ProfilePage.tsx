@@ -428,6 +428,7 @@ export const ProfilePage: React.FC = () => {
           startup_interests: formData.startupInterests,
           industries: formData.industries,
           preferred_role: formData.preferredRole,
+          is_category_selected: true,
           availability: formData.availability,
           startup_experience: formData.startupExperience,
           achievements: formData.achievements,

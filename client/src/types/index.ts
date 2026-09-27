@@ -50,6 +50,7 @@ export interface Profile {
   achievements?: string | null;
   openTo?: string | null;
   profileCompletion?: number;
+  isCategorySelected?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

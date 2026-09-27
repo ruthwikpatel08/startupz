@@ -72,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           location: metadata.location || 'Remote',
           avatar,
           preferred_role: role,
+          is_category_selected: isGoogle ? false : true,
           auth_provider: isGoogle ? 'google' : 'email',
           email: authUser.email || '',
         });

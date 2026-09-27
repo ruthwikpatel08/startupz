@@ -135,9 +135,9 @@ export const AuthCallbackPage: React.FC = () => {
           // Check if profile exists in public.profiles
           const existingProfile = await fetchUserProfile(user.id);
 
-          // If existing profile has a preferred_role already, they are an existing user!
+          // If existing profile has already selected a category, they are an existing user!
           // Proceed directly to dashboard without interrupting them.
-          if (existingProfile && existingProfile.preferred_role) {
+          if (existingProfile && existingProfile.is_category_selected === true) {
             if (isSubscribed) {
               navigate('/dashboard', { replace: true });
             }
@@ -192,7 +192,7 @@ export const AuthCallbackPage: React.FC = () => {
             }
 
             const existing = await fetchUserProfile(user.id);
-            if (existing && existing.preferred_role) {
+            if (existing && existing.is_category_selected === true) {
               if (isSubscribed) {
                 navigate('/dashboard', { replace: true });
               }
@@ -273,6 +273,7 @@ export const AuthCallbackPage: React.FC = () => {
         location: cleanLocation,
         avatar,
         preferred_role: selectedRole,
+        is_category_selected: true,
         auth_provider: 'google',
         email: authUser.email || '',
         open_to: selectedRole === 'Co-Founders' ? 'Co-Founder,Startup Team' : 'Co-Founder,Startup Team,Investment',

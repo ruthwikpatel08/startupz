@@ -98,6 +98,7 @@ export function mapSupabaseToAppUser(
     achievements: profileRow?.achievements || '',
     openTo: profileRow?.open_to || 'Co-Founder,Startup Team,Investment',
     profileCompletion: profileRow?.profile_completion || 60,
+    isCategorySelected: profileRow?.is_category_selected === true,
     createdAt: profileRow?.created_at || authUser.created_at,
     updatedAt: profileRow?.updated_at || authUser.updated_at,
   };
@@ -164,6 +165,7 @@ export async function upsertUserProfile(
     website_url: string;
     open_to: string;
     profile_completion: number;
+    is_category_selected: boolean;
     auth_provider: string;
     email: string;
   }>
