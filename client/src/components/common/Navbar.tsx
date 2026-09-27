@@ -185,6 +185,7 @@ export const Navbar: React.FC = () => {
   }, [user, location.pathname]);
 
   const coFoundersDropdownItems = [
+    { name: 'All Members', categoryKey: 'all', href: '/cofounders?category=all', description: 'Browse all platform members', icon: Users },
     { name: 'Founders', categoryKey: 'founders', href: '/cofounders?category=founders', description: 'Active founders building startups', icon: Rocket },
     { name: 'Co-Founders', categoryKey: 'cofounders', href: '/cofounders?category=cofounders', description: 'Builders seeking synergy', icon: Users },
     { name: 'Marketers', categoryKey: 'marketers', href: '/cofounders?category=marketers', description: 'Growth & demand leads', icon: Megaphone },

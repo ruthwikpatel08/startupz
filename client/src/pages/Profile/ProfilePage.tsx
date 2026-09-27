@@ -1209,7 +1209,7 @@ export const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-[#64748B] mb-1">Full Name</label>
                 <input
@@ -1219,6 +1219,24 @@ export const ProfilePage: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   className="w-full px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#64748B] mb-1">Primary Category</label>
+                <select
+                  value={formData.preferredRole || 'Founders'}
+                  onChange={(e) => setFormData({ ...formData, preferredRole: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
+                >
+                  <option value="Founders">Founders</option>
+                  <option value="Co-Founders">Co-Founders</option>
+                  <option value="Marketers">Marketers</option>
+                  <option value="Investors">Investors</option>
+                  <option value="Developer">Developer / Technical</option>
+                  <option value="Designer">Designer / UI-UX</option>
+                  <option value="Mentor">Mentor / Advisor</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
 
               <div>

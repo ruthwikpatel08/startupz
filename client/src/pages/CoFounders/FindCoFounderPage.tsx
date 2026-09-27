@@ -27,6 +27,60 @@ import {
   X,
 } from 'lucide-react';
 
+export function getUserCategory(user: any): 'founders' | 'cofounders' | 'marketers' | 'investors' | 'other' {
+  const role = (user.role || user.profile?.preferredRole || user.preferred_role || '').toString().trim().toLowerCase();
+  const headline = (user.profile?.headline || user.headline || '').toLowerCase();
+
+  // 1. Check Co-Founders first (crucial: 'co-founder' contains 'founder' substring)
+  if (
+    role.includes('co-founder') ||
+    role.includes('cofounder') ||
+    role === 'co-founder' ||
+    role === 'cofounder' ||
+    role === 'co-founders' ||
+    role === 'cofounders' ||
+    headline.startsWith('co-founder') ||
+    headline.startsWith('cofounder') ||
+    headline.includes('co-founder') ||
+    headline.includes('cofounder')
+  ) {
+    return 'cofounders';
+  }
+
+  // 2. Check Founders
+  if (
+    role === 'founder' ||
+    role === 'founders' ||
+    role.startsWith('founder') ||
+    headline.startsWith('founder') ||
+    headline.includes('founder')
+  ) {
+    return 'founders';
+  }
+
+  // 3. Check Investors
+  if (
+    role.includes('investor') ||
+    role.includes('investing') ||
+    headline.includes('investor') ||
+    user.investorProfile
+  ) {
+    return 'investors';
+  }
+
+  // 4. Check Marketers
+  if (
+    role.includes('market') ||
+    role.includes('growth') ||
+    headline.includes('marketer') ||
+    headline.includes('marketing')
+  ) {
+    return 'marketers';
+  }
+
+  return 'other';
+}
+
 export const FindCoFounderPage: React.FC = () => {
   const { user: currentUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -201,18 +255,7 @@ export const FindCoFounderPage: React.FC = () => {
         // Also query live Supabase profiles table to guarantee real registered users are displayed
         let supaMappedProfiles: any[] = [];
         try {
-          let query = supabase.from('profiles').select('*');
-          if (currentCategory === 'founders') {
-            query = query.or('preferred_role.ilike.%founder%,open_to.ilike.%founder%,headline.ilike.%founder%');
-          } else if (currentCategory === 'cofounders') {
-            query = query.or('preferred_role.ilike.%co-founder%,open_to.ilike.%co-founder%,preferred_role.ilike.%cofounder%,headline.ilike.%cofounder%');
-          } else if (currentCategory === 'marketers') {
-            query = query.or('preferred_role.ilike.%market%,skills.ilike.%marketing%,skills.ilike.%growth%,headline.ilike.%market%');
-          } else if (currentCategory === 'other') {
-            query = query.or('preferred_role.ilike.%developer%,preferred_role.ilike.%designer%,preferred_role.ilike.%engineer%,skills.ilike.%engineer%,skills.ilike.%design%,skills.ilike.%tech%');
-          }
-
-          const { data: supaProfiles } = await query;
+          const { data: supaProfiles } = await supabase.from('profiles').select('*');
           if (supaProfiles && supaProfiles.length > 0) {
             supaMappedProfiles = supaProfiles.map((p) => {
               const uName = p.username || (p.email ? p.email.split('@')[0] : 'user');
@@ -220,6 +263,7 @@ export const FindCoFounderPage: React.FC = () => {
                 id: p.user_id || p.id,
                 email: p.email,
                 role: (p.preferred_role || 'FOUNDER').toUpperCase(),
+                preferred_role: p.preferred_role,
                 verificationBadge: p.auth_provider === 'google' ? 'Verified via Google' : 'Verified Member',
                 matchPercentage: null,
                 matchExplanation: null,
@@ -244,7 +288,40 @@ export const FindCoFounderPage: React.FC = () => {
           console.warn('Supabase profiles query notice:', supaErr);
         }
 
-        const rawAllCandidates = [...supaMappedProfiles, ...loadedMatches];
+        // If category is 'all', also load registered investors so All Members includes every member
+        let extraAllInvestors: any[] = [];
+        if (currentCategory === 'all') {
+          try {
+            const res = await api.getInvestors('');
+            if (res.investors && res.investors.length > 0) {
+              extraAllInvestors = res.investors.map((inv: any) => ({
+                id: inv.user?.id || inv.userId || inv.id,
+                email: inv.user?.email || '',
+                role: 'INVESTOR',
+                preferred_role: 'INVESTOR',
+                verificationBadge: 'Verified Investor',
+                profile: {
+                  id: inv.id,
+                  userId: inv.userId || inv.id,
+                  fullName: inv.organization || inv.user?.profile?.fullName || 'Angel Investor',
+                  username: inv.user?.profile?.username || (inv.user?.email ? inv.user.email.split('@')[0] : 'investor'),
+                  headline: inv.about || inv.user?.profile?.headline || 'Angel & Venture Investor',
+                  location: inv.location || 'Remote',
+                  bio: inv.about || '',
+                  avatar: inv.user?.profile?.avatar,
+                  skills: inv.industries || '',
+                  preferredRole: 'INVESTOR',
+                  availability: 'Capital & Mentorship',
+                  openTo: 'Investment, Advisory',
+                },
+              }));
+            }
+          } catch {
+            // Backend offline fallback
+          }
+        }
+
+        const rawAllCandidates = [...supaMappedProfiles, ...loadedMatches, ...extraAllInvestors];
         const seenCandEmails = new Set<string>();
         const seenCandIds = new Set<string>();
         const seenCandUsernames = new Set<string>();
@@ -279,7 +356,17 @@ export const FindCoFounderPage: React.FC = () => {
           if (candId) seenCandIds.add(candId);
           if (candUsername) seenCandUsernames.add(candUsername);
 
-          // 3. Search and role filters
+          // 3. Strict category separation:
+          // Never show founders in co-founders or vice versa!
+          // When currentCategory === 'all', show ALL members.
+          if (currentCategory !== 'all') {
+            const candCategory = getUserCategory(cand);
+            if (candCategory !== currentCategory) {
+              continue;
+            }
+          }
+
+          // 4. Search and role filters
           if (qTerm) {
             const uname = candUsername;
             const fname = (cand.profile?.fullName || '').toLowerCase();

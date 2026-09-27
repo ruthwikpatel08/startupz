@@ -165,15 +165,26 @@ router.get('/matching/cofounders', optionalAuth, async (req, res) => {
       if (catLower === 'founders' || catLower === 'founder') {
         where.OR = [
           { role: 'FOUNDER' },
-          { profile: { openTo: { contains: 'Founder' } } },
-          { profile: { preferredRole: { contains: 'Founder' } } },
+          { profile: { preferredRole: { in: ['FOUNDER', 'Founders', 'Founder'] } } },
           { startups: { some: {} } },
+        ];
+        where.NOT = [
+          ...(where.NOT || []),
+          { role: 'COFOUNDER' },
+          { profile: { preferredRole: { contains: 'Co-Founder' } } },
+          { profile: { preferredRole: { contains: 'cofounder' } } },
         ];
       } else if (catLower === 'cofounders' || catLower === 'cofounder') {
         where.OR = [
           { role: 'COFOUNDER' },
-          { profile: { openTo: { contains: 'Co-Founder' } } },
           { profile: { preferredRole: { contains: 'Co-Founder' } } },
+          { profile: { preferredRole: { contains: 'cofounder' } } },
+          { profile: { preferredRole: { in: ['COFOUNDER', 'Co-Founders', 'Co-Founder'] } } },
+        ];
+        where.NOT = [
+          ...(where.NOT || []),
+          { role: 'FOUNDER' },
+          { profile: { preferredRole: { in: ['FOUNDER', 'Founders', 'Founder'] } } },
         ];
       } else if (catLower === 'marketers' || catLower === 'marketer') {
         where.OR = [
