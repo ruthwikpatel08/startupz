@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { User, Profile } from '../../types';
-import { fetchUserProfile as fetchUserProfileFromSupabase, upsertUserProfile } from '../../lib/supabase';
+import { supabase, fetchUserProfile as fetchUserProfileFromSupabase, upsertUserProfile } from '../../lib/supabase';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { StartupConnectionModal } from '../../components/common/StartupConnectionModal';
@@ -48,6 +48,7 @@ export const ProfilePage: React.FC = () => {
   const targetId = id || currentUser?.id;
 
   const [profileUser, setProfileUser] = useState<User | null>(null);
+  const [connectionsCount, setConnectionsCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   // Edit Modal State
@@ -199,7 +200,30 @@ export const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     fetchUserProfile();
-  }, [targetId, currentUser]);
+
+    let isMounted = true;
+    const loadConnections = async () => {
+      try {
+        if (isMe) {
+          const res = await api.getConnections();
+          if (isMounted) setConnectionsCount(res.connections?.length || 0);
+        } else if (targetId) {
+          const { count } = await supabase
+            .from('connections')
+            .select('*', { count: 'exact', head: true })
+            .or(`sender_id.eq.${targetId},receiver_id.eq.${targetId}`)
+            .eq('status', 'ACCEPTED');
+          if (isMounted) setConnectionsCount(count || 0);
+        }
+      } catch {
+        if (isMounted) setConnectionsCount(0);
+      }
+    };
+    loadConnections();
+    return () => {
+      isMounted = false;
+    };
+  }, [targetId, currentUser, isMe]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -308,10 +332,10 @@ export const ProfilePage: React.FC = () => {
     .toUpperCase();
   const avatar = p.avatar;
   const skillsList = p.skills ? p.skills.split(',').map((s) => s.trim()).filter(Boolean) : [];
-  const openToList = p.openTo ? p.openTo.split(',').map((o) => o.trim()).filter(Boolean) : ['Co-Founder', 'Startup Team'];
+  const openToList = p.openTo ? p.openTo.split(',').map((o) => o.trim()).filter(Boolean) : [];
   const interestsList = p.startupInterests
     ? p.startupInterests.split(',').map((i) => i.trim()).filter(Boolean)
-    : ['Entrepreneurship', 'Technology', 'AI', 'Growth'];
+    : [];
   const industriesList = p.industries ? p.industries.split(',').map((i) => i.trim()).filter(Boolean) : [];
 
   // Calculate profile completion percentage
@@ -326,8 +350,8 @@ export const ProfilePage: React.FC = () => {
   const completionPercentage = Math.round((completedFields / totalFields) * 100);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 font-sans transition-colors selection:bg-[#4F46E5] selection:text-white">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 py-8 px-3 sm:px-6 lg:px-8 font-sans transition-colors selection:bg-[#4F46E5] selection:text-white w-full max-w-full overflow-x-hidden">
+      <div className="max-w-6xl mx-auto space-y-6 w-full overflow-x-hidden">
 
         {/* 1. TOP HERO / COVER & MAIN PROFILE CARD */}
         <div className="rounded-2xl bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 shadow-xs overflow-hidden">
@@ -368,26 +392,26 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* Profile Header Row */}
-          <div className="px-6 sm:px-8 pb-6 pt-0 relative">
-            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 -mt-16 sm:-mt-20 mb-6">
+          <div className="px-4 sm:px-8 pb-6 pt-0 relative">
+            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 -mt-14 sm:-mt-20 mb-6">
               
               {/* Profile Photo (Partially Overlapping) */}
-              <div className="flex items-end gap-5">
+              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 sm:gap-5 w-full md:w-auto">
                 <div className="relative shrink-0">
                   {avatar ? (
                     <img
                       src={avatar}
                       alt={displayName}
-                      className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white dark:border-slate-900 shadow-md bg-white"
+                      className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white dark:border-slate-900 shadow-md bg-white"
                     />
                   ) : (
-                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-slate-900 shadow-md bg-indigo-50 dark:bg-slate-800 text-[#4F46E5] dark:text-indigo-400 flex items-center justify-center font-bold text-3xl sm:text-4xl">
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-slate-900 shadow-md bg-indigo-50 dark:bg-slate-800 text-[#4F46E5] dark:text-indigo-400 flex items-center justify-center font-bold text-2xl sm:text-4xl">
                       {initials}
                     </div>
                   )}
                 </div>
 
-                <div className="space-y-1 mb-1">
+                <div className="space-y-1 mb-1 min-w-0">
                   <div className="flex items-center gap-2.5 flex-wrap">
                     <h1 className="text-2xl sm:text-[32px] font-bold text-[#0F172A] dark:text-white tracking-tight leading-tight">
                       {displayName}
@@ -396,11 +420,11 @@ export const ProfilePage: React.FC = () => {
                     <RoleBadge role={profileUser.role} />
                   </div>
 
-                  <p className="text-base sm:text-lg font-medium text-[#64748B] dark:text-slate-300">
-                    {p.headline || 'Startup Enthusiast & Innovator'}
+                  <p className="text-sm sm:text-lg font-medium text-[#64748B] dark:text-slate-300">
+                    {p.headline || (isMe ? 'Add your role or startup vision' : 'Member of StartupZ')}
                   </p>
 
-                  <div className="flex items-center gap-3 text-xs sm:text-sm text-[#64748B] dark:text-slate-400 flex-wrap pt-0.5">
+                  <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-[#64748B] dark:text-slate-400 flex-wrap pt-0.5">
                     {p.location && (
                       <span className="flex items-center gap-1">
                         <MapPin size={14} className="text-[#4F46E5]" />
@@ -415,7 +439,7 @@ export const ProfilePage: React.FC = () => {
                     )}
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-[#16A34A] dark:text-emerald-400 border border-emerald-200/80">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse" />
-                      <span>{p.availability || 'Open to Co-Founder Opportunities'}</span>
+                      <span>{p.availability || 'Available'}</span>
                     </span>
                   </div>
                 </div>
@@ -463,26 +487,26 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* Profile Statistics Row */}
-            <div className="pt-5 border-t border-[#E2E8F0] dark:border-slate-800 grid grid-cols-3 gap-4 text-center sm:text-left">
+            <div className="pt-5 border-t border-[#E2E8F0] dark:border-slate-800 grid grid-cols-3 gap-2 sm:gap-4 text-center sm:text-left">
               <Link to="/network" className="group">
                 <div className="text-xl sm:text-2xl font-bold text-[#0F172A] dark:text-white group-hover:text-[#4F46E5] transition-colors">
-                  128
+                  {connectionsCount}
                 </div>
                 <div className="text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400">
                   Connections
                 </div>
               </Link>
 
-              <div className="border-l border-[#E2E8F0] dark:border-slate-800 pl-4 sm:pl-8">
+              <div className="border-l border-[#E2E8F0] dark:border-slate-800 pl-2 sm:pl-8">
                 <div className="text-xl sm:text-2xl font-bold text-[#0F172A] dark:text-white">
-                  {profileUser.startups?.length || 1}
+                  {profileUser.startups?.length || 0}
                 </div>
                 <div className="text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400">
                   Startups Founded
                 </div>
               </div>
 
-              <div className="border-l border-[#E2E8F0] dark:border-slate-800 pl-4 sm:pl-8">
+              <div className="border-l border-[#E2E8F0] dark:border-slate-800 pl-2 sm:pl-8">
                 <div className="text-xl sm:text-2xl font-bold text-[#0F172A] dark:text-white">
                   {skillsList.length}
                 </div>
@@ -511,21 +535,23 @@ export const ProfilePage: React.FC = () => {
               </p>
 
               {/* Interests Tags */}
-              <div className="pt-4 border-t border-[#E2E8F0] dark:border-slate-800 space-y-2">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-[#64748B] dark:text-slate-400">
-                  Startup Interests
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {interestsList.map((interest, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1 rounded-full text-xs font-medium bg-[#F8FAFC] dark:bg-slate-800 text-[#0F172A] dark:text-slate-200 border border-[#E2E8F0] dark:border-slate-700"
-                    >
-                      {interest}
-                    </span>
-                  ))}
+              {interestsList.length > 0 && (
+                <div className="pt-4 border-t border-[#E2E8F0] dark:border-slate-800 space-y-2">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#64748B] dark:text-slate-400">
+                    Startup Interests
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {interestsList.map((interest, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1 rounded-full text-xs font-medium bg-[#F8FAFC] dark:bg-slate-800 text-[#0F172A] dark:text-slate-200 border border-[#E2E8F0] dark:border-slate-700"
+                      >
+                        {interest}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* EXPERIENCE SECTION */}
@@ -543,17 +569,19 @@ export const ProfilePage: React.FC = () => {
                     <div className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-[#4F46E5] border-4 border-white dark:border-slate-900" />
                     <div className="space-y-1">
                       <h3 className="text-base font-semibold text-[#0F172A] dark:text-white">
-                        {p.preferredRole || 'Founder & CEO'}
+                        {p.preferredRole || 'Founder'}
                       </h3>
-                      <p className="text-sm font-medium text-[#4F46E5]">
-                        {profileUser.startups?.[0]?.name || 'Early-Stage Venture'}
-                      </p>
-                      <p className="text-xs text-[#64748B] dark:text-slate-400 flex items-center gap-2">
-                        <Calendar size={13} />
-                        <span>Jan 2024 – Present</span>
-                        <span>•</span>
-                        <span>{p.location || 'Remote'}</span>
-                      </p>
+                      {profileUser.startups && profileUser.startups.length > 0 && (
+                        <p className="text-sm font-medium text-[#4F46E5]">
+                          {profileUser.startups[0].name}
+                        </p>
+                      )}
+                      {p.location && (
+                        <p className="text-xs text-[#64748B] dark:text-slate-400 flex items-center gap-2">
+                          <MapPin size={13} />
+                          <span>{p.location}</span>
+                        </p>
+                      )}
                       <p className="text-sm text-[#64748B] dark:text-slate-300 pt-2 whitespace-pre-line leading-relaxed">
                         {p.startupExperience}
                       </p>
@@ -592,9 +620,6 @@ export const ProfilePage: React.FC = () => {
                     <h3 className="text-base font-semibold text-[#0F172A] dark:text-white">
                       {p.education}
                     </h3>
-                    <p className="text-sm font-normal text-[#64748B] dark:text-slate-400">
-                      Bachelor of Science / Computer Science & Business
-                    </p>
                   </div>
                 </div>
               ) : (
@@ -693,14 +718,17 @@ export const ProfilePage: React.FC = () => {
                 </Link>
               </div>
 
-              <div className="p-4 rounded-xl bg-[#F8FAFC] dark:bg-slate-800/60 border border-[#E2E8F0] dark:border-slate-800 space-y-2">
-                <div className="flex items-center justify-between text-xs text-[#64748B]">
-                  <span className="font-semibold text-[#4F46E5]">Founder Update</span>
-                  <span>2 days ago</span>
-                </div>
-                <p className="text-sm text-[#0F172A] dark:text-slate-200 leading-relaxed">
-                  "Looking for a passionate Technical Co-Founder to scale our AI-driven startup ecosystem platform!"
-                </p>
+              <div className="text-center py-6 border border-dashed border-[#E2E8F0] dark:border-slate-800 rounded-xl space-y-1">
+                <Share2 size={24} className="mx-auto text-slate-300 mb-1" />
+                <p className="text-xs text-[#64748B] dark:text-slate-400 font-medium">No activity or posts shared yet.</p>
+                {isMe && (
+                  <Link
+                    to="/feed"
+                    className="inline-block mt-2 text-xs font-bold text-[#4F46E5] hover:underline"
+                  >
+                    + Share an update on Feed
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -780,25 +808,29 @@ export const ProfilePage: React.FC = () => {
               )}
 
               {/* Skills Pill Tags */}
-              <div className="flex flex-wrap gap-2">
-                {skillsList.map((skill, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-[#EEF2FF] text-[#4F46E5] border border-[#C7D2FE] dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
-                  >
-                    <span>{skill}</span>
-                    {isMe && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSkill(skill)}
-                        className="hover:text-rose-600 transition-colors ml-1"
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
-                  </span>
-                ))}
-              </div>
+              {skillsList.length === 0 ? (
+                <p className="text-xs text-[#64748B] dark:text-slate-400 py-1">No skills added yet.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {skillsList.map((skill, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-[#EEF2FF] text-[#4F46E5] border border-[#C7D2FE] dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
+                    >
+                      <span>{skill}</span>
+                      {isMe && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSkill(skill)}
+                          className="hover:text-rose-600 transition-colors ml-1"
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* ECOSYSTEM HUB & LINKS CARD */}

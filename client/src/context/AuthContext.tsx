@@ -282,9 +282,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         headline: `${role.charAt(0) + role.slice(1).toLowerCase()} | Startup Builder`,
         location: 'Remote',
         avatar,
-        skills: 'Startup Strategy, Product Engineering, Early Growth',
+        skills: '',
         availability: 'Full-time',
-        profileCompletion: 92,
+        profileCompletion: 60,
       } as any,
     };
 
@@ -419,9 +419,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         headline: profileRow?.headline || `${role} | Startup Builder`,
         location: profileRow?.location || 'Remote',
         avatar,
-        skills: profileRow?.skills || 'Startup Strategy, Product Engineering, Early Growth',
+        skills: profileRow?.skills || '',
         availability: profileRow?.availability || 'Full-time',
-        profileCompletion: profileRow?.profile_completion || 90,
+        profileCompletion: profileRow?.profile_completion || 60,
       } as any,
     };
 

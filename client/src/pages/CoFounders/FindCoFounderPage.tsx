@@ -221,18 +221,18 @@ export const FindCoFounderPage: React.FC = () => {
                 email: p.email,
                 role: (p.preferred_role || 'FOUNDER').toUpperCase(),
                 verificationBadge: p.auth_provider === 'google' ? 'Verified via Google' : 'Verified Member',
-                matchPercentage: 92,
-                matchExplanation: `Verified ${p.preferred_role || 'member'} active on StartupZ with complementary skill synergy.`,
+                matchPercentage: null,
+                matchExplanation: null,
                 profile: {
                   id: p.id,
                   userId: p.user_id || p.id,
                   fullName: p.full_name,
                   username: uName,
-                  headline: p.headline || `${p.preferred_role || 'Startup Builder'} | Network`,
-                  location: p.location || 'Remote',
-                  bio: p.bio,
+                  headline: p.headline || '',
+                  location: p.location || '',
+                  bio: p.bio || '',
                   avatar: p.avatar,
-                  skills: p.skills || 'Startup Strategy, Product Engineering, Early Growth',
+                  skills: p.skills || '',
                   preferredRole: p.preferred_role,
                   availability: p.availability || 'Full-time',
                   openTo: p.open_to,
@@ -343,7 +343,7 @@ export const FindCoFounderPage: React.FC = () => {
   const investorStages = ['ALL', 'Pre-Seed', 'Seed', 'Series A', 'Series B', 'Grants', 'Idea / Prototype'];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 w-full overflow-x-hidden">
       
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -365,7 +365,7 @@ export const FindCoFounderPage: React.FC = () => {
       </div>
 
       {/* Primary Category Selector Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
         {categories.map((cat) => {
           const Icon = cat.icon;
           const isSelected = currentCategory === cat.value;
@@ -665,11 +665,13 @@ export const FindCoFounderPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="text-right shrink-0">
-                      <span className="inline-flex items-center gap-1 text-xs font-black px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 shadow-xs">
-                        <Sparkles size={13} /> {cand.matchPercentage || 92}% Match
-                      </span>
-                    </div>
+                    {cand.matchPercentage ? (
+                      <div className="text-right shrink-0">
+                        <span className="inline-flex items-center gap-1 text-xs font-black px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 shadow-xs">
+                          <Sparkles size={13} /> {cand.matchPercentage}% Match
+                        </span>
+                      </div>
+                    ) : null}
                   </div>
 
                   {cand.matchExplanation && (

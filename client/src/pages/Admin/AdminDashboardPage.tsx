@@ -165,7 +165,7 @@ export const AdminDashboardPage: React.FC = () => {
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="text-xs font-bold uppercase text-slate-400">Connections</div>
           <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">
-            {stats?.totalConnections || 24}
+            {stats?.totalConnections || 0}
           </div>
         </div>
 
