@@ -6,6 +6,7 @@ import { Investor, Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
 import { SendPitchModal } from '../../components/common/SendPitchModal';
 import { ConnectModal } from '../../components/common/ConnectModal';
+import { Avatar } from '../../components/common/Avatar';
 import { EmptyState } from '../../components/common/EmptyState';
 import {
   TrendingUp,
@@ -217,13 +218,11 @@ export const InvestorsPage: React.FC = () => {
                 {/* Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <img
-                      src={
-                        inv.user?.profile?.avatar ||
-                        `https://api.dicebear.com/7.x/initials/svg?seed=${inv.organization}`
-                      }
-                      alt=""
-                      className="w-11 h-11 rounded-lg object-cover border border-slate-200 dark:border-dark-800"
+                    <Avatar
+                      src={inv.user?.profile?.avatar}
+                      name={inv.organization}
+                      size="md"
+                      className="!w-11 !h-11 rounded-lg"
                     />
                     <div>
                       <div className="flex items-center gap-2">

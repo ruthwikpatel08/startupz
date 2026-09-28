@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { Avatar } from '../common/Avatar';
 import { X, UserPlus, ArrowRight, Sparkles } from 'lucide-react';
 
 interface GoogleAccountChooserModalProps {
@@ -23,7 +24,6 @@ const REGISTERED_GOOGLE_ACCOUNTS: RealGoogleAccount[] = [
     name: 'Ruthwik Patel',
     role: 'FOUNDER',
     tag: 'Founder & Lead',
-    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=Ruthwik%20Patel&backgroundColor=4f46e5,06b6d4,10b981',
   },
   {
     email: 'legacyplayer04@gmail.com',
@@ -37,7 +37,6 @@ const REGISTERED_GOOGLE_ACCOUNTS: RealGoogleAccount[] = [
     name: 'lavan yadav',
     role: 'INVESTOR',
     tag: 'Verified Investor',
-    avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=lavan%20yadav&backgroundColor=4f46e5,06b6d4,10b981',
   },
 ];
 
@@ -167,10 +166,11 @@ export const GoogleAccountChooserModal: React.FC<GoogleAccountChooserModalProps>
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="relative shrink-0">
-                    <img
+                    <Avatar
                       src={acc.avatar}
-                      alt={acc.name}
-                      className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+                      name={acc.name}
+                      size="sm"
+                      className="w-9 h-9"
                     />
                     <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white dark:border-slate-900 rounded-full" />
                   </div>

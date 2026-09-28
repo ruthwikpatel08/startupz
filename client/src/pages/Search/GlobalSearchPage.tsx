@@ -5,6 +5,7 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { StartupConnectionModal } from '../../components/common/StartupConnectionModal';
+import { Avatar } from '../../components/common/Avatar';
 import { supabase } from '../../lib/supabase';
 import {
   Search,
@@ -277,20 +278,16 @@ export const GlobalSearchPage: React.FC = () => {
                   const username = u.profile?.username || (u.email ? u.email.split('@')[0] : 'user');
                   const fullName = u.profile?.fullName || (u.email ? u.email.split('@')[0] : 'User');
                   const role = u.profile?.preferredRole || u.role || 'FOUNDER';
-                  const avatar =
-                    u.profile?.avatar ||
-                    `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}&backgroundColor=4f46e5,06b6d4,10b981`;
-
                   return (
                     <div
                       key={u.id}
                       className="card-base p-5 flex flex-col justify-between space-y-3 hover:border-slate-300 dark:hover:border-dark-700 transition-colors"
                     >
                       <div className="flex items-start gap-3.5">
-                        <img
-                          src={avatar}
-                          alt={fullName}
-                          className="w-11 h-11 rounded-lg object-cover border border-slate-200 dark:border-dark-700 shrink-0"
+                        <Avatar
+                          src={u.profile?.avatar}
+                          name={fullName}
+                          size="lg"
                         />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">

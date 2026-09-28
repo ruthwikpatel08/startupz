@@ -5,6 +5,7 @@ import { api } from '../../services/api';
 import { Conversation, Message, User } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Avatar } from '../../components/common/Avatar';
 import {
   MessageSquare,
   Send,
@@ -233,7 +234,6 @@ export const MessagesPage: React.FC = () => {
                 const isSelected = selectedConversation?.id === conv.id;
                 const p = conv.participant;
                 const name = p?.profile?.fullName || p?.email || 'User';
-                const avatar = p?.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${name}`;
 
                 return (
                   <button
@@ -245,10 +245,11 @@ export const MessagesPage: React.FC = () => {
                         : 'hover:bg-slate-100/70 dark:hover:bg-dark-800/40'
                     }`}
                   >
-                    <img
-                      src={avatar}
-                      alt={name}
-                      className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-dark-800 shrink-0"
+                    <Avatar
+                      src={p?.profile?.avatar}
+                      name={name}
+                      size="md"
+                      className="!w-9 !h-9"
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-1">
@@ -280,15 +281,14 @@ export const MessagesPage: React.FC = () => {
               {/* Chat Header */}
               <div className="p-3.5 border-b border-slate-200 dark:border-dark-800 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <img
-                    src={
-                      selectedConversation.participant?.profile?.avatar ||
-                      `https://api.dicebear.com/7.x/initials/svg?seed=${
-                        selectedConversation.participant?.profile?.fullName || selectedConversation.participant?.email
-                      }`
+                  <Avatar
+                    src={selectedConversation.participant?.profile?.avatar}
+                    name={
+                      selectedConversation.participant?.profile?.fullName ||
+                      selectedConversation.participant?.email
                     }
-                    alt=""
-                    className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-dark-800"
+                    size="md"
+                    className="!w-9 !h-9"
                   />
                   <div>
                     <div className="flex items-center gap-1.5">

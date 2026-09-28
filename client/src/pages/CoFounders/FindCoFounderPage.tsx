@@ -8,6 +8,7 @@ import { ConnectModal } from '../../components/common/ConnectModal';
 import { StartupConnectionModal } from '../../components/common/StartupConnectionModal';
 import { EmptyState } from '../../components/common/EmptyState';
 import { supabase } from '../../lib/supabase';
+import { Avatar } from '../../components/common/Avatar';
 import {
   Users,
   Search,
@@ -342,10 +343,13 @@ export const FindCoFounderPage: React.FC = () => {
             const curEmail = (currentUser.email || '').toLowerCase().trim();
             const curId = (currentUser.id || '').trim();
             const curUsername = (currentUser.profile?.username || (curEmail ? curEmail.split('@')[0] : '')).toLowerCase().trim();
+            const curFullName = (currentUser.profile?.fullName || '').toLowerCase().trim();
+            const candFullName = (cand.profile?.fullName || cand.organization || '').toLowerCase().trim();
 
             if (curEmail && candEmail && curEmail === candEmail) continue;
             if (curId && candId && curId === candId) continue;
             if (curUsername && candUsername && curUsername === candUsername) continue;
+            if (curFullName && candFullName && curFullName === candFullName) continue;
           }
 
           // 2. Strict deduplication - never show the same profile multiple times!
@@ -611,13 +615,10 @@ export const FindCoFounderPage: React.FC = () => {
                   <div className="space-y-2.5">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={
-                            inv.user?.profile?.avatar ||
-                            `https://api.dicebear.com/7.x/initials/svg?seed=${inv.organization}&backgroundColor=2457d6`
-                          }
-                          alt=""
-                          className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                        <Avatar
+                          src={inv.user?.profile?.avatar}
+                          name={inv.organization}
+                          size="md"
                         />
                         <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
@@ -718,13 +719,10 @@ export const FindCoFounderPage: React.FC = () => {
                 <div className="space-y-2.5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={
-                          cand.profile?.avatar ||
-                          `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}&backgroundColor=2457d6`
-                        }
-                        alt={displayName}
-                        className="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                      <Avatar
+                        src={cand.profile?.avatar}
+                        name={displayName}
+                        size="lg"
                       />
                       <div>
                         <div className="flex items-center gap-1.5 flex-wrap">

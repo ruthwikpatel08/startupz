@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api';
+import { Avatar } from './Avatar';
 import {
   Rocket,
   Compass,
@@ -493,10 +494,11 @@ export const Navbar: React.FC = () => {
                         : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-slate-300'
                     }`}
                   >
-                    <img
-                      src={user.profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
-                      alt=""
-                      className="w-4 h-4 rounded-full object-cover"
+                    <Avatar
+                      src={user.profile?.avatar}
+                      name={user.profile?.fullName || user.email}
+                      size="xs"
+                      className="!w-4 !h-4"
                     />
                     <span className="text-[11px] truncate max-w-[70px]">
                       {user.profile?.fullName?.split(' ')[0] || 'Profile'}
@@ -530,10 +532,10 @@ export const Navbar: React.FC = () => {
                       onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                       className="flex items-center gap-2 p-0.5 rounded-full border border-slate-200 dark:border-slate-700 hover:border-brand-600 transition-colors focus:outline-none cursor-pointer"
                     >
-                      <img
-                        src={user.profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
-                        alt={user.profile?.fullName || user.email}
-                        className="w-7 h-7 rounded-full object-cover"
+                      <Avatar
+                        src={user.profile?.avatar}
+                        name={user.profile?.fullName || user.email}
+                        size="sm"
                       />
                     </button>
 
@@ -792,10 +794,11 @@ export const Navbar: React.FC = () => {
             {user && (
               <div className="p-3 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800 space-y-2.5">
                 <div className="flex items-center gap-2.5">
-                  <img
-                    src={user.profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
-                    alt={user.profile?.fullName || user.email}
-                    className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+                  <Avatar
+                    src={user.profile?.avatar}
+                    name={user.profile?.fullName || user.email}
+                    size="md"
+                    className="!w-9 !h-9"
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">

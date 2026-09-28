@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
+import { Avatar } from '../../components/common/Avatar';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
 import {
@@ -19,6 +22,7 @@ import {
 
 export const NetworkPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const urlTab = searchParams.get('tab')?.toUpperCase();
 
@@ -49,11 +53,161 @@ export const NetworkPage: React.FC = () => {
         api.getStartupProposals().catch(() => ({ received: [], sent: [] })),
       ]);
 
-      setConnections(connRes.connections || []);
-      setPendingReceived(pendingRes.received || []);
-      setPendingSent(pendingRes.sent || []);
-      setReceivedProposals((proposalsRes as any)?.received || []);
-      setSentProposals((proposalsRes as any)?.sent || []);
+      let connList = connRes.connections || [];
+      let rxList = pendingRes.received || [];
+      let txList = pendingRes.sent || [];
+      let rxProp = (proposalsRes as any)?.received || [];
+      let txProp = (proposalsRes as any)?.sent || [];
+
+      // Also merge with Supabase live connections and proposals
+      if (user?.id) {
+        try {
+          const { data: supaConns } = await supabase
+            .from('connections')
+            .select('*')
+            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+
+          if (supaConns && supaConns.length > 0) {
+            const otherIds = supaConns.map((c) => (c.sender_id === user.id ? c.receiver_id : c.sender_id));
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('*')
+              .in('user_id', otherIds);
+            const profMap = new Map((profiles || []).map((p) => [p.user_id, p]));
+
+            for (const c of supaConns) {
+              const otherId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
+              const p = profMap.get(otherId);
+              const otherUserObj = {
+                id: otherId,
+                email: p?.email || '',
+                role: p?.preferred_role || 'FOUNDER',
+                isVerified: true,
+                verificationBadge: 'Verified Member',
+                profile: {
+                  id: p?.id || otherId,
+                  userId: otherId,
+                  fullName: p?.full_name || 'Startup Builder',
+                  avatar: p?.avatar,
+                  headline: p?.headline || '',
+                  location: p?.location || 'Remote',
+                  preferredRole: p?.preferred_role,
+                },
+              };
+
+              if (c.status === 'ACCEPTED') {
+                if (!connList.some((item: any) => item.connectionId === c.id || item.user?.id === otherId)) {
+                  connList.push({
+                    connectionId: c.id,
+                    connectedAt: c.updated_at,
+                    user: otherUserObj,
+                  });
+                }
+              } else if (c.status === 'PENDING') {
+                if (c.receiver_id === user.id) {
+                  if (!rxList.some((item: any) => item.id === c.id || item.senderId === c.sender_id)) {
+                    rxList.push({
+                      id: c.id,
+                      senderId: c.sender_id,
+                      receiverId: c.receiver_id,
+                      note: c.note,
+                      createdAt: c.created_at,
+                      sender: otherUserObj,
+                    });
+                  }
+                } else if (c.sender_id === user.id) {
+                  if (!txList.some((item: any) => item.id === c.id || item.receiverId === c.receiver_id)) {
+                    txList.push({
+                      id: c.id,
+                      senderId: c.sender_id,
+                      receiverId: c.receiver_id,
+                      note: c.note,
+                      createdAt: c.created_at,
+                      receiver: otherUserObj,
+                    });
+                  }
+                }
+              }
+            }
+          }
+        } catch (supaErr) {
+          console.warn('Supabase network connections notice:', supaErr);
+        }
+
+        try {
+          const { data: supaProps } = await supabase
+            .from('startup_proposals')
+            .select('*')
+            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+
+          if (supaProps && supaProps.length > 0) {
+            const otherIds = supaProps.map((pr) => (pr.sender_id === user.id ? pr.receiver_id : pr.sender_id));
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('*')
+              .in('user_id', otherIds);
+            const profMap = new Map((profiles || []).map((p) => [p.user_id, p]));
+
+            for (const pr of supaProps) {
+              const otherId = pr.sender_id === user.id ? pr.receiver_id : pr.sender_id;
+              const p = profMap.get(otherId);
+              const otherUserObj = {
+                id: otherId,
+                email: p?.email || '',
+                role: p?.preferred_role || 'FOUNDER',
+                isVerified: true,
+                verificationBadge: 'Verified Member',
+                profile: {
+                  id: p?.id || otherId,
+                  fullName: p?.full_name || 'Startup Builder',
+                  avatar: p?.avatar,
+                  headline: p?.headline || '',
+                },
+              };
+
+              if (pr.receiver_id === user.id) {
+                if (!rxProp.some((item: any) => item.id === pr.id)) {
+                  rxProp.push({
+                    id: pr.id,
+                    senderId: pr.sender_id,
+                    receiverId: pr.receiver_id,
+                    ideaTitle: pr.idea_title,
+                    pitchDescription: pr.pitch_description,
+                    proposedRole: pr.proposed_role,
+                    proposedEquity: pr.proposed_equity,
+                    status: pr.status || 'PENDING',
+                    createdAt: pr.created_at,
+                    sender: otherUserObj,
+                  });
+                }
+              } else if (pr.sender_id === user.id) {
+                if (!txProp.some((item: any) => item.id === pr.id)) {
+                  txProp.push({
+                    id: pr.id,
+                    senderId: pr.sender_id,
+                    receiverId: pr.receiver_id,
+                    ideaTitle: pr.idea_title,
+                    pitchDescription: pr.pitch_description,
+                    proposedRole: pr.proposed_role,
+                    proposedEquity: pr.proposed_equity,
+                    status: pr.status || 'PENDING',
+                    createdAt: pr.created_at,
+                    receiver: otherUserObj,
+                  });
+                }
+              }
+            }
+          }
+        } catch (propErr) {
+          console.warn('Supabase startup proposals notice:', propErr);
+        }
+      }
+
+      setConnections(connList);
+      setPendingReceived(rxList);
+      setPendingSent(txList);
+      setReceivedProposals(rxProp);
+      setSentProposals(txProp);
     } catch (err) {
       console.error('Failed to load network connections:', err);
     } finally {
@@ -63,12 +217,23 @@ export const NetworkPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user]);
 
   const handleRespond = async (connectionId: string, action: 'ACCEPT' | 'REJECT') => {
     setActionLoading((prev) => ({ ...prev, [connectionId]: true }));
     try {
-      await api.respondConnection(connectionId, action);
+      try {
+        await api.respondConnection(connectionId, action);
+      } catch (e) {
+        console.warn('Backend respondConnection notice:', e);
+      }
+      try {
+        const newStatus = action === 'ACCEPT' ? 'ACCEPTED' : 'REJECTED';
+        await supabase
+          .from('connections')
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq('id', connectionId);
+      } catch {}
       await fetchData();
     } catch (err) {
       console.error(`Failed to ${action} connection:`, err);
@@ -81,7 +246,14 @@ export const NetworkPage: React.FC = () => {
     if (!window.confirm('Are you sure you want to disconnect from this user?')) return;
     setActionLoading((prev) => ({ ...prev, [connectionId]: true }));
     try {
-      await api.removeConnection(connectionId);
+      try {
+        await api.removeConnection(connectionId);
+      } catch (e) {
+        console.warn('Backend removeConnection notice:', e);
+      }
+      try {
+        await supabase.from('connections').delete().eq('id', connectionId);
+      } catch {}
       setConnections((prev) => prev.filter((c) => c.connectionId !== connectionId));
     } catch (err) {
       console.error('Failed to remove connection:', err);
@@ -93,7 +265,17 @@ export const NetworkPage: React.FC = () => {
   const handleRespondProposal = async (proposalId: string, status: 'ACCEPTED' | 'DECLINED') => {
     setActionLoading((prev) => ({ ...prev, [proposalId]: true }));
     try {
-      await api.respondStartupProposal(proposalId, status);
+      try {
+        await api.respondStartupProposal(proposalId, status);
+      } catch (e) {
+        console.warn('Backend respondStartupProposal notice:', e);
+      }
+      try {
+        await supabase
+          .from('startup_proposals')
+          .update({ status, updated_at: new Date().toISOString() })
+          .eq('id', proposalId);
+      } catch {}
       await fetchData();
     } catch (err) {
       console.error(`Failed to respond to startup proposal:`, err);
@@ -192,9 +374,6 @@ export const NetworkPage: React.FC = () => {
               const u = c.user;
               const name = u?.profile?.fullName || (u?.email ? u.email.split('@')[0] : 'Member');
               const username = u?.profile?.username || (u?.email ? u.email.split('@')[0] : 'user');
-              const avatar =
-                u?.profile?.avatar ||
-                `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=4f46e5,06b6d4,10b981`;
               const headline = u?.profile?.headline || u?.role;
               const location = u?.profile?.location || 'Remote';
 
@@ -206,10 +385,11 @@ export const NetworkPage: React.FC = () => {
                   <div className="space-y-2.5">
                     <div className="flex items-start gap-3">
                       <Link to={`/profile/${u?.id}`}>
-                        <img
-                          src={avatar}
-                          alt={name}
-                          className="w-11 h-11 rounded-lg object-cover border border-slate-200 dark:border-dark-800"
+                        <Avatar
+                          src={u?.profile?.avatar}
+                          name={name}
+                          size="md"
+                          className="!w-11 !h-11 rounded-lg"
                         />
                       </Link>
                       <div className="min-w-0 flex-1">
@@ -287,9 +467,6 @@ export const NetworkPage: React.FC = () => {
                   const s = req.sender;
                   const name = s?.profile?.fullName || (s?.email ? s.email.split('@')[0] : 'Founder');
                   const username = s?.profile?.username || (s?.email ? s.email.split('@')[0] : 'user');
-                  const avatar =
-                    s?.profile?.avatar ||
-                    `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=4f46e5,06b6d4,10b981`;
                   const headline = s?.profile?.headline || s?.role;
 
                   return (
@@ -299,10 +476,11 @@ export const NetworkPage: React.FC = () => {
                     >
                       <div className="flex items-center gap-3">
                         <Link to={`/profile/${s?.id}`}>
-                          <img
-                            src={avatar}
-                            alt={name}
-                            className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-dark-800"
+                          <Avatar
+                            src={s?.profile?.avatar}
+                            name={name}
+                            size="md"
+                            className="!w-10 !h-10 rounded-lg"
                           />
                         </Link>
                         <div className="min-w-0 flex-1">
@@ -368,20 +546,17 @@ export const NetworkPage: React.FC = () => {
                 {pendingSent.map((req) => {
                   const r = req.receiver;
                   const name = r?.profile?.fullName || (r?.email ? r.email.split('@')[0] : 'User');
-                  const avatar =
-                    r?.profile?.avatar ||
-                    `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=4f46e5,06b6d4,10b981`;
-
                   return (
                     <div
                       key={req.id}
                       className="card-base p-3 flex items-center justify-between gap-3"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <img
-                          src={avatar}
-                          alt={name}
-                          className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-dark-800 shrink-0"
+                        <Avatar
+                          src={r?.profile?.avatar}
+                          name={name}
+                          size="sm"
+                          className="!w-8 !h-8"
                         />
                         <div className="min-w-0">
                           <h4 className="font-semibold text-xs text-slate-900 dark:text-white truncate">
@@ -427,10 +602,6 @@ export const NetworkPage: React.FC = () => {
                 {receivedProposals.map((prop) => {
                   const s = prop.sender;
                   const name = s?.profile?.fullName || (s?.email ? s.email.split('@')[0] : 'Founder');
-                  const avatar =
-                    s?.profile?.avatar ||
-                    `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=4f46e5,06b6d4,10b981`;
-
                   return (
                     <div
                       key={prop.id}
@@ -439,10 +610,11 @@ export const NetworkPage: React.FC = () => {
                       <div className="space-y-2.5">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
-                            <img
-                              src={avatar}
-                              alt={name}
-                              className="w-9 h-9 rounded-lg object-cover border border-slate-200 dark:border-dark-800"
+                            <Avatar
+                              src={s?.profile?.avatar}
+                              name={name}
+                              size="md"
+                              className="!w-9 !h-9 rounded-lg"
                             />
                             <div className="min-w-0">
                               <h4 className="font-semibold text-xs text-slate-900 dark:text-white truncate">
@@ -539,10 +711,6 @@ export const NetworkPage: React.FC = () => {
                 {sentProposals.map((prop) => {
                   const r = prop.receiver;
                   const name = r?.profile?.fullName || (r?.email ? r.email.split('@')[0] : 'Founder');
-                  const avatar =
-                    r?.profile?.avatar ||
-                    `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=4f46e5,06b6d4,10b981`;
-
                   return (
                     <div
                       key={prop.id}
@@ -550,10 +718,11 @@ export const NetworkPage: React.FC = () => {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <img
-                            src={avatar}
-                            alt={name}
-                            className="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-dark-800"
+                          <Avatar
+                            src={r?.profile?.avatar}
+                            name={name}
+                            size="xs"
+                            className="!w-7 !h-7"
                           />
                           <span className="font-semibold text-xs text-slate-900 dark:text-white">{name}</span>
                         </div>

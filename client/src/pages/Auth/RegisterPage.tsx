@@ -167,7 +167,7 @@ export const RegisterPage: React.FC = () => {
           preferred_role: role,
           auth_provider: 'email',
           email: normalizedEmail,
-          avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(trimmedName)}&backgroundColor=4f46e5,06b6d4,10b981`,
+          avatar: undefined,
           open_to: 'Co-Founder,Startup Team,Investment',
           profile_completion: 65,
         });

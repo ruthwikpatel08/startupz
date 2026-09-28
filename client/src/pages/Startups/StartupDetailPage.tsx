@@ -6,6 +6,7 @@ import { Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { IdeaFeedbackModal } from '../../components/common/IdeaFeedbackModal';
+import { Avatar } from '../../components/common/Avatar';
 import {
   Rocket,
   MapPin,
@@ -377,13 +378,11 @@ export const StartupDetailPage: React.FC = () => {
               FOUNDER
             </span>
             <div className="flex items-center gap-3">
-              <img
-                src={
-                  startup.founder?.profile?.avatar ||
-                  `https://api.dicebear.com/7.x/initials/svg?seed=${startup.founder?.profile?.fullName}`
-                }
-                alt=""
-                className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-dark-700"
+              <Avatar
+                src={startup.founder?.profile?.avatar}
+                name={startup.founder?.profile?.fullName || 'Founder'}
+                size="lg"
+                className="!w-12 !h-12 rounded-lg"
               />
               <div className="min-w-0 flex-1">
                 <Link
@@ -425,10 +424,11 @@ export const StartupDetailPage: React.FC = () => {
             </span>
             <div className="space-y-2">
               <div className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800">
-                <img
-                  src={startup.founder?.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${startup.founder?.profile?.fullName}`}
-                  alt=""
-                  className="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-dark-700"
+                <Avatar
+                  src={startup.founder?.profile?.avatar}
+                  name={startup.founder?.profile?.fullName}
+                  size="sm"
+                  className="!w-7 !h-7"
                 />
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-xs text-slate-900 dark:text-white truncate">
@@ -440,10 +440,11 @@ export const StartupDetailPage: React.FC = () => {
 
               {startup.members?.map((m) => (
                 <div key={m.id} className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800">
-                  <img
-                    src={m.user?.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${m.user?.profile?.fullName || m.id}`}
-                    alt=""
-                    className="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-dark-700"
+                  <Avatar
+                    src={m.user?.profile?.avatar}
+                    name={m.user?.profile?.fullName || m.id}
+                    size="sm"
+                    className="!w-7 !h-7"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold text-xs text-slate-900 dark:text-white truncate">

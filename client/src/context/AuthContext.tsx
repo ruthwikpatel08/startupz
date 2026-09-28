@@ -64,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const avatar =
           metadata.avatar_url ||
           metadata.picture ||
-          `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}&backgroundColor=4f46e5,06b6d4,10b981`;
+          null;
 
         profileRow = await upsertUserProfile(authUser.id, {
           full_name: fullName,
@@ -261,9 +261,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cleanEmail = account.email.trim().toLowerCase();
     const cleanName = account.name || cleanEmail.split('@')[0];
     const role = (account.role as any) || 'FOUNDER';
-    const avatar =
-      account.avatar ||
-      `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanName)}&backgroundColor=4f46e5,06b6d4,10b981`;
+    const avatar = account.avatar || null;
 
     const userId = 'usr_g_' + Math.abs(cleanEmail.split('').reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0)).toString(16);
 
@@ -300,7 +298,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         username: cleanEmail.split('@')[0],
         headline: `${role} | Startup Builder`,
         location: 'Remote',
-        avatar,
+        avatar: avatar || undefined,
         preferred_role: role,
         auth_provider: 'google',
         email: cleanEmail,
@@ -400,9 +398,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       'usr_' + Math.abs(resolvedEmail.split('').reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0)).toString(16);
     const fullName = profileRow?.full_name || cleanId.split('@')[0];
     const role = profileRow?.preferred_role || 'FOUNDER';
-    const avatar =
-      profileRow?.avatar ||
-      `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}&backgroundColor=4f46e5,06b6d4,10b981`;
+    const avatar = profileRow?.avatar || null;
 
     const appUser: User = {
       id: userId,

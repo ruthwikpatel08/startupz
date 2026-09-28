@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { upsertUserProfile } from '../../lib/supabase';
 import { api } from '../../services/api';
+import { Avatar } from '../common/Avatar';
 import {
   Rocket,
   Users,
@@ -176,10 +177,11 @@ export const NewUserCategoryModal: React.FC = () => {
           </div>
 
           <div className="flex flex-col items-center gap-2">
-            <img
-              src={user.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}&backgroundColor=2457d6`}
-              alt=""
-              className="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+            <Avatar
+              src={user.profile?.avatar}
+              name={displayName}
+              size="lg"
+              className="w-12 h-12"
             />
             <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
               Which category best describes you, {displayName.split(' ')[0]}?

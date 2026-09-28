@@ -5,6 +5,7 @@ import { api } from '../../services/api';
 import { Startup, User, StartupOpportunity, Post } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
+import { Avatar } from '../../components/common/Avatar';
 import {
   Rocket,
   Users,
@@ -206,10 +207,11 @@ export const DashboardPage: React.FC = () => {
                 >
                   <div className="space-y-2">
                     <div className="flex items-center gap-2.5">
-                      <img
-                        src={p.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${p.profile?.fullName || p.email}&backgroundColor=2457d6`}
-                        alt=""
-                        className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                      <Avatar
+                        src={p.profile?.avatar}
+                        name={p.profile?.fullName || p.email}
+                        size="md"
+                        className="!w-9 !h-9"
                       />
                       <div className="min-w-0 flex-1">
                         <Link
@@ -386,10 +388,11 @@ export const DashboardPage: React.FC = () => {
                 {pendingRequests.map((req) => (
                   <div key={req.id} className="p-2.5 rounded-md bg-slate-50 dark:bg-slate-800/40 text-xs space-y-1.5 border border-slate-200 dark:border-slate-800">
                     <div className="flex items-center gap-2">
-                      <img
-                        src={req.sender?.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${req.sender?.profile?.fullName}&backgroundColor=2457d6`}
-                        alt=""
-                        className="w-7 h-7 rounded-full object-cover"
+                      <Avatar
+                        src={req.sender?.profile?.avatar}
+                        name={req.sender?.profile?.fullName}
+                        size="sm"
+                        className="!w-7 !h-7"
                       />
                       <div className="min-w-0 flex-1">
                         <div className="font-semibold text-xs truncate">{req.sender?.profile?.fullName}</div>

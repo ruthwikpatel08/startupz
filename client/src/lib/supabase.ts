@@ -73,7 +73,7 @@ export function mapSupabaseToAppUser(
     profileRow?.avatar ||
     metadata.avatar_url ||
     metadata.picture ||
-    `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}&backgroundColor=4f46e5,06b6d4,10b981`;
+    undefined;
 
   const profile: Profile = {
     id: profileRow?.id || authUser.id,

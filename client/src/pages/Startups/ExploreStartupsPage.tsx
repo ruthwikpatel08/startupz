@@ -6,6 +6,7 @@ import { Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ConnectModal } from '../../components/common/ConnectModal';
+import { Avatar } from '../../components/common/Avatar';
 import {
   Compass,
   Search,
@@ -329,13 +330,11 @@ export const ExploreStartupsPage: React.FC = () => {
                 {/* Founder Info */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <img
-                      src={
-                        startup.founder?.profile?.avatar ||
-                        `https://api.dicebear.com/7.x/initials/svg?seed=${startup.founder?.profile?.fullName}`
-                      }
-                      alt=""
-                      className="w-5 h-5 rounded-full object-cover border border-slate-200 dark:border-dark-700"
+                    <Avatar
+                      src={startup.founder?.profile?.avatar}
+                      name={startup.founder?.profile?.fullName || 'Founder'}
+                      size="xs"
+                      className="!w-5 !h-5"
                     />
                     <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">
                       {startup.founder?.profile?.fullName || 'Founder'}

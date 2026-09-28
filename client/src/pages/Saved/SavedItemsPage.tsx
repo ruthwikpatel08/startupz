@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 import { SavedItem } from '../../types';
 import { EmptyState } from '../../components/common/EmptyState';
 import { VerificationBadge } from '../../components/common/Badge';
+import { Avatar } from '../../components/common/Avatar';
 import {
   Bookmark,
   Compass,
@@ -150,10 +151,10 @@ export const SavedItemsPage: React.FC = () => {
 
                   {item.itemType === 'USER' && (
                     <div className="flex items-center gap-3">
-                      <img
-                        src={d.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${d.profile?.fullName || d.email}`}
-                        alt=""
-                        className="w-11 h-11 rounded-lg object-cover border border-slate-200 dark:border-dark-700"
+                      <Avatar
+                        src={d.profile?.avatar}
+                        name={d.profile?.fullName || d.email}
+                        size="lg"
                       />
                       <div className="min-w-0 flex-1">
                         <h3 className="font-semibold text-sm text-slate-900 dark:text-white truncate">

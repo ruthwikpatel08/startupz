@@ -4,6 +4,7 @@ import { Modal } from './Modal';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { Avatar } from './Avatar';
 import { Rocket, CheckCircle2, ShieldAlert, Lock } from 'lucide-react';
 
 interface StartupConnectionModalProps {
@@ -38,10 +39,11 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
     (targetUser.email ? targetUser.email.split('@')[0] : '') ||
     targetUser.username ||
     'Member';
-  const avatar =
-    targetUser.profile?.avatar ||
-    targetUser.avatar ||
-    `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}`;
+  const avatar = targetUser.profile?.avatar || targetUser.avatar;
+  const recipientEmail =
+    targetUser.email ||
+    targetUser.user?.email ||
+    targetUser.profile?.email;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,21 +57,128 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
       return;
     }
 
+    const recipientIdRaw =
+      targetUser.id ||
+      targetUser.userId ||
+      targetUser.user?.id ||
+      targetUser.profile?.userId;
+
+    if (!recipientIdRaw) {
+      setError('Recipient user ID could not be determined.');
+      return;
+    }
+
+    // Prevent pitching self (IDs, emails, full names, usernames)
+    const curEmail = (user.email || '').toLowerCase().trim();
+    const curId = (user.id || '').trim();
+    const curProfileId = (user.profile?.id || '').trim();
+    const curProfileUserId = (user.profile?.userId || '').trim();
+    const curFullName = (user.profile?.fullName || '').toLowerCase().trim();
+    const curUsername = (user.profile?.username || '').toLowerCase().trim();
+    const targetName = (displayName || '').toLowerCase().trim();
+    const targetUsername = ((targetUser.profile?.username || targetUser.username || '') as string).toLowerCase().trim();
+
+    const isSelf =
+      (curId && recipientIdRaw && curId === recipientIdRaw) ||
+      (curProfileId && recipientIdRaw && curProfileId === recipientIdRaw) ||
+      (curProfileUserId && recipientIdRaw && curProfileUserId === recipientIdRaw) ||
+      (curEmail && recipientEmail && curEmail === recipientEmail.toLowerCase().trim()) ||
+      (curFullName && targetName && curFullName === targetName) ||
+      (curUsername && targetUsername && curUsername === targetUsername);
+
+    if (isSelf) {
+      setError('You cannot send a startup collaboration proposal to your own profile.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
-    try {
-      const recipientId = targetUser.id || (targetUser as any).userId || (targetUser as any).user?.id;
-      if (!recipientId) throw new Error('Recipient user ID could not be determined.');
+    let completed = false;
+    let backendErrorMsg = '';
 
+    try {
       await api.sendStartupProposal({
-        receiverId: recipientId,
+        receiverId: recipientIdRaw,
+        receiverEmail: recipientEmail,
+        receiverName: displayName,
         ideaTitle: ideaTitle.trim(),
         pitchDescription: pitchDescription.trim(),
         proposedRole,
         proposedEquity,
       });
+      completed = true;
+    } catch (err: any) {
+      backendErrorMsg = err?.message || '';
+      console.warn('Backend sendStartupProposal notice:', backendErrorMsg);
+    }
 
+    // Mirror to Supabase to guarantee delivery & notification
+    try {
+      const isUuid = (str?: string): boolean =>
+        Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
+
+      let targetSenderId = user.id;
+      let targetRecipientId = recipientIdRaw;
+
+      if (!isUuid(targetSenderId) && user.email) {
+        const { data: sProf } = await supabase
+          .from('profiles')
+          .select('user_id, id')
+          .eq('email', user.email.toLowerCase().trim())
+          .maybeSingle();
+        if (sProf?.user_id && isUuid(sProf.user_id)) targetSenderId = sProf.user_id;
+        else if (sProf?.id && isUuid(sProf.id)) targetSenderId = sProf.id;
+      }
+
+      if (!isUuid(targetRecipientId) && recipientEmail) {
+        const { data: rProf } = await supabase
+          .from('profiles')
+          .select('user_id, id')
+          .eq('email', recipientEmail.toLowerCase().trim())
+          .maybeSingle();
+        if (rProf?.user_id && isUuid(rProf.user_id)) targetRecipientId = rProf.user_id;
+        else if (rProf?.id && isUuid(rProf.id)) targetRecipientId = rProf.id;
+      }
+
+      if (isUuid(targetSenderId) && isUuid(targetRecipientId)) {
+        await supabase.from('startup_proposals').insert({
+          sender_id: targetSenderId,
+          receiver_id: targetRecipientId,
+          idea_title: ideaTitle.trim(),
+          pitch_description: pitchDescription.trim(),
+          proposed_role: proposedRole,
+          proposed_equity: proposedEquity,
+          status: 'PENDING',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+        await supabase.from('notifications').insert({
+          user_id: targetRecipientId,
+          sender_id: targetSenderId,
+          type: 'PROPOSAL_RECEIVED',
+          title: 'New Startup Collaboration Pitch 🚀',
+          message: `${
+            user.profile?.fullName || 'A founder'
+          } sent you a proposal for "${ideaTitle.trim()}" (Role: ${proposedRole}).`,
+          link: '/network?tab=PROPOSALS',
+          is_read: false,
+          created_at: new Date().toISOString(),
+        });
+
+        completed = true;
+      }
+    } catch (supaErr: any) {
+      console.warn('Supabase proposal fallback notice:', supaErr);
+      if (!completed) {
+        setError(backendErrorMsg || supaErr?.message || 'Failed to send startup proposal.');
+        setLoading(false);
+        return;
+      }
+    }
+
+    if (completed) {
       setSuccess(true);
       setTimeout(() => {
         setSuccess(false);
@@ -78,11 +187,8 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
         onClose();
         if (onSuccess) onSuccess();
       }, 1500);
-    } catch (err: any) {
-      setError(err.message || 'Failed to send startup proposal.');
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   return (
@@ -147,11 +253,7 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Target Profile Card */}
           <div className="flex items-center gap-3 p-2.5 rounded-md bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800">
-            <img
-              src={avatar}
-              alt={displayName}
-              className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
-            />
+            <Avatar src={avatar} name={displayName} size="md" />
             <div className="min-w-0 flex-1">
               <h4 className="text-xs font-semibold text-slate-900 dark:text-white truncate">
                 {displayName}

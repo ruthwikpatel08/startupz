@@ -7,6 +7,7 @@ import { VerificationBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
 import { Modal } from '../../components/common/Modal';
 import { ConnectModal } from '../../components/common/ConnectModal';
+import { Avatar } from '../../components/common/Avatar';
 import {
   GraduationCap,
   Search,
@@ -204,7 +205,6 @@ export const MentorsPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {mentors.map((mentor) => {
             const mentorName = mentor.user?.profile?.fullName || 'Distinguished Mentor';
-            const avatar = mentor.user?.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${mentorName}`;
             const headline = mentor.user?.profile?.headline || `${mentor.yearsExperience}+ Years Startup Experience`;
             const topics = mentor.mentoringTopics ? mentor.mentoringTopics.split(',').map((t) => t.trim()) : [];
             const industries = mentor.industries ? mentor.industries.split(',').map((i) => i.trim()) : [];
@@ -218,10 +218,11 @@ export const MentorsPage: React.FC = () => {
                   {/* Top: Avatar, Name, Verification */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={avatar}
-                        alt={mentorName}
-                        className="w-11 h-11 rounded-lg object-cover border border-slate-200 dark:border-dark-800"
+                      <Avatar
+                        src={mentor.user?.profile?.avatar}
+                        name={mentorName}
+                        size="md"
+                        className="!w-11 !h-11 rounded-lg"
                       />
                       <div>
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -298,7 +299,7 @@ export const MentorsPage: React.FC = () => {
                   </button>
 
                   <button
-                    onClick={() => setConnectUser(mentor.user || { id: mentor.userId, profile: { fullName: mentorName, avatar, headline } })}
+                    onClick={() => setConnectUser((mentor.user as any) || { id: mentor.userId, profile: { fullName: mentorName, avatar: (mentor.user as any)?.profile?.avatar, headline } })}
                     title="Send Connection"
                     className="btn-secondary p-1.5 text-xs font-medium"
                   >

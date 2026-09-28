@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { FailedStartup, RaisedSolution } from '../../types';
 import { RaiseSolutionModal } from '../../components/common/RaiseSolutionModal';
 import { ConnectModal } from '../../components/common/ConnectModal';
+import { Avatar } from '../../components/common/Avatar';
 import {
   Skull,
   Lightbulb,
@@ -313,9 +314,6 @@ export const FailedStartupsPage: React.FC = () => {
                               sol.author?.profile?.fullName ||
                               sol.author?.email?.split('@')[0] ||
                               'Innovator';
-                            const authorAvatar =
-                              sol.author?.profile?.avatar ||
-                              `https://api.dicebear.com/7.x/initials/svg?seed=${authorName}`;
                             const isUpvoted = upvotedSolutions[sol.id];
 
                             return (
@@ -354,10 +352,11 @@ export const FailedStartupsPage: React.FC = () => {
                                 {/* Author footer & Connect */}
                                 <div className="pt-2 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-[11px]">
                                   <div className="flex items-center gap-1.5">
-                                    <img
-                                      src={authorAvatar}
-                                      alt={authorName}
-                                      className="w-4 h-4 rounded-full object-cover"
+                                    <Avatar
+                                      src={sol.author?.profile?.avatar}
+                                      name={authorName}
+                                      size="xs"
+                                      className="w-4 h-4"
                                     />
                                     <span className="font-medium text-slate-700 dark:text-slate-300 truncate">
                                       {authorName}

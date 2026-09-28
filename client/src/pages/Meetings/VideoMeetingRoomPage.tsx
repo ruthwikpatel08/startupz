@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { VideoMeeting } from '../../types';
+import { Avatar } from '../../components/common/Avatar';
 import {
   Mic,
   MicOff,
@@ -258,13 +259,11 @@ export const VideoMeetingRoomPage: React.FC = () => {
                 /* Simulated video stream */
                 <div className="relative w-full h-full flex flex-col items-center justify-center bg-gradient-to-tr from-slate-900 via-slate-850 to-slate-900 p-6 text-center">
                   <div className="relative">
-                    <img
-                      src={
-                        currentUser?.profile?.avatar ||
-                        `https://api.dicebear.com/7.x/initials/svg?seed=${hostName}`
-                      }
-                      alt={hostName}
-                      className="w-20 h-20 rounded-full border-2 border-brand-500 shadow-md object-cover"
+                    <Avatar
+                      src={currentUser?.profile?.avatar}
+                      name={hostName}
+                      size="2xl"
+                      className="w-20 h-20 border-2 border-brand-500 shadow-md"
                     />
                     {isMicOn && (
                       <span className="absolute bottom-0 right-0 p-1.5 rounded-full bg-emerald-500 text-white shadow-sm">
@@ -315,13 +314,11 @@ export const VideoMeetingRoomPage: React.FC = () => {
               ) : (
                 <div className="relative w-full h-full flex flex-col items-center justify-center bg-gradient-to-tr from-slate-900 via-slate-850 to-slate-900 p-6 text-center">
                   <div className="relative">
-                    <img
-                      src={
-                        meeting.guest?.profile?.avatar ||
-                        `https://api.dicebear.com/7.x/initials/svg?seed=${guestName}`
-                      }
-                      alt={guestName}
-                      className="w-20 h-20 rounded-full border-2 border-emerald-500 shadow-md object-cover"
+                    <Avatar
+                      src={meeting.guest?.profile?.avatar}
+                      name={guestName}
+                      size="2xl"
+                      className="w-20 h-20 border-2 border-emerald-500 shadow-md"
                     />
                   </div>
                   <span className="mt-3 text-xs font-semibold text-white">{guestName}</span>

@@ -154,7 +154,7 @@ export const AuthCallbackPage: React.FC = () => {
           const userAvatar =
             user.user_metadata?.avatar_url ||
             user.user_metadata?.picture ||
-            `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(userFullName)}&backgroundColor=4f46e5,06b6d4,10b981`;
+            null;
 
           const cleanUsername = (user.email?.split('@')[0] || 'user').toLowerCase().replace(/[^a-z0-9_]/g, '');
 
@@ -206,7 +206,7 @@ export const AuthCallbackPage: React.FC = () => {
               const userAvatar =
                 user.user_metadata?.avatar_url ||
                 user.user_metadata?.picture ||
-                `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(userFullName)}&backgroundColor=4f46e5,06b6d4,10b981`;
+                null;
 
               if (isSubscribed) {
                 setAuthUser(user);

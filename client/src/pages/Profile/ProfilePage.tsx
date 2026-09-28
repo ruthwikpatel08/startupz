@@ -629,6 +629,18 @@ export const ProfilePage: React.FC = () => {
     .substring(0, 2)
     .toUpperCase();
   const avatar = p.avatar;
+  const hasCustomAvatar = Boolean(
+    avatar &&
+    typeof avatar === 'string' &&
+    avatar.trim() !== '' &&
+    !avatar.includes('dicebear.com') &&
+    !avatar.includes('avataaars')
+  );
+  const hasCustomCover = Boolean(
+    p.coverImage &&
+    typeof p.coverImage === 'string' &&
+    p.coverImage.trim() !== ''
+  );
   const skillsList = p.skills ? p.skills.split(',').map((s) => s.trim()).filter(Boolean) : [];
   const openToList = p.openTo ? p.openTo.split(',').map((o) => o.trim()).filter(Boolean) : [];
   const interestsList = p.startupInterests
@@ -679,7 +691,7 @@ export const ProfilePage: React.FC = () => {
               )}
               {isMe && (
                 <>
-                  {p.coverImage && (
+                  {hasCustomCover && (
                     <button
                       onClick={() => handleRemovePhoto('cover')}
                       disabled={isRemovingPhoto}
@@ -717,20 +729,21 @@ export const ProfilePage: React.FC = () => {
               {/* Profile Photo (Partially Overlapping) */}
               <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 sm:gap-5 w-full md:w-auto">
                 <div className="relative shrink-0 group">
-                  {avatar ? (
+                  {hasCustomAvatar ? (
                     <img
-                      src={avatar}
+                      src={avatar!}
                       alt={displayName}
                       className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white dark:border-dark-900 shadow-sm bg-white"
                     />
                   ) : (
-                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white dark:border-dark-900 shadow-sm bg-slate-100 dark:bg-dark-800 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-2xl sm:text-3xl">
-                      {initials}
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white dark:border-dark-900 shadow-sm bg-brand-600 text-white flex flex-col items-center justify-center font-bold">
+                      <Rocket className="w-8 h-8 sm:w-10 sm:h-10 mb-0.5 text-white" />
+                      <span className="text-xs sm:text-sm font-semibold tracking-wider">{initials}</span>
                     </div>
                   )}
                   {isMe && (
                     <div className="absolute -bottom-1 -right-1 flex items-center gap-1">
-                      {avatar && (
+                      {hasCustomAvatar && (
                         <button
                           onClick={() => handleRemovePhoto('avatar')}
                           disabled={isRemovingPhoto}
@@ -1301,20 +1314,26 @@ export const ProfilePage: React.FC = () => {
                     Profile Photo (Avatar)
                   </label>
                   <div className="flex items-center gap-2">
-                    <img
-                      src={formData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.fullName || 'User'}`}
-                      alt=""
-                      className="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-dark-700 shadow-xs shrink-0"
-                    />
+                    {formData.avatar && !formData.avatar.includes('dicebear') && !formData.avatar.includes('avataaars') ? (
+                      <img
+                        src={formData.avatar}
+                        alt=""
+                        className="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-dark-700 shadow-xs shrink-0"
+                      />
+                    ) : (
+                      <div className="w-11 h-11 rounded-full bg-brand-600 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-brand-500/30">
+                        {formData.fullName?.split(' ').filter(Boolean).map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || 'SZ'}
+                      </div>
+                    )}
                     <button
                       type="button"
                       onClick={() => handleRequestGalleryPermission('avatar')}
                       className="btn-secondary flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium cursor-pointer"
                     >
                       <Camera size={13} className="text-brand-600" />
-                      <span>{formData.avatar ? 'Change Photo' : 'Upload Photo'}</span>
+                      <span>{formData.avatar && !formData.avatar.includes('dicebear') && !formData.avatar.includes('avataaars') ? 'Change Photo' : 'Upload Photo'}</span>
                     </button>
-                    {formData.avatar && (
+                    {formData.avatar && !formData.avatar.includes('dicebear') && !formData.avatar.includes('avataaars') && (
                       <button
                         type="button"
                         onClick={() => handleRemovePhoto('avatar')}

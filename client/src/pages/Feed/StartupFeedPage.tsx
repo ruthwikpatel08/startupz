@@ -6,6 +6,7 @@ import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { ReportModal } from '../../components/common/ReportModal';
+import { Avatar } from '../../components/common/Avatar';
 import {
   Share2,
   Heart,
@@ -233,10 +234,11 @@ export const StartupFeedPage: React.FC = () => {
       {user && (
         <div className="card-base p-4 sm:p-5 transition-colors">
           <div className="flex items-center gap-3">
-            <img
-              src={user.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${user.email}`}
-              alt=""
-              className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-dark-700"
+            <Avatar
+              src={user.profile?.avatar}
+              name={user.profile?.fullName || user.email}
+              size="md"
+              className="!w-9 !h-9"
             />
             <button
               onClick={() => setComposerOpen(!composerOpen)}
@@ -349,7 +351,6 @@ export const StartupFeedPage: React.FC = () => {
           {posts.map((post) => {
             const author = post.author;
             const authorName = author?.profile?.fullName || author?.email || 'Founder';
-            const authorAvatar = author?.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${authorName}`;
             const authorHeadline = author?.profile?.headline || author?.role;
             const isCommentsOpen = !!expandedComments[post.id];
 
@@ -363,10 +364,11 @@ export const StartupFeedPage: React.FC = () => {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <Link to={`/profile/${author?.id}`}>
-                      <img
-                        src={authorAvatar}
-                        alt={authorName}
-                        className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-dark-700"
+                      <Avatar
+                        src={author?.profile?.avatar}
+                        name={authorName}
+                        size="md"
+                        className="!w-10 !h-10"
                       />
                     </Link>
                     <div>

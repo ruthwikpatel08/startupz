@@ -5,6 +5,7 @@ import { api } from '../../services/api';
 import { ConnectModal } from '../common/ConnectModal';
 import { StartupConnectionModal } from '../common/StartupConnectionModal';
 import { ScheduleMeetingModal } from '../common/ScheduleMeetingModal';
+import { Avatar } from '../common/Avatar';
 import {
   Sparkles,
   Bot,
@@ -206,9 +207,6 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
                   results.results.map((candidate: any) => {
                     const profile = candidate.profile || {};
                     const name = profile.fullName || candidate.email?.split('@')[0] || 'Anonymous';
-                    const avatar =
-                      profile.avatar ||
-                      `https://api.dicebear.com/7.x/initials/svg?seed=${name}&backgroundColor=2457d6`;
                     const skillsList = profile.skills
                       ? profile.skills.split(',').map((s: string) => s.trim()).filter(Boolean)
                       : [];
@@ -220,10 +218,10 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
                       >
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                           <div className="flex items-start gap-3">
-                            <img
-                              src={avatar}
-                              alt={name}
-                              className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                            <Avatar
+                              src={profile.avatar}
+                              name={name}
+                              size="md"
                             />
                             <div className="space-y-0.5">
                               <div className="flex items-center gap-2">

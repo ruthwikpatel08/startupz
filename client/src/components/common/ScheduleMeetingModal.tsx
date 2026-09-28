@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Modal } from './Modal';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { Avatar } from './Avatar';
 import { Video, Calendar, Copy, Check, ExternalLink, ShieldAlert, Lock } from 'lucide-react';
 
 interface ScheduleMeetingModalProps {
@@ -35,9 +36,6 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
   if (!targetUser) return null;
 
   const displayName = targetUser.profile?.fullName || targetUser.email.split('@')[0];
-  const avatar =
-    targetUser.profile?.avatar ||
-    `https://api.dicebear.com/7.x/initials/svg?seed=${displayName}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -201,10 +199,10 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Target Profile Card */}
           <div className="flex items-center gap-3 p-2.5 rounded-md bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800">
-            <img
-              src={avatar}
-              alt={displayName}
-              className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+            <Avatar
+              src={targetUser.profile?.avatar}
+              name={displayName}
+              size="md"
             />
             <div className="min-w-0 flex-1">
               <h4 className="text-xs font-semibold text-slate-900 dark:text-white truncate">

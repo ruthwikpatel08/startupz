@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '../common/Modal';
+import { Avatar } from '../common/Avatar';
 import { supabase } from '../../lib/supabase';
 import {
   Search,
@@ -164,13 +165,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
                   className="w-full flex items-center justify-between p-2 rounded-md bg-white dark:bg-slate-900 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-800 transition-colors text-left group"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <img
-                      src={
-                        u.avatar ||
-                        `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.fullName)}&backgroundColor=2457d6`
-                      }
-                      alt={u.fullName}
-                      className="w-7 h-7 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700"
+                    <Avatar
+                      src={u.avatar}
+                      name={u.fullName}
+                      size="sm"
                     />
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">

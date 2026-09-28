@@ -99,33 +99,85 @@ router.get('/pending', requireAuth, async (req, res) => {
 // POST /api/connections
 router.post('/', requireAuth, async (req, res) => {
   try {
-    let { receiverId, note } = req.body;
+    let { receiverId, note, receiverEmail, receiverName, receiverRole } = req.body;
 
     if (!receiverId) return res.status(400).json({ error: 'Receiver user ID is required.' });
 
-    // Resolve receiverId if it was passed as a Profile, Investor, or Mentor ID
-    let targetUser = await prisma.user.findUnique({ where: { id: receiverId } });
+    // 1. First look up target user by id
+    let targetUser = await prisma.user.findUnique({ where: { id: receiverId }, include: { profile: true } });
+
+    // 2. If not found and email is provided, look up by email
+    if (!targetUser && receiverEmail) {
+      targetUser = await prisma.user.findUnique({
+        where: { email: receiverEmail.toLowerCase().trim() },
+        include: { profile: true },
+      });
+    }
+
+    // 3. Look up by profile, investor, or mentor
     if (!targetUser) {
-      const p = await prisma.profile.findFirst({ where: { OR: [{ id: receiverId }, { userId: receiverId }] } });
-      if (p) {
-        receiverId = p.userId;
-        targetUser = await prisma.user.findUnique({ where: { id: receiverId } });
-      } else {
-        const inv = await prisma.investor.findFirst({ where: { OR: [{ id: receiverId }, { userId: receiverId }] } });
-        if (inv) {
-          receiverId = inv.userId;
-          targetUser = await prisma.user.findUnique({ where: { id: receiverId } });
-        } else {
-          const m = await prisma.mentor.findFirst({ where: { OR: [{ id: receiverId }, { userId: receiverId }] } });
-          if (m) {
-            receiverId = m.userId;
-            targetUser = await prisma.user.findUnique({ where: { id: receiverId } });
-          }
+      const p = await prisma.profile.findFirst({
+        where: { OR: [{ id: receiverId }, { userId: receiverId }] },
+        include: { user: { include: { profile: true } } },
+      });
+      if (p) targetUser = p.user;
+      else {
+        const inv = await prisma.investor.findFirst({
+          where: { OR: [{ id: receiverId }, { userId: receiverId }] },
+          include: { user: { include: { profile: true } } },
+        });
+        if (inv) targetUser = inv.user;
+        else {
+          const m = await prisma.mentor.findFirst({
+            where: { OR: [{ id: receiverId }, { userId: receiverId }] },
+            include: { user: { include: { profile: true } } },
+          });
+          if (m) targetUser = m.user;
         }
       }
     }
 
-    if (receiverId === req.user.id) return res.status(400).json({ error: 'You cannot connect with yourself.' });
+    // 4. If targetUser is still not in Prisma (e.g. registered in Supabase), AUTO-PROVISION in Prisma
+    if (!targetUser) {
+      const email = receiverEmail ? receiverEmail.toLowerCase().trim() : `${receiverId}@synced.user`;
+      const name = receiverName || email.split('@')[0];
+      try {
+        targetUser = await prisma.user.upsert({
+          where: { email },
+          update: {},
+          create: {
+            id: receiverId,
+            email,
+            password: 'SUPABASE_SYNCED_USER',
+            role: receiverRole || 'FOUNDER',
+            isVerified: true,
+            verificationBadge: 'Verified Member',
+            profile: {
+              create: {
+                fullName: name,
+                headline: 'Startup Builder',
+                profileCompletion: 80,
+              },
+            },
+          },
+          include: { profile: true },
+        });
+      } catch (upsertErr) {
+        targetUser = await prisma.user.findFirst({
+          where: { OR: [{ id: receiverId }, { email }] },
+          include: { profile: true },
+        });
+      }
+    }
+
+    if (targetUser) {
+      receiverId = targetUser.id;
+    }
+
+    // Check if user is attempting to connect with themselves
+    if (receiverId === req.user.id || (targetUser && targetUser.email.toLowerCase() === req.user.email.toLowerCase())) {
+      return res.status(400).json({ error: 'You cannot connect with your own profile.' });
+    }
 
     const existing = await prisma.connection.findFirst({
       where: {
@@ -317,25 +369,72 @@ router.post('/startup-proposal', requireAuth, async (req, res) => {
     }
 
     // Resolve receiverId if it was passed as a Profile, Investor, or Mentor ID
-    let targetUser = await prisma.user.findUnique({ where: { id: receiverId } });
+    let targetUser = await prisma.user.findUnique({ where: { id: receiverId }, include: { profile: true } });
+    if (!targetUser && req.body.receiverEmail) {
+      targetUser = await prisma.user.findUnique({
+        where: { email: req.body.receiverEmail.toLowerCase().trim() },
+        include: { profile: true },
+      });
+    }
+
     if (!targetUser) {
       const p = await prisma.profile.findFirst({ where: { OR: [{ id: receiverId }, { userId: receiverId }] } });
       if (p) {
         receiverId = p.userId;
+        targetUser = await prisma.user.findUnique({ where: { id: receiverId } });
       } else {
         const inv = await prisma.investor.findFirst({ where: { OR: [{ id: receiverId }, { userId: receiverId }] } });
         if (inv) {
           receiverId = inv.userId;
+          targetUser = await prisma.user.findUnique({ where: { id: receiverId } });
         } else {
           const m = await prisma.mentor.findFirst({ where: { OR: [{ id: receiverId }, { userId: receiverId }] } });
           if (m) {
             receiverId = m.userId;
+            targetUser = await prisma.user.findUnique({ where: { id: receiverId } });
           }
         }
       }
     }
 
-    if (receiverId === req.user.id) {
+    // Auto-provision if missing from Prisma
+    if (!targetUser) {
+      const email = req.body.receiverEmail ? req.body.receiverEmail.toLowerCase().trim() : `${receiverId}@synced.user`;
+      const name = req.body.receiverName || email.split('@')[0];
+      try {
+        targetUser = await prisma.user.upsert({
+          where: { email },
+          update: {},
+          create: {
+            id: receiverId,
+            email,
+            password: 'SUPABASE_SYNCED_USER',
+            role: proposedRole?.includes('Investor') ? 'INVESTOR' : 'FOUNDER',
+            isVerified: true,
+            verificationBadge: 'Verified Member',
+            profile: {
+              create: {
+                fullName: name,
+                headline: 'Startup Builder',
+                profileCompletion: 80,
+              },
+            },
+          },
+          include: { profile: true },
+        });
+      } catch (e) {
+        targetUser = await prisma.user.findFirst({
+          where: { OR: [{ id: receiverId }, { email }] },
+          include: { profile: true },
+        });
+      }
+    }
+
+    if (targetUser) {
+      receiverId = targetUser.id;
+    }
+
+    if (receiverId === req.user.id || (targetUser && targetUser.email.toLowerCase() === req.user.email.toLowerCase())) {
       return res.status(400).json({ error: 'You cannot propose starting a company with yourself.' });
     }
 

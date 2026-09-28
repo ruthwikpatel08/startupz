@@ -30,7 +30,7 @@ router.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const initialAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}&backgroundColor=4f46e5,06b6d4,10b981`;
+    const initialAvatar = null;
 
     const user = await prisma.user.create({
       data: {
@@ -136,7 +136,7 @@ router.post('/google', async (req, res) => {
 
     if (!user) {
       const generatedPassword = await bcrypt.hash(`GoogleAuth_${Math.random()}_2026!`, 10);
-      const userAvatar = avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}&backgroundColor=4f46e5,06b6d4,10b981`;
+      const userAvatar = avatar || null;
 
       user = await prisma.user.create({
         data: {
@@ -227,7 +227,7 @@ router.post('/sync', async (req, res) => {
               fullName: cleanName,
               headline: headline || `${upperRole.charAt(0) + upperRole.slice(1).toLowerCase()} | Startup Builder`,
               location: location || 'Remote',
-              avatar: avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanName)}&backgroundColor=4f46e5,06b6d4,10b981`,
+              avatar: avatar || null,
               openTo: 'Co-Founder,Startup Team,Investment',
               profileCompletion: 85,
             },
@@ -243,7 +243,7 @@ router.post('/sync', async (req, res) => {
           fullName: cleanName,
           headline: headline || user.profile?.headline || `${upperRole} | Startup Builder`,
           location: location || user.profile?.location || 'Remote',
-          avatar: avatar || user.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanName)}`,
+          avatar: avatar || user.profile?.avatar || null,
           openTo: 'Co-Founder,Startup Team,Investment',
           profileCompletion: 85,
         },

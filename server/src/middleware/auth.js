@@ -43,7 +43,7 @@ async function resolveUserFromToken(token, req) {
           const meta = decoded.user_metadata || {};
           const fullName = meta.full_name || meta.name || userEmail.split('@')[0];
           const role = (meta.role || 'FOUNDER').toUpperCase();
-          const avatar = meta.avatar_url || meta.picture || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName)}&backgroundColor=4f46e5,06b6d4,10b981`;
+          const avatar = meta.avatar_url || meta.picture || null;
 
           user = await prisma.user.create({
             data: {

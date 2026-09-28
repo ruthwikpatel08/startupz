@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabase';
+import { Avatar } from './Avatar';
 import {
   Bell,
   Check,
@@ -56,12 +58,81 @@ export const NotificationsDropdown: React.FC = () => {
   const fetchNotifications = async () => {
     if (!user) return;
     try {
-      const res = await api.getNotifications();
-      const list = res.notifications || [];
-      const unread = res.unreadCount ?? list.filter((n: any) => !n.isRead).length;
+      let list: NotificationItem[] = [];
+      let unread = 0;
+
+      try {
+        const res = await api.getNotifications();
+        list = res.notifications || [];
+        unread = res.unreadCount ?? list.filter((n: any) => !n.isRead).length;
+      } catch (err) {
+        console.warn('Backend notifications polling notice:', err);
+      }
+
+      // Check Supabase notifications
+      if (user.id) {
+        try {
+          const { data: supaNotifs } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+          if (supaNotifs && supaNotifs.length > 0) {
+            const senderIds = supaNotifs.map((n) => n.sender_id).filter(Boolean);
+            let senderMap = new Map<string, any>();
+            if (senderIds.length > 0) {
+              const { data: senders } = await supabase
+                .from('profiles')
+                .select('*')
+                .in('user_id', senderIds);
+              senderMap = new Map((senders || []).map((s) => [s.user_id, s]));
+            }
+
+            for (const sn of supaNotifs) {
+              const alreadyInList = list.some(
+                (item) =>
+                  item.id === sn.id ||
+                  (item.title === sn.title && item.message === sn.message)
+              );
+              if (!alreadyInList) {
+                const sProf = sn.sender_id ? senderMap.get(sn.sender_id) : null;
+                list.push({
+                  id: sn.id,
+                  userId: sn.user_id,
+                  senderId: sn.sender_id,
+                  type: sn.type,
+                  title: sn.title,
+                  message: sn.message,
+                  link: sn.link,
+                  isRead: sn.is_read,
+                  createdAt: sn.created_at,
+                  sender: sn.sender_id
+                    ? {
+                        id: sn.sender_id,
+                        email: sProf?.email || '',
+                        role: sProf?.preferred_role || 'FOUNDER',
+                        isVerified: true,
+                        profile: {
+                          fullName: sProf?.full_name || 'Startup Builder',
+                          avatar: sProf?.avatar,
+                          headline: sProf?.headline || '',
+                        },
+                      }
+                    : undefined,
+                });
+              }
+            }
+            unread = list.filter((n) => !n.isRead).length;
+          }
+        } catch (supaErr) {
+          console.warn('Supabase notifications load notice:', supaErr);
+        }
+      }
+
       setNotifications(list);
       setUnreadCount(unread);
-    } catch (err) {
+    } catch {
       // Graceful poll fail
     }
   };
@@ -96,7 +167,14 @@ export const NotificationsDropdown: React.FC = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await api.markAllNotificationsAsRead();
+      try {
+        await api.markAllNotificationsAsRead();
+      } catch {}
+      if (user?.id) {
+        try {
+          await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id);
+        } catch {}
+      }
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (err) {
@@ -107,14 +185,17 @@ export const NotificationsDropdown: React.FC = () => {
   const handleNotificationClick = async (notif: NotificationItem) => {
     if (!notif.isRead) {
       try {
-        await api.markNotificationAsRead(notif.id);
+        try {
+          await api.markNotificationAsRead(notif.id);
+        } catch {}
+        try {
+          await supabase.from('notifications').update({ is_read: true }).eq('id', notif.id);
+        } catch {}
         setNotifications((prev) =>
           prev.map((n) => (n.id === notif.id ? { ...n, isRead: true } : n))
         );
         setUnreadCount((c) => Math.max(0, c - 1));
-      } catch (err) {
-        // Continue navigation
-      }
+      } catch {}
     }
     setIsOpen(false);
     if (notif.link) {
@@ -125,7 +206,12 @@ export const NotificationsDropdown: React.FC = () => {
   const handleDismiss = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
-      await api.deleteNotification(id);
+      try {
+        await api.deleteNotification(id);
+      } catch {}
+      try {
+        await supabase.from('notifications').delete().eq('id', id);
+      } catch {}
       setNotifications((prev) => prev.filter((n) => n.id !== id));
       setUnreadCount((c) => Math.max(0, c - 1));
     } catch {
@@ -142,18 +228,28 @@ export const NotificationsDropdown: React.FC = () => {
     e.stopPropagation();
     setActionLoading((prev) => ({ ...prev, [notif.id]: true }));
     try {
-      // Find pending connection ID if senderId exists
-      const pendingRes = await api.getPendingConnections();
-      const match = (pendingRes?.received || []).find(
-        (c: any) => c.senderId === notif.senderId || c.sender?.id === notif.senderId
-      );
+      // 1. Try backend
+      try {
+        const pendingRes = await api.getPendingConnections();
+        const match = (pendingRes?.received || []).find(
+          (c: any) => c.senderId === notif.senderId || c.sender?.id === notif.senderId
+        );
+        if (match?.id) {
+          await api.respondConnection(match.id, action);
+        }
+      } catch {}
 
-      if (match?.id) {
-        await api.respondConnection(match.id, action);
-      } else {
-        navigate('/network?tab=PENDING');
-        setIsOpen(false);
-        return;
+      // 2. Also update Supabase
+      if (notif.senderId && user?.id) {
+        try {
+          const newStatus = action === 'ACCEPT' ? 'ACCEPTED' : 'REJECTED';
+          await supabase
+            .from('connections')
+            .update({ status: newStatus, updated_at: new Date().toISOString() })
+            .or(
+              `and(sender_id.eq.${notif.senderId},receiver_id.eq.${user.id}),and(sender_id.eq.${user.id},receiver_id.eq.${notif.senderId})`
+            );
+        } catch {}
       }
 
       setNotifications((prev) =>
@@ -332,9 +428,6 @@ export const NotificationsDropdown: React.FC = () => {
                   n.sender?.profile?.fullName ||
                   n.sender?.email?.split('@')[0] ||
                   'Startup Founder';
-                const senderAvatar =
-                  n.sender?.profile?.avatar ||
-                  `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(senderName)}`;
 
                 return (
                   <div
@@ -353,10 +446,11 @@ export const NotificationsDropdown: React.FC = () => {
 
                     {/* Sender Avatar */}
                     <div className="relative shrink-0">
-                      <img
-                        src={senderAvatar}
-                        alt={senderName}
-                        className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+                      <Avatar
+                        src={n.sender?.profile?.avatar}
+                        name={senderName}
+                        size="md"
+                        className="!w-9 !h-9"
                       />
                       <span
                         className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] ${

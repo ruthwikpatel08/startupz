@@ -172,14 +172,18 @@ export const api = {
   getConnections: (params?: any) => request<any>(`/connections${buildQuery(params)}`),
   getPendingConnections: () => request<any>('/connections/pending'),
   getConnectionCount: (userId: string) => request<{ count: number }>(`/connections/count/${userId}`),
-  sendConnection: (receiverId: string, note?: string) =>
-    request<any>('/connections', { method: 'POST', body: JSON.stringify({ receiverId, note }) }),
+  sendConnection: (payloadOrReceiverId: any, note?: string) => {
+    const body = typeof payloadOrReceiverId === 'string'
+      ? { receiverId: payloadOrReceiverId, note }
+      : payloadOrReceiverId;
+    return request<any>('/connections', { method: 'POST', body: JSON.stringify(body) });
+  },
   respondConnection: (id: string, action: 'ACCEPT' | 'REJECT' | 'ACCEPTED' | 'REJECTED') => {
     const status = action === 'ACCEPT' || action === 'ACCEPTED' ? 'ACCEPTED' : 'REJECTED';
     return request<any>(`/connections/${id}`, { method: 'PUT', body: JSON.stringify({ status, action }) });
   },
   removeConnection: (id: string) => request<any>(`/connections/${id}`, { method: 'DELETE' }),
-  sendStartupProposal: (payload: { receiverId: string; ideaTitle: string; pitchDescription: string; proposedRole: string; proposedEquity?: string }) =>
+  sendStartupProposal: (payload: { receiverId: string; ideaTitle: string; pitchDescription: string; proposedRole: string; proposedEquity?: string; receiverEmail?: string; receiverName?: string }) =>
     request<any>('/connections/startup-proposal', { method: 'POST', body: JSON.stringify(payload) }),
   getStartupProposals: (type?: 'sent' | 'received') =>
     request<any[]>(`/connections/startup-proposals${type ? `?type=${type}` : ''}`),
