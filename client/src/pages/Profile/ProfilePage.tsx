@@ -36,6 +36,7 @@ import {
   BookOpen,
   FolderKanban,
   Check,
+  Clock,
   ChevronRight,
   Camera,
   Image as ImageIcon,
@@ -335,10 +336,16 @@ export const ProfilePage: React.FC = () => {
     }
 
     try {
+      let backendData: any = null;
+      try {
+        const data = await api.getUser(targetId);
+        backendData = data.user || data;
+      } catch {}
+
       // 1. Check Supabase profiles table directly for authenticated UUID
       const sbProfile = await fetchUserProfileFromSupabase(targetId);
       if (sbProfile) {
-        const u: User = {
+        const u: any = {
           id: sbProfile.user_id || targetId,
           email: sbProfile.email || currentUser?.email || '',
           role: sbProfile.preferred_role || currentUser?.role || 'FOUNDER',
@@ -347,6 +354,8 @@ export const ProfilePage: React.FC = () => {
           isSuspended: false,
           isAdmin: currentUser?.isAdmin || false,
           createdAt: sbProfile.created_at || new Date().toISOString(),
+          connectionStatus: backendData?.connectionStatus || null,
+          startups: backendData?.startups || [],
           profile: {
             id: sbProfile.id,
             userId: sbProfile.user_id || targetId,
@@ -371,10 +380,14 @@ export const ProfilePage: React.FC = () => {
           },
         };
         setProfileUser(u);
-      } else {
-        const data = await api.getUser(targetId);
-        const u = data.user || data;
-        setProfileUser(u);
+        if (typeof backendData?.connectionsCount === 'number') {
+          setConnectionsCount(backendData.connectionsCount);
+        }
+      } else if (backendData) {
+        setProfileUser(backendData);
+        if (typeof backendData?.connectionsCount === 'number') {
+          setConnectionsCount(backendData.connectionsCount);
+        }
       }
     } catch (err) {
       console.warn('Profile fetch warning:', err);
@@ -389,6 +402,13 @@ export const ProfilePage: React.FC = () => {
     let isMounted = true;
     const loadConnections = async () => {
       try {
+        if (targetId) {
+          const countRes = await api.getConnectionCount(targetId).catch(() => null);
+          if (countRes && typeof countRes.count === 'number') {
+            if (isMounted) setConnectionsCount(countRes.count);
+            return;
+          }
+        }
         if (isMe) {
           const res = await api.getConnections();
           if (isMounted) setConnectionsCount(res.connections?.length || 0);
@@ -655,23 +675,36 @@ export const ProfilePage: React.FC = () => {
               <div className="flex items-center gap-2 w-full md:w-auto flex-wrap sm:flex-nowrap pt-2 md:pt-0">
                 {!isMe && (
                   <>
-                    <button
-                      onClick={() => setConnectOpen(true)}
-                      className="flex-1 sm:flex-none btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium"
-                    >
-                      <UserPlus size={15} />
-                      <span>Connect</span>
-                    </button>
+                    {(profileUser as any).connectionStatus?.status === 'ACCEPTED' ? (
+                      <span className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        <Check size={14} />
+                        <span>Connected</span>
+                      </span>
+                    ) : (profileUser as any).connectionStatus?.status === 'PENDING' ? (
+                      <span className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                        <Clock size={14} />
+                        <span>Invitation Pending</span>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => setConnectOpen(true)}
+                        className="flex-1 sm:flex-none btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium cursor-pointer"
+                      >
+                        <UserPlus size={15} />
+                        <span>Connect</span>
+                      </button>
+                    )}
+
                     <button
                       onClick={() => navigate(`/messages?user=${profileUser.id}`)}
-                      className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium"
+                      className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium cursor-pointer"
                     >
                       <MessageSquare size={15} />
-                      <span>Message</span>
+                      <span>Chat</span>
                     </button>
                     <button
                       onClick={() => setStartupProposalOpen(true)}
-                      className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium"
+                      className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium cursor-pointer"
                       title="Propose Startup Connection"
                     >
                       <Rocket size={15} className="text-brand-600" />

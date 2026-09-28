@@ -10,12 +10,24 @@ router.get('/', requireAuth, async (req, res) => {
     const notifications = await prisma.notification.findMany({
       where: { userId: req.user.id },
       orderBy: { createdAt: 'desc' },
-      take: 30,
+      take: 40,
       include: {
         sender: {
           select: {
             id: true,
-            profile: { select: { fullName: true, avatar: true } },
+            email: true,
+            role: true,
+            isVerified: true,
+            verificationBadge: true,
+            profile: {
+              select: {
+                fullName: true,
+                avatar: true,
+                headline: true,
+                location: true,
+                preferredRole: true,
+              },
+            },
           },
         },
       },
@@ -25,8 +37,9 @@ router.get('/', requireAuth, async (req, res) => {
       where: { userId: req.user.id, isRead: false },
     });
 
-    return res.json({ notifications, unreadCount });
+    return res.json({ notifications, unreadCount, data: notifications });
   } catch (error) {
+    console.error('Get notifications error:', error);
     return res.status(500).json({ error: 'Failed to retrieve notifications.' });
   }
 });
@@ -55,6 +68,19 @@ router.put('/:id/read', requireAuth, async (req, res) => {
     return res.json({ message: 'Notification marked as read.' });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to update notification.' });
+  }
+});
+
+// DELETE /api/notifications/:id
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.notification.deleteMany({
+      where: { id, userId: req.user.id },
+    });
+    return res.json({ message: 'Notification dismissed.' });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to dismiss notification.' });
   }
 });
 

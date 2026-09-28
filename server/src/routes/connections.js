@@ -113,6 +113,8 @@ router.post('/', requireAuth, async (req, res) => {
       },
     });
 
+    const senderName = req.user.profile?.fullName || 'A startup builder';
+
     if (existing) {
       if (existing.status === 'ACCEPTED') {
         return res.status(400).json({ error: 'You are already connected with this user.' });
@@ -129,6 +131,19 @@ router.post('/', requireAuth, async (req, res) => {
           note,
         },
       });
+
+      // Send notification on resend
+      await prisma.notification.create({
+        data: {
+          userId: receiverId,
+          senderId: req.user.id,
+          type: 'CONNECTION_REQUEST',
+          title: 'New Connection Request 🤝',
+          message: `${senderName} wants to connect with you.${note ? ` Note: "${note}"` : ''}`,
+          link: '/network?tab=PENDING',
+        },
+      });
+
       return res.json({ message: 'Connection request sent!', connection: updated });
     }
 
@@ -141,21 +156,40 @@ router.post('/', requireAuth, async (req, res) => {
       },
     });
 
-    const senderName = req.user.profile?.fullName || 'A startup builder';
     await prisma.notification.create({
       data: {
         userId: receiverId,
         senderId: req.user.id,
         type: 'CONNECTION_REQUEST',
-        title: 'New Connection Request',
+        title: 'New Connection Request 🤝',
         message: `${senderName} wants to connect with you.${note ? ` Note: "${note}"` : ''}`,
-        link: '/network',
+        link: '/network?tab=PENDING',
       },
     });
 
     return res.status(201).json({ message: 'Connection request sent!', connection });
   } catch (error) {
+    console.error('Send connection error:', error);
     return res.status(500).json({ error: 'Failed to send connection request.' });
+  }
+});
+
+// GET /api/connections/count/:userId - Get public connection count for any user
+router.get('/count/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const count = await prisma.connection.count({
+      where: {
+        status: 'ACCEPTED',
+        OR: [
+          { senderId: userId },
+          { receiverId: userId },
+        ],
+      },
+    });
+    return res.json({ count });
+  } catch (err) {
+    return res.json({ count: 0 });
   }
 });
 
@@ -163,7 +197,13 @@ router.post('/', requireAuth, async (req, res) => {
 router.put('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    let status = req.body.status || req.body.action;
+
+    if (typeof status === 'string') {
+      const upper = status.toUpperCase();
+      if (upper === 'ACCEPT' || upper === 'ACCEPTED') status = 'ACCEPTED';
+      else if (upper === 'REJECT' || upper === 'REJECTED' || upper === 'DECLINE' || upper === 'DECLINED') status = 'REJECTED';
+    }
 
     if (!['ACCEPTED', 'REJECTED'].includes(status)) {
       return res.status(400).json({ error: 'Status must be ACCEPTED or REJECTED.' });
@@ -179,21 +219,52 @@ router.put('/:id', requireAuth, async (req, res) => {
       data: { status },
     });
 
+    let conversationId = null;
+
     if (status === 'ACCEPTED') {
+      // 1. Send accepted notification to sender with direct chat link
       await prisma.notification.create({
         data: {
           userId: conn.senderId,
           senderId: req.user.id,
           type: 'CONNECTION_ACCEPTED',
           title: 'Connection Accepted! 🤝',
-          message: `${req.user.profile?.fullName || 'Your connection'} accepted your connection request.`,
-          link: `/profile/${req.user.id}`,
+          message: `${req.user.profile?.fullName || 'Your connection'} accepted your connection request. You can now chat!`,
+          link: `/messages?user=${req.user.id}`,
         },
       });
+
+      // 2. Automatically establish Conversation between them so they can immediately chat
+      const [p1, p2] = [conn.senderId, conn.receiverId].sort();
+      let conv = await prisma.conversation.findUnique({
+        where: {
+          participant1Id_participant2Id: {
+            participant1Id: p1,
+            participant2Id: p2,
+          },
+        },
+      });
+
+      if (!conv) {
+        conv = await prisma.conversation.create({
+          data: {
+            participant1Id: p1,
+            participant2Id: p2,
+            lastMessage: 'Connected! Say hello and start collaborating.',
+            lastMessageAt: new Date(),
+          },
+        });
+      }
+      conversationId = conv.id;
     }
 
-    return res.json({ message: `Connection request ${status.toLowerCase()}!`, connection: updated });
+    return res.json({
+      message: `Connection request ${status.toLowerCase()}!`,
+      connection: updated,
+      conversationId,
+    });
   } catch (error) {
+    console.error('Update connection error:', error);
     return res.status(500).json({ error: 'Failed to update connection request.' });
   }
 });
@@ -248,14 +319,15 @@ router.post('/startup-proposal', requireAuth, async (req, res) => {
       },
     });
 
+    const senderName = req.user.profile?.fullName || 'A founder';
     await prisma.notification.create({
       data: {
         userId: receiverId,
         senderId: req.user.id,
         type: 'STARTUP_PROPOSAL',
         title: '🚀 Venture Co-Founder Proposal!',
-        message: `${req.user.profile?.fullName || 'A founder'} invited you to co-found "${ideaTitle}"!`,
-        link: '/network',
+        message: `${senderName} invited you to co-found "${ideaTitle}"! Role: ${proposedRole || 'Technical Co-Founder'} • Equity: ${proposedEquity || '50/50'}.`,
+        link: '/network?tab=PROPOSALS',
       },
     });
 
@@ -308,7 +380,17 @@ router.get('/startup-proposals', requireAuth, async (req, res) => {
 router.put('/startup-proposals/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // ACCEPTED or DECLINED
+    let status = req.body.status || req.body.action;
+
+    if (typeof status === 'string') {
+      const upper = status.toUpperCase();
+      if (upper === 'ACCEPT' || upper === 'ACCEPTED') status = 'ACCEPTED';
+      else if (upper === 'DECLINE' || upper === 'DECLINED' || upper === 'REJECT' || upper === 'REJECTED') status = 'DECLINED';
+    }
+
+    if (!['ACCEPTED', 'DECLINED'].includes(status)) {
+      return res.status(400).json({ error: 'Status must be ACCEPTED or DECLINED.' });
+    }
 
     const proposal = await prisma.startupProposal.findUnique({ where: { id } });
     if (!proposal || proposal.receiverId !== req.user.id) {
@@ -320,8 +402,10 @@ router.put('/startup-proposals/:id', requireAuth, async (req, res) => {
       data: { status },
     });
 
+    let conversationId = null;
+
     if (status === 'ACCEPTED') {
-      // Automatically establish mutual connection if not connected
+      // 1. Automatically establish mutual connection if not connected
       await prisma.connection.upsert({
         where: {
           senderId_receiverId: {
@@ -338,20 +422,68 @@ router.put('/startup-proposals/:id', requireAuth, async (req, res) => {
         },
       });
 
+      // 2. Automatically establish Conversation between them so they can immediately chat
+      const [p1, p2] = [proposal.senderId, proposal.receiverId].sort();
+      let conv = await prisma.conversation.findUnique({
+        where: {
+          participant1Id_participant2Id: {
+            participant1Id: p1,
+            participant2Id: p2,
+          },
+        },
+      });
+
+      if (!conv) {
+        conv = await prisma.conversation.create({
+          data: {
+            participant1Id: p1,
+            participant2Id: p2,
+            lastMessage: `Agreed to co-found "${proposal.ideaTitle}"! Let's build together.`,
+            lastMessageAt: new Date(),
+          },
+        });
+      } else {
+        await prisma.conversation.update({
+          where: { id: conv.id },
+          data: {
+            lastMessage: `Agreed to co-found "${proposal.ideaTitle}"! Let's build together.`,
+            lastMessageAt: new Date(),
+          },
+        });
+      }
+      conversationId = conv.id;
+
+      // 3. Send notification to the proposal sender
       await prisma.notification.create({
         data: {
           userId: proposal.senderId,
           senderId: req.user.id,
           type: 'PROPOSAL_ACCEPTED',
           title: '🎉 Startup Proposal Accepted!',
-          message: `${req.user.profile?.fullName || 'Your partner'} agreed to co-found "${proposal.ideaTitle}"!`,
-          link: `/profile/${req.user.id}`,
+          message: `${req.user.profile?.fullName || 'Your partner'} agreed to co-found "${proposal.ideaTitle}"! You can now chat directly.`,
+          link: `/messages?user=${req.user.id}`,
+        },
+      });
+    } else if (status === 'DECLINED') {
+      await prisma.notification.create({
+        data: {
+          userId: proposal.senderId,
+          senderId: req.user.id,
+          type: 'PROPOSAL_DECLINED',
+          title: 'Startup Proposal Update',
+          message: `${req.user.profile?.fullName || 'A builder'} declined the co-founder proposal for "${proposal.ideaTitle}".`,
+          link: '/network?tab=PROPOSALS',
         },
       });
     }
 
-    return res.json({ message: `Venture proposal ${status.toLowerCase()}!`, proposal: updated });
+    return res.json({
+      message: `Venture proposal ${status.toLowerCase()}!`,
+      proposal: updated,
+      conversationId,
+    });
   } catch (error) {
+    console.error('Respond proposal error:', error);
     return res.status(500).json({ error: 'Failed to respond to startup proposal.' });
   }
 });

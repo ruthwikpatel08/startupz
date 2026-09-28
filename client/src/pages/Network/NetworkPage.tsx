@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -19,8 +19,12 @@ import {
 
 export const NetworkPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const urlTab = searchParams.get('tab')?.toUpperCase();
 
-  const [activeTab, setActiveTab] = useState<'CONNECTED' | 'PENDING' | 'PROPOSALS'>('CONNECTED');
+  const [activeTab, setActiveTab] = useState<'CONNECTED' | 'PENDING' | 'PROPOSALS'>(
+    urlTab === 'PENDING' || urlTab === 'PROPOSALS' ? urlTab : 'CONNECTED'
+  );
   const [connections, setConnections] = useState<any[]>([]);
   const [pendingReceived, setPendingReceived] = useState<any[]>([]);
   const [pendingSent, setPendingSent] = useState<any[]>([]);
@@ -28,6 +32,13 @@ export const NetworkPage: React.FC = () => {
   const [sentProposals, setSentProposals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const t = searchParams.get('tab')?.toUpperCase();
+    if (t === 'PENDING' || t === 'PROPOSALS' || t === 'CONNECTED') {
+      setActiveTab(t as any);
+    }
+  }, [searchParams]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -497,8 +508,17 @@ export const NetworkPage: React.FC = () => {
                           </button>
                         </div>
                       ) : (
-                        <div className="pt-2 border-t border-slate-100 dark:border-dark-800 text-xs font-medium text-slate-500 dark:text-slate-400">
-                          {prop.status === 'ACCEPTED' ? 'Offer Accepted! You are now connected partners.' : 'Offer declined.'}
+                        <div className="pt-2 border-t border-slate-100 dark:border-dark-800 text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center justify-between flex-wrap gap-2">
+                          <span>{prop.status === 'ACCEPTED' ? '🎉 Offer Accepted! You are now connected partners.' : 'Offer declined.'}</span>
+                          {prop.status === 'ACCEPTED' && (
+                            <button
+                              onClick={() => navigate(`/messages?user=${prop.senderId || prop.sender?.id}`)}
+                              className="btn-primary !py-1 !px-2.5 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                            >
+                              <MessageSquare size={13} />
+                              <span>Chat Now</span>
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -553,6 +573,19 @@ export const NetworkPage: React.FC = () => {
                       <div className="text-[11px] text-slate-500 dark:text-slate-400">
                         {prop.proposedRole} • {prop.proposedEquity}
                       </div>
+
+                      {prop.status === 'ACCEPTED' && (
+                        <div className="pt-1.5 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between">
+                          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Partner Accepted!</span>
+                          <button
+                            onClick={() => navigate(`/messages?user=${prop.receiverId || prop.receiver?.id}`)}
+                            className="btn-primary !py-1 !px-2.5 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <MessageSquare size={12} />
+                            <span>Chat Now</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

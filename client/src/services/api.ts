@@ -170,17 +170,22 @@ export const api = {
   // CONNECTIONS & STARTUP PROPOSALS
   getConnections: (params?: any) => request<any>(`/connections${buildQuery(params)}`),
   getPendingConnections: () => request<any>('/connections/pending'),
+  getConnectionCount: (userId: string) => request<{ count: number }>(`/connections/count/${userId}`),
   sendConnection: (receiverId: string, note?: string) =>
     request<any>('/connections', { method: 'POST', body: JSON.stringify({ receiverId, note }) }),
-  respondConnection: (id: string, action: 'ACCEPT' | 'REJECT') =>
-    request<any>(`/connections/${id}`, { method: 'PUT', body: JSON.stringify({ action }) }),
+  respondConnection: (id: string, action: 'ACCEPT' | 'REJECT' | 'ACCEPTED' | 'REJECTED') => {
+    const status = action === 'ACCEPT' || action === 'ACCEPTED' ? 'ACCEPTED' : 'REJECTED';
+    return request<any>(`/connections/${id}`, { method: 'PUT', body: JSON.stringify({ status, action }) });
+  },
   removeConnection: (id: string) => request<any>(`/connections/${id}`, { method: 'DELETE' }),
   sendStartupProposal: (payload: { receiverId: string; ideaTitle: string; pitchDescription: string; proposedRole: string; proposedEquity?: string }) =>
     request<any>('/connections/startup-proposal', { method: 'POST', body: JSON.stringify(payload) }),
   getStartupProposals: (type?: 'sent' | 'received') =>
     request<any[]>(`/connections/startup-proposals${type ? `?type=${type}` : ''}`),
-  respondStartupProposal: (id: string, status: 'ACCEPTED' | 'DECLINED') =>
-    request<any>(`/connections/startup-proposals/${id}`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  respondStartupProposal: (id: string, status: 'ACCEPTED' | 'DECLINED' | 'ACCEPT' | 'DECLINE') => {
+    const norm = status === 'ACCEPT' || status === 'ACCEPTED' ? 'ACCEPTED' : 'DECLINED';
+    return request<any>(`/connections/startup-proposals/${id}`, { method: 'PUT', body: JSON.stringify({ status: norm, action: norm }) });
+  },
 
   // MEETINGS
   scheduleMeeting: (payload: { guestId: string; title: string; scheduledAt?: string; durationMinutes?: number; notes?: string }) =>
@@ -228,8 +233,20 @@ export const api = {
     request<any>(`/posts/${id}/comments`, { method: 'POST', body: JSON.stringify({ content }) }),
 
   // MESSAGES
-  getConversations: () => request<any[]>('/messages/conversations'),
-  getMessages: (conversationId: string) => request<any[]>(`/messages/${conversationId}`),
+  getConversations: async () => {
+    const res = await request<any>('/messages/conversations');
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray(res.conversations)) return res.conversations;
+    if (res && Array.isArray(res.data)) return res.data;
+    return [];
+  },
+  getMessages: async (conversationId: string) => {
+    const res = await request<any>(`/messages/${conversationId}`);
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray(res.messages)) return res.messages;
+    if (res && Array.isArray(res.data)) return res.data;
+    return [];
+  },
   sendMessage: (payload: { receiverId: string; content: string }) =>
     request<any>('/messages', { method: 'POST', body: JSON.stringify(payload) }),
 
@@ -244,9 +261,19 @@ export const api = {
     request<any>('/saved/toggle', { method: 'POST', body: JSON.stringify({ itemType, itemId }) }),
 
   // NOTIFICATIONS
-  getNotifications: () => request<any[]>('/notifications'),
+  getNotifications: async () => {
+    const res = await request<any>('/notifications');
+    if (Array.isArray(res)) {
+      return { notifications: res, unreadCount: res.filter((n: any) => !n.isRead).length };
+    }
+    return {
+      notifications: Array.isArray(res?.notifications) ? res.notifications : (Array.isArray(res?.data) ? res.data : []),
+      unreadCount: typeof res?.unreadCount === 'number' ? res.unreadCount : (res?.notifications?.filter((n: any) => !n.isRead)?.length || 0),
+    };
+  },
   markNotificationAsRead: (id: string) => request<any>(`/notifications/${id}/read`, { method: 'PUT' }),
   markAllNotificationsAsRead: () => request<any>('/notifications/read-all', { method: 'PUT' }),
+  deleteNotification: (id: string) => request<any>(`/notifications/${id}`, { method: 'DELETE' }),
 
   // SEARCH
   searchAll: (query: string, type?: string) => {

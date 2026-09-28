@@ -18,6 +18,7 @@ export const MessagesPage: React.FC = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const targetUserId = searchParams.get('user');
+  const targetConvId = searchParams.get('conversationId');
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -37,35 +38,51 @@ export const MessagesPage: React.FC = () => {
   const fetchConversations = async () => {
     try {
       const data = await api.getConversations();
-      setConversations(data || []);
+      const list = Array.isArray(data) ? data : (data?.conversations || data?.data || []);
+      setConversations(list);
 
-      // If user came via /messages?user=xyz
-      if (targetUserId && data) {
-        const found = data.find(
-          (c) => c.participant?.id === targetUserId || c.participant1Id === targetUserId || c.participant2Id === targetUserId
+      // 1. If user came via /messages?conversationId=xyz
+      if (targetConvId && list.length > 0) {
+        const found = list.find((c: any) => c.id === targetConvId);
+        if (found) {
+          setSelectedConversation(found);
+          return;
+        }
+      }
+
+      // 2. If user came via /messages?user=xyz
+      if (targetUserId) {
+        const found = list.find(
+          (c: any) =>
+            c.participant?.id === targetUserId ||
+            c.participant1Id === targetUserId ||
+            c.participant2Id === targetUserId
         );
         if (found) {
           setSelectedConversation(found);
         } else {
-          // If conversation doesn't exist yet, fetch the user to start a draft conversation
+          // If conversation doesn't exist in list yet, fetch user to start a clean draft conversation
           try {
             const targetUserRes = await api.getUser(targetUserId);
-            const draftConv: any = {
-              id: 'draft',
-              participant: targetUserRes.user || targetUserRes,
-              participant1Id: user?.id || '',
-              participant2Id: targetUserId,
-              lastMessage: 'Start a conversation...',
-              lastMessageAt: new Date().toISOString(),
-              messages: [],
-            };
-            setSelectedConversation(draftConv);
+            const userObj = targetUserRes?.user || targetUserRes;
+            if (userObj?.id) {
+              const draftConv: any = {
+                id: 'draft',
+                participant: userObj,
+                participant1Id: user?.id || '',
+                participant2Id: userObj.id,
+                lastMessage: 'Start a conversation...',
+                lastMessageAt: new Date().toISOString(),
+                messages: [],
+              };
+              setSelectedConversation(draftConv);
+            }
           } catch (err) {
             console.error('Failed to load target user for conversation:', err);
           }
         }
-      } else if (!selectedConversation && data && data.length > 0) {
-        setSelectedConversation(data[0]);
+      } else if (!selectedConversation && list.length > 0) {
+        setSelectedConversation(list[0]);
       }
     } catch (err) {
       console.error('Failed to load conversations:', err);
@@ -76,7 +93,7 @@ export const MessagesPage: React.FC = () => {
 
   useEffect(() => {
     fetchConversations();
-  }, [targetUserId]);
+  }, [targetUserId, targetConvId]);
 
   // Fetch messages when selectedConversation changes
   useEffect(() => {
@@ -89,7 +106,8 @@ export const MessagesPage: React.FC = () => {
       setLoadingMessages(true);
       try {
         const res = await api.getMessages(selectedConversation.id);
-        setMessages(res || []);
+        const list = Array.isArray(res) ? res : (res?.messages || res?.data || []);
+        setMessages(list);
         setTimeout(scrollToBottom, 100);
       } catch (err) {
         console.error('Failed to load messages:', err);
@@ -101,9 +119,34 @@ export const MessagesPage: React.FC = () => {
     fetchMessages();
   }, [selectedConversation?.id]);
 
+  // Live polling for incoming messages every 3.5 seconds
+  useEffect(() => {
+    if (!selectedConversation || selectedConversation.id === 'draft') return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.getMessages(selectedConversation.id);
+        const list = Array.isArray(res) ? res : (res?.messages || res?.data || []);
+        setMessages((prev) => {
+          if (
+            list.length !== prev.length ||
+            (list.length > 0 && list[list.length - 1]?.id !== prev[prev.length - 1]?.id)
+          ) {
+            return list;
+          }
+          return prev;
+        });
+      } catch {
+        // Silent poll error
+      }
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [selectedConversation?.id]);
+
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages.length]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,27 +161,36 @@ export const MessagesPage: React.FC = () => {
     if (!receiverId) return;
 
     setSending(true);
+    const contentToSend = newMessage.trim();
     try {
       const res = await api.sendMessage({
         receiverId,
-        content: newMessage.trim(),
+        content: contentToSend,
       });
 
-      setMessages((prev) => [...prev, res.message]);
+      const sentMsg = res?.data || (typeof res?.message === 'object' ? res.message : null);
+      if (sentMsg) {
+        setMessages((prev) => [...prev, sentMsg]);
+      }
       setNewMessage('');
 
-      // If it was draft, refresh conversations to get real conversationId
-      if (selectedConversation.id === 'draft') {
+      // If it was draft, switch to real conversation ID
+      if (selectedConversation.id === 'draft' && res?.conversationId) {
+        setSelectedConversation((prev) =>
+          prev ? { ...prev, id: res.conversationId, lastMessage: contentToSend } : null
+        );
         fetchConversations();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to send message:', err);
+      alert(err.message || 'Failed to send message. Please make sure you are connected.');
     } finally {
       setSending(false);
     }
   };
 
-  const filteredConversations = conversations.filter((c) => {
+  const safeConversations = Array.isArray(conversations) ? conversations : [];
+  const filteredConversations = safeConversations.filter((c) => {
     const pName = c.participant?.profile?.fullName || c.participant?.email || '';
     return pName.toLowerCase().includes(search.toLowerCase());
   });

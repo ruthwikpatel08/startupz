@@ -22,6 +22,7 @@ import {
   ExternalLink,
   Target,
   Rocket,
+  MessageSquare,
   Megaphone,
   BriefcaseBusiness,
   X,
@@ -814,9 +815,17 @@ export const FindCoFounderPage: React.FC = () => {
 
                     {/* User Connection Button */}
                     {cand.connectionStatus?.status === 'ACCEPTED' ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
-                        <Check size={12} /> Connected
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
+                          <Check size={12} /> Connected
+                        </span>
+                        <Link
+                          to={`/messages?user=${cand.id}`}
+                          className="btn-primary !text-xs !py-1 !px-2 flex items-center gap-1"
+                        >
+                          <MessageSquare size={12} /> Chat
+                        </Link>
+                      </div>
                     ) : cand.connectionStatus?.status === 'PENDING' ? (
                       <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
                         Pending

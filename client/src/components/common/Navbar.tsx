@@ -39,6 +39,7 @@ import { AIScoutModal } from '../ai/AIScoutModal';
 import { GlobalSearchModal } from '../search/GlobalSearchModal';
 import { GoogleAccountChooserModal } from '../auth/GoogleAccountChooserModal';
 import { QuickLoginModal } from '../auth/QuickLoginModal';
+import { NotificationsDropdown } from './NotificationsDropdown';
 import { supabase } from '../../lib/supabase';
 
 export const Navbar: React.FC = () => {
@@ -176,8 +177,12 @@ export const Navbar: React.FC = () => {
   useEffect(() => {
     if (user) {
       api.getNotifications()
-        .then((items) => {
-          const unread = items?.filter((n: any) => !n.isRead)?.length || 0;
+        .then((res: any) => {
+          const unread = typeof res?.unreadCount === 'number'
+            ? res.unreadCount
+            : (Array.isArray(res?.notifications)
+                ? res.notifications.filter((n: any) => !n.isRead).length
+                : (Array.isArray(res) ? res.filter((n: any) => !n.isRead).length : 0));
           setUnreadNotifications(unread);
         })
         .catch(() => {});
@@ -442,6 +447,9 @@ export const Navbar: React.FC = () => {
 
               {user ? (
                 <>
+                  {/* Notifications */}
+                  <NotificationsDropdown />
+
                   {/* Messages */}
                   <Link
                     to="/messages"

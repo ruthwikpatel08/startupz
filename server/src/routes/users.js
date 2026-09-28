@@ -422,9 +422,20 @@ router.get('/:id', optionalAuth, async (req, res) => {
       }
     }
 
+    const connectionsCount = await prisma.connection.count({
+      where: {
+        status: 'ACCEPTED',
+        OR: [
+          { senderId: user.id },
+          { receiverId: user.id },
+        ],
+      },
+    });
+
     const { password: _, ...userSafe } = user;
     return res.json({
       ...userSafe,
+      connectionsCount,
       connectionStatus,
     });
   } catch (error) {

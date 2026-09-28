@@ -53,6 +53,18 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
           status: 'PENDING',
         });
         if (supaErr) throw supaErr;
+
+        try {
+          await supabase.from('notifications').insert({
+            user_id: activeUser.id,
+            sender_id: currentUser.id,
+            type: 'CONNECTION_REQUEST',
+            title: 'New Connection Request 🤝',
+            message: `${currentUser.profile?.fullName || 'A startup builder'} wants to connect with you.${note.trim() ? ` Note: "${note.trim()}"` : ''}`,
+            link: '/network?tab=PENDING',
+            is_read: false,
+          });
+        } catch {}
       }
 
       setSent(true);

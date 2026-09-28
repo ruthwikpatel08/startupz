@@ -61,14 +61,17 @@ router.get('/conversations', requireAuth, async (req, res) => {
       return {
         id: c.id,
         participant: userMap.get(otherId) || null,
+        participant1Id: c.participant1Id,
+        participant2Id: c.participant2Id,
         lastMessage: c.lastMessage || c.messages?.[0]?.content || '',
         lastMessageAt: c.lastMessageAt,
         unreadCount: unreadMap.get(c.id) || 0,
       };
     });
 
-    return res.json({ conversations: formatted });
+    return res.json({ conversations: formatted, data: formatted });
   } catch (error) {
+    console.error('Get conversations error:', error);
     return res.status(500).json({ error: 'Failed to retrieve conversations.' });
   }
 });
@@ -78,18 +81,37 @@ router.get('/:conversationId', requireAuth, async (req, res) => {
   try {
     const { conversationId } = req.params;
 
-    const conv = await prisma.conversation.findUnique({ where: { id: conversationId } });
-    if (!conv || (conv.participant1Id !== req.user.id && conv.participant2Id !== req.user.id)) {
+    let conv = await prisma.conversation.findUnique({ where: { id: conversationId } });
+    
+    // Fallback: If conversationId is actually another user's ID
+    if (!conv) {
+      const [p1, p2] = [req.user.id, conversationId].sort();
+      conv = await prisma.conversation.findUnique({
+        where: {
+          participant1Id_participant2Id: {
+            participant1Id: p1,
+            participant2Id: p2,
+          },
+        },
+      });
+    }
+
+    if (!conv) {
+      return res.json({ messages: [], data: [] });
+    }
+
+    if (conv.participant1Id !== req.user.id && conv.participant2Id !== req.user.id) {
       return res.status(403).json({ error: 'Unauthorized to view this conversation.' });
     }
 
     const messages = await prisma.message.findMany({
-      where: { conversationId },
+      where: { conversationId: conv.id },
       orderBy: { createdAt: 'asc' },
       include: {
         sender: {
           select: {
             id: true,
+            email: true,
             profile: { select: { fullName: true, avatar: true } },
           },
         },
@@ -98,15 +120,16 @@ router.get('/:conversationId', requireAuth, async (req, res) => {
 
     await prisma.message.updateMany({
       where: {
-        conversationId,
+        conversationId: conv.id,
         receiverId: req.user.id,
         isRead: false,
       },
       data: { isRead: true },
     });
 
-    return res.json({ messages });
+    return res.json({ messages, data: messages, conversationId: conv.id });
   } catch (error) {
+    console.error('Get messages error:', error);
     return res.status(500).json({ error: 'Failed to retrieve messages.' });
   }
 });
@@ -165,6 +188,7 @@ router.post('/', requireAuth, async (req, res) => {
         sender: {
           select: {
             id: true,
+            email: true,
             profile: { select: { fullName: true, avatar: true } },
           },
         },
@@ -178,17 +202,19 @@ router.post('/', requireAuth, async (req, res) => {
         senderId: req.user.id,
         type: 'NEW_MESSAGE',
         title: `New message from ${senderName}`,
-        message: content.trim().slice(0, 60),
-        link: `/messages?conversationId=${conversation.id}`,
+        message: content.trim().slice(0, 80),
+        link: `/messages?conversationId=${conversation.id}&user=${req.user.id}`,
       },
     });
 
     return res.status(201).json({
       message: 'Message sent.',
-      conversationId: conversation.id,
       data: message,
+      messageObject: message,
+      conversationId: conversation.id,
     });
   } catch (error) {
+    console.error('Send message error:', error);
     return res.status(500).json({ error: 'Failed to send message.' });
   }
 });
