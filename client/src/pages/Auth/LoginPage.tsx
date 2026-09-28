@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase, getAuthErrorMessage, recordAuthProviderHint, resolveEmailOrUsername } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -7,7 +7,13 @@ import { GoogleAccountChooserModal } from '../../components/auth/GoogleAccountCh
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { loginWithPasswordOrUsername } = useAuth();
+  const { user, loginWithPasswordOrUsername } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');

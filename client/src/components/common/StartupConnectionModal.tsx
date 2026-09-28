@@ -59,39 +59,16 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
     setError(null);
 
     try {
-      try {
-        await api.sendStartupProposal({
-          receiverId: targetUser.id,
-          ideaTitle: ideaTitle.trim(),
-          pitchDescription: pitchDescription.trim(),
-          proposedRole,
-          proposedEquity,
-        });
-      } catch (backendErr) {
-        console.warn('Backend proposal notice, syncing directly to Supabase:', backendErr);
-        const { error: supaErr } = await supabase.from('startup_proposals').insert({
-          sender_id: user.id,
-          receiver_id: targetUser.id,
-          idea_title: ideaTitle.trim(),
-          pitch_description: pitchDescription.trim(),
-          proposed_role: proposedRole,
-          proposed_equity: proposedEquity,
-          status: 'PENDING',
-        });
-        if (supaErr) throw supaErr;
+      const recipientId = targetUser.id || (targetUser as any).userId || (targetUser as any).user?.id;
+      if (!recipientId) throw new Error('Recipient user ID could not be determined.');
 
-        try {
-          await supabase.from('notifications').insert({
-            user_id: targetUser.id,
-            sender_id: user.id,
-            type: 'STARTUP_PROPOSAL',
-            title: '🚀 Venture Co-Founder Proposal!',
-            message: `${user.profile?.fullName || 'A founder'} invited you to co-found "${ideaTitle.trim()}"! Role: ${proposedRole} • Equity: ${proposedEquity}.`,
-            link: '/network?tab=PROPOSALS',
-            is_read: false,
-          });
-        } catch {}
-      }
+      await api.sendStartupProposal({
+        receiverId: recipientId,
+        ideaTitle: ideaTitle.trim(),
+        pitchDescription: pitchDescription.trim(),
+        proposedRole,
+        proposedEquity,
+      });
 
       setSuccess(true);
       setTimeout(() => {

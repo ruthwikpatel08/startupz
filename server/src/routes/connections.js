@@ -99,9 +99,32 @@ router.get('/pending', requireAuth, async (req, res) => {
 // POST /api/connections
 router.post('/', requireAuth, async (req, res) => {
   try {
-    const { receiverId, note } = req.body;
+    let { receiverId, note } = req.body;
 
     if (!receiverId) return res.status(400).json({ error: 'Receiver user ID is required.' });
+
+    // Resolve receiverId if it was passed as a Profile, Investor, or Mentor ID
+    let targetUser = await prisma.user.findUnique({ where: { id: receiverId } });
+    if (!targetUser) {
+      const p = await prisma.profile.findFirst({ where: { OR: [{ id: receiverId }, { userId: receiverId }] } });
+      if (p) {
+        receiverId = p.userId;
+        targetUser = await prisma.user.findUnique({ where: { id: receiverId } });
+      } else {
+        const inv = await prisma.investor.findFirst({ where: { OR: [{ id: receiverId }, { userId: receiverId }] } });
+        if (inv) {
+          receiverId = inv.userId;
+          targetUser = await prisma.user.findUnique({ where: { id: receiverId } });
+        } else {
+          const m = await prisma.mentor.findFirst({ where: { OR: [{ id: receiverId }, { userId: receiverId }] } });
+          if (m) {
+            receiverId = m.userId;
+            targetUser = await prisma.user.findUnique({ where: { id: receiverId } });
+          }
+        }
+      }
+    }
+
     if (receiverId === req.user.id) return res.status(400).json({ error: 'You cannot connect with yourself.' });
 
     const existing = await prisma.connection.findFirst({
@@ -117,22 +140,20 @@ router.post('/', requireAuth, async (req, res) => {
 
     if (existing) {
       if (existing.status === 'ACCEPTED') {
-        return res.status(400).json({ error: 'You are already connected with this user.' });
+        return res.json({ message: 'You are already connected with this user.', connection: existing, alreadyConnected: true });
       }
-      if (existing.status === 'PENDING') {
-        return res.status(400).json({ error: 'A connection request is already pending.' });
-      }
+      
       const updated = await prisma.connection.update({
         where: { id: existing.id },
         data: {
           senderId: req.user.id,
           receiverId,
           status: 'PENDING',
-          note,
+          note: note !== undefined ? note : existing.note,
         },
       });
 
-      // Send notification on resend
+      // Send/Re-send notification to receiver
       await prisma.notification.create({
         data: {
           userId: receiverId,
@@ -289,10 +310,29 @@ router.delete('/:id', requireAuth, async (req, res) => {
 // POST /api/connections/startup-proposal - Propose Co-Founding a Startup
 router.post('/startup-proposal', requireAuth, async (req, res) => {
   try {
-    const { receiverId, ideaTitle, pitchDescription, proposedRole, proposedEquity } = req.body;
+    let { receiverId, ideaTitle, pitchDescription, proposedRole, proposedEquity } = req.body;
 
     if (!receiverId || !ideaTitle || !pitchDescription) {
       return res.status(400).json({ error: 'Please provide receiver, startup idea title, and proposal details.' });
+    }
+
+    // Resolve receiverId if it was passed as a Profile, Investor, or Mentor ID
+    let targetUser = await prisma.user.findUnique({ where: { id: receiverId } });
+    if (!targetUser) {
+      const p = await prisma.profile.findFirst({ where: { OR: [{ id: receiverId }, { userId: receiverId }] } });
+      if (p) {
+        receiverId = p.userId;
+      } else {
+        const inv = await prisma.investor.findFirst({ where: { OR: [{ id: receiverId }, { userId: receiverId }] } });
+        if (inv) {
+          receiverId = inv.userId;
+        } else {
+          const m = await prisma.mentor.findFirst({ where: { OR: [{ id: receiverId }, { userId: receiverId }] } });
+          if (m) {
+            receiverId = m.userId;
+          }
+        }
+      }
     }
 
     if (receiverId === req.user.id) {

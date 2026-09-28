@@ -514,4 +514,54 @@ router.put('/profile', requireAuth, async (req, res) => {
   }
 });
 
+// DELETE /api/users/me - Permanently delete account and all associated data
+router.delete('/me', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Delete all user related entities safely
+    await prisma.connection.deleteMany({
+      where: { OR: [{ senderId: userId }, { receiverId: userId }] },
+    });
+    await prisma.startupProposal.deleteMany({
+      where: { OR: [{ senderId: userId }, { receiverId: userId }] },
+    });
+    await prisma.message.deleteMany({
+      where: { OR: [{ senderId: userId }, { receiverId: userId }] },
+    });
+    await prisma.conversation.deleteMany({
+      where: { OR: [{ participant1Id: userId }, { participant2Id: userId }] },
+    });
+    await prisma.notification.deleteMany({
+      where: { OR: [{ userId }, { senderId: userId }] },
+    });
+    await prisma.like.deleteMany({ where: { userId } });
+    await prisma.comment.deleteMany({ where: { userId } });
+    await prisma.savedItem.deleteMany({ where: { userId } });
+    await prisma.startupFollow.deleteMany({ where: { userId } });
+    await prisma.opportunityApplication.deleteMany({ where: { applicantId: userId } });
+    await prisma.investor.deleteMany({ where: { userId } });
+    await prisma.mentor.deleteMany({ where: { userId } });
+    await prisma.mentorshipRequest.deleteMany({
+      where: { OR: [{ founderId: userId }, { mentorId: userId }] },
+    });
+    await prisma.videoMeeting.deleteMany({
+      where: { OR: [{ hostId: userId }, { guestId: userId }] },
+    });
+    await prisma.report.deleteMany({ where: { reporterId: userId } });
+    await prisma.verificationRequest.deleteMany({ where: { userId } });
+    await prisma.raisedSolution.deleteMany({ where: { userId } });
+    await prisma.startupMember.deleteMany({ where: { userId } });
+    await prisma.post.deleteMany({ where: { authorId: userId } });
+    await prisma.startup.deleteMany({ where: { founderId: userId } });
+    await prisma.profile.deleteMany({ where: { userId } });
+    await prisma.user.delete({ where: { id: userId } });
+
+    return res.json({ message: 'Account permanently deleted.' });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    return res.status(500).json({ error: 'Failed to permanently delete account.' });
+  }
+});
+
 export default router;

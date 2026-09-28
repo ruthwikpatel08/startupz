@@ -142,6 +142,7 @@ export const api = {
   getUser: (id: string) => request<any>(`/users/${id}`),
   getUserById: (id: string) => request<any>(`/users/${id}`),
   updateProfile: (payload: any) => request<any>('/users/profile', { method: 'PUT', body: JSON.stringify(payload) }),
+  deleteAccount: () => request<any>('/users/me', { method: 'DELETE' }),
   getCoFounderMatches: (params?: any) => request<any>(`/users/matching/cofounders${buildQuery(params)}`),
   getCofounderMatches: (params?: any) => request<any>(`/users/matching/cofounders${buildQuery(params)}`),
   getRecommendedPeople: () => request<any>('/users/recommendations'),

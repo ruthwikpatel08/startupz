@@ -43,6 +43,9 @@ import {
   ShieldCheck,
   Upload,
   RefreshCw,
+  Trash2,
+  AlertTriangle,
+  AlertOctagon,
 } from 'lucide-react';
 
 function resizeImageToDataUrl(file: File, maxDimension = 1200, quality = 0.85): Promise<string> {
@@ -248,6 +251,94 @@ export const ProfilePage: React.FC = () => {
   const [startupProposalOpen, setStartupProposalOpen] = useState(false);
   const [meetingOpen, setMeetingOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [isRemovingPhoto, setIsRemovingPhoto] = useState(false);
+
+  // Account deletion states
+  const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleRemovePhoto = async (type: 'avatar' | 'cover') => {
+    if (!currentUser?.id) return;
+    setIsRemovingPhoto(true);
+    try {
+      const fieldKey = type === 'avatar' ? 'avatar' : 'cover_image';
+      const formKey = type === 'avatar' ? 'avatar' : 'coverImage';
+
+      // 1. Update Supabase profile
+      await upsertUserProfile(currentUser.id, {
+        [fieldKey]: null,
+      });
+
+      // 2. Mirror to backend if avatar
+      if (type === 'avatar') {
+        try {
+          await api.updateProfile({ avatar: '' });
+        } catch {}
+      }
+
+      // 3. Update local state
+      setFormData((prev: any) => ({
+        ...prev,
+        [formKey]: '',
+      }));
+
+      const updatedUser: User = {
+        ...(profileUser || currentUser),
+        profile: {
+          ...((profileUser || currentUser).profile || ({} as Profile)),
+          [formKey]: '',
+        },
+      };
+
+      setProfileUser(updatedUser);
+      updateUser(updatedUser);
+
+      setPhotoSavedNotice(
+        type === 'avatar'
+          ? 'Profile photo removed successfully!'
+          : 'Background cover removed successfully!'
+      );
+      setTimeout(() => setPhotoSavedNotice(null), 4000);
+    } catch (err) {
+      console.error('Failed to remove photo:', err);
+    } finally {
+      setIsRemovingPhoto(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!currentUser?.id) return;
+    if (deleteConfirmText.trim().toLowerCase() !== 'delete') {
+      setDeleteError('Please type "delete" to confirm permanent deletion.');
+      return;
+    }
+    setIsDeletingAccount(true);
+    setDeleteError(null);
+    try {
+      try {
+        await api.deleteAccount();
+      } catch (err: any) {
+        console.warn('Backend delete notice:', err);
+      }
+
+      try {
+        await supabase.from('profiles').delete().eq('user_id', currentUser.id);
+      } catch {}
+
+      try {
+        await supabase.auth.signOut();
+      } catch {}
+
+      localStorage.removeItem('startupz_token');
+      localStorage.removeItem('startupz_user');
+      window.location.href = '/?deleted=true';
+    } catch (err: any) {
+      setDeleteError(err?.message || 'Failed to delete account.');
+      setIsDeletingAccount(false);
+    }
+  };
 
   // Interactive skills state
   const [newSkillInput, setNewSkillInput] = useState('');
@@ -576,7 +667,7 @@ export const ProfilePage: React.FC = () => {
               <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
             )}
 
-            <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+            <div className="absolute top-4 right-4 flex items-center gap-2 z-10 flex-wrap justify-end">
               {!isMe && (
                 <button
                   onClick={() => setReportOpen(true)}
@@ -588,13 +679,24 @@ export const ProfilePage: React.FC = () => {
               )}
               {isMe && (
                 <>
+                  {p.coverImage && (
+                    <button
+                      onClick={() => handleRemovePhoto('cover')}
+                      disabled={isRemovingPhoto}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-red-600/85 hover:bg-red-600 text-white backdrop-blur-xs text-xs font-medium transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                      title="Remove background cover image"
+                    >
+                      <Trash2 size={13} />
+                      <span className="hidden xs:inline">Remove Cover</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => handleRequestGalleryPermission('cover')}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-black/40 hover:bg-black/60 text-white backdrop-blur-xs text-xs font-medium transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-black/40 hover:bg-black/60 text-white backdrop-blur-xs text-xs font-medium transition-colors cursor-pointer shadow-xs"
                     title="Change background cover image from gallery"
                   >
                     <Camera size={14} />
-                    <span className="hidden xs:inline">Change Cover</span>
+                    <span className="hidden xs:inline">{p.coverImage ? 'Change Cover' : 'Add Cover'}</span>
                   </button>
                   <button
                     onClick={handleOpenEdit}
@@ -627,13 +729,25 @@ export const ProfilePage: React.FC = () => {
                     </div>
                   )}
                   {isMe && (
-                    <button
-                      onClick={() => handleRequestGalleryPermission('avatar')}
-                      className="absolute bottom-0 right-0 p-1.5 rounded-full bg-brand-600 text-white shadow-sm hover:bg-brand-700 transition-colors cursor-pointer"
-                      title="Upload profile photo from gallery"
-                    >
-                      <Camera size={13} />
-                    </button>
+                    <div className="absolute -bottom-1 -right-1 flex items-center gap-1">
+                      {avatar && (
+                        <button
+                          onClick={() => handleRemovePhoto('avatar')}
+                          disabled={isRemovingPhoto}
+                          className="p-1.5 rounded-full bg-red-600 text-white shadow-sm hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50"
+                          title="Remove profile photo"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleRequestGalleryPermission('avatar')}
+                        className="p-1.5 rounded-full bg-brand-600 text-white shadow-sm hover:bg-brand-700 transition-colors cursor-pointer"
+                        title="Upload/change profile photo from gallery"
+                      >
+                        <Camera size={13} />
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -1186,7 +1300,7 @@ export const ProfilePage: React.FC = () => {
                   <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
                     Profile Photo (Avatar)
                   </label>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <img
                       src={formData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.fullName || 'User'}`}
                       alt=""
@@ -1198,8 +1312,19 @@ export const ProfilePage: React.FC = () => {
                       className="btn-secondary flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium cursor-pointer"
                     >
                       <Camera size={13} className="text-brand-600" />
-                      <span>Upload Photo</span>
+                      <span>{formData.avatar ? 'Change Photo' : 'Upload Photo'}</span>
                     </button>
+                    {formData.avatar && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto('avatar')}
+                        disabled={isRemovingPhoto}
+                        className="px-2.5 py-1.5 rounded-md border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/60 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                        title="Remove Profile Photo"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                   <input
                     type="url"
@@ -1215,7 +1340,7 @@ export const ProfilePage: React.FC = () => {
                   <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
                     Background Cover Image
                   </label>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <div className="w-14 h-10 rounded-md bg-slate-800 overflow-hidden border border-slate-200 dark:border-dark-700 shrink-0">
                       {formData.coverImage ? (
                         <img src={formData.coverImage} alt="" className="w-full h-full object-cover" />
@@ -1229,8 +1354,19 @@ export const ProfilePage: React.FC = () => {
                       className="btn-secondary flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium cursor-pointer"
                     >
                       <ImageIcon size={13} className="text-brand-600" />
-                      <span>Upload Cover</span>
+                      <span>{formData.coverImage ? 'Change Cover' : 'Upload Cover'}</span>
                     </button>
+                    {formData.coverImage && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto('cover')}
+                        disabled={isRemovingPhoto}
+                        className="px-2.5 py-1.5 rounded-md border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/60 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                        title="Remove Cover Image"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                   <input
                     type="url"
@@ -1391,6 +1527,29 @@ export const ProfilePage: React.FC = () => {
               </div>
             )}
 
+            {/* Danger Zone: Permanent Account Deletion */}
+            <div className="p-3.5 rounded-lg bg-red-50/70 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 flex items-center justify-between gap-3 mt-4">
+              <div>
+                <h5 className="text-xs font-bold text-red-600 dark:text-red-400 flex items-center gap-1.5">
+                  <AlertTriangle size={14} />
+                  <span>Danger Zone: Permanent Account Deletion</span>
+                </h5>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Permanently erase your startup profile, ideas, messages, and connections.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditOpen(false);
+                  setDeleteAccountModalOpen(true);
+                }}
+                className="px-3 py-1.5 rounded-md text-xs font-semibold text-red-600 dark:text-red-400 bg-white dark:bg-dark-900 border border-red-300 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950 transition-colors cursor-pointer shrink-0"
+              >
+                Delete Account
+              </button>
+            </div>
+
             <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-dark-800">
               <button
                 type="button"
@@ -1415,13 +1574,16 @@ export const ProfilePage: React.FC = () => {
       <ConnectModal
         isOpen={connectOpen}
         onClose={() => setConnectOpen(false)}
+        targetUser={profileUser}
         user={profileUser}
+        onSuccess={fetchUserProfile}
       />
 
       <StartupConnectionModal
         isOpen={startupProposalOpen}
         onClose={() => setStartupProposalOpen(false)}
         targetUser={profileUser}
+        onSuccess={fetchUserProfile}
       />
 
       <ScheduleMeetingModal
@@ -1437,6 +1599,88 @@ export const ProfilePage: React.FC = () => {
         targetId={profileUser.id}
         targetTitle={displayName}
       />
+
+      {/* DELETE ACCOUNT CONFIRMATION MODAL */}
+      <Modal
+        isOpen={deleteAccountModalOpen}
+        onClose={() => {
+          if (!isDeletingAccount) {
+            setDeleteAccountModalOpen(false);
+            setDeleteConfirmText('');
+            setDeleteError(null);
+          }
+        }}
+        title="Permanently Delete Account"
+      >
+        <div className="space-y-4 py-2 font-sans">
+          <div className="p-3.5 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-start gap-3">
+            <AlertOctagon size={20} className="text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <h4 className="text-xs font-bold text-red-900 dark:text-red-200">
+                Warning: This action cannot be undone
+              </h4>
+              <p className="text-xs text-red-700 dark:text-red-300 leading-relaxed">
+                Deleting your account will immediately remove your profile, startups, pitch proposals, connections, conversations, and all saved items forever.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Type <span className="font-mono text-red-600 dark:text-red-400 font-bold">delete</span> below to confirm:
+            </label>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => {
+                setDeleteConfirmText(e.target.value);
+                setDeleteError(null);
+              }}
+              placeholder='Type "delete"'
+              className="input-base w-full px-3 py-2 text-xs font-mono"
+            />
+          </div>
+
+          {deleteError && (
+            <div className="p-2.5 rounded-md bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 text-xs font-medium">
+              {deleteError}
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              disabled={isDeletingAccount}
+              onClick={() => {
+                setDeleteAccountModalOpen(false);
+                setDeleteConfirmText('');
+                setDeleteError(null);
+              }}
+              className="btn-secondary px-3.5 py-2 text-xs font-medium cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={isDeletingAccount || deleteConfirmText.trim().toLowerCase() !== 'delete'}
+              onClick={handleDeleteAccount}
+              className="px-4 py-2 rounded-md text-xs font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+            >
+              {isDeletingAccount ? (
+                <>
+                  <RefreshCw size={13} className="animate-spin" />
+                  <span>Deleting Account...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 size={13} />
+                  <span>Permanently Delete</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Hidden File Inputs for Device Gallery Picking */}
       <input

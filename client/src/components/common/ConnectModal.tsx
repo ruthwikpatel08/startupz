@@ -42,30 +42,10 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
     setLoading(true);
     setError(null);
     try {
-      try {
-        await api.sendConnection(activeUser.id, note.trim() || undefined);
-      } catch (backendErr) {
-        console.warn('Backend connection notice, syncing directly to Supabase:', backendErr);
-        const { error: supaErr } = await supabase.from('connections').insert({
-          sender_id: currentUser.id,
-          receiver_id: activeUser.id,
-          note: note.trim() || null,
-          status: 'PENDING',
-        });
-        if (supaErr) throw supaErr;
+      const recipientId = activeUser.id || (activeUser as any).userId || (activeUser as any).user?.id;
+      if (!recipientId) throw new Error('Recipient user ID could not be determined.');
 
-        try {
-          await supabase.from('notifications').insert({
-            user_id: activeUser.id,
-            sender_id: currentUser.id,
-            type: 'CONNECTION_REQUEST',
-            title: 'New Connection Request 🤝',
-            message: `${currentUser.profile?.fullName || 'A startup builder'} wants to connect with you.${note.trim() ? ` Note: "${note.trim()}"` : ''}`,
-            link: '/network?tab=PENDING',
-            is_read: false,
-          });
-        } catch {}
-      }
+      await api.sendConnection(recipientId, note.trim() || undefined);
 
       setSent(true);
       setTimeout(() => {
@@ -75,7 +55,18 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
         if (onSuccess) onSuccess();
       }, 1500);
     } catch (err: any) {
-      setError(err.message || 'Failed to send connection request.');
+      const msg = err?.message || '';
+      if (msg.includes('already connected') || msg.includes('already pending')) {
+        setSent(true);
+        setTimeout(() => {
+          setSent(false);
+          setNote('');
+          onClose();
+          if (onSuccess) onSuccess();
+        }, 1500);
+        return;
+      }
+      setError(err?.message || 'Failed to send connection request.');
     } finally {
       setLoading(false);
     }
