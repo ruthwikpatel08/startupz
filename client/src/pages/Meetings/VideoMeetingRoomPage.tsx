@@ -178,15 +178,15 @@ export const VideoMeetingRoomPage: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 space-y-4">
       {/* Top Meeting Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div className="card-base p-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 font-bold">
+          <div className="p-2 rounded-lg bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-bold border border-brand-100 dark:border-brand-900/40">
             <Video size={18} />
           </div>
           <div>
             <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <span>{meeting.title}</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                 LIVE
               </span>
             </h1>
@@ -198,15 +198,15 @@ export const VideoMeetingRoomPage: React.FC = () => {
 
         <div className="flex items-center gap-2">
           {/* Duration Badge */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-mono font-bold text-slate-700 dark:text-slate-300">
-            <Clock size={14} className="text-cyan-500" />
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-100 dark:bg-dark-800 text-xs font-mono font-medium text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-dark-700">
+            <Clock size={13} className="text-slate-500" />
             <span>{formatTimer(secondsElapsed)}</span>
           </div>
 
           {/* Copy Link Button */}
           <button
             onClick={handleCopyLink}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+            className="btn-secondary inline-flex items-center gap-1.5 text-xs py-1.5 px-3"
           >
             {copiedLink ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
             <span>{copiedLink ? 'Copied Link' : 'Invite'}</span>
@@ -215,26 +215,26 @@ export const VideoMeetingRoomPage: React.FC = () => {
           {/* Toggle Chat / Notes button */}
           <button
             onClick={() => setActiveTab(activeTab === 'chat' ? null : 'chat')}
-            className={`p-2 rounded-xl text-xs transition-colors ${
+            className={`p-2 rounded-md text-xs transition-colors border ${
               activeTab === 'chat'
-                ? 'bg-brand-600 text-white'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                ? 'bg-brand-600 text-white border-brand-600'
+                : 'bg-white dark:bg-dark-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-dark-700'
             }`}
             title="Toggle In-Call Chat"
           >
-            <MessageSquare size={16} />
+            <MessageSquare size={15} />
           </button>
 
           <button
             onClick={() => setActiveTab(activeTab === 'notes' ? null : 'notes')}
-            className={`p-2 rounded-xl text-xs transition-colors ${
+            className={`p-2 rounded-md text-xs transition-colors border ${
               activeTab === 'notes'
-                ? 'bg-brand-600 text-white'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                ? 'bg-brand-600 text-white border-brand-600'
+                : 'bg-white dark:bg-dark-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-dark-700'
             }`}
             title="Toggle Live Notes"
           >
-            <FileText size={16} />
+            <FileText size={15} />
           </button>
         </div>
       </div>
@@ -245,7 +245,7 @@ export const VideoMeetingRoomPage: React.FC = () => {
         <div className={`space-y-4 ${activeTab ? 'lg:col-span-3' : 'lg:col-span-4'}`}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-[480px]">
             {/* 1. Host / Local Participant Tile */}
-            <div className="relative rounded-3xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center group shadow-lg">
+            <div className="relative rounded-xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center group shadow-xs">
               {isCameraOn && hasWebcamAccess ? (
                 <video
                   ref={localVideoRef}
@@ -256,7 +256,7 @@ export const VideoMeetingRoomPage: React.FC = () => {
                 />
               ) : isCameraOn ? (
                 /* Simulated video stream */
-                <div className="relative w-full h-full flex flex-col items-center justify-center bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 p-6 text-center">
+                <div className="relative w-full h-full flex flex-col items-center justify-center bg-gradient-to-tr from-slate-900 via-slate-850 to-slate-900 p-6 text-center">
                   <div className="relative">
                     <img
                       src={
@@ -264,56 +264,56 @@ export const VideoMeetingRoomPage: React.FC = () => {
                         `https://api.dicebear.com/7.x/initials/svg?seed=${hostName}`
                       }
                       alt={hostName}
-                      className="w-24 h-24 rounded-full border-4 border-cyan-500 shadow-xl object-cover animate-pulse"
+                      className="w-20 h-20 rounded-full border-2 border-brand-500 shadow-md object-cover"
                     />
                     {isMicOn && (
-                      <span className="absolute bottom-0 right-0 p-1.5 rounded-full bg-emerald-500 text-white shadow-md">
-                        <Volume2 size={12} />
+                      <span className="absolute bottom-0 right-0 p-1.5 rounded-full bg-emerald-500 text-white shadow-sm">
+                        <Volume2 size={11} />
                       </span>
                     )}
                   </div>
-                  <span className="mt-3 text-xs font-bold text-white">{hostName} (You)</span>
-                  <span className="text-[10px] text-cyan-400 font-mono">Simulated HD Camera</span>
+                  <span className="mt-3 text-xs font-semibold text-white">{hostName} (You)</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Connected Camera</span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center space-y-2 text-slate-500">
-                  <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center">
-                    <VideoOff size={24} />
+                  <div className="w-14 h-14 rounded-full bg-slate-900 flex items-center justify-center">
+                    <VideoOff size={20} />
                   </div>
-                  <span className="text-xs font-bold text-slate-400">Camera Paused</span>
+                  <span className="text-xs font-medium text-slate-400">Camera Paused</span>
                 </div>
               )}
 
               {/* Status Overlay */}
-              <div className="absolute bottom-3 left-3 flex items-center gap-2 px-3 py-1 rounded-xl bg-black/60 backdrop-blur-md text-white text-xs font-semibold">
+              <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded bg-black/70 backdrop-blur-xs text-white text-xs font-medium">
                 <span>{hostName} (You)</span>
-                {!isMicOn && <MicOff size={13} className="text-rose-400" />}
+                {!isMicOn && <MicOff size={12} className="text-rose-400" />}
               </div>
             </div>
 
             {/* 2. Guest / Peer Participant Tile */}
-            <div className="relative rounded-3xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center shadow-lg">
+            <div className="relative rounded-xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center shadow-xs">
               {isScreenSharing ? (
                 /* Screen sharing mode */
-                <div className="w-full h-full p-6 flex flex-col justify-between bg-slate-900 border-2 border-dashed border-cyan-500/50 rounded-2xl">
-                  <div className="flex items-center justify-between text-xs font-bold text-cyan-400">
+                <div className="w-full h-full p-6 flex flex-col justify-between bg-slate-900 border-2 border-dashed border-brand-500/40 rounded-lg">
+                  <div className="flex items-center justify-between text-xs font-semibold text-brand-400">
                     <span className="flex items-center gap-1.5">
-                      <Monitor size={15} /> Presenting: Pitch Deck & Architecture Demo
+                      <Monitor size={14} /> Presenting: Pitch Deck & Architecture Demo
                     </span>
-                    <span className="px-2 py-0.5 rounded-md bg-cyan-950 border border-cyan-800 text-[10px]">
+                    <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] text-slate-300">
                       1080p 60fps
                     </span>
                   </div>
                   <div className="space-y-2 text-center py-10">
-                    <h3 className="text-lg font-extrabold text-white">StartupZ Live Screen Share</h3>
+                    <h3 className="text-base font-bold text-white">StartupZ Live Screen Share</h3>
                     <p className="text-xs text-slate-400 max-w-sm mx-auto">
                       Showing interactive product mockups, codebase structure, and financial model.
                     </p>
                   </div>
-                  <div className="text-[10px] text-slate-500 text-right">Encrypted WebRTC Channel</div>
+                  <div className="text-[10px] text-slate-500 text-right">Encrypted Channel</div>
                 </div>
               ) : (
-                <div className="relative w-full h-full flex flex-col items-center justify-center bg-gradient-to-tr from-slate-900 via-indigo-950 to-slate-900 p-6 text-center">
+                <div className="relative w-full h-full flex flex-col items-center justify-center bg-gradient-to-tr from-slate-900 via-slate-850 to-slate-900 p-6 text-center">
                   <div className="relative">
                     <img
                       src={
@@ -321,11 +321,10 @@ export const VideoMeetingRoomPage: React.FC = () => {
                         `https://api.dicebear.com/7.x/initials/svg?seed=${guestName}`
                       }
                       alt={guestName}
-                      className="w-24 h-24 rounded-full border-4 border-emerald-500 shadow-xl object-cover"
+                      className="w-20 h-20 rounded-full border-2 border-emerald-500 shadow-md object-cover"
                     />
-                    <span className="absolute bottom-0 right-0 p-1.5 rounded-full bg-emerald-500 text-white shadow-md animate-ping" />
                   </div>
-                  <span className="mt-3 text-xs font-bold text-white">{guestName}</span>
+                  <span className="mt-3 text-xs font-semibold text-white">{guestName}</span>
                   <span className="text-[10px] text-emerald-400 font-mono flex items-center justify-center gap-1">
                     <Volume2 size={11} /> Connected • Speaking
                   </span>
@@ -333,7 +332,7 @@ export const VideoMeetingRoomPage: React.FC = () => {
               )}
 
               {/* Status Overlay */}
-              <div className="absolute bottom-3 left-3 flex items-center gap-2 px-3 py-1 rounded-xl bg-black/60 backdrop-blur-md text-white text-xs font-semibold">
+              <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded bg-black/70 backdrop-blur-xs text-white text-xs font-medium">
                 <span>{guestName}</span>
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
               </div>
@@ -341,52 +340,52 @@ export const VideoMeetingRoomPage: React.FC = () => {
           </div>
 
           {/* Meeting Control Bar */}
-          <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-md flex items-center justify-center gap-3">
+          <div className="card-base p-3 flex items-center justify-center gap-3">
             {/* Mic Toggle */}
             <button
               onClick={() => setIsMicOn(!isMicOn)}
-              className={`p-3.5 rounded-2xl transition-all ${
+              className={`p-2.5 rounded-lg transition-all ${
                 isMicOn
-                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-200'
-                  : 'bg-rose-500 text-white shadow-md'
+                  ? 'btn-secondary'
+                  : 'bg-rose-600 text-white'
               }`}
               title={isMicOn ? 'Mute Microphone' : 'Unmute Microphone'}
             >
-              {isMicOn ? <Mic size={20} /> : <MicOff size={20} />}
+              {isMicOn ? <Mic size={18} /> : <MicOff size={18} />}
             </button>
 
             {/* Camera Toggle */}
             <button
               onClick={() => setIsCameraOn(!isCameraOn)}
-              className={`p-3.5 rounded-2xl transition-all ${
+              className={`p-2.5 rounded-lg transition-all ${
                 isCameraOn
-                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-200'
-                  : 'bg-rose-500 text-white shadow-md'
+                  ? 'btn-secondary'
+                  : 'bg-rose-600 text-white'
               }`}
               title={isCameraOn ? 'Turn Off Camera' : 'Turn On Camera'}
             >
-              {isCameraOn ? <Video size={20} /> : <VideoOff size={20} />}
+              {isCameraOn ? <Video size={18} /> : <VideoOff size={18} />}
             </button>
 
             {/* Screen Share */}
             <button
               onClick={() => setIsScreenSharing(!isScreenSharing)}
-              className={`p-3.5 rounded-2xl transition-all ${
+              className={`p-2.5 rounded-lg transition-all ${
                 isScreenSharing
-                  ? 'bg-cyan-500 text-white shadow-md'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-200'
+                  ? 'bg-brand-600 text-white'
+                  : 'btn-secondary'
               }`}
               title={isScreenSharing ? 'Stop Screen Share' : 'Share Screen'}
             >
-              <Monitor size={20} />
+              <Monitor size={18} />
             </button>
 
             {/* End Call Button */}
             <button
               onClick={handleEndCall}
-              className="px-6 py-3.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-2 shadow-lg transition-transform hover:scale-105"
+              className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors"
             >
-              <PhoneOff size={18} />
+              <PhoneOff size={16} />
               <span>Leave Room</span>
             </button>
           </div>
@@ -394,14 +393,14 @@ export const VideoMeetingRoomPage: React.FC = () => {
 
         {/* Side Panel: In-Call Chat or Scratchpad Notes */}
         {activeTab && (
-          <div className="lg:col-span-1 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-[560px] overflow-hidden">
+          <div className="lg:col-span-1 card-base flex flex-col h-[560px] overflow-hidden">
             {/* Header Switcher */}
-            <div className="flex border-b border-slate-100 dark:border-slate-800 p-2 gap-1 bg-slate-50 dark:bg-slate-800/40">
+            <div className="flex border-b border-slate-200 dark:border-dark-800 p-2 gap-1 bg-slate-50 dark:bg-dark-800/40">
               <button
                 onClick={() => setActiveTab('chat')}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-colors ${
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                   activeTab === 'chat'
-                    ? 'bg-white dark:bg-slate-900 text-brand-600 shadow-xs'
+                    ? 'bg-white dark:bg-dark-900 text-brand-600 dark:text-brand-400 shadow-xs'
                     : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -409,9 +408,9 @@ export const VideoMeetingRoomPage: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab('notes')}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-colors ${
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors ${
                   activeTab === 'notes'
-                    ? 'bg-white dark:bg-slate-900 text-brand-600 shadow-xs'
+                    ? 'bg-white dark:bg-dark-900 text-brand-600 dark:text-brand-400 shadow-xs'
                     : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -423,14 +422,14 @@ export const VideoMeetingRoomPage: React.FC = () => {
             {activeTab === 'chat' ? (
               <div className="flex-1 flex flex-col justify-between p-3 overflow-hidden">
                 {/* Messages list */}
-                <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
+                <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 text-xs">
                   {chatMessages.map((msg, idx) => (
                     <div key={idx} className="space-y-0.5">
                       <div className="flex items-center justify-between text-[10px] text-slate-400">
-                        <span className="font-bold">{msg.sender}</span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">{msg.sender}</span>
                         <span>{msg.time}</span>
                       </div>
-                      <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 leading-relaxed">
+                      <div className="p-2.5 rounded-lg bg-slate-100 dark:bg-dark-800 text-slate-800 dark:text-slate-200 leading-relaxed border border-slate-200/40 dark:border-dark-700">
                         {msg.text}
                       </div>
                     </div>
@@ -444,13 +443,13 @@ export const VideoMeetingRoomPage: React.FC = () => {
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     placeholder="Type in-call message..."
-                    className="flex-1 px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="input-base flex-1 text-xs py-1.5"
                   />
                   <button
                     type="submit"
-                    className="p-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white shrink-0"
+                    className="btn-primary p-2 text-xs"
                   >
-                    <Send size={14} />
+                    <Send size={13} />
                   </button>
                 </form>
               </div>
@@ -459,7 +458,7 @@ export const VideoMeetingRoomPage: React.FC = () => {
                 <textarea
                   value={meetingNotes}
                   onChange={(e) => setMeetingNotes(e.target.value)}
-                  className="w-full h-full p-2 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500 resize-none"
+                  className="input-base w-full h-full p-2.5 text-xs font-mono resize-none leading-relaxed"
                   placeholder="Record mutual decisions, equity splits, and responsibilities..."
                 />
               </div>

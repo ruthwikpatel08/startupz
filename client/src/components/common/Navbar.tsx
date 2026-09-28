@@ -213,72 +213,70 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/90 dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 transition-colors">
+      <header className="sticky top-0 z-40 w-full bg-white dark:bg-dark-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 gap-3">
+          <div className="flex items-center justify-between h-14 gap-3">
             
             {/* Brand Logo */}
             <Link
               to={user ? '/dashboard' : '/'}
               title="StartupZ"
-              className="flex items-center gap-2.5 shrink-0 group cursor-pointer"
+              className="flex items-center gap-2 shrink-0 cursor-pointer"
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20 group-hover:scale-110 group-active:scale-95 transition-all">
-                <Rocket size={18} className="transform -rotate-12 group-hover:-translate-y-0.5 transition-transform" />
+              <div className="w-7 h-7 rounded-md bg-brand-600 flex items-center justify-center text-white shadow-subtle">
+                <Rocket size={15} />
               </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-black tracking-tight bg-gradient-to-r from-brand-600 via-indigo-600 to-cyan-500 bg-clip-text text-transparent">
-                  StartupZ
-                </span>
-              </div>
+              <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
+                Startup<span className="text-brand-600">Z</span>
+              </span>
             </Link>
 
-            {/* Global Search Button (Desktop & Tablet) — Opens GlobalSearchModal */}
+            {/* Global Search Button (Desktop & Tablet) */}
             <button
               onClick={() => setSearchModalOpen(true)}
-              className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/80 transition-all flex-1 max-w-[200px] text-left cursor-pointer group shrink-0"
+              className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-md text-xs bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex-1 max-w-[210px] text-left cursor-pointer group shrink-0"
             >
-              <Search size={14} className="text-brand-500 group-hover:scale-110 transition-transform shrink-0" />
+              <Search size={13} className="text-slate-400 group-hover:text-brand-600 transition-colors shrink-0" />
               <span className="truncate">Search usernames...</span>
-              <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded text-[10px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-400 ml-auto shrink-0 font-mono">
+              <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded text-[10px] bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-700 text-slate-400 ml-auto shrink-0 font-mono">
                 ⌘K
               </kbd>
             </button>
 
-            {/* Desktop Navigation Links (SLIDING BAR from AI-Scout to Problem Statements) */}
-            <nav className="hidden lg:flex items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap max-w-xl xl:max-w-2xl py-1 shrink">
+            {/* Desktop Navigation Links */}
+            <nav className="hidden lg:flex items-center gap-1 overflow-x-auto no-scrollbar whitespace-nowrap max-w-xl xl:max-w-2xl py-1 shrink">
               {/* 1. AI-Scout */}
               <button
                 onClick={() => setAiScoutOpen(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 border border-purple-200/80 dark:border-purple-800/80 hover:bg-purple-100 dark:hover:bg-purple-900/60 shadow-xs transition-all hover:scale-105 shrink-0"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-dark-800 hover:bg-slate-200/70 dark:hover:bg-dark-850 border border-slate-200 dark:border-slate-700 transition-colors shrink-0 cursor-pointer"
                 title="AI People Finder Bot"
               >
-                <Sparkles size={13} className="text-purple-500 animate-pulse" />
+                <Sparkles size={13} className="text-brand-600 dark:text-brand-400" />
                 <span>AI - Scout</span>
               </button>
 
               {/* 2. Startups */}
               <Link
                 to="/startups"
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0 ${
                   isActive('/startups')
-                    ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60'
-                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                    ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-800'
                 }`}
               >
                 <Compass size={14} />
                 <span>Startups</span>
               </Link>
 
-              {/* 3. Co-Founders Dropdown Trigger (CLICK TO TOGGLE) */}
+              {/* 3. Co-Founders Dropdown Trigger */}
               <div ref={coFoundersRef} className="shrink-0">
                 <button
                   type="button"
                   onClick={handleToggleCoFounders}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                     isCoFoundersActive || coFoundersDropdownOpen
-                      ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                      ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-800'
                   }`}
                   aria-expanded={coFoundersDropdownOpen}
                   aria-haspopup="true"
@@ -287,22 +285,22 @@ export const Navbar: React.FC = () => {
                   <span>Co - Founders</span>
                   <ChevronDown
                     size={12}
-                    className={`transition-transform duration-200 ${
-                      coFoundersDropdownOpen ? 'transform rotate-180 text-brand-500' : 'text-slate-400'
+                    className={`transition-transform duration-150 ${
+                      coFoundersDropdownOpen ? 'transform rotate-180 text-brand-600' : 'text-slate-400'
                     }`}
                   />
                 </button>
               </div>
 
-              {/* 4. Opportunities Dropdown Trigger (CLICK TO TOGGLE) */}
+              {/* 4. Opportunities Dropdown Trigger */}
               <div ref={opportunitiesRef} className="shrink-0">
                 <button
                   type="button"
                   onClick={handleToggleOpportunities}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                     isOpportunitiesActive || opportunitiesDropdownOpen
-                      ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                      ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-800'
                   }`}
                   aria-expanded={opportunitiesDropdownOpen}
                   aria-haspopup="true"
@@ -311,8 +309,8 @@ export const Navbar: React.FC = () => {
                   <span>Opportunities</span>
                   <ChevronDown
                     size={12}
-                    className={`transition-transform duration-200 ${
-                      opportunitiesDropdownOpen ? 'transform rotate-180 text-brand-500' : 'text-slate-400'
+                    className={`transition-transform duration-150 ${
+                      opportunitiesDropdownOpen ? 'transform rotate-180 text-brand-600' : 'text-slate-400'
                     }`}
                   />
                 </button>
@@ -326,10 +324,10 @@ export const Navbar: React.FC = () => {
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0 ${
                       active
-                        ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60'
-                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                        ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-800'
                     }`}
                   >
                     <Icon size={14} />
@@ -339,16 +337,16 @@ export const Navbar: React.FC = () => {
               })}
             </nav>
 
-            {/* FIXED VIEWPORT DROPDOWNS: Rendered outside slidebar overflow container so they NEVER get clipped */}
+            {/* FIXED VIEWPORT DROPDOWNS */}
             {coFoundersDropdownOpen && (
               <div
                 ref={coFoundersMenuRef}
                 onMouseDown={(e) => e.stopPropagation()}
-                className="fixed z-50 animate-in fade-in zoom-in-95 duration-100"
+                className="fixed z-50 animate-fade-in"
                 style={{ left: `${coFoundersPos.left}px`, top: `${coFoundersPos.top}px` }}
               >
-                <div className="w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2">
-                  <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80 mb-1">
+                <div className="w-64 bg-white dark:bg-dark-900 rounded-lg shadow-modal border border-slate-200 dark:border-slate-800 py-1.5">
+                  <div className="px-3.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
                     Co-Founder Network
                   </div>
                   {coFoundersDropdownItems.map((item) => {
@@ -362,15 +360,15 @@ export const Navbar: React.FC = () => {
                         key={item.name}
                         to={item.href}
                         onClick={() => setCoFoundersDropdownOpen(false)}
-                        className={`flex items-start gap-2.5 px-3 py-2 mx-1.5 rounded-xl text-xs transition-colors ${
+                        className={`flex items-start gap-2.5 px-3 py-1.5 mx-1 rounded-md text-xs transition-colors ${
                           isOptionActive
-                            ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-bold'
-                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                            ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-semibold'
+                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800'
                         }`}
                       >
                         <Icon size={14} className={`mt-0.5 shrink-0 ${isOptionActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
                         <div className="flex flex-col">
-                          <span className="font-semibold text-xs leading-tight">{item.name}</span>
+                          <span className="font-medium text-xs leading-tight">{item.name}</span>
                           <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal leading-normal">{item.description}</span>
                         </div>
                       </Link>
@@ -384,11 +382,11 @@ export const Navbar: React.FC = () => {
               <div
                 ref={opportunitiesMenuRef}
                 onMouseDown={(e) => e.stopPropagation()}
-                className="fixed z-50 animate-in fade-in zoom-in-95 duration-100"
+                className="fixed z-50 animate-fade-in"
                 style={{ left: `${opportunitiesPos.left}px`, top: `${opportunitiesPos.top}px` }}
               >
-                <div className="w-60 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2">
-                  <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800/80 mb-1">
+                <div className="w-60 bg-white dark:bg-dark-900 rounded-lg shadow-modal border border-slate-200 dark:border-slate-800 py-1.5">
+                  <div className="px-3.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
                     Startup Opportunities
                   </div>
                   {opportunitiesDropdownItems.map((item) => {
@@ -401,15 +399,15 @@ export const Navbar: React.FC = () => {
                         key={item.name}
                         to={item.href}
                         onClick={() => setOpportunitiesDropdownOpen(false)}
-                        className={`flex items-start gap-2.5 px-3 py-2 mx-1.5 rounded-xl text-xs transition-colors ${
+                        className={`flex items-start gap-2.5 px-3 py-1.5 mx-1 rounded-md text-xs transition-colors ${
                           isOptionActive
-                            ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-bold'
-                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                            ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-semibold'
+                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800'
                         }`}
                       >
                         <Icon size={14} className={`mt-0.5 shrink-0 ${isOptionActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
                         <div className="flex flex-col">
-                          <span className="font-semibold text-xs leading-tight">{item.name}</span>
+                          <span className="font-medium text-xs leading-tight">{item.name}</span>
                           <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal leading-normal">{item.description}</span>
                         </div>
                       </Link>
@@ -420,26 +418,26 @@ export const Navbar: React.FC = () => {
             )}
 
             {/* Right Action Icons & Profile */}
-            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
 
               {/* Mobile Search Button */}
               <button
                 type="button"
                 onClick={() => setSearchModalOpen(true)}
                 aria-label="Search platform"
-                className="md:hidden p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                className="md:hidden p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
                 title="Search usernames & platform"
               >
-                <Search size={17} className="text-brand-500" />
+                <Search size={16} className="text-slate-600 dark:text-slate-300" />
               </button>
 
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
                 aria-label="Toggle theme"
-                className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                className="p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
               >
-                {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
               </button>
 
               {user ? (
@@ -448,62 +446,62 @@ export const Navbar: React.FC = () => {
                   <Link
                     to="/messages"
                     aria-label="Messages"
-                    className={`p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
+                    className={`p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors ${
                       isActive('/messages') ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60' : ''
                     }`}
                   >
-                    <MessageSquare size={17} />
+                    <MessageSquare size={16} />
                   </Link>
 
                   {/* Network */}
                   <Link
                     to="/network"
                     aria-label="Network Connections"
-                    className={`p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
+                    className={`p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors ${
                       isActive('/network') ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60' : ''
                     }`}
                   >
-                    <Users size={17} />
+                    <Users size={16} />
                   </Link>
 
-                  {/* Saved Items (Desktop only - removed on mobile view as requested) */}
+                  {/* Saved Items */}
                   <Link
                     to="/saved"
                     aria-label="Saved items"
-                    className={`hidden sm:inline-flex p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
+                    className={`hidden sm:inline-flex p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors ${
                       isActive('/saved') ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60' : ''
                     }`}
                   >
-                    <Bookmark size={17} />
+                    <Bookmark size={16} />
                   </Link>
 
                   {/* Profile Bar at Top in Mobile View */}
                   <Link
                     to={`/profile/${user.id}`}
                     aria-label="My Profile Bar"
-                    className={`sm:hidden flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold transition-all shadow-xs shrink-0 ${
+                    className={`sm:hidden flex items-center gap-1 px-2 py-1 rounded-md border text-xs font-medium transition-colors shrink-0 ${
                       location.pathname.startsWith('/profile')
-                        ? 'bg-indigo-50 dark:bg-indigo-950/80 border-indigo-300 dark:border-indigo-800 text-[#4F46E5] dark:text-indigo-300'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-indigo-400'
+                        ? 'bg-brand-50 dark:bg-brand-950/80 border-brand-300 dark:border-brand-800 text-brand-700 dark:text-brand-300'
+                        : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-slate-300'
                     }`}
                   >
                     <img
                       src={user.profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
                       alt=""
-                      className="w-5 h-5 rounded-full object-cover"
+                      className="w-4 h-4 rounded-full object-cover"
                     />
-                    <span className="font-semibold text-[11px] truncate max-w-[80px]">
+                    <span className="text-[11px] truncate max-w-[70px]">
                       {user.profile?.fullName?.split(' ')[0] || 'Profile'}
                     </span>
-                    <Edit3 size={11} className="text-[#4F46E5] dark:text-indigo-400 shrink-0" />
+                    <Edit3 size={10} className="text-brand-600 shrink-0" />
                   </Link>
 
                   {/* Post Startup Action */}
                   <Link
                     to="/startups/create"
-                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 shadow-sm shadow-brand-500/20 transition-all hover:scale-105"
+                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 shadow-subtle transition-colors"
                   >
-                    <Plus size={14} />
+                    <Plus size={13} />
                     <span>Post Idea</span>
                   </Link>
 
@@ -512,9 +510,9 @@ export const Navbar: React.FC = () => {
                     <Link
                       to="/admin"
                       title="Admin Moderation Portal"
-                      className="p-2 rounded-xl text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 transition-colors"
+                      className="p-1.5 rounded-md text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 transition-colors"
                     >
-                      <Shield size={17} />
+                      <Shield size={16} />
                     </Link>
                   )}
 
@@ -522,7 +520,7 @@ export const Navbar: React.FC = () => {
                   <div ref={profileRef} className="relative hidden sm:block">
                     <button
                       onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                      className="flex items-center gap-2 p-1 rounded-full border-2 border-brand-500/40 hover:border-brand-500 transition-all focus:outline-none"
+                      className="flex items-center gap-2 p-0.5 rounded-full border border-slate-200 dark:border-slate-700 hover:border-brand-600 transition-colors focus:outline-none cursor-pointer"
                     >
                       <img
                         src={user.profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
@@ -532,12 +530,12 @@ export const Navbar: React.FC = () => {
                     </button>
 
                     {profileDropdownOpen && (
-                      <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
-                        <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-800">
-                          <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                      <div className="absolute right-0 mt-1.5 w-56 bg-white dark:bg-dark-900 rounded-lg shadow-modal border border-slate-200 dark:border-slate-800 py-1.5 z-50 animate-fade-in">
+                        <div className="px-3.5 py-2 border-b border-slate-100 dark:border-slate-800">
+                          <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
                             {user.profile?.fullName || 'Founder'}
                           </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
                             {user.email}
                           </p>
                         </div>
@@ -546,58 +544,58 @@ export const Navbar: React.FC = () => {
                           <Link
                             to="/dashboard"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
                           >
-                            <LayoutDashboard size={15} className="text-brand-500" />
+                            <LayoutDashboard size={14} className="text-slate-400" />
                             <span>Dashboard</span>
                           </Link>
                           <Link
                             to={`/profile/${user.id}`}
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
                           >
-                            <UserIcon size={15} className="text-indigo-500" />
+                            <UserIcon size={14} className="text-slate-400" />
                             <span>My Startup Profile</span>
                           </Link>
                           <Link
                             to="/network"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
                           >
-                            <Users size={15} className="text-cyan-500" />
+                            <Users size={14} className="text-slate-400" />
                             <span>My Startup Network</span>
                           </Link>
                           <Link
                             to="/memberships"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
                           >
-                            <Crown size={15} className="text-amber-500" />
+                            <Crown size={14} className="text-slate-400" />
                             <span>Memberships & Plans</span>
                           </Link>
                           <Link
                             to="/feed"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
                           >
-                            <Share2 size={15} className="text-emerald-500" />
+                            <Share2 size={14} className="text-slate-400" />
                             <span>Community Feed</span>
                           </Link>
                           <Link
                             to="/saved"
                             onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
                           >
-                            <Bookmark size={15} className="text-purple-500" />
+                            <Bookmark size={14} className="text-slate-400" />
                             <span>Saved Items</span>
                           </Link>
                           {user.isAdmin && (
                             <Link
                               to="/admin"
                               onClick={() => setProfileDropdownOpen(false)}
-                              className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                              className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                             >
-                              <Shield size={15} />
+                              <Shield size={14} />
                               <span>Admin Panel</span>
                             </Link>
                           )}
@@ -610,9 +608,9 @@ export const Navbar: React.FC = () => {
                               await logout();
                               navigate('/');
                             }}
-                            className="flex items-center gap-2.5 w-full text-left px-4 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                            className="flex items-center gap-2.5 w-full text-left px-3.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                           >
-                            <LogOut size={15} />
+                            <LogOut size={14} />
                             <span>Log Out</span>
                           </button>
                         </div>
@@ -621,11 +619,11 @@ export const Navbar: React.FC = () => {
                   </div>
                 </>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <button
                     type="button"
                     onClick={handleGoogleClick}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs transition-all hover:scale-105 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 bg-white dark:bg-dark-850 hover:bg-slate-50 dark:hover:bg-dark-800 shadow-subtle transition-colors cursor-pointer"
                     title="Sign in with Google"
                   >
                     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
@@ -652,16 +650,15 @@ export const Navbar: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setQuickLoginOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
                   >
                     <LogIn size={13} className="text-slate-400" />
                     <span>Log In</span>
                   </button>
                   <Link
                     to="/register"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl text-white bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700 hover:from-brand-500 hover:to-indigo-500 shadow-md shadow-brand-500/20 transition-all hover:scale-105 shrink-0"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md text-white bg-brand-600 hover:bg-brand-700 shadow-subtle transition-colors shrink-0"
                   >
-                    <Sparkles size={13} className="text-brand-200" />
                     <span>Join</span>
                   </Link>
                 </div>
@@ -670,34 +667,34 @@ export const Navbar: React.FC = () => {
               {/* Mobile Hamburger Button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="lg:hidden p-1.5 rounded-md text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
                 aria-label="Toggle Navigation Menu"
               >
-                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Mobile Horizontal Slidebar (From Search & AI - Scout through Problem Statements) */}
-        <div className="flex lg:hidden items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap px-3.5 py-2 bg-slate-50/80 dark:bg-slate-900/80 border-t border-slate-200/60 dark:border-slate-800/60 scroll-smooth shrink-0">
+        {/* Mobile Horizontal Slidebar */}
+        <div className="flex lg:hidden items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap px-3 py-1.5 bg-slate-50 dark:bg-dark-950 border-t border-slate-200 dark:border-slate-800 scroll-smooth shrink-0">
           {/* 0. Search */}
           <button
             onClick={() => setSearchModalOpen(true)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 border border-brand-200/80 dark:border-brand-800/80 shrink-0 shadow-xs cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shrink-0 shadow-subtle cursor-pointer"
             title="Search Usernames & Platform"
           >
-            <Search size={12} className="text-brand-500" />
+            <Search size={12} className="text-slate-400" />
             <span>Search</span>
           </button>
 
           {/* 1. AI-Scout */}
           <button
             onClick={() => setAiScoutOpen(true)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 border border-purple-200/80 dark:border-purple-800/80 shrink-0 shadow-xs"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 shrink-0 shadow-subtle cursor-pointer"
             title="AI People Finder Bot"
           >
-            <Sparkles size={12} className="text-purple-500 animate-pulse" />
+            <Sparkles size={12} className="text-brand-600 dark:text-brand-400" />
             <span>AI - Scout</span>
           </button>
 
@@ -705,13 +702,13 @@ export const Navbar: React.FC = () => {
           {user && (
             <Link
               to={`/profile/${user.id}`}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold shrink-0 shadow-xs transition-all ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium shrink-0 shadow-subtle transition-colors ${
                 location.pathname.startsWith('/profile')
-                  ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/70 border border-indigo-200 dark:border-indigo-800'
-                  : 'text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'
+                  ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/70 border border-brand-200 dark:border-brand-800'
+                  : 'text-slate-700 dark:text-slate-200 bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800'
               }`}
             >
-              <UserIcon size={12} className="text-indigo-500" />
+              <UserIcon size={12} className="text-slate-400" />
               <span>My Profile</span>
             </Link>
           )}
@@ -719,10 +716,10 @@ export const Navbar: React.FC = () => {
           {/* 2. Startups */}
           <Link
             to="/startups"
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold shrink-0 transition-all ${
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium shrink-0 transition-colors ${
               isActive('/startups')
-                ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
             }`}
           >
             <Compass size={13} />
@@ -733,30 +730,30 @@ export const Navbar: React.FC = () => {
           <button
             type="button"
             onClick={handleToggleCoFounders}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold shrink-0 cursor-pointer transition-all ${
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium shrink-0 cursor-pointer transition-colors ${
               isCoFoundersActive || coFoundersDropdownOpen
-                ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
             }`}
           >
             <Users size={13} />
             <span>Co - Founders</span>
-            <ChevronDown size={11} className={coFoundersDropdownOpen ? 'rotate-180 text-brand-500' : 'text-slate-400'} />
+            <ChevronDown size={11} className={coFoundersDropdownOpen ? 'rotate-180 text-brand-600' : 'text-slate-400'} />
           </button>
 
           {/* 4. Opportunities */}
           <button
             type="button"
             onClick={handleToggleOpportunities}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold shrink-0 cursor-pointer transition-all ${
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium shrink-0 cursor-pointer transition-colors ${
               isOpportunitiesActive || opportunitiesDropdownOpen
-                ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
             }`}
           >
             <Briefcase size={13} />
             <span>Opportunities</span>
-            <ChevronDown size={11} className={opportunitiesDropdownOpen ? 'rotate-180 text-brand-500' : 'text-slate-400'} />
+            <ChevronDown size={11} className={opportunitiesDropdownOpen ? 'rotate-180 text-brand-600' : 'text-slate-400'} />
           </button>
 
           {/* 5. Graveyard, Mentors, Problem Statements */}
@@ -767,10 +764,10 @@ export const Navbar: React.FC = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold shrink-0 transition-all ${
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium shrink-0 transition-colors ${
                   active
-                    ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                    ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
                 }`}
               >
                 <Icon size={13} />
@@ -782,21 +779,21 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile Drawer Navigation */}
         {mobileMenuOpen && (
-          <div className="lg:hidden px-4 pt-3 pb-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4 max-h-[85vh] overflow-y-auto">
-            {/* Logged-In User Profile & Edit Card at Top of Mobile Drawer */}
+          <div className="lg:hidden px-4 pt-3 pb-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-dark-900 space-y-3 max-h-[85vh] overflow-y-auto">
+            {/* Logged-In User Profile */}
             {user && (
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-50/80 via-white to-brand-50/60 dark:from-slate-800 dark:via-slate-800/90 dark:to-indigo-950/40 border border-indigo-100 dark:border-slate-700/80 shadow-xs space-y-3">
-                <div className="flex items-center gap-3">
+              <div className="p-3 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800 space-y-2.5">
+                <div className="flex items-center gap-2.5">
                   <img
                     src={user.profile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`}
                     alt={user.profile?.fullName || user.email}
-                    className="w-11 h-11 rounded-full object-cover border-2 border-[#4F46E5]/40 shadow-xs"
+                    className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-700"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                    <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
                       {user.profile?.fullName || 'Founder'}
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
                       {user.profile?.username ? `@${user.profile.username}` : user.email}
                     </p>
                   </div>
@@ -805,17 +802,15 @@ export const Navbar: React.FC = () => {
                   <Link
                     to={`/profile/${user.id}`}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-1.5 py-2 px-3 text-center text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl shadow-xs hover:border-[#4F46E5] transition-all"
+                    className="btn-secondary text-center py-1.5"
                   >
-                    <UserIcon size={13} className="text-[#4F46E5]" />
                     <span>View Profile</span>
                   </Link>
                   <Link
                     to={`/profile/${user.id}?edit=true`}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-1.5 py-2 px-3 text-center text-xs font-bold text-white bg-[#4F46E5] hover:bg-[#4338CA] rounded-xl shadow-xs transition-all"
+                    className="btn-primary text-center py-1.5"
                   >
-                    <Edit3 size={13} />
                     <span>Edit Profile</span>
                   </Link>
                 </div>
@@ -827,9 +822,9 @@ export const Navbar: React.FC = () => {
                 setMobileMenuOpen(false);
                 setSearchModalOpen(true);
               }}
-              className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs bg-slate-50 dark:bg-dark-850 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800"
             >
-              <Search size={16} className="text-brand-500" />
+              <Search size={14} className="text-slate-400" />
               <span>Search platform, skills, founders...</span>
             </button>
 
@@ -840,42 +835,42 @@ export const Navbar: React.FC = () => {
                   setMobileMenuOpen(false);
                   setAiScoutOpen(true);
                 }}
-                className="flex items-center gap-2 p-2.5 rounded-xl text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50"
+                className="flex items-center gap-2 p-2 rounded-md text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-dark-800 hover:bg-slate-200/60"
               >
-                <Sparkles size={16} className="text-purple-500" />
+                <Sparkles size={14} className="text-brand-600 dark:text-brand-400" />
                 <span>AI - Scout</span>
               </button>
               <Link
                 to="/startups"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 p-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="flex items-center gap-2 p-2 rounded-md text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800"
               >
-                <Compass size={16} className="text-brand-500" />
+                <Compass size={14} className="text-slate-400" />
                 <span>Startups</span>
               </Link>
             </div>
 
             {/* Co-Founders Mobile Section */}
-            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-2.5 bg-slate-50/60 dark:bg-slate-800/40">
+            <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 bg-slate-50/50 dark:bg-dark-850/50">
               <button
                 type="button"
                 onClick={() => setMobileCoFoundersOpen(!mobileCoFoundersOpen)}
-                className="flex items-center justify-between w-full text-xs font-bold text-slate-900 dark:text-white pb-1.5"
+                className="flex items-center justify-between w-full text-xs font-semibold text-slate-900 dark:text-white pb-1"
               >
-                <div className="flex items-center gap-2">
-                  <Users size={15} className="text-brand-500" />
+                <div className="flex items-center gap-1.5">
+                  <Users size={14} className="text-brand-600" />
                   <span>Co - Founders</span>
                 </div>
-                <ChevronDown size={14} className={`text-slate-400 transition-transform ${mobileCoFoundersOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={13} className={`text-slate-400 transition-transform ${mobileCoFoundersOpen ? 'rotate-180' : ''}`} />
               </button>
               {mobileCoFoundersOpen && (
-                <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                <div className="grid grid-cols-2 gap-1 pt-2 border-t border-slate-200 dark:border-slate-800">
                   {coFoundersDropdownItems.map((item) => (
                     <Link
                       key={item.name}
                       to={item.href}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 flex items-center gap-1.5"
+                      className="px-2 py-1 rounded-md text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 flex items-center gap-1.5"
                     >
                       <item.icon size={12} className="text-slate-400" />
                       <span>{item.name}</span>
@@ -886,26 +881,26 @@ export const Navbar: React.FC = () => {
             </div>
 
             {/* Opportunities Mobile Section */}
-            <div className="border border-slate-200 dark:border-slate-800 rounded-2xl p-2.5 bg-slate-50/60 dark:bg-slate-800/40">
+            <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 bg-slate-50/50 dark:bg-dark-850/50">
               <button
                 type="button"
                 onClick={() => setMobileOpportunitiesOpen(!mobileOpportunitiesOpen)}
-                className="flex items-center justify-between w-full text-xs font-bold text-slate-900 dark:text-white pb-1.5"
+                className="flex items-center justify-between w-full text-xs font-semibold text-slate-900 dark:text-white pb-1"
               >
-                <div className="flex items-center gap-2">
-                  <Briefcase size={15} className="text-cyan-500" />
+                <div className="flex items-center gap-1.5">
+                  <Briefcase size={14} className="text-slate-600 dark:text-slate-400" />
                   <span>Opportunities</span>
                 </div>
-                <ChevronDown size={14} className={`text-slate-400 transition-transform ${mobileOpportunitiesOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={13} className={`text-slate-400 transition-transform ${mobileOpportunitiesOpen ? 'rotate-180' : ''}`} />
               </button>
               {mobileOpportunitiesOpen && (
-                <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                <div className="grid grid-cols-2 gap-1 pt-2 border-t border-slate-200 dark:border-slate-800">
                   {opportunitiesDropdownItems.map((item) => (
                     <Link
                       key={item.name}
                       to={item.href}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 flex items-center gap-1.5"
+                      className="px-2 py-1 rounded-md text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 flex items-center gap-1.5"
                     >
                       <item.icon size={12} className="text-slate-400" />
                       <span>{item.name}</span>
@@ -915,8 +910,8 @@ export const Navbar: React.FC = () => {
               )}
             </div>
 
-            {/* Other Nav Links (Graveyard, Mentors, Problem Statements) */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* Other Nav Links */}
+            <div className="grid grid-cols-2 gap-1.5">
               {otherNavLinks.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -924,9 +919,9 @@ export const Navbar: React.FC = () => {
                     key={item.name}
                     to={item.href}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2 p-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="flex items-center gap-1.5 p-2 rounded-md text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
                   >
-                    <Icon size={16} className="text-brand-500" />
+                    <Icon size={14} className="text-slate-400" />
                     <span>{item.name}</span>
                   </Link>
                 );
@@ -942,9 +937,9 @@ export const Navbar: React.FC = () => {
                     setMobileMenuOpen(false);
                     handleGoogleClick();
                   }}
-                  className="w-full flex items-center justify-center gap-2.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 text-xs font-medium text-slate-800 dark:text-slate-100 shadow-subtle cursor-pointer"
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
                     <path
                       fill="#4285F4"
                       d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
@@ -972,42 +967,42 @@ export const Navbar: React.FC = () => {
                       setMobileMenuOpen(false);
                       setQuickLoginOpen(true);
                     }}
-                    className="flex-1 py-2 text-center text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 rounded-xl cursor-pointer"
+                    className="flex-1 btn-secondary text-center py-1.5"
                   >
                     Log In
                   </button>
                   <Link
                     to="/register"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex-1 py-2 text-center text-xs font-bold text-white bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700 rounded-xl shadow-md shadow-brand-500/20"
+                    className="flex-1 btn-primary text-center py-1.5"
                   >
                     Join StartupZ
                   </Link>
                 </div>
               </div>
             ) : (
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
                 <div className="grid grid-cols-3 gap-1.5">
                   <Link
                     to="/startups/create"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="py-2 text-center text-xs font-bold text-white bg-brand-600 rounded-xl"
+                    className="btn-primary text-center py-1.5 text-xs"
                   >
                     + Post Idea
                   </Link>
                   <Link
                     to={`/profile/${user.id}`}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="py-2 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-xl"
+                    className="btn-secondary text-center py-1.5 text-xs"
                   >
                     Profile
                   </Link>
                   <Link
                     to={`/profile/${user.id}?edit=true`}
                     onClick={() => setMobileMenuOpen(false)}
-                    className="py-2 text-center text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 rounded-xl"
+                    className="btn-secondary text-center py-1.5 text-xs"
                   >
-                    Edit Profile
+                    Edit
                   </Link>
                 </div>
                 <button
@@ -1017,9 +1012,9 @@ export const Navbar: React.FC = () => {
                     await logout();
                     navigate('/');
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 rounded-xl transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-colors cursor-pointer"
                 >
-                  <LogOut size={14} />
+                  <LogOut size={13} />
                   <span>Log Out</span>
                 </button>
               </div>

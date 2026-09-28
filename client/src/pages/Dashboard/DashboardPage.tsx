@@ -70,44 +70,44 @@ export const DashboardPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* 1. WELCOME BANNER & PROFILE COMPLETION */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-brand-600 via-indigo-600 to-cyan-600 p-6 sm:p-8 text-white shadow-xl">
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-xl">
+      <div className="rounded-xl bg-slate-900 dark:bg-slate-850 p-5 sm:p-6 text-white border border-slate-800 shadow-subtle">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-1.5 max-w-xl">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md">
+              <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
                 {user?.role || 'FOUNDER'} PORTAL
               </span>
               <VerificationBadge badge={user?.verificationBadge} isVerified={user?.isVerified} />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Welcome back, {user?.profile?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'Builder'}! 👋
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+              Welcome back, {user?.profile?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'Builder'}
             </h1>
-            <p className="text-sm text-brand-100 leading-relaxed">
-              Find the right people. Build the right startup. Here is what is happening across your network today.
+            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+              Find collaborators, discover opportunities, and manage ecosystem connections.
             </p>
           </div>
 
           {/* Profile Progress Box */}
-          <div className="w-full md:w-72 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl shrink-0">
-            <div className="flex items-center justify-between text-xs font-bold mb-1.5">
+          <div className="w-full md:w-64 bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-lg shrink-0">
+            <div className="flex items-center justify-between text-xs font-medium mb-1.5 text-slate-300">
               <span>Profile Strength</span>
-              <span>{profileCompletion}% Complete</span>
+              <span className="font-semibold text-white">{profileCompletion}%</span>
             </div>
-            <div className="w-full h-2.5 bg-black/20 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-emerald-400 to-cyan-300 rounded-full transition-all duration-500"
+                className="h-full bg-brand-500 rounded-full transition-all duration-500"
                 style={{ width: `${profileCompletion}%` }}
               />
             </div>
-            <div className="flex items-center justify-between mt-3 text-xs">
-              <span className="text-brand-100 text-[11px]">
-                {profileCompletion >= 80 ? '🔥 High match readiness' : 'Add skills to boost matching'}
+            <div className="flex items-center justify-between mt-2.5 text-[11px]">
+              <span className="text-slate-400">
+                {profileCompletion >= 80 ? 'High match readiness' : 'Complete details to match'}
               </span>
               <Link
                 to={`/profile/${user?.id}`}
-                className="font-bold underline text-white hover:text-cyan-200"
+                className="font-medium text-brand-400 hover:underline"
               >
-                Complete
+                Edit
               </Link>
             </div>
           </div>
@@ -115,106 +115,106 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* 2. STATS QUICK ROW */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 font-sans">
         <Link
           to="/cofounders"
-          className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group"
+          className="p-3.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group shadow-subtle"
         >
           <div className="flex items-center justify-between mb-2">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-              <Users size={18} />
+            <div className="w-8 h-8 rounded-md bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-200/50 dark:border-brand-900/50">
+              <Users size={16} />
             </div>
-            <span className="text-xs font-bold text-slate-400 group-hover:text-brand-600">Browse →</span>
+            <span className="text-xs text-slate-400 group-hover:text-brand-600">Browse →</span>
           </div>
-          <div className="text-lg font-black text-slate-900 dark:text-white">Co-Founders</div>
-          <div className="text-xs text-slate-500 mt-0.5">Compatible talent matching</div>
+          <div className="text-sm font-semibold text-slate-900 dark:text-white">Co-Founders</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">Compatible talent matching</div>
         </Link>
 
         <Link
           to="/network"
-          className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group"
+          className="p-3.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group shadow-subtle"
         >
           <div className="flex items-center justify-between mb-2">
-            <div className="w-9 h-9 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
-              <UserPlus size={18} />
+            <div className="w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+              <UserPlus size={16} />
             </div>
-            <span className="text-xs font-bold text-slate-400 group-hover:text-cyan-600">Network →</span>
+            <span className="text-xs text-slate-400 group-hover:text-brand-600">Network →</span>
           </div>
-          <div className="text-lg font-black text-slate-900 dark:text-white">My Network</div>
-          <div className="text-xs text-slate-500 mt-0.5">Connections & Invitations</div>
+          <div className="text-sm font-semibold text-slate-900 dark:text-white">My Network</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">Connections & requests</div>
         </Link>
 
         <Link
           to="/memberships"
-          className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group"
+          className="p-3.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group shadow-subtle"
         >
           <div className="flex items-center justify-between mb-2">
-            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-              <Crown size={18} />
+            <div className="w-8 h-8 rounded-md bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-200/50 dark:border-amber-900/50">
+              <Crown size={16} />
             </div>
-            <span className="text-xs font-bold text-slate-400 group-hover:text-amber-600">Plans →</span>
+            <span className="text-xs text-slate-400 group-hover:text-amber-600">Plans →</span>
           </div>
-          <div className="text-lg font-black text-slate-900 dark:text-white">Memberships</div>
-          <div className="text-xs text-slate-500 mt-0.5">Basic, Pro & Premium</div>
+          <div className="text-sm font-semibold text-slate-900 dark:text-white">Memberships</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">Standard & Pro tiers</div>
         </Link>
 
         <Link
           to="/feed"
-          className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group"
+          className="p-3.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group shadow-subtle"
         >
           <div className="flex items-center justify-between mb-2">
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <Share2 size={18} />
+            <div className="w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+              <Share2 size={16} />
             </div>
-            <span className="text-xs font-bold text-slate-400 group-hover:text-emerald-600">Updates →</span>
+            <span className="text-xs text-slate-400 group-hover:text-brand-600">Feed →</span>
           </div>
-          <div className="text-lg font-black text-slate-900 dark:text-white">Community Feed</div>
-          <div className="text-xs text-slate-500 mt-0.5">Ecosystem posts & launches</div>
+          <div className="text-sm font-semibold text-slate-900 dark:text-white">Community Feed</div>
+          <div className="text-[11px] text-slate-500 mt-0.5">Ecosystem updates</div>
         </Link>
       </div>
 
       {/* 3. MAIN DASHBOARD CONTENT: 2-COLUMN LAYOUT */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 font-sans">
         
         {/* Left Column (2 Cols wide): Recommended People, Startups, Feed */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-6">
           
           {/* Recommended Co-Founders / People */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-            <div className="flex items-center justify-between mb-5">
+          <div className="p-5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Users size={18} className="text-brand-600" /> Recommended Co-Founders
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Users size={16} className="text-brand-600" /> Recommended Co-Founders
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Algorithmic matches based on complementary skills and shared stage
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Algorithmic matches based on complementary skills
                 </p>
               </div>
               <Link
                 to="/cofounders"
-                className="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
+                className="text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline"
               >
                 View all ({recommendedPeople.length})
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {recommendedPeople.slice(0, 4).map((p: any) => (
                 <div
                   key={p.id}
-                  className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 flex flex-col justify-between"
+                  className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex flex-col justify-between"
                 >
                   <div className="space-y-2">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2.5">
                       <img
-                        src={p.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${p.profile?.fullName || p.email}`}
+                        src={p.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${p.profile?.fullName || p.email}&backgroundColor=2457d6`}
                         alt=""
-                        className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+                        className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
                       />
                       <div className="min-w-0 flex-1">
                         <Link
                           to={`/profile/${p.id}`}
-                          className="font-bold text-xs text-slate-900 dark:text-white hover:text-brand-600 truncate block"
+                          className="font-semibold text-xs text-slate-900 dark:text-white hover:text-brand-600 truncate block"
                         >
                           {p.profile?.fullName || p.email}
                         </Link>
@@ -222,20 +222,20 @@ export const DashboardPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <p className="text-[11px] text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
-                      💡 {p.recommendationReason || p.matchExplanation || 'Complementary startup background'}
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 p-2 rounded-md border border-slate-200 dark:border-slate-800">
+                      {p.recommendationReason || p.matchExplanation || 'Complementary startup background'}
                     </p>
                   </div>
 
-                  <div className="pt-3 mt-3 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-between">
-                    <span className="text-[10px] font-semibold text-slate-400">
+                  <div className="pt-2.5 mt-2.5 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between">
+                    <span className="text-[10px] font-medium text-slate-400">
                       {p.profile?.location || 'Remote'}
                     </span>
                     <button
                       onClick={() => setConnectUser(p.profile ? { id: p.id, ...p.profile } : p)}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-950 transition-colors"
+                      className="btn-secondary !text-xs !py-1 !px-2 flex items-center gap-1"
                     >
-                      <UserPlus size={13} /> Connect
+                      <UserPlus size={12} /> Connect
                     </button>
                   </div>
                 </div>
@@ -244,39 +244,39 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* Recommended Startups */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-            <div className="flex items-center justify-between mb-5">
+          <div className="p-5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Compass size={18} className="text-cyan-600" /> Startups Seeking Your Skills
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Compass size={16} className="text-brand-600" /> Startups Seeking Your Skills
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Ventures aligned with your industry experience
                 </p>
               </div>
               <Link
                 to="/startups"
-                className="text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline"
+                className="text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline"
               >
                 Explore all
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {recommendedStartups.slice(0, 4).map((s: any) => (
                 <Link
                   key={s.id}
                   to={`/startups/${s.id}`}
-                  className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 hover:border-brand-500 transition-all flex flex-col justify-between group"
+                  className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between group"
                 >
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 uppercase">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 uppercase">
                         {s.stage}
                       </span>
-                      <span className="text-[10px] font-semibold text-slate-400">{s.industry}</span>
+                      <span className="text-[10px] text-slate-400">{s.industry}</span>
                     </div>
-                    <h4 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-brand-600 truncate">
+                    <h4 className="font-semibold text-xs text-slate-900 dark:text-white group-hover:text-brand-600 truncate">
                       {s.name}
                     </h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">
@@ -284,7 +284,7 @@ export const DashboardPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="mt-3 pt-2 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border-t border-slate-200/60 dark:border-slate-800">
+                  <div className="mt-2.5 pt-2 text-[11px] font-medium text-slate-600 dark:text-slate-400 border-t border-slate-200/80 dark:border-slate-800">
                     {s.recommendationReason || 'Matches your preferred industry profile'}
                   </div>
                 </Link>
@@ -293,28 +293,28 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* Recent Feed Highlights */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+          <div className="p-5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle space-y-3.5">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Sparkles size={18} className="text-amber-500" /> Recent Network Updates
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                <Sparkles size={15} className="text-brand-600" /> Recent Network Updates
               </h3>
-              <Link to="/feed" className="text-xs font-bold text-brand-600 hover:underline">
+              <Link to="/feed" className="text-xs font-medium text-brand-600 hover:underline">
                 Open Feed →
               </Link>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {recentPosts.map((post) => (
                 <div
                   key={post.id}
-                  className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800"
+                  className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800"
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-brand-50 dark:bg-brand-950 text-brand-600">
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-900">
                         {post.postType}
                       </span>
-                      <span className="text-xs font-bold text-slate-900 dark:text-white">
+                      <span className="text-xs font-semibold text-slate-900 dark:text-white">
                         {post.author?.profile?.fullName || 'Community Member'}
                       </span>
                     </div>
@@ -322,8 +322,8 @@ export const DashboardPage: React.FC = () => {
                       {new Date(post.createdAt).toLocaleDateString()}
                     </span>
                   </div>
-                  {post.title && <h5 className="font-bold text-xs text-slate-900 dark:text-white mb-1">{post.title}</h5>}
-                  <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                  {post.title && <h5 className="font-semibold text-xs text-slate-900 dark:text-white mb-1">{post.title}</h5>}
+                  <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
                     {post.content}
                   </p>
                 </div>
@@ -334,75 +334,75 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Right Sidebar: Membership Plan, Connection Requests, Opportunities */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           
           {/* Membership & Plan Status Card */}
-          <div className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white border border-slate-800 shadow-lg space-y-3">
+          <div className="p-4 rounded-lg bg-slate-900 text-white border border-slate-800 shadow-subtle space-y-2.5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                  <Crown size={18} />
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  <Crown size={15} />
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Membership Tier</span>
-                  <h4 className="text-sm font-bold text-white">Standard Founder Plan</h4>
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Membership Tier</span>
+                  <h4 className="text-xs font-semibold text-white">Standard Founder Plan</h4>
                 </div>
               </div>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                 Active
               </span>
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed">
-              Unlimited co-founder connections, 100 AI Scout queries, and directory priority.
+              Unlimited co-founder connections, AI Scout queries, and directory listing.
             </p>
 
-            <div className="pt-2 flex items-center justify-between border-t border-slate-800/80">
+            <div className="pt-2 flex items-center justify-between border-t border-slate-800">
               <Link
                 to="/memberships"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors"
+                className="inline-flex items-center gap-1 text-xs font-medium text-amber-400 hover:underline transition-colors"
               >
-                <span>View Benefits & Upgrade</span>
-                <ArrowRight size={13} />
+                <span>View Details & Tiers</span>
+                <ArrowRight size={12} />
               </Link>
             </div>
           </div>
 
           {/* Pending Connection Requests */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <UserPlus size={16} className="text-brand-600" /> Connection Requests
+          <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+                <UserPlus size={14} className="text-brand-600" /> Connection Requests
               </h4>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950 text-brand-600">
+              <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                 {pendingRequests.length}
               </span>
             </div>
 
             {pendingRequests.length === 0 ? (
-              <p className="text-xs text-slate-400 text-center py-4">No pending requests.</p>
+              <p className="text-xs text-slate-400 text-center py-3">No pending requests.</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {pendingRequests.map((req) => (
-                  <div key={req.id} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-xs space-y-2">
+                  <div key={req.id} className="p-2.5 rounded-md bg-slate-50 dark:bg-slate-800/40 text-xs space-y-1.5 border border-slate-200 dark:border-slate-800">
                     <div className="flex items-center gap-2">
                       <img
-                        src={req.sender?.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${req.sender?.profile?.fullName}`}
+                        src={req.sender?.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${req.sender?.profile?.fullName}&backgroundColor=2457d6`}
                         alt=""
-                        className="w-8 h-8 rounded-full object-cover"
+                        className="w-7 h-7 rounded-full object-cover"
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="font-bold truncate">{req.sender?.profile?.fullName}</div>
+                        <div className="font-semibold text-xs truncate">{req.sender?.profile?.fullName}</div>
                         <div className="text-[10px] text-slate-400 truncate">{req.sender?.profile?.headline}</div>
                       </div>
                     </div>
                     {req.note && (
                       <p className="text-[11px] text-slate-500 italic">"{req.note}"</p>
                     )}
-                    <div className="flex items-center gap-2 pt-1">
+                    <div className="flex items-center gap-2 pt-0.5">
                       <Link
                         to="/network"
-                        className="w-full text-center py-1 rounded-lg bg-brand-600 text-white font-bold text-[11px]"
+                        className="btn-primary w-full !text-[11px] !py-1 text-center block"
                       >
                         Respond
                       </Link>
@@ -414,24 +414,24 @@ export const DashboardPage: React.FC = () => {
           </div>
 
           {/* Active Opportunities */}
-          <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <Briefcase size={16} className="text-cyan-600" /> Early-Stage Roles
+          <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+                <Briefcase size={14} className="text-brand-600" /> Early-Stage Roles
               </h4>
-              <Link to="/opportunities" className="text-xs text-brand-600 hover:underline">
+              <Link to="/opportunities" className="text-xs font-medium text-brand-600 hover:underline">
                 View all
               </Link>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {opportunities.map((opp) => (
                 <Link
                   key={opp.id}
                   to="/opportunities"
-                  className="block p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="block p-2.5 rounded-md bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-slate-200/60 dark:border-slate-800"
                 >
-                  <div className="font-bold text-xs text-slate-900 dark:text-white truncate">{opp.role}</div>
+                  <div className="font-semibold text-xs text-slate-900 dark:text-white truncate">{opp.role}</div>
                   <div className="text-[11px] text-slate-500 truncate">{opp.startup?.name} • {opp.compensation}</div>
                 </Link>
               ))}

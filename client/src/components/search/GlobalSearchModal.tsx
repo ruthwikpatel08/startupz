@@ -120,39 +120,39 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Search Platform & Usernames" maxWidth="xl">
+    <Modal isOpen={isOpen} onClose={onClose} title="Search Platform" maxWidth="xl">
       <div className="space-y-4 font-sans">
         
         {/* Search Input Bar */}
         <form onSubmit={handleSearchSubmit} className="relative">
-          <Search size={18} className="absolute left-4 top-3.5 text-brand-500 pointer-events-none" />
+          <Search size={16} className="absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
           <input
             ref={inputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Type any username (e.g. ruthwik, legacy, lavan) or keyword..."
-            className="w-full pl-11 pr-10 py-3 text-sm rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-brand-500/30 focus:border-brand-500 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 transition-all font-medium"
+            placeholder="Search by name, username (@username), role, or startup..."
+            className="w-full pl-10 pr-9 py-2.5 text-sm rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600/20 transition-all font-normal"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
             >
-              <X size={16} />
+              <X size={15} />
             </button>
           )}
         </form>
 
         {/* Live Matching Real Users Section */}
         {matchedUsers.length > 0 && (
-          <div className="space-y-2 p-3 rounded-2xl bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900/60">
-            <div className="flex items-center justify-between text-xs font-bold text-brand-700 dark:text-brand-300">
+          <div className="space-y-2 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
               <span className="flex items-center gap-1.5">
-                <Users size={14} /> Matching Real Members ({matchedUsers.length})
+                <Users size={14} className="text-brand-600 dark:text-brand-400" /> Members ({matchedUsers.length})
               </span>
-              <span className="text-[10px] text-brand-500">Live Database</span>
+              <span className="text-[11px] text-slate-400">Direct match</span>
             </div>
 
             <div className="space-y-1">
@@ -161,34 +161,34 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
                   key={u.id}
                   type="button"
                   onClick={() => handleSelectOption(`/profile/${u.id}`)}
-                  className="w-full flex items-center justify-between p-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-brand-100/50 dark:hover:bg-brand-900/50 border border-slate-100 dark:border-slate-800 transition-colors text-left group"
+                  className="w-full flex items-center justify-between p-2 rounded-md bg-white dark:bg-slate-900 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-800 transition-colors text-left group"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <img
                       src={
                         u.avatar ||
-                        `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.fullName)}&backgroundColor=4f46e5,06b6d4,10b981`
+                        `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(u.fullName)}&backgroundColor=2457d6`
                       }
                       alt={u.fullName}
-                      className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700"
+                      className="w-7 h-7 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700"
                     />
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                        <span className="font-semibold text-xs text-slate-900 dark:text-white truncate">
                           {u.fullName}
                         </span>
-                        <span className="text-[11px] text-brand-600 dark:text-brand-400 font-mono font-semibold">
+                        <span className="text-[11px] text-brand-600 dark:text-brand-400 font-mono">
                           @{u.username}
                         </span>
                       </div>
-                      <span className="text-[10px] text-slate-500 block truncate">
+                      <span className="text-[11px] text-slate-500 block truncate">
                         {u.role}
                       </span>
                     </div>
                   </div>
 
-                  <span className="text-xs text-brand-600 dark:text-brand-400 font-bold group-hover:translate-x-1 transition-transform shrink-0 ml-2">
-                    View →
+                  <span className="text-xs text-slate-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 font-medium shrink-0 ml-2">
+                    View profile →
                   </span>
                 </button>
               ))}
@@ -198,9 +198,8 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
 
         {/* Quick Popular Keyword Pills */}
         <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 uppercase tracking-wider">
-            <Flame size={13} className="text-amber-500" />
-            <span>Popular Searches</span>
+          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            Popular Searches
           </div>
           <div className="flex flex-wrap gap-1.5">
             {popularTags.map((tag) => (
@@ -212,9 +211,9 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
                   navigate(`/search?q=${encodeURIComponent(tag)}`);
                   onClose();
                 }}
-                className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950 text-slate-700 dark:text-slate-300 hover:text-brand-600 transition-colors cursor-pointer"
+                className="px-2.5 py-1 rounded-md text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-brand-600 hover:text-brand-600 dark:hover:border-brand-500 dark:hover:text-brand-400 transition-colors"
               >
-                + {tag}
+                {tag}
               </button>
             ))}
           </div>
@@ -225,18 +224,18 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
           <button
             type="button"
             onClick={() => handleSelectOption(`/search?q=${encodeURIComponent(searchQuery.trim())}`)}
-            className="w-full text-left p-3 rounded-xl bg-brand-50/80 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-900/60 border border-brand-200 dark:border-brand-800 flex items-center justify-between text-brand-600 dark:text-brand-300 font-bold transition-colors"
+            className="w-full text-left p-2.5 rounded-md bg-brand-50 dark:bg-brand-950/40 hover:bg-brand-100/70 dark:hover:bg-brand-900/40 border border-brand-200 dark:border-brand-900 flex items-center justify-between text-brand-700 dark:text-brand-300 text-xs font-semibold transition-colors"
           >
-            <div className="flex items-center gap-2.5">
-              <Search size={15} />
-              <span>Full search for "{searchQuery}" in all ecosystem records</span>
+            <div className="flex items-center gap-2">
+              <Search size={14} />
+              <span>Search ecosystem for "{searchQuery}"</span>
             </div>
-            <ArrowRight size={14} />
+            <ArrowRight size={13} />
           </button>
         )}
 
         {/* Direct Category Shortcuts */}
-        <div className="space-y-1 pt-2 border-t border-slate-100 dark:border-slate-800 max-h-48 overflow-y-auto">
+        <div className="space-y-0.5 pt-2 border-t border-slate-100 dark:border-slate-800 max-h-48 overflow-y-auto">
           {filteredSuggestions.map((item, idx) => {
             const Icon = item.icon;
             return (
@@ -244,13 +243,13 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
                 key={idx}
                 type="button"
                 onClick={() => handleSelectOption(item.url)}
-                className="w-full text-left p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-slate-800 dark:text-slate-200 transition-colors group"
+                className="w-full text-left p-2 rounded-md hover:bg-slate-100/80 dark:hover:bg-slate-800/80 flex items-center justify-between text-slate-700 dark:text-slate-300 transition-colors group"
               >
                 <div className="flex items-center gap-2.5 truncate">
-                  <Icon size={14} className="text-slate-400 group-hover:text-brand-500 shrink-0" />
-                  <span className="font-semibold text-xs">{item.term}</span>
+                  <Icon size={14} className="text-slate-400 group-hover:text-brand-600 shrink-0" />
+                  <span className="font-medium text-xs">{item.term}</span>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:text-brand-600 shrink-0 ml-2">
+                <span className="text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0 ml-2">
                   {item.type}
                 </span>
               </button>
@@ -260,7 +259,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
 
         {/* Footer Note */}
         <div className="pt-2 text-center text-[11px] text-slate-400 border-t border-slate-100 dark:border-slate-800">
-          Enter any username or keyword to discover founders, co-founders, and ventures.
+          Press Enter to run global search or click any member to open profile.
         </div>
 
       </div>

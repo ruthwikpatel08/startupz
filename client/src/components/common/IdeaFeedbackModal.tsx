@@ -96,46 +96,46 @@ export const IdeaFeedbackModal: React.FC<IdeaFeedbackModalProps> = ({
           </p>
         </div>
       ) : feedback ? (
-        <div className="space-y-5 text-sm">
+        <div className="space-y-4 text-sm font-sans">
           {/* Score & Banner */}
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white shadow-lg shadow-brand-500/10">
+          <div className="flex items-center justify-between p-4 rounded-lg bg-slate-900 dark:bg-slate-850 text-white border border-slate-800">
             <div>
-              <div className="text-xs uppercase tracking-wider text-brand-100 font-semibold flex items-center gap-1.5 mb-1">
-                <Sparkles size={14} /> AI Clarity & Viability Index
+              <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5 mb-1">
+                <Sparkles size={13} className="text-brand-400" /> AI Viability Index
               </div>
-              <div className="text-2xl font-black">
-                {feedback.overallScore || 85}/100{' '}
-                <span className="text-sm font-normal text-brand-200">Strong Foundations</span>
+              <div className="text-2xl font-bold tracking-tight">
+                {feedback.overallScore || 85}<span className="text-sm font-normal text-slate-400">/100</span>{' '}
+                <span className="text-xs font-semibold text-emerald-400 ml-1.5">Strong Potential</span>
               </div>
             </div>
-            <div className="text-xs max-w-xs text-right text-brand-100 hidden sm:block">
-              Calculated across problem statement precision, market differentiation, and defensibility metrics.
+            <div className="text-xs max-w-xs text-right text-slate-400 hidden sm:block">
+              Calculated across problem statement clarity, market differentiation, and defensibility.
             </div>
           </div>
 
           {/* 3 Pillars */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-              <div className="font-semibold text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <div className="font-semibold text-xs text-slate-700 dark:text-slate-300 mb-1">
                 Problem Clarity
               </div>
-              <p className="text-slate-900 dark:text-slate-200 text-xs leading-relaxed">
+              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
                 {feedback.problemClarity || 'Addresses a concrete, recurring friction in the domain.'}
               </p>
             </div>
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-              <div className="font-semibold text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <div className="font-semibold text-xs text-slate-700 dark:text-slate-300 mb-1">
                 Solution Viability
               </div>
-              <p className="text-slate-900 dark:text-slate-200 text-xs leading-relaxed">
+              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
                 {feedback.solutionClarity || 'Technically feasible with immediate MVP potential.'}
               </p>
             </div>
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-              <div className="font-semibold text-xs text-slate-500 dark:text-slate-400 mb-1">
+            <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <div className="font-semibold text-xs text-slate-700 dark:text-slate-300 mb-1">
                 Target Audience
               </div>
-              <p className="text-slate-900 dark:text-slate-200 text-xs leading-relaxed">
+              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
                 {feedback.targetCustomerClarity || 'High willingness to pay if friction is reduced.'}
               </p>
             </div>
@@ -143,14 +143,14 @@ export const IdeaFeedbackModal: React.FC<IdeaFeedbackModalProps> = ({
 
           {/* Strengths */}
           {feedback.strengths && feedback.strengths.length > 0 && (
-            <div>
-              <h5 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-2 text-xs uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 size={16} /> Key Strengths
+            <div className="p-3.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/70 dark:border-emerald-900/40">
+              <h5 className="font-semibold text-emerald-800 dark:text-emerald-400 flex items-center gap-1.5 mb-2 text-xs uppercase tracking-wider">
+                <CheckCircle2 size={15} /> Key Strengths
               </h5>
-              <ul className="space-y-1.5 pl-2">
+              <ul className="space-y-1.5 pl-1">
                 {feedback.strengths.map((s: string, idx: number) => (
                   <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
-                    <span className="text-emerald-500 font-bold">•</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">•</span>
                     <span>{s}</span>
                   </li>
                 ))}
@@ -160,14 +160,14 @@ export const IdeaFeedbackModal: React.FC<IdeaFeedbackModalProps> = ({
 
           {/* Potential Risks */}
           {feedback.potentialRisks && feedback.potentialRisks.length > 0 && (
-            <div>
-              <h5 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-2 text-xs uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                <AlertTriangle size={16} /> Potential Risks & Blind Spots
+            <div className="p-3.5 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40">
+              <h5 className="font-semibold text-amber-800 dark:text-amber-400 flex items-center gap-1.5 mb-2 text-xs uppercase tracking-wider">
+                <AlertTriangle size={15} /> Potential Risks & Blind Spots
               </h5>
-              <ul className="space-y-1.5 pl-2">
+              <ul className="space-y-1.5 pl-1">
                 {feedback.potentialRisks.map((r: string, idx: number) => (
                   <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
-                    <span className="text-amber-500 font-bold">•</span>
+                    <span className="text-amber-600 dark:text-amber-400 font-bold">•</span>
                     <span>{r}</span>
                   </li>
                 ))}
@@ -177,14 +177,14 @@ export const IdeaFeedbackModal: React.FC<IdeaFeedbackModalProps> = ({
 
           {/* Validation Questions */}
           {feedback.validationQuestions && feedback.validationQuestions.length > 0 && (
-            <div>
-              <h5 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-2 text-xs uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                <HelpCircle size={16} /> Questions to Ask Prospective Customers
+            <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800">
+              <h5 className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mb-2 text-xs uppercase tracking-wider">
+                <HelpCircle size={15} className="text-brand-600 dark:text-brand-400" /> Customer Discovery Questions
               </h5>
-              <ul className="space-y-1.5 pl-2">
+              <ul className="space-y-1.5 pl-1">
                 {feedback.validationQuestions.map((q: string, idx: number) => (
                   <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
-                    <span className="text-indigo-500 font-bold">•</span>
+                    <span className="text-brand-600 dark:text-brand-400 font-bold">•</span>
                     <span>{q}</span>
                   </li>
                 ))}
@@ -195,7 +195,7 @@ export const IdeaFeedbackModal: React.FC<IdeaFeedbackModalProps> = ({
           <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
             <button
               onClick={onClose}
-              className="px-5 py-2 text-xs font-semibold rounded-xl text-white bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 transition-colors"
+              className="btn-primary !text-xs !py-2 !px-4"
             >
               Done Reviewing
             </button>

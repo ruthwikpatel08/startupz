@@ -34,10 +34,10 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center font-semibold rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20 shadow-xs ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center font-medium rounded-full bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 border border-brand-200 dark:border-brand-900 ${sizeClasses[size]} ${className}`}
       title={text}
     >
-      <ShieldCheck size={iconSizes[size]} className="text-brand-500 shrink-0" />
+      <ShieldCheck size={iconSizes[size]} className="text-brand-600 dark:text-brand-400 shrink-0" />
       <span>{text}</span>
     </span>
   );
@@ -51,23 +51,23 @@ export const RoleBadge: React.FC<{ role: string; className?: string; size?: 'sm'
   const getBadgeStyle = (r: string) => {
     switch (r?.toUpperCase()) {
       case 'FOUNDER':
-        return 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20';
+        return 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700';
       case 'COFOUNDER':
-        return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20';
+        return 'bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 border-brand-200 dark:border-brand-900';
       case 'INVESTOR':
-        return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
+        return 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
       case 'MENTOR':
-        return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+        return 'bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800';
       case 'DEVELOPER':
-        return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
+        return 'bg-sky-50 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border-sky-200 dark:border-sky-800';
       case 'DESIGNER':
-        return 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20';
+        return 'bg-purple-50 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200 dark:border-purple-800';
       case 'MARKETER':
-        return 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20';
+        return 'bg-orange-50 text-orange-800 dark:bg-orange-950/60 dark:text-orange-300 border-orange-200 dark:border-orange-800';
       case 'ADMIN':
-        return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
+        return 'bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800';
       default:
-        return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20';
+        return 'bg-slate-50 text-slate-700 dark:bg-slate-800/80 dark:text-slate-300 border-slate-200 dark:border-slate-700';
     }
   };
 
@@ -79,7 +79,7 @@ export const RoleBadge: React.FC<{ role: string; className?: string; size?: 'sm'
 
   return (
     <span
-      className={`inline-flex items-center font-semibold rounded-full border ${sizeClasses[size]} ${getBadgeStyle(
+      className={`inline-flex items-center font-medium rounded border ${sizeClasses[size]} ${getBadgeStyle(
         role
       )} ${className}`}
     >

@@ -61,19 +61,19 @@ export const AIInsightSection: React.FC<AIInsightSectionProps> = ({ problem }) =
   };
 
   return (
-    <div className="rounded-3xl bg-gradient-to-br from-indigo-50/70 via-purple-50/40 to-slate-50 dark:from-indigo-950/30 dark:via-purple-950/20 dark:to-slate-900 border border-purple-200/80 dark:border-purple-900/60 p-6 sm:p-8 shadow-sm space-y-6">
+    <div className="card-base p-6 sm:p-8 space-y-6">
       
       {/* AI Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 mb-2">
-            <Sparkles size={14} className="text-purple-500 animate-spin" />
-            <span>Google Gemini GenAI Intelligence</span>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-900/40 mb-2">
+            <Sparkles size={13} className="text-brand-600 dark:text-brand-400" />
+            <span>GenAI Analysis</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
             AI Startup Opportunities & Founder Fit
           </h2>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-2xl">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl mt-1 leading-relaxed">
             Leverage Gemini reasoning to transform this global challenge into venture-backable startup concepts and verify alignment with your technical skills.
           </p>
         </div>
@@ -83,18 +83,18 @@ export const AIInsightSection: React.FC<AIInsightSectionProps> = ({ problem }) =
           <button
             onClick={handleGenerateSolutions}
             disabled={solutionsLoading}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-brand-600 hover:from-purple-500 hover:to-brand-500 shadow-md shadow-purple-500/20 transition-all hover:scale-105 disabled:opacity-50"
+            className="btn-primary inline-flex items-center gap-2 text-xs py-2 px-3.5 disabled:opacity-50"
           >
-            <Lightbulb size={15} />
+            <Lightbulb size={14} />
             <span>{solutionsLoading ? 'Analyzing Challenge...' : 'Suggest Startup Ideas'}</span>
           </button>
 
           <button
             onClick={handleCalculateMatch}
             disabled={matchLoading}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750 shadow-xs transition-all hover:scale-105 disabled:opacity-50"
+            className="btn-secondary inline-flex items-center gap-2 text-xs py-2 px-3.5 disabled:opacity-50"
           >
-            <Brain size={15} className="text-indigo-500" />
+            <Brain size={14} className="text-brand-600 dark:text-brand-400" />
             <span>{matchLoading ? 'Evaluating Profile...' : 'Check My Match Score'}</span>
           </button>
         </div>
@@ -102,22 +102,22 @@ export const AIInsightSection: React.FC<AIInsightSectionProps> = ({ problem }) =
 
       {/* Error alert */}
       {errorMsg && (
-        <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-semibold">
-          <AlertCircle size={16} className="shrink-0 text-rose-500" />
+        <div className="flex items-center gap-2.5 p-3.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-medium">
+          <AlertCircle size={15} className="shrink-0 text-rose-600" />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {/* User Match Result Box */}
       {matchData && (
-        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900/60 p-5 shadow-sm space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="rounded-lg bg-slate-50 dark:bg-dark-800/60 border border-slate-200 dark:border-dark-700 p-5 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-black text-sm">
-                <TrendingUp size={20} />
+              <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-950/40 border border-brand-100 dark:border-brand-900/40 flex items-center justify-center text-brand-600 dark:text-brand-400 font-bold text-sm">
+                <TrendingUp size={18} />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
                   Founder–Problem Synergy Score
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -127,23 +127,23 @@ export const AIInsightSection: React.FC<AIInsightSectionProps> = ({ problem }) =
             </div>
 
             <div className="text-right">
-              <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
+              <span className="text-2xl font-bold text-brand-600 dark:text-brand-400">
                 {matchData.matchScore}%
               </span>
-              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <span className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 Alignment
               </span>
             </div>
           </div>
 
-          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-slate-200 dark:bg-dark-700 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-brand-500 via-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-1000"
+              className="bg-brand-600 h-1.5 rounded-full transition-all duration-700"
               style={{ width: `${Math.min(100, Math.max(10, matchData.matchScore))}%` }}
             />
           </div>
 
-          <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-indigo-50/50 dark:bg-indigo-950/30 rounded-xl p-3 border border-indigo-100 dark:border-indigo-900/40">
+          <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-dark-900 rounded-md p-3 border border-slate-200 dark:border-dark-700 leading-relaxed">
             {matchData.reason}
           </p>
         </div>
@@ -151,9 +151,9 @@ export const AIInsightSection: React.FC<AIInsightSectionProps> = ({ problem }) =
 
       {/* Suggested Startup Ideas Grid */}
       {solutionsData && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-top-3 duration-300">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
-            <Rocket size={15} className="text-brand-500" />
+        <div className="space-y-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+            <Rocket size={14} className="text-brand-600 dark:text-brand-400" />
             <span>AI Suggested Startup Ventures to Address this Problem</span>
           </h3>
 
@@ -161,16 +161,16 @@ export const AIInsightSection: React.FC<AIInsightSectionProps> = ({ problem }) =
             {solutionsData.ideas.map((idea, idx) => (
               <div
                 key={idx}
-                className="flex flex-col justify-between rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 shadow-xs hover:border-brand-500 transition-all"
+                className="card-base p-5 flex flex-col justify-between hover:border-slate-300 dark:hover:border-dark-700 transition-colors"
               >
                 <div>
-                  <div className="w-7 h-7 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-bold text-xs flex items-center justify-center mb-3">
+                  <div className="w-7 h-7 rounded bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-bold text-xs flex items-center justify-center mb-3 border border-brand-100 dark:border-brand-900/40">
                     0{idx + 1}
                   </div>
-                  <h4 className="text-base font-bold text-slate-900 dark:text-white mb-2 leading-snug">
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-1.5 leading-snug">
                     {idea.title}
                   </h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-4">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
                     {idea.description}
                   </p>
                 </div>
@@ -181,7 +181,7 @@ export const AIInsightSection: React.FC<AIInsightSectionProps> = ({ problem }) =
                   )}&suggestedTitle=${encodeURIComponent(idea.title)}&suggestedDescription=${encodeURIComponent(
                     idea.description
                   )}`}
-                  className="inline-flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-500 shadow-sm transition-all"
+                  className="btn-primary inline-flex items-center justify-center gap-1.5 w-full py-2 text-xs font-semibold"
                 >
                   <Rocket size={13} />
                   <span>Build This Startup</span>
@@ -192,9 +192,9 @@ export const AIInsightSection: React.FC<AIInsightSectionProps> = ({ problem }) =
 
           {/* Needed Skills Breakdown */}
           {solutionsData.needed_skills && solutionsData.needed_skills.length > 0 && (
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 space-y-2">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300">
-                <Users size={14} className="text-indigo-500" />
+            <div className="rounded-lg bg-slate-50 dark:bg-dark-800/60 border border-slate-200 dark:border-dark-700 p-4 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <Users size={14} className="text-brand-600 dark:text-brand-400" />
                 <span>Recommended Team Skill Roles Needed:</span>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -202,10 +202,10 @@ export const AIInsightSection: React.FC<AIInsightSectionProps> = ({ problem }) =
                   <Link
                     key={idx}
                     to={`/cofounders?skill=${encodeURIComponent(skill)}`}
-                    className="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-brand-50 dark:hover:bg-brand-950/60 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-750 hover:border-brand-500 transition-colors"
                     title={`Find co-founders with ${skill}`}
                   >
-                    <CheckCircle2 size={12} className="text-emerald-500" />
+                    <CheckCircle2 size={12} className="text-emerald-600" />
                     <span>{skill}</span>
                   </Link>
                 ))}
@@ -218,8 +218,8 @@ export const AIInsightSection: React.FC<AIInsightSectionProps> = ({ problem }) =
       {/* Skeletons while loading */}
       {(solutionsLoading || matchLoading) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="h-32 rounded-2xl bg-white/70 dark:bg-slate-800/50 animate-pulse" />
-          <div className="h-32 rounded-2xl bg-white/70 dark:bg-slate-800/50 animate-pulse" />
+          <div className="h-32 rounded-lg bg-slate-100 dark:bg-dark-800 animate-pulse" />
+          <div className="h-32 rounded-lg bg-slate-100 dark:bg-dark-800 animate-pulse" />
         </div>
       )}
     </div>

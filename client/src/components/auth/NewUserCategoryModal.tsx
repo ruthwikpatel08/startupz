@@ -166,44 +166,44 @@ export const NewUserCategoryModal: React.FC = () => {
   const displayName = user.profile?.fullName || user.email?.split('@')[0] || 'Builder';
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 my-8 animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 font-sans">
+      <div className="max-w-xl w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 shadow-modal space-y-5 my-6 animate-in fade-in zoom-in-95 duration-150">
         
         {/* Header */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 text-xs font-bold border border-brand-200 dark:border-brand-800">
-            <Sparkles size={13} /> Welcome to StartupZ!
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 text-xs font-medium border border-brand-200 dark:border-brand-900">
+            <Sparkles size={12} className="text-brand-600" /> Welcome to StartupZ
           </div>
 
           <div className="flex flex-col items-center gap-2">
             <img
-              src={user.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}`}
+              src={user.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(displayName)}&backgroundColor=2457d6`}
               alt=""
-              className="w-14 h-14 rounded-full object-cover border-2 border-brand-500 shadow-md"
+              className="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-700"
             />
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-              Which category do you belong to, {displayName.split(' ')[0]}?
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+              Which category best describes you, {displayName.split(' ')[0]}?
             </h2>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-              Please choose your category below so we can display you in the correct directory (Founders, Co-Founders, Marketers, or Investors).
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+              Select your primary ecosystem role so you appear accurately in search and founder directories.
             </p>
           </div>
         </div>
 
         {error && (
-          <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 text-xs text-center border border-rose-200 dark:border-rose-800">
+          <div className="p-2.5 rounded-md bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-xs text-center border border-rose-200 dark:border-rose-900">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Category Cards */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Select Your Category
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Select Category
             </label>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[300px] overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[260px] overflow-y-auto pr-1">
               {roleCategories.map((cat) => {
                 const Icon = cat.icon;
                 const isSelected = selectedRole === cat.id;
@@ -213,30 +213,30 @@ export const NewUserCategoryModal: React.FC = () => {
                     key={cat.id}
                     type="button"
                     onClick={() => handleCategorySelect(cat.id, cat.defaultHeadline)}
-                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                    className={`p-2.5 rounded-lg border text-left transition-colors cursor-pointer flex items-start gap-2.5 ${
                       isSelected
-                        ? 'bg-brand-50 dark:bg-brand-950/80 border-brand-600 dark:border-brand-500 ring-2 ring-brand-500/30 shadow-sm'
-                        : 'bg-slate-50/70 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/80 hover:border-brand-300 dark:hover:border-slate-600'
+                        ? 'bg-brand-50/70 dark:bg-brand-950/70 border-brand-600 dark:border-brand-500 ring-1 ring-brand-600/30'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                     }`}
                   >
                     <span
-                      className={`p-2 rounded-xl shrink-0 mt-0.5 ${
+                      className={`p-1.5 rounded-md shrink-0 mt-0.5 ${
                         isSelected
                           ? 'bg-brand-600 text-white'
-                          : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200'
                       }`}
                     >
-                      <Icon size={16} />
+                      <Icon size={15} />
                     </span>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
+                        <span className="font-semibold text-xs text-slate-900 dark:text-white">
                           {cat.label}
                         </span>
                         {isSelected && (
-                          <span className="w-4 h-4 rounded-full bg-brand-600 text-white flex items-center justify-center shrink-0">
-                            <Check size={10} strokeWidth={3} />
+                          <span className="w-3.5 h-3.5 rounded-full bg-brand-600 text-white flex items-center justify-center shrink-0">
+                            <Check size={9} strokeWidth={3} />
                           </span>
                         )}
                       </div>
@@ -251,10 +251,10 @@ export const NewUserCategoryModal: React.FC = () => {
           </div>
 
           {/* Headline and Location */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Professional Headline
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Headline
               </label>
               <input
                 type="text"
@@ -262,43 +262,43 @@ export const NewUserCategoryModal: React.FC = () => {
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
                 placeholder="e.g. Co-Founder | Technical Partner"
-                className="w-full px-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="input-base !py-1.5 !text-xs"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Location
               </label>
               <div className="relative">
-                <MapPin size={13} className="absolute left-3 top-3 text-slate-400" />
+                <MapPin size={13} className="absolute left-2.5 top-2.5 text-slate-400" />
                 <input
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="e.g. Bengaluru, India or Remote"
-                  className="w-full pl-8 pr-3 py-2 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="input-base !pl-7 !py-1.5 !text-xs"
                 />
               </div>
             </div>
           </div>
 
           {/* Submit */}
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 px-5 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-brand-500/25 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+              className="btn-primary w-full !py-2 !text-xs flex items-center justify-center gap-1.5"
             >
               {isSubmitting ? (
                 <>
-                  <RefreshCw size={15} className="animate-spin" />
-                  <span>Saving Your Category...</span>
+                  <RefreshCw size={13} className="animate-spin" />
+                  <span>Saving Category...</span>
                 </>
               ) : (
                 <>
-                  <span>Save Category & Proceed</span>
-                  <ArrowRight size={15} />
+                  <span>Save & Continue</span>
+                  <ArrowRight size={13} />
                 </>
               )}
             </button>

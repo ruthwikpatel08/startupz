@@ -333,7 +333,7 @@ export const RocketFlightOverlay: React.FC = () => {
 
             <button
               onClick={() => launchRocket()}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-brand-600 via-indigo-600 to-cyan-500 hover:scale-102 active:scale-98 shadow-md shadow-brand-500/25 transition-all"
+              className="btn-primary w-full flex items-center justify-center gap-2 py-2 px-3 text-xs"
             >
               <Rocket size={14} className="transform -rotate-45" />
               <span>Launch Mission Now</span>
@@ -342,23 +342,22 @@ export const RocketFlightOverlay: React.FC = () => {
         )}
 
         {/* Floating Quick Launch Action Button */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-white/90 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800/80 shadow-xl backdrop-blur-md">
+        <div className="flex items-center gap-1.5 p-1 rounded-lg bg-white/95 dark:bg-dark-900/95 border border-slate-200 dark:border-dark-800 shadow-md backdrop-blur-xs">
           <button
             onClick={() => launchRocket()}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-brand-600 via-indigo-600 to-cyan-500 hover:from-brand-500 hover:to-cyan-400 shadow-md shadow-brand-500/30 transition-all hover:scale-105 active:scale-95 group"
+            className="btn-primary flex items-center gap-2 px-3 py-1.5 text-xs font-semibold"
             title="Launch Startup Rocket across the page"
           >
-            <Rocket size={15} className="transform -rotate-45 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            <Rocket size={14} className="transform -rotate-45" />
             <span>Launch Rocket</span>
-            <Sparkles size={13} className="text-cyan-200 animate-pulse" />
           </button>
 
           <button
             onClick={() => setIsDockExpanded((prev) => !prev)}
             aria-label="Toggle Mission Control Dock"
-            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors"
           >
-            {isDockExpanded ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+            {isDockExpanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
           </button>
         </div>
       </div>

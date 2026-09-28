@@ -213,15 +213,15 @@ export const StartupFeedPage: React.FC = () => {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
       {/* Feed Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
         {postTypes.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setFilterType(tab.key)}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0 ${
               filterType === tab.key
-                ? 'bg-brand-600 text-white shadow-md shadow-brand-500/20'
-                : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500'
+                ? 'bg-brand-600 text-white shadow-xs'
+                : 'bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-dark-700'
             }`}
           >
             {tab.label}
@@ -231,25 +231,25 @@ export const StartupFeedPage: React.FC = () => {
 
       {/* Post Composer Card */}
       {user && (
-        <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-all">
+        <div className="card-base p-4 sm:p-5 transition-colors">
           <div className="flex items-center gap-3">
             <img
               src={user.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${user.email}`}
               alt=""
-              className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+              className="w-9 h-9 rounded-full object-cover border border-slate-200 dark:border-dark-700"
             />
             <button
               onClick={() => setComposerOpen(!composerOpen)}
-              className="flex-1 text-left px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 text-xs font-medium border border-slate-200/80 dark:border-slate-700/80 transition-colors"
+              className="flex-1 text-left px-3.5 py-2 rounded-md bg-slate-50 dark:bg-dark-850 hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-500 text-xs font-normal border border-slate-200/80 dark:border-dark-700/80 transition-colors"
             >
               Share a startup update, ask for advice, or hire co-founders...
             </button>
           </div>
 
           {composerOpen && (
-            <form onSubmit={handleCreatePost} className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold text-slate-400">Post Type:</span>
+            <form onSubmit={handleCreatePost} className="mt-4 pt-4 border-t border-slate-100 dark:border-dark-800 space-y-3">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-xs font-medium text-slate-500 mr-1">Post Type:</span>
                 {[
                   { id: 'UPDATE', label: 'Update' },
                   { id: 'LAUNCH', label: 'Product Launch' },
@@ -262,10 +262,10 @@ export const StartupFeedPage: React.FC = () => {
                     key={t.id}
                     type="button"
                     onClick={() => setPostType(t.id)}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                       postType === t.id
-                        ? 'bg-brand-500 text-white'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                        ? 'bg-brand-600 text-white'
+                        : 'bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-800'
                     }`}
                   >
                     {t.label}
@@ -278,7 +278,7 @@ export const StartupFeedPage: React.FC = () => {
                 value={postTitle}
                 onChange={(e) => setPostTitle(e.target.value)}
                 placeholder="Post title or milestone headline (optional)"
-                className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="input-base w-full px-3 py-2 text-xs"
               />
 
               <textarea
@@ -287,7 +287,7 @@ export const StartupFeedPage: React.FC = () => {
                 onChange={(e) => setPostContent(e.target.value)}
                 placeholder="Write your update, metrics, co-founder criteria, or question..."
                 rows={4}
-                className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="input-base w-full px-3 py-2 text-xs resize-none"
               />
 
               <div className="flex items-center gap-2">
@@ -297,12 +297,12 @@ export const StartupFeedPage: React.FC = () => {
                   value={postLinks}
                   onChange={(e) => setPostLinks(e.target.value)}
                   placeholder="External link (e.g. demo URL, announcement blog, deck)"
-                  className="flex-1 px-3 py-1.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="input-base flex-1 px-3 py-1.5 text-xs"
                 />
               </div>
 
               {composerError && (
-                <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 text-xs">
+                <div className="p-2.5 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs border border-rose-200 dark:border-rose-900">
                   {composerError}
                 </div>
               )}
@@ -311,14 +311,14 @@ export const StartupFeedPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setComposerOpen(false)}
-                  className="px-4 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="btn-secondary px-3 py-1.5 text-xs font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingPost}
-                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-500 shadow-sm shadow-brand-500/20 disabled:opacity-50 flex items-center gap-1.5 transition-all hover:scale-105"
+                  className="btn-primary px-4 py-1.5 text-xs font-medium disabled:opacity-50 flex items-center gap-1.5"
                 >
                   <Send size={13} />
                   <span>{submittingPost ? 'Publishing...' : 'Publish'}</span>
@@ -333,7 +333,7 @@ export const StartupFeedPage: React.FC = () => {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((n) => (
-            <div key={n} className="h-48 rounded-3xl bg-slate-100 dark:bg-slate-800/40 animate-pulse" />
+            <div key={n} className="h-44 rounded-lg bg-slate-100 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 animate-pulse" />
           ))}
         </div>
       ) : posts.length === 0 ? (
@@ -341,11 +341,11 @@ export const StartupFeedPage: React.FC = () => {
           icon={Share2}
           title="No posts in this feed"
           description="Be the first to publish a startup update, hiring notice, or co-founder search."
-          actionText="Publish Update"
+          actionLabel="Publish Update"
           onAction={() => setComposerOpen(true)}
         />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {posts.map((post) => {
             const author = post.author;
             const authorName = author?.profile?.fullName || author?.email || 'Founder';
@@ -357,7 +357,7 @@ export const StartupFeedPage: React.FC = () => {
               <div
                 key={post.id}
                 id={`post-${post.id}`}
-                className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-all space-y-4"
+                className="card-base p-5 sm:p-6 transition-colors space-y-4"
               >
                 {/* Post Header */}
                 <div className="flex items-start justify-between gap-3">
@@ -366,21 +366,21 @@ export const StartupFeedPage: React.FC = () => {
                       <img
                         src={authorAvatar}
                         alt={authorName}
-                        className="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+                        className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-dark-700"
                       />
                     </Link>
                     <div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <Link
                           to={`/profile/${author?.id}`}
-                          className="font-bold text-sm text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                          className="font-semibold text-sm text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
                         >
                           {authorName}
                         </Link>
                         <VerificationBadge badge={author?.verificationBadge} isVerified={author?.isVerified} size="sm" />
                       </div>
                       <p className="text-xs text-slate-500 line-clamp-1">{authorHeadline}</p>
-                      <div className="text-[10px] text-slate-400 mt-0.5">
+                      <div className="text-[11px] text-slate-400 mt-0.5">
                         {new Date(post.createdAt).toLocaleDateString(undefined, {
                           month: 'short',
                           day: 'numeric',
@@ -394,7 +394,7 @@ export const StartupFeedPage: React.FC = () => {
                   {/* Post Type Badge & Report Dropdown */}
                   <div className="flex items-center gap-2">
                     <span
-                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${getPostTypeBadge(
+                      className={`text-[11px] font-medium px-2 py-0.5 rounded-md border ${getPostTypeBadge(
                         post.postType
                       )}`}
                     >
@@ -404,7 +404,7 @@ export const StartupFeedPage: React.FC = () => {
                     <button
                       onClick={() => setReportTarget({ id: post.id, title: post.title || post.content.slice(0, 30) })}
                       title="Report Post"
-                      className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+                      className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
                     >
                       <Flag size={14} />
                     </button>
@@ -414,16 +414,16 @@ export const StartupFeedPage: React.FC = () => {
                 {/* Post Body */}
                 <div className="space-y-2">
                   {post.title && (
-                    <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                    <h3 className="font-semibold text-base text-slate-900 dark:text-white">
                       {post.title}
                     </h3>
                   )}
-                  <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
+                  <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
                     {post.content}
                   </p>
 
                   {post.links && (
-                    <div className="pt-2">
+                    <div className="pt-1.5">
                       <a
                         href={post.links}
                         target="_blank"
@@ -438,18 +438,18 @@ export const StartupFeedPage: React.FC = () => {
                 </div>
 
                 {/* Post Actions Bar */}
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                   <div className="flex items-center gap-4">
                     {/* Like Button */}
                     <button
                       onClick={() => handleLikePost(post.id)}
-                      className={`flex items-center gap-1.5 font-bold transition-colors ${
+                      className={`flex items-center gap-1.5 font-medium transition-colors ${
                         post.isLiked
                           ? 'text-rose-600 dark:text-rose-400'
                           : 'hover:text-rose-600'
                       }`}
                     >
-                      <Heart size={16} className={post.isLiked ? 'fill-rose-600' : ''} />
+                      <Heart size={15} className={post.isLiked ? 'fill-rose-600' : ''} />
                       <span>{post.likesCount || 0}</span>
                     </button>
 
@@ -461,22 +461,22 @@ export const StartupFeedPage: React.FC = () => {
                           [post.id]: !prev[post.id],
                         }))
                       }
-                      className="flex items-center gap-1.5 font-bold hover:text-brand-600 transition-colors"
+                      className="flex items-center gap-1.5 font-medium hover:text-brand-600 transition-colors"
                     >
-                      <MessageSquare size={16} />
+                      <MessageSquare size={15} />
                       <span>{post.commentsCount || 0}</span>
                     </button>
 
                     {/* Save Button */}
                     <button
                       onClick={() => handleToggleSave(post.id)}
-                      className={`flex items-center gap-1.5 font-bold transition-colors ${
+                      className={`flex items-center gap-1.5 font-medium transition-colors ${
                         post.isSaved
                           ? 'text-brand-600 dark:text-brand-400'
                           : 'hover:text-brand-600'
                       }`}
                     >
-                      <Bookmark size={16} className={post.isSaved ? 'fill-brand-600' : ''} />
+                      <Bookmark size={15} className={post.isSaved ? 'fill-brand-600' : ''} />
                       <span className="hidden sm:inline">{post.isSaved ? 'Saved' : 'Save'}</span>
                     </button>
                   </div>
@@ -488,12 +488,12 @@ export const StartupFeedPage: React.FC = () => {
                       className="flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition-colors"
                     >
                       {copiedPostId === post.id ? (
-                        <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-bold">
+                        <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
                           <Check size={14} /> Copied!
                         </span>
                       ) : (
                         <>
-                          <Share2 size={15} />
+                          <Share2 size={14} />
                           <span className="hidden sm:inline">Share</span>
                         </>
                       )}
@@ -503,9 +503,9 @@ export const StartupFeedPage: React.FC = () => {
                     {user && user.id !== author?.id && (
                       <button
                         onClick={() => setConnectUser(author)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-950 font-bold transition-colors"
+                        className="btn-secondary px-2.5 py-1 text-[11px] font-medium inline-flex items-center gap-1"
                       >
-                        <UserPlus size={14} />
+                        <UserPlus size={13} />
                         <span>Connect</span>
                       </button>
                     )}
@@ -514,7 +514,7 @@ export const StartupFeedPage: React.FC = () => {
 
                 {/* Expanded Comments Section */}
                 {isCommentsOpen && (
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                  <div className="pt-3 border-t border-slate-100 dark:border-dark-800 space-y-3">
                     {/* Add Comment Box */}
                     {user && (
                       <div className="flex items-center gap-2">
@@ -531,12 +531,12 @@ export const StartupFeedPage: React.FC = () => {
                             if (e.key === 'Enter') handleAddComment(post.id);
                           }}
                           placeholder="Write a constructive comment or thought..."
-                          className="flex-1 px-3.5 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                          className="input-base flex-1 px-3 py-1.5 text-xs"
                         />
                         <button
                           onClick={() => handleAddComment(post.id)}
                           disabled={submittingComment[post.id] || !(commentInputs[post.id] || '').trim()}
-                          className="px-4 py-2 rounded-xl bg-brand-600 text-white font-bold text-xs disabled:opacity-40 hover:bg-brand-500 transition-colors"
+                          className="btn-primary px-3 py-1.5 text-xs font-medium disabled:opacity-40"
                         >
                           Send
                         </button>
@@ -549,10 +549,10 @@ export const StartupFeedPage: React.FC = () => {
                         post.comments.map((c) => (
                           <div
                             key={c.id}
-                            className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 text-xs space-y-1"
+                            className="p-3 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800 text-xs space-y-1"
                           >
                             <div className="flex items-center justify-between">
-                              <span className="font-bold text-slate-900 dark:text-white">
+                              <span className="font-semibold text-slate-900 dark:text-white">
                                 {c.author?.profile?.fullName || c.author?.email || 'Member'}
                               </span>
                               <span className="text-[10px] text-slate-400">
@@ -582,7 +582,7 @@ export const StartupFeedPage: React.FC = () => {
       <ConnectModal
         isOpen={!!connectUser}
         onClose={() => setConnectUser(null)}
-        user={connectUser}
+        targetUser={connectUser}
       />
 
       {/* Report Modal */}

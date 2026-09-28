@@ -90,16 +90,16 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
   const impact = problem.impactLevel || problem.impact_level || 7;
 
   return (
-    <div className="group relative flex flex-col justify-between rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 p-6 shadow-sm hover:shadow-xl hover:border-brand-500/40 dark:hover:border-brand-500/40 transition-all duration-300 hover:-translate-y-1">
+    <div className="card-base p-5 flex flex-col justify-between space-y-3.5 hover:border-slate-300 dark:hover:border-dark-700 transition-colors">
       
       {/* Top Meta: Categories & Impact Score */}
       <div>
-        <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center justify-between gap-2 mb-2.5">
           <div className="flex flex-wrap items-center gap-1.5">
             {problem.categories?.slice(0, 2).map((category, idx) => (
               <span
                 key={idx}
-                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${getCategoryColor(
+                className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium border ${getCategoryColor(
                   category
                 )}`}
               >
@@ -107,7 +107,7 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
               </span>
             ))}
             {problem.categories && problem.categories.length > 2 && (
-              <span className="text-[11px] font-semibold text-slate-400">
+              <span className="text-[10px] font-medium text-slate-400">
                 +{problem.categories.length - 2}
               </span>
             )}
@@ -115,48 +115,48 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
 
           {/* Impact Meter Badge */}
           <div
-            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black shrink-0 ${
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold shrink-0 ${
               impact >= 9
-                ? 'bg-gradient-to-r from-rose-500 to-amber-500 text-white shadow-xs'
-                : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300'
+                ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60'
+                : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60'
             }`}
             title={`Global Urgency & Impact Score: ${impact}/10`}
           >
-            <Flame size={13} className={impact >= 9 ? 'animate-pulse' : ''} />
+            <Flame size={12} className={impact >= 9 ? 'text-rose-500' : 'text-amber-500'} />
             <span>Impact {impact}/10</span>
           </div>
         </div>
 
         {/* Problem Title */}
         <Link to={`/problems/${problem.id}`} className="block">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors line-clamp-2 mb-2 leading-snug">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 transition-colors line-clamp-2 mb-1.5 leading-snug">
             {problem.title}
           </h3>
         </Link>
 
         {/* Truncated Description */}
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-3 mb-4 leading-relaxed">
+        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mb-3 leading-relaxed">
           {problem.description}
         </p>
 
         {/* Regions & Tags */}
-        <div className="space-y-2 mb-4">
+        <div className="space-y-1.5 mb-2">
           {problem.regions && problem.regions.length > 0 && (
             <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-              <Globe2 size={13} className="text-brand-500 shrink-0" />
+              <Globe2 size={13} className="text-slate-400 shrink-0" />
               <span className="truncate">
-                Region: <strong className="text-slate-700 dark:text-slate-200">{problem.regions.join(', ')}</strong>
+                Region: <strong className="text-slate-700 dark:text-slate-300 font-medium">{problem.regions.join(', ')}</strong>
               </span>
             </div>
           )}
 
           {/* Tags Chips */}
           {problem.tags && problem.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-1">
+            <div className="flex flex-wrap gap-1 pt-0.5">
               {problem.tags.slice(0, 3).map((tag, idx) => (
                 <span
                   key={idx}
-                  className="px-2 py-0.5 rounded-lg text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                  className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-dark-800"
                 >
                   #{tag}
                 </span>
@@ -172,22 +172,22 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
       </div>
 
       {/* Card Footer Actions */}
-      <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2 mt-auto">
-        <div className="flex items-center gap-1.5">
+      <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between gap-2 mt-auto">
+        <div className="flex items-center gap-1">
           {/* Save/Bookmark Button */}
           <button
             onClick={handleSave}
             disabled={saveLoading}
             aria-label={isSaved ? 'Remove from saved' : 'Save problem statement'}
-            className={`p-2 rounded-xl transition-all ${
+            className={`p-1.5 rounded-md transition-colors ${
               isSaved
-                ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-500 border border-amber-200 dark:border-amber-800'
-                : 'text-slate-400 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 border border-amber-200 dark:border-amber-900/60'
+                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
             }`}
             title={isSaved ? 'Saved to My Problems' : 'Save to My Problems'}
           >
             <Bookmark
-              size={16}
+              size={14}
               className={`${isSaved ? 'fill-amber-500 text-amber-500' : ''} ${
                 saveLoading ? 'animate-spin' : ''
               }`}
@@ -198,10 +198,10 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
           {onShare && (
             <button
               onClick={() => onShare(problem)}
-              className="p-2 rounded-xl text-slate-400 hover:text-brand-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
               title="Share Challenge"
             >
-              <Share2 size={16} />
+              <Share2 size={14} />
             </button>
           )}
 
@@ -211,31 +211,31 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
               href={problem.sourceUrl || problem.source_url || '#'}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-xl text-slate-400 hover:text-cyan-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="p-1.5 rounded-md text-slate-400 hover:text-brand-600 transition-colors"
               title="View Official UN / WHO / Global Citation Source"
               onClick={(e) => e.stopPropagation()}
             >
-              <ExternalLink size={15} />
+              <ExternalLink size={13} />
             </a>
           )}
 
           {/* Admin Management Controls */}
           {user?.isAdmin && (
-            <div className="flex items-center gap-1 ml-1 border-l border-slate-200 dark:border-slate-800 pl-1.5">
+            <div className="flex items-center gap-1 ml-1 border-l border-slate-200 dark:border-dark-800 pl-1.5">
               <Link
                 to={`/admin/problems/${problem.id}/edit`}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-colors"
+                className="p-1 rounded text-slate-400 hover:text-brand-600 transition-colors"
                 title="Edit Problem Statement (Admin)"
               >
-                <Edit size={14} />
+                <Edit size={13} />
               </Link>
               {onDelete && (
                 <button
                   onClick={() => onDelete(problem.id)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+                  className="p-1 rounded text-slate-400 hover:text-rose-500 transition-colors"
                   title="Delete Problem (Admin)"
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={13} />
                 </button>
               )}
             </div>
@@ -245,10 +245,10 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
         {/* View Details CTA */}
         <Link
           to={`/problems/${problem.id}`}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-900/60 transition-all group-hover:translate-x-0.5"
+          className="btn-primary py-1 px-3 text-xs font-semibold inline-flex items-center gap-1"
         >
           <span>Explore</span>
-          <ArrowRight size={13} />
+          <ArrowRight size={12} />
         </Link>
       </div>
     </div>

@@ -62,18 +62,18 @@ export const QuickLoginModal: React.FC<QuickLoginModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
       <div
-        className="w-full max-w-[420px] rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
+        className="w-full max-w-[400px] rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-modal overflow-hidden animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-brand-600 flex items-center justify-center text-white font-black text-sm">
+            <div className="w-6 h-6 rounded-md bg-brand-600 flex items-center justify-center text-white font-bold text-xs">
               Z
             </div>
-            <span className="font-bold text-sm text-slate-900 dark:text-white">
+            <span className="font-semibold text-xs tracking-tight text-slate-900 dark:text-white">
               Sign In to Startup<span className="text-brand-600">Z</span>
             </span>
           </div>
@@ -81,19 +81,19 @@ export const QuickLoginModal: React.FC<QuickLoginModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
-        <div className="p-6 pt-4 space-y-4">
+        <div className="p-5 space-y-4 font-sans">
           <div>
-            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white">
               Welcome back
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Enter your Gmail, username, or email to proceed by password.
+              Enter your credentials to continue.
             </p>
           </div>
 
@@ -105,7 +105,7 @@ export const QuickLoginModal: React.FC<QuickLoginModalProps> = ({
                 onClose();
                 onOpenGoogleChooser();
               }}
-              className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-xs transition-all hover:scale-[1.01] cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-xs font-medium text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                 <path
@@ -135,26 +135,26 @@ export const QuickLoginModal: React.FC<QuickLoginModalProps> = ({
               <div className="w-full border-t border-slate-200 dark:border-slate-800" />
             </div>
             <div className="relative flex justify-center text-[10px] uppercase">
-              <span className="bg-white dark:bg-slate-900 px-3 text-slate-400 font-bold tracking-wider">
-                Or sign in with password
+              <span className="bg-white dark:bg-slate-900 px-2 text-slate-400 font-medium tracking-wider">
+                Or password
               </span>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3.5">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {error && (
-              <div className="p-3 text-xs rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 flex items-start gap-2">
-                <AlertCircle size={16} className="shrink-0 text-rose-500 mt-0.5" />
+              <div className="p-2.5 text-xs rounded-md bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900 flex items-start gap-1.5">
+                <AlertCircle size={14} className="shrink-0 text-rose-500 mt-0.5" />
                 <span className="leading-snug">{error}</span>
               </div>
             )}
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1 flex items-center justify-between">
-                <span>Email, Gmail, or Username</span>
+              <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">
+                Email, Gmail, or Username
               </label>
               <div className="relative">
-                <Mail size={15} className="absolute left-3.5 top-3 text-slate-400" />
+                <Mail size={14} className="absolute left-3 top-2.5 text-slate-400" />
                 <input
                   type="text"
                   required
@@ -162,14 +162,14 @@ export const QuickLoginModal: React.FC<QuickLoginModalProps> = ({
                   disabled={loading}
                   onChange={(e) => setIdentifier(e.target.value)}
                   placeholder="e.g. ruthwik, user@gmail.com, or email"
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="input-base !pl-8 !py-1.5 !text-xs"
                 />
               </div>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                   Password
                 </label>
                 <Link
@@ -181,7 +181,7 @@ export const QuickLoginModal: React.FC<QuickLoginModalProps> = ({
                 </Link>
               </div>
               <div className="relative">
-                <Lock size={15} className="absolute left-3.5 top-3 text-slate-400" />
+                <Lock size={14} className="absolute left-3 top-2.5 text-slate-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
@@ -189,14 +189,14 @@ export const QuickLoginModal: React.FC<QuickLoginModalProps> = ({
                   disabled={loading}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-9 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="input-base !pl-8 !pr-8 !py-1.5 !text-xs"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                 >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
             </div>
@@ -204,14 +204,14 @@ export const QuickLoginModal: React.FC<QuickLoginModalProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-[0.99] text-xs font-bold text-white shadow-md shadow-brand-500/25 transition-all cursor-pointer disabled:opacity-60"
+              className="btn-primary w-full !py-2 !text-xs inline-flex items-center justify-center gap-1.5"
             >
               {loading ? (
                 <span>Signing in...</span>
               ) : (
                 <>
-                  <span>Sign In with Password</span>
-                  <ArrowRight size={14} />
+                  <span>Sign In</span>
+                  <ArrowRight size={13} />
                 </>
               )}
             </button>
@@ -219,40 +219,40 @@ export const QuickLoginModal: React.FC<QuickLoginModalProps> = ({
 
           {/* Quick test accounts for real accounts */}
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-            <span className="text-[10px] text-slate-400 font-semibold block mb-1.5">
-              Quick Sign In:
+            <span className="text-[10px] text-slate-400 font-medium block mb-1">
+              Quick Accounts:
             </span>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1">
               <button
                 type="button"
                 onClick={() => handleQuickFill('ruthwikpatel08@gmail.com')}
-                className="text-[10px] px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono transition-colors"
+                className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono transition-colors"
               >
                 ruthwikpatel08@gmail.com
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickFill('legacyplayer04@gmail.com')}
-                className="text-[10px] px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono transition-colors"
+                className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono transition-colors"
               >
                 legacyplayer04@gmail.com
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickFill('lavanyadav0206@gmail.com')}
-                className="text-[10px] px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono transition-colors"
+                className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono transition-colors"
               >
                 lavanyadav0206@gmail.com
               </button>
             </div>
           </div>
 
-          <div className="pt-2 text-center text-xs text-slate-500 dark:text-slate-400">
+          <div className="pt-1 text-center text-xs text-slate-500 dark:text-slate-400">
             Don't have an account?{' '}
             <Link
               to="/register"
               onClick={onClose}
-              className="font-bold text-brand-600 dark:text-brand-400 hover:underline"
+              className="font-medium text-brand-600 dark:text-brand-400 hover:underline"
             >
               Sign up
             </Link>

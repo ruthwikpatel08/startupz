@@ -59,10 +59,10 @@ export const ProblemFormPage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         
         {/* Navigation Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
           <Link
             to="/admin/problems"
-            className="inline-flex items-center gap-1.5 hover:text-brand-600 transition-colors"
+            className="inline-flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <ArrowLeft size={14} />
             <span>Back to Problem Management</span>
@@ -73,23 +73,23 @@ export const ProblemFormPage: React.FC = () => {
           </span>
         </div>
 
-        {/* Card Header */}
-        <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-sm">
+        {/* Card Header & Form Container */}
+        <div className="card-base p-6 sm:p-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-2xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold">
-              <Shield size={20} />
+            <div className="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold border border-brand-100 dark:border-brand-900/40">
+              <Shield size={18} />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                 {isEdit ? 'Edit Global Problem Statement' : 'Publish New Global Challenge'}
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Curate verified world challenges drawing on UN SDGs, WHO, and World Bank research.
               </p>
             </div>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+          <div className="mt-6 pt-6 border-t border-slate-100 dark:border-dark-800">
             <ProblemForm
               initialData={problem}
               onSubmit={handleSubmit}

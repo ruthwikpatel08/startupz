@@ -103,47 +103,48 @@ export const MembershipsPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8 transition-colors">
-      <div className="max-w-7xl mx-auto space-y-16">
+    <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto space-y-12">
 
         {/* Header Section */}
-        <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-50 dark:bg-brand-950/70 border border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-300 text-xs font-bold uppercase tracking-wider">
-            <Sparkles size={14} className="text-brand-500 animate-pulse" />
-            <span>StartupZ Membership Plans</span>
+        <div className="text-center space-y-3 max-w-2xl mx-auto">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-brand-50 dark:bg-brand-950/40 border border-brand-200/50 dark:border-brand-900/50 text-brand-700 dark:text-brand-300 text-xs font-semibold">
+            <Sparkles size={13} className="text-brand-600 dark:text-brand-400" />
+            <span>Membership Plans</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
             Accelerate Your Startup Journey
           </h1>
 
-          <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
-            Choose the right tier to find co-founders, hire top talent, connect with verified investors, and leverage AI matchmaking.
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            Choose the right tier to match with co-founders, hire technical builders, pitch verified investors, and access platform discovery tools.
           </p>
 
           {/* Billing Cycle Toggle */}
-          <div className="pt-4 flex items-center justify-center gap-3">
-            <span className={`text-xs font-bold ${billingCycle === 'monthly' ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
-              Monthly Billing
+          <div className="pt-3 flex items-center justify-center gap-2.5">
+            <span className={`text-xs font-medium ${billingCycle === 'monthly' ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+              Monthly
             </span>
 
             <button
               type="button"
               onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-              className="relative inline-flex h-6 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-slate-300 dark:bg-slate-700 transition-colors duration-200 ease-in-out focus:outline-none"
+              className="relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-slate-200 dark:bg-dark-800 transition-colors duration-150 ease-in-out focus:outline-none"
+              aria-label="Toggle billing cycle"
             >
               <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-brand-600 shadow-md ring-0 transition duration-200 ease-in-out ${
-                  billingCycle === 'annual' ? 'translate-x-6 bg-brand-500' : 'translate-x-0 bg-white'
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-brand-600 transition duration-150 ease-in-out ${
+                  billingCycle === 'annual' ? 'translate-x-5' : 'translate-x-0'
                 }`}
               />
             </button>
 
             <div className="flex items-center gap-1.5">
-              <span className={`text-xs font-bold ${billingCycle === 'annual' ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
-                Annual Billing
+              <span className={`text-xs font-medium ${billingCycle === 'annual' ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+                Annual
               </span>
-              <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 rounded-full">
+              <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-900/50 rounded">
                 Save 20%
               </span>
             </div>
@@ -151,7 +152,7 @@ export const MembershipsPage: React.FC = () => {
         </div>
 
         {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
           {plans.map((plan) => {
             const Icon = plan.icon;
             const price = billingCycle === 'annual' ? plan.priceAnnual : plan.priceMonthly;
@@ -159,61 +160,61 @@ export const MembershipsPage: React.FC = () => {
             return (
               <div
                 key={plan.id}
-                className={`relative flex flex-col justify-between rounded-3xl p-8 bg-white dark:bg-slate-900 border transition-all duration-300 hover:shadow-2xl ${
+                className={`relative flex flex-col justify-between card-base p-6 transition-colors ${
                   plan.popular
-                    ? 'border-2 border-brand-500 shadow-xl shadow-brand-500/10 scale-102 z-10'
-                    : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                    ? 'border-brand-600 dark:border-brand-500 shadow-xs'
+                    : 'hover:border-slate-300 dark:hover:border-dark-700'
                 }`}
               >
                 {/* Popular Badge */}
                 {plan.popular && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-gradient-to-r from-brand-600 to-indigo-600 text-white shadow-md">
-                    Most Popular Choice
+                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded text-[11px] font-semibold bg-brand-600 text-white shadow-xs">
+                    Most Popular
                   </div>
                 )}
 
                 <div>
                   {/* Header */}
-                  <div className="flex items-center justify-between gap-3 mb-4">
-                    <div className="flex items-center gap-2.5">
-                      <div className={`p-2.5 rounded-2xl ${plan.badgeColor}`}>
-                        <Icon size={20} />
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-md bg-slate-100 dark:bg-dark-850 flex items-center justify-center text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-dark-800">
+                        <Icon size={16} />
                       </div>
-                      <h2 className="text-xl font-bold text-slate-900 dark:text-white">{plan.name}</h2>
+                      <h2 className="text-base font-bold text-slate-900 dark:text-white">{plan.name}</h2>
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-500 dark:text-slate-400 min-h-[36px] mb-6">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 min-h-[32px] mb-5">
                     {plan.tagline}
                   </p>
 
                   {/* Price */}
-                  <div className="mb-6 pb-6 border-b border-slate-100 dark:border-slate-800">
+                  <div className="mb-5 pb-5 border-b border-slate-100 dark:border-dark-800">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl sm:text-5xl font-black text-slate-900 dark:text-white">
+                      <span className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
                         ${price}
                       </span>
-                      <span className="text-xs font-semibold text-slate-400">
+                      <span className="text-xs font-normal text-slate-400">
                         / month {billingCycle === 'annual' && plan.priceAnnual > 0 ? '(billed annually)' : ''}
                       </span>
                     </div>
                   </div>
 
                   {/* Included Features */}
-                  <div className="space-y-3 mb-8">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  <div className="space-y-2.5 mb-6">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                       What's Included:
                     </p>
                     {plan.features.map((feat, i) => (
-                      <div key={i} className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-200">
-                        <Check size={16} className="text-emerald-500 shrink-0 mt-0.5" />
+                      <div key={i} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
+                        <Check size={14} className="text-emerald-600 shrink-0 mt-0.5" />
                         <span>{feat}</span>
                       </div>
                     ))}
 
                     {plan.notIncluded.map((feat, i) => (
-                      <div key={i} className="flex items-start gap-2.5 text-xs text-slate-400 dark:text-slate-600 line-through">
-                        <div className="w-4 h-4 rounded-full border border-slate-300 dark:border-slate-700 shrink-0 mt-0.5 flex items-center justify-center text-[10px]">
+                      <div key={i} className="flex items-start gap-2 text-xs text-slate-400 line-through">
+                        <div className="w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-dark-700 shrink-0 mt-0.5 flex items-center justify-center text-[9px]">
                           ✕
                         </div>
                         <span>{feat}</span>
@@ -223,19 +224,17 @@ export const MembershipsPage: React.FC = () => {
                 </div>
 
                 {/* CTA Button */}
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="pt-4 border-t border-slate-100 dark:border-dark-800">
                   <Link
                     to={user ? '/dashboard' : '/register'}
-                    className={`w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold transition-all shadow-md ${
-                      plan.buttonVariant === 'primary'
-                        ? 'bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white shadow-brand-500/25 hover:scale-102'
-                        : plan.buttonVariant === 'accent'
-                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white shadow-amber-500/25 hover:scale-102'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    className={`w-full inline-flex items-center justify-center gap-1.5 py-2 px-4 text-xs font-semibold rounded-md transition-colors ${
+                      plan.popular
+                        ? 'btn-primary'
+                        : 'btn-secondary'
                     }`}
                   >
                     <span>{plan.priceMonthly === 0 ? 'Get Started Free' : `Upgrade to ${plan.name}`}</span>
-                    <ArrowRight size={14} />
+                    <ArrowRight size={13} />
                   </Link>
                 </div>
               </div>
@@ -244,42 +243,42 @@ export const MembershipsPage: React.FC = () => {
         </div>
 
         {/* Trust Badges */}
-        <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 text-center space-y-6">
-          <div className="flex flex-wrap items-center justify-center gap-8 text-xs font-bold text-slate-600 dark:text-slate-300">
+        <div className="card-base p-4 text-center">
+          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs font-medium text-slate-600 dark:text-slate-400">
             <div className="flex items-center gap-2">
-              <ShieldCheck size={18} className="text-brand-500" />
+              <ShieldCheck size={16} className="text-brand-600 dark:text-brand-400" />
               <span>Verified Ecosystem Profiles</span>
             </div>
             <div className="flex items-center gap-2">
-              <Zap size={18} className="text-amber-500" />
+              <Zap size={16} className="text-brand-600 dark:text-brand-400" />
               <span>Instant AI Scout Bot Access</span>
             </div>
             <div className="flex items-center gap-2">
-              <Crown size={18} className="text-purple-500" />
+              <Crown size={16} className="text-brand-600 dark:text-brand-400" />
               <span>Cancel or Change Plan Anytime</span>
             </div>
           </div>
         </div>
 
         {/* FAQ Section */}
-        <div className="max-w-3xl mx-auto space-y-8">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center justify-center gap-2">
-              <HelpCircle size={22} className="text-brand-500" />
+        <div className="max-w-2xl mx-auto space-y-5">
+          <div className="text-center space-y-1">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center justify-center gap-1.5">
+              <HelpCircle size={18} className="text-brand-600 dark:text-brand-400" />
               <span>Frequently Asked Questions</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Have questions about StartupZ memberships? Here are common answers.
+              Common questions about StartupZ memberships and features.
             </p>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-2.5">
             {faqs.map((faq, idx) => (
               <div
                 key={idx}
-                className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5"
+                className="card-base p-3.5 space-y-1"
               >
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{faq.q}</h3>
+                <h3 className="text-xs font-semibold text-slate-900 dark:text-white">{faq.q}</h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{faq.a}</p>
               </div>
             ))}

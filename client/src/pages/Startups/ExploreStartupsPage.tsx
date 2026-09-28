@@ -142,35 +142,35 @@ export const ExploreStartupsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-            <Compass className="text-brand-600" size={28} /> Explore Startup Ideas & Ventures
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5 tracking-tight">
+            <Compass className="text-brand-600" size={26} /> Explore Startups & Ventures
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Discover cutting-edge ideas, join as a co-founder, or support early-stage founders.
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Discover cutting-edge ideas, join as a co-founder, or support early-stage founders across the ecosystem.
           </p>
         </div>
 
         <Link
           to="/startups/create"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md transition-all shrink-0"
+          className="btn-primary inline-flex items-center gap-2 text-xs shrink-0"
         >
-          <Plus size={16} /> Publish Your Startup Idea
+          <Plus size={15} /> Publish Startup Venture
         </Link>
       </div>
 
       {/* Filter Toolbar */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="card-base p-3.5 space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
           
           {/* Search */}
           <div className="relative lg:col-span-2">
-            <Search size={16} className="absolute left-3.5 top-3 text-slate-400" />
+            <Search size={15} className="absolute left-3 top-2.5 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search problem, solution, skills..."
-              className="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="input-base w-full pl-9 pr-3 py-2 text-xs"
             />
           </div>
 
@@ -179,7 +179,7 @@ export const ExploreStartupsPage: React.FC = () => {
             <select
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
-              className="w-full py-2 px-3 text-xs rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="input-base w-full py-2 px-3 text-xs"
             >
               {industries.map((ind) => (
                 <option key={ind} value={ind}>
@@ -194,7 +194,7 @@ export const ExploreStartupsPage: React.FC = () => {
             <select
               value={stage}
               onChange={(e) => setStage(e.target.value)}
-              className="w-full py-2 px-3 text-xs rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="input-base w-full py-2 px-3 text-xs"
             >
               {stages.map((st) => (
                 <option key={st} value={st}>
@@ -209,7 +209,7 @@ export const ExploreStartupsPage: React.FC = () => {
             <select
               value={fundingStatus}
               onChange={(e) => setFundingStatus(e.target.value)}
-              className="w-full py-2 px-3 text-xs rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="input-base w-full py-2 px-3 text-xs"
             >
               {fundingOptions.map((f) => (
                 <option key={f} value={f}>
@@ -224,9 +224,9 @@ export const ExploreStartupsPage: React.FC = () => {
 
       {/* Startups Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-72 rounded-3xl bg-slate-100 dark:bg-dark-850 animate-pulse" />
+            <div key={i} className="h-64 rounded-lg bg-slate-100 dark:bg-dark-850 animate-pulse border border-slate-200 dark:border-dark-800" />
           ))}
         </div>
       ) : startups.length === 0 ? (
@@ -243,25 +243,25 @@ export const ExploreStartupsPage: React.FC = () => {
           }}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {startups.map((startup) => (
             <div
               key={startup.id}
-              className="group p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-brand-500/50 transition-all flex flex-col justify-between"
+              className="card-base p-5 hover:border-slate-300 dark:hover:border-dark-700 transition-colors flex flex-col justify-between"
             >
-              <div className="space-y-4">
+              <div className="space-y-3.5">
                 {/* Header: Logo, Name, Verified, Stage */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <img
                       src={startup.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${startup.name}`}
                       alt=""
-                      className="w-12 h-12 rounded-2xl object-cover border border-slate-100 dark:border-slate-800 shadow-xs shrink-0"
+                      className="w-11 h-11 rounded-lg object-cover border border-slate-200 dark:border-dark-700 shrink-0"
                     />
                     <div className="min-w-0">
                       <Link
                         to={`/startups/${startup.id}`}
-                        className="font-bold text-base text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors truncate block"
+                        className="font-semibold text-sm text-slate-900 dark:text-white hover:text-brand-600 transition-colors truncate block"
                       >
                         {startup.name}
                       </Link>
@@ -279,7 +279,7 @@ export const ExploreStartupsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 uppercase tracking-wider shrink-0">
+                  <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200/50 dark:border-brand-900/50 shrink-0">
                     {startup.stage}
                   </span>
                 </div>
@@ -287,18 +287,18 @@ export const ExploreStartupsPage: React.FC = () => {
                 {/* Problem & Solution */}
                 <div className="space-y-2 text-xs">
                   <div>
-                    <span className="font-bold text-slate-400 uppercase text-[10px] tracking-wider block">
+                    <span className="font-medium text-slate-400 uppercase text-[10px] tracking-wider block">
                       Problem
                     </span>
-                    <p className="text-slate-600 dark:text-slate-300 line-clamp-2 mt-0.5">
+                    <p className="text-slate-600 dark:text-slate-300 line-clamp-2 mt-0.5 leading-relaxed">
                       {startup.problem}
                     </p>
                   </div>
                   <div>
-                    <span className="font-bold text-brand-600 dark:text-brand-400 uppercase text-[10px] tracking-wider block">
+                    <span className="font-medium text-brand-600 dark:text-brand-400 uppercase text-[10px] tracking-wider block">
                       Solution
                     </span>
-                    <p className="text-slate-600 dark:text-slate-300 line-clamp-2 mt-0.5">
+                    <p className="text-slate-600 dark:text-slate-300 line-clamp-2 mt-0.5 leading-relaxed">
                       {startup.solution}
                     </p>
                   </div>
@@ -307,14 +307,14 @@ export const ExploreStartupsPage: React.FC = () => {
                 {/* Required Skills */}
                 {startup.requiredSkills && (
                   <div>
-                    <span className="font-bold text-slate-400 uppercase text-[10px] tracking-wider block mb-1.5">
+                    <span className="font-medium text-slate-400 uppercase text-[10px] tracking-wider block mb-1.5">
                       Looking for Skills
                     </span>
                     <div className="flex flex-wrap gap-1">
                       {startup.requiredSkills.split(',').slice(0, 3).map((sk, idx) => (
                         <span
                           key={idx}
-                          className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300"
+                          className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-dark-700/60"
                         >
                           {sk.trim()}
                         </span>
@@ -325,7 +325,7 @@ export const ExploreStartupsPage: React.FC = () => {
               </div>
 
               {/* Card Footer: Founder, Stats, Actions */}
-              <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800/80 space-y-3">
+              <div className="pt-3.5 mt-3.5 border-t border-slate-100 dark:border-dark-800 space-y-3">
                 {/* Founder Info */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -335,14 +335,14 @@ export const ExploreStartupsPage: React.FC = () => {
                         `https://api.dicebear.com/7.x/initials/svg?seed=${startup.founder?.profile?.fullName}`
                       }
                       alt=""
-                      className="w-6 h-6 rounded-full object-cover"
+                      className="w-5 h-5 rounded-full object-cover border border-slate-200 dark:border-dark-700"
                     />
-                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
+                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">
                       {startup.founder?.profile?.fullName || 'Founder'}
                     </span>
                   </div>
 
-                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                     {startup.fundingStatus || 'Bootstrapped'}
                   </span>
                 </div>
@@ -352,38 +352,38 @@ export const ExploreStartupsPage: React.FC = () => {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={(e) => handleLike(startup.id, e)}
-                      className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 ${
+                      className={`p-1.5 rounded-md transition-colors flex items-center gap-1 ${
                         startup.isLiked
-                          ? 'text-rose-500 bg-rose-50 dark:bg-rose-950/50'
-                          : 'text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-dark-800'
+                          ? 'text-rose-600 bg-rose-50 dark:bg-rose-950/50'
+                          : 'text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-dark-800'
                       }`}
                       title="Like Idea"
                     >
-                      <Heart size={15} fill={startup.isLiked ? 'currentColor' : 'none'} />
-                      <span className="font-semibold text-[11px]">{startup.likesCount}</span>
+                      <Heart size={14} fill={startup.isLiked ? 'currentColor' : 'none'} />
+                      <span className="font-medium text-[11px]">{startup.likesCount}</span>
                     </button>
 
                     <button
                       onClick={(e) => handleSave(startup.id, e)}
-                      className={`p-1.5 rounded-lg transition-colors ${
+                      className={`p-1.5 rounded-md transition-colors ${
                         startup.isSaved
                           ? 'text-brand-600 bg-brand-50 dark:bg-brand-950/50'
                           : 'text-slate-400 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-800'
                       }`}
                       title="Save Startup"
                     >
-                      <Bookmark size={15} fill={startup.isSaved ? 'currentColor' : 'none'} />
+                      <Bookmark size={14} fill={startup.isSaved ? 'currentColor' : 'none'} />
                     </button>
 
                     <button
                       onClick={(e) => handleShare(startup.id, e)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-dark-800"
+                      className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-dark-800"
                       title="Share Link"
                     >
                       {copiedId === startup.id ? (
-                        <Check size={15} className="text-emerald-500" />
+                        <Check size={14} className="text-emerald-600" />
                       ) : (
-                        <Share2 size={15} />
+                        <Share2 size={14} />
                       )}
                     </button>
                   </div>
@@ -391,10 +391,10 @@ export const ExploreStartupsPage: React.FC = () => {
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={(e) => handleFollow(startup.id, e)}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
                         startup.isFollowed
-                          ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                          : 'text-slate-600 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-800'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-800 border border-slate-200 dark:border-dark-700'
                       }`}
                       title="Follow Startup"
                     >
@@ -406,15 +406,15 @@ export const ExploreStartupsPage: React.FC = () => {
                     </button>
                     <button
                       onClick={() => setConnectUser(startup.founder || null)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
+                      className="btn-secondary px-2.5 py-1 text-[11px] font-medium inline-flex items-center gap-1"
                     >
-                      <UserPlus size={13} /> Connect
+                      <UserPlus size={12} /> Connect
                     </button>
                     <Link
                       to={`/startups/${startup.id}`}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold text-white bg-brand-600 hover:bg-brand-700"
+                      className="btn-primary px-3 py-1 text-xs inline-flex items-center gap-1"
                     >
-                      <Eye size={13} /> View
+                      <Eye size={12} /> View
                     </Link>
                   </div>
                 </div>

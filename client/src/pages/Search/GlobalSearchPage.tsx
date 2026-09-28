@@ -198,24 +198,29 @@ export const GlobalSearchPage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
-      {/* Big Search Header */}
+      {/* Search Header */}
       <div className="space-y-4">
-        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-          <Search className="text-brand-600" size={28} /> Network & Ecosystem Search
-        </h1>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
+            <Search className="text-brand-600 dark:text-brand-400" size={26} /> Network & Ecosystem Search
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Discover verified founders, startups, investors, mentors, opportunities, and documented problems.
+          </p>
+        </div>
 
         <form onSubmit={handleSearchSubmit} className="relative">
-          <Search size={18} className="absolute left-4 top-3.5 text-slate-400" />
+          <Search size={16} className="absolute left-3.5 top-3 text-slate-400" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by username (e.g. ruthwik, legacy, lavan), category, startups, problems..."
-            className="w-full pl-12 pr-28 py-3 text-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+            placeholder="Search by username, category, startups, problems..."
+            className="input-base w-full pl-10 pr-24 py-2.5 text-sm"
           />
           <button
             type="submit"
-            className="absolute right-2 top-2 px-5 py-1.5 rounded-xl bg-brand-600 text-white font-bold text-xs hover:bg-brand-500 shadow-sm"
+            className="btn-primary absolute right-1.5 top-1.5 text-xs py-1.5 px-4"
           >
             Search
           </button>
@@ -223,17 +228,18 @@ export const GlobalSearchPage: React.FC = () => {
       </div>
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-slate-200 dark:border-dark-800">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => handleTabChange(tab.key)}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+            className={`px-3 py-2 rounded-t-md text-xs font-semibold transition-all shrink-0 border-b-2 -mb-px flex items-center gap-1.5 ${
               activeTab === tab.key
-                ? 'bg-brand-600 text-white shadow-sm'
-                : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-brand-500'
+                ? 'border-brand-600 text-brand-600 dark:text-brand-400 bg-brand-50/50 dark:bg-brand-950/20'
+                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300'
             }`}
           >
+            {tab.icon && <tab.icon size={13} />}
             {tab.label}
           </button>
         ))}
@@ -241,16 +247,16 @@ export const GlobalSearchPage: React.FC = () => {
 
       {/* Results View */}
       {loading ? (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-28 rounded-2xl bg-slate-100 dark:bg-slate-800/40 animate-pulse" />
+            <div key={i} className="h-28 card-base bg-slate-50 dark:bg-dark-900 animate-pulse" />
           ))}
         </div>
       ) : totalResults === 0 && query ? (
         <EmptyState
           icon={Search}
           title="No records found"
-          description={`We couldn't find any results matching "${query}". Try searching for usernames like ruthwik, legacy, or categories like founder, investor.`}
+          description={`We couldn't find any results matching "${query}". Try searching for usernames, or categories like founder, investor.`}
           actionLabel="Clear Search"
           onAction={() => {
             setQuery('');
@@ -263,8 +269,8 @@ export const GlobalSearchPage: React.FC = () => {
           {/* People Section */}
           {(activeTab === 'ALL' || activeTab === 'PEOPLE') && results.users?.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Users size={16} /> Real People & Co-Founders ({results.users.length})
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <Users size={14} /> Real People & Co-Founders ({results.users.length})
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {results.users.map((u: any) => {
@@ -278,31 +284,31 @@ export const GlobalSearchPage: React.FC = () => {
                   return (
                     <div
                       key={u.id}
-                      className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 transition-all flex flex-col justify-between space-y-3 shadow-xs"
+                      className="card-base p-5 flex flex-col justify-between space-y-3 hover:border-slate-300 dark:hover:border-dark-700 transition-colors"
                     >
                       <div className="flex items-start gap-3.5">
                         <img
                           src={avatar}
                           alt={fullName}
-                          className="w-12 h-12 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                          className="w-11 h-11 rounded-lg object-cover border border-slate-200 dark:border-dark-700 shrink-0"
                         />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <Link
                               to={`/profile/${u.id}`}
-                              className="font-bold text-sm text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                              className="font-semibold text-sm text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
                             >
                               {fullName}
                             </Link>
-                            <span className="text-xs text-brand-600 dark:text-brand-400 font-mono font-semibold">
+                            <span className="text-xs text-brand-600 dark:text-brand-400 font-mono font-medium">
                               @{username}
                             </span>
                             <RoleBadge role={role} size="sm" />
                             <VerificationBadge badge={u.verificationBadge} isVerified={true} size="sm" />
                           </div>
-                          <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{u.profile?.headline || role}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">{u.profile?.headline || role}</p>
                           {u.profile?.location && (
-                            <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
                               <MapPin size={10} /> {u.profile.location}
                             </p>
                           )}
@@ -314,7 +320,7 @@ export const GlobalSearchPage: React.FC = () => {
                           {u.profile.skills.split(',').slice(0, 3).map((sk: string, idx: number) => (
                             <span
                               key={idx}
-                              className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                              className="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-dark-700"
                             >
                               {sk.trim()}
                             </span>
@@ -323,29 +329,27 @@ export const GlobalSearchPage: React.FC = () => {
                       )}
 
                       {/* Card Action Buttons */}
-                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
+                      <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between flex-wrap gap-2">
                         <Link
                           to={`/profile/${u.id}`}
-                          className="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-brand-600"
+                          className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
                         >
                           View Profile →
                         </Link>
 
                         <div className="flex items-center gap-2">
-                          {/* Startup Connection Button */}
                           <button
                             type="button"
                             onClick={() => setStartupConnectUser(u)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900 hover:bg-brand-100 transition-colors"
+                            className="btn-secondary inline-flex items-center gap-1 text-xs py-1.5 px-3"
                           >
                             <Rocket size={13} /> Startup Connection
                           </button>
 
-                          {/* Standard Connect Button */}
                           <button
                             type="button"
                             onClick={() => setConnectUser(u)}
-                            className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-xs"
+                            className="btn-primary inline-flex items-center gap-1 text-xs py-1.5 px-3"
                           >
                             <UserPlus size={13} /> Connect
                           </button>
@@ -361,26 +365,26 @@ export const GlobalSearchPage: React.FC = () => {
           {/* Startups Section */}
           {(activeTab === 'ALL' || activeTab === 'STARTUPS') && results.startups?.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Compass size={16} /> Startups ({results.startups.length})
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <Compass size={14} /> Startups ({results.startups.length})
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {results.startups.map((s: any) => (
                   <Link
                     key={s.id}
                     to={`/startups/${s.id}`}
-                    className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 transition-all space-y-2 block"
+                    className="card-base p-4 hover:border-slate-300 dark:hover:border-dark-700 transition-colors space-y-2 block"
                   >
                     <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-sm text-slate-900 dark:text-white">{s.name}</h3>
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950 text-brand-600">
+                      <h3 className="font-semibold text-sm text-slate-900 dark:text-white">{s.name}</h3>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-900/40">
                         {s.stage}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
                       {s.oneLineDescription || s.problem}
                     </p>
-                    <div className="text-[10px] font-bold text-brand-600">
+                    <div className="text-xs font-medium text-brand-600 dark:text-brand-400">
                       {s.industry} • {s.location || 'Remote'}
                     </div>
                   </Link>
@@ -392,19 +396,19 @@ export const GlobalSearchPage: React.FC = () => {
           {/* Investors Section */}
           {(activeTab === 'ALL' || activeTab === 'INVESTORS') && results.investors?.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <TrendingUp size={16} /> Investors ({results.investors.length})
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <TrendingUp size={14} /> Investors ({results.investors.length})
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {results.investors.map((inv: any) => (
                   <Link
                     key={inv.id}
                     to="/investors"
-                    className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500 transition-all space-y-1 block"
+                    className="card-base p-4 hover:border-slate-300 dark:hover:border-dark-700 transition-colors space-y-1 block"
                   >
-                    <div className="font-bold text-xs text-slate-900 dark:text-white">{inv.organization}</div>
-                    <p className="text-[11px] text-slate-500">{inv.investorType}</p>
-                    <p className="text-[10px] text-emerald-600 font-bold pt-1">
+                    <div className="font-semibold text-xs text-slate-900 dark:text-white">{inv.organization}</div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{inv.investorType}</p>
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold pt-1">
                       Check: {inv.minCheckSize || '$25K'} - {inv.maxCheckSize || '$500K'}
                     </p>
                   </Link>
@@ -416,20 +420,20 @@ export const GlobalSearchPage: React.FC = () => {
           {/* Mentors Section */}
           {(activeTab === 'ALL' || activeTab === 'MENTORS') && results.mentors?.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <GraduationCap size={16} /> Mentors & Programs ({results.mentors.length})
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <GraduationCap size={14} /> Mentors & Programs ({results.mentors.length})
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {results.mentors.map((m: any) => (
                   <Link
                     key={m.id}
                     to="/mentors"
-                    className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500 transition-all space-y-1.5 block"
+                    className="card-base p-4 hover:border-slate-300 dark:hover:border-dark-700 transition-colors space-y-1.5 block"
                   >
-                    <div className="font-bold text-xs text-slate-900 dark:text-white">
+                    <div className="font-semibold text-xs text-slate-900 dark:text-white">
                       {m.user?.profile?.fullName || m.expertise}
                     </div>
-                    <p className="text-[11px] text-slate-500 line-clamp-2">{m.about || m.mentoringTopics}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">{m.about || m.mentoringTopics}</p>
                   </Link>
                 ))}
               </div>
@@ -439,23 +443,23 @@ export const GlobalSearchPage: React.FC = () => {
           {/* Opportunities Section */}
           {(activeTab === 'ALL' || activeTab === 'OPPORTUNITIES') && results.opportunities?.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Briefcase size={16} /> Opportunities & Roles ({results.opportunities.length})
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <Briefcase size={14} /> Opportunities & Roles ({results.opportunities.length})
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {results.opportunities.map((opp: any) => (
                   <Link
                     key={opp.id}
                     to="/opportunities"
-                    className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-cyan-500 transition-all flex items-center justify-between group"
+                    className="card-base p-4 hover:border-slate-300 dark:hover:border-dark-700 transition-colors flex items-center justify-between group"
                   >
                     <div>
-                      <div className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-cyan-600">
+                      <div className="font-semibold text-xs text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">
                         {opp.role}
                       </div>
-                      <div className="text-[11px] text-slate-500">{opp.startup?.name} • {opp.compensation}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{opp.startup?.name} • {opp.compensation}</div>
                     </div>
-                    <span className="text-[10px] font-bold text-slate-400">{opp.workplaceType}</span>
+                    <span className="text-xs font-medium text-slate-400 dark:text-slate-500">{opp.workplaceType}</span>
                   </Link>
                 ))}
               </div>
@@ -465,29 +469,29 @@ export const GlobalSearchPage: React.FC = () => {
           {/* Documented Problems Section */}
           {(activeTab === 'ALL' || activeTab === 'PROBLEMS') && results.problems?.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Globe size={16} /> Documented Problems ({results.problems.length})
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <Globe size={14} /> Documented Problems ({results.problems.length})
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {results.problems.map((prob: any) => (
                   <Link
                     key={prob.id}
                     to={`/problems/${prob.id}`}
-                    className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500 transition-all space-y-2 block group"
+                    className="card-base p-4 hover:border-slate-300 dark:hover:border-dark-700 transition-colors space-y-2 block group"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors line-clamp-1">
+                      <h3 className="font-semibold text-sm text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors line-clamp-1">
                         {prob.title}
                       </h3>
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 shrink-0">
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-900/40 shrink-0">
                         Impact: {prob.impactLevel}/10
                       </span>
                     </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
                       {prob.description}
                     </p>
-                    <div className="flex items-center gap-2 pt-1 text-[11px] text-cyan-600 dark:text-cyan-400 font-semibold">
-                      <span>View Problem Statement & Sourced Evidence</span>
+                    <div className="flex items-center gap-1.5 pt-1 text-xs text-brand-600 dark:text-brand-400 font-medium">
+                      <span>View Problem Statement & Evidence</span>
                       <ArrowRight size={12} />
                     </div>
                   </Link>
@@ -499,26 +503,26 @@ export const GlobalSearchPage: React.FC = () => {
           {/* Feed Posts */}
           {(activeTab === 'ALL' || activeTab === 'POSTS') && results.posts?.length > 0 && (
             <div className="space-y-3">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Share2 size={16} /> Feed Posts ({results.posts.length})
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <Share2 size={14} /> Feed Posts ({results.posts.length})
               </h2>
               <div className="space-y-3">
                 {results.posts.map((post: any) => (
                   <Link
                     key={post.id}
                     to={`/feed#post-${post.id}`}
-                    className="block p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 transition-all space-y-1.5"
+                    className="card-base p-4 hover:border-slate-300 dark:hover:border-dark-700 transition-colors space-y-1.5 block"
                   >
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-slate-900 dark:text-white">
+                      <span className="font-semibold text-slate-900 dark:text-white">
                         {post.author?.profile?.fullName || 'Member'}
                       </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-dark-700">
                         {post.postType}
                       </span>
                     </div>
-                    {post.title && <h4 className="font-bold text-xs text-slate-800 dark:text-slate-200">{post.title}</h4>}
-                    <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">{post.content}</p>
+                    {post.title && <h4 className="font-semibold text-xs text-slate-800 dark:text-slate-200">{post.title}</h4>}
+                    <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">{post.content}</p>
                   </Link>
                 ))}
               </div>

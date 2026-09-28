@@ -93,9 +93,9 @@ export const ProblemDetailPage: React.FC = () => {
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6 animate-pulse">
-        <div className="h-6 w-32 bg-slate-200 dark:bg-slate-800 rounded-lg" />
-        <div className="h-10 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
-        <div className="h-64 bg-slate-100 dark:bg-slate-850 rounded-3xl" />
+        <div className="h-5 w-32 bg-slate-200 dark:bg-dark-800 rounded" />
+        <div className="h-9 w-3/4 bg-slate-200 dark:bg-dark-800 rounded-lg" />
+        <div className="h-64 card-base bg-slate-50 dark:bg-dark-900" />
       </div>
     );
   }
@@ -106,12 +106,12 @@ export const ProblemDetailPage: React.FC = () => {
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">
           Problem Statement Not Found
         </h2>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           The requested global challenge may have been updated or removed.
         </p>
         <Link
           to="/problems"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-500"
+          className="btn-primary inline-flex items-center gap-2 text-xs py-2.5 px-4"
         >
           <ArrowLeft size={14} />
           <span>Back to All Problems</span>
@@ -124,16 +124,16 @@ export const ProblemDetailPage: React.FC = () => {
   const source = problem.sourceUrl || problem.source_url;
 
   return (
-    <div className="min-h-screen py-8 sm:py-12 space-y-8">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div className="min-h-screen py-8 sm:py-10 space-y-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         
         {/* Navigation Breadcrumb */}
         <div className="flex items-center justify-between">
           <Link
             to="/problems"
-            className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
-            <ArrowLeft size={15} />
+            <ArrowLeft size={14} />
             <span>Back to Problem Statements</span>
           </Link>
 
@@ -142,16 +142,16 @@ export const ProblemDetailPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <Link
                 to={`/admin/problems/${problem.id}/edit`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/40 hover:bg-brand-100 transition-colors border border-brand-200/60 dark:border-brand-900/40"
               >
-                <Edit size={14} />
+                <Edit size={13} />
                 <span>Edit (Admin)</span>
               </Link>
               <button
                 onClick={handleDelete}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 transition-colors border border-rose-200/60 dark:border-rose-900/40"
               >
-                <Trash2 size={14} />
+                <Trash2 size={13} />
                 <span>Delete</span>
               </button>
             </div>
@@ -159,7 +159,7 @@ export const ProblemDetailPage: React.FC = () => {
         </div>
 
         {/* Header Hero Card */}
-        <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 p-6 sm:p-10 shadow-sm space-y-6">
+        <div className="card-base p-6 sm:p-8 space-y-6">
           
           {/* Metadata Row */}
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -167,7 +167,7 @@ export const ProblemDetailPage: React.FC = () => {
               {problem.categories?.map((cat, idx) => (
                 <span
                   key={idx}
-                  className={`px-3 py-1 rounded-full text-xs font-bold border ${getCategoryColor(
+                  className={`px-2.5 py-0.5 rounded text-xs font-semibold border ${getCategoryColor(
                     cat
                   )}`}
                 >
@@ -176,8 +176,8 @@ export const ProblemDetailPage: React.FC = () => {
               ))}
 
               {problem.regions && problem.regions.length > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                  <Globe2 size={13} className="text-brand-500" />
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-350 border border-slate-200/60 dark:border-dark-700">
+                  <Globe2 size={12} className="text-brand-600 dark:text-brand-400" />
                   <span>{problem.regions.join(', ')}</span>
                 </span>
               )}
@@ -185,27 +185,27 @@ export const ProblemDetailPage: React.FC = () => {
 
             {/* Impact Metric */}
             <div
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-black ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold ${
                 impact >= 9
-                  ? 'bg-gradient-to-r from-rose-500 to-amber-500 text-white shadow-sm'
-                  : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300'
+                  ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-900/40'
+                  : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-900/40'
               }`}
               title="Urgency on 1-10 Global Priority Scale"
             >
-              <Flame size={15} />
+              <Flame size={14} className={impact >= 9 ? 'text-rose-600' : 'text-amber-600'} />
               <span>Urgency & Impact: {impact}/10</span>
             </div>
           </div>
 
           {/* Heading */}
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white leading-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white leading-tight">
             {problem.title}
           </h1>
 
           {/* Date & Citation */}
           <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
             <div className="flex items-center gap-1.5">
-              <Calendar size={14} className="text-slate-400" />
+              <Calendar size={13} className="text-slate-400" />
               <span>
                 Added {new Date(problem.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
               </span>
@@ -215,7 +215,7 @@ export const ProblemDetailPage: React.FC = () => {
                 href={source}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-cyan-600 dark:text-cyan-400 hover:underline font-semibold"
+                className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium"
               >
                 <span>Official Global Citation</span>
                 <ExternalLink size={12} />
@@ -224,18 +224,18 @@ export const ProblemDetailPage: React.FC = () => {
           </div>
 
           {/* Action Buttons Bar */}
-          <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-100 dark:border-dark-800">
             <button
               onClick={handleToggleSave}
               disabled={saveLoading}
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
+              className={`btn-secondary inline-flex items-center gap-2 text-xs py-2 px-3.5 ${
                 isSaved
-                  ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
-                  : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
+                  ? 'border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400'
+                  : ''
               }`}
             >
               <Bookmark
-                size={16}
+                size={14}
                 className={isSaved ? 'fill-amber-500 text-amber-500' : ''}
               />
               <span>{isSaved ? 'Saved to My Challenges' : 'Save this Problem'}</span>
@@ -243,9 +243,9 @@ export const ProblemDetailPage: React.FC = () => {
 
             <button
               onClick={() => setShareModalOpen(true)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+              className="btn-secondary inline-flex items-center gap-2 text-xs py-2 px-3.5"
             >
-              <Share2 size={16} />
+              <Share2 size={14} />
               <span>Share</span>
             </button>
 
@@ -253,36 +253,36 @@ export const ProblemDetailPage: React.FC = () => {
               to={`/startups/create?problemTitle=${encodeURIComponent(
                 problem.title
               )}&problemDescription=${encodeURIComponent(problem.description)}`}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 shadow-md shadow-brand-500/20 transition-all hover:scale-105 ml-auto"
+              className="btn-primary inline-flex items-center gap-2 text-xs py-2 px-4 ml-auto"
             >
-              <Rocket size={15} />
+              <Rocket size={14} />
               <span>Launch Startup Solving This</span>
             </Link>
           </div>
         </div>
 
         {/* Detailed Problem Description Section */}
-        <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 p-6 sm:p-10 shadow-sm space-y-6">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+        <div className="card-base p-6 sm:p-8 space-y-6">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
             <span>Challenge Overview & Market Friction</span>
           </h2>
 
-          <div className="prose dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 text-sm sm:text-base leading-relaxed space-y-4">
+          <div className="prose dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 text-sm leading-relaxed space-y-4">
             <p className="whitespace-pre-line">{problem.description}</p>
           </div>
 
           {/* Tags */}
           {problem.tags && problem.tags.length > 0 && (
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <div className="pt-4 border-t border-slate-100 dark:border-dark-800 space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                 Thematic Keywords & Subtopics
               </span>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {problem.tags.map((tag, idx) => (
                   <Link
                     key={idx}
                     to={`/problems?tag=${encodeURIComponent(tag)}`}
-                    className="px-3 py-1 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-brand-50 hover:text-brand-600 dark:hover:bg-brand-950/60 dark:hover:text-brand-400 transition-colors"
+                    className="px-2.5 py-1 rounded text-xs font-medium bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-dark-700 hover:border-brand-500 dark:hover:border-dark-600 transition-colors"
                   >
                     #{tag}
                   </Link>
@@ -293,14 +293,14 @@ export const ProblemDetailPage: React.FC = () => {
 
           {/* Official Reference Citation Card */}
           {source && (
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-750 flex items-center justify-between gap-4">
+            <div className="p-4 rounded-lg bg-slate-50 dark:bg-dark-800/60 border border-slate-200 dark:border-dark-700 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <ShieldCheck size={22} className="text-emerald-500 shrink-0" />
+                <ShieldCheck size={20} className="text-emerald-600 shrink-0" />
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                  <h4 className="text-xs font-semibold text-slate-900 dark:text-white">
                     Authoritative Research & Data Source
                   </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-md">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-md mt-0.5">
                     {source}
                   </p>
                 </div>
@@ -309,10 +309,10 @@ export const ProblemDetailPage: React.FC = () => {
                 href={source}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 transition-colors shrink-0"
+                className="btn-secondary inline-flex items-center gap-1.5 text-xs py-1.5 px-3 shrink-0"
               >
                 <span>Read Full Report</span>
-                <ExternalLink size={13} />
+                <ExternalLink size={12} />
               </a>
             </div>
           )}
@@ -322,14 +322,14 @@ export const ProblemDetailPage: React.FC = () => {
         <AIInsightSection problem={problem} />
 
         {/* Collaboration & Team Formation Section */}
-        <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 p-6 sm:p-10 shadow-sm space-y-6">
+        <div className="card-base p-6 sm:p-8 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Users size={20} className="text-brand-500" />
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Users size={18} className="text-brand-600 dark:text-brand-400" />
                 <span>Ecosystem Collaboration & Team Formation</span>
               </h2>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
                 Great startups start with great co-founders. Connect with builders, engineers, and mentors committed to this challenge.
               </p>
             </div>
@@ -337,14 +337,14 @@ export const ProblemDetailPage: React.FC = () => {
             <div className="flex items-center gap-2 shrink-0">
               <Link
                 to="/cofounders"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition-colors"
+                className="btn-secondary inline-flex items-center text-xs py-2 px-3.5"
               >
                 <span>Browse Talent</span>
               </Link>
 
               <Link
                 to={`/feed`}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 hover:bg-brand-100 transition-colors"
+                className="btn-primary inline-flex items-center text-xs py-2 px-3.5"
               >
                 <span>Discuss on Feed</span>
               </Link>
@@ -352,23 +352,23 @@ export const ProblemDetailPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-750 space-y-1">
-              <div className="text-xs font-bold text-slate-900 dark:text-white">1. Formulate Solution</div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="p-4 rounded-lg bg-slate-50 dark:bg-dark-800/60 border border-slate-200 dark:border-dark-700 space-y-1">
+              <div className="text-xs font-semibold text-slate-900 dark:text-white">1. Formulate Solution</div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Use AI suggestions above or your own market domain insights to draft a startup concept.
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-750 space-y-1">
-              <div className="text-xs font-bold text-slate-900 dark:text-white">2. Recruit Co-Founders</div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="p-4 rounded-lg bg-slate-50 dark:bg-dark-800/60 border border-slate-200 dark:border-dark-700 space-y-1">
+              <div className="text-xs font-semibold text-slate-900 dark:text-white">2. Recruit Co-Founders</div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Match with developers, operators, or researchers possessing the recommended complementary skills.
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-750 space-y-1">
-              <div className="text-xs font-bold text-slate-900 dark:text-white">3. Connect With Capital</div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="p-4 rounded-lg bg-slate-50 dark:bg-dark-800/60 border border-slate-200 dark:border-dark-700 space-y-1">
+              <div className="text-xs font-semibold text-slate-900 dark:text-white">3. Connect With Capital</div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Pitch ESG, ClimateTech, and impact venture funds actively looking for founders solving this problem.
               </p>
             </div>

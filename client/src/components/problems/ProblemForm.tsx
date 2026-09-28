@@ -188,8 +188,8 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
     <form onSubmit={handleSubmit} className="space-y-6">
       
       {serverError && (
-        <div className="flex items-center gap-2.5 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-semibold">
-          <AlertCircle size={16} className="shrink-0 text-rose-500" />
+        <div className="flex items-center gap-2.5 p-3.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs font-medium">
+          <AlertCircle size={15} className="shrink-0 text-rose-600" />
           <span>{serverError}</span>
         </div>
       )}
@@ -197,7 +197,7 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
       {/* Title */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
             Problem Title <span className="text-rose-500">*</span>
           </label>
           <span className="text-[11px] text-slate-400 font-medium">
@@ -209,17 +209,17 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. Ensure Clean Drinking Water for Rural Communities"
-          className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          className="input-base w-full text-sm"
         />
         {errors.title && (
-          <p className="mt-1 text-xs text-rose-500 font-semibold">{errors.title}</p>
+          <p className="mt-1 text-xs text-rose-500 font-medium">{errors.title}</p>
         )}
       </div>
 
       {/* Description & AI Auto-Assist */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
             Full Problem Description <span className="text-rose-500">*</span>
           </label>
 
@@ -228,10 +228,10 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
             type="button"
             onClick={handleAIAssist}
             disabled={aiLoading}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 transition-colors disabled:opacity-50"
+            className="btn-secondary inline-flex items-center gap-1.5 text-xs py-1 px-2.5 disabled:opacity-50"
             title="Automatically detect categories and tags using Gemini GenAI"
           >
-            <Sparkles size={13} className={aiLoading ? 'animate-spin text-purple-500' : 'text-purple-500'} />
+            <Sparkles size={12} className="text-brand-600 dark:text-brand-400" />
             <span>{aiLoading ? 'AI Analyzing...' : 'AI Auto-Tag & Categorize'}</span>
           </button>
         </div>
@@ -240,20 +240,20 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Detailed problem statement, affected populations, root causes, market friction, and why new startup solutions are urgently required..."
-          className="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 leading-relaxed"
+          className="input-base w-full text-sm leading-relaxed"
         />
         {errors.description && (
-          <p className="mt-1 text-xs text-rose-500 font-semibold">{errors.description}</p>
+          <p className="mt-1 text-xs text-rose-500 font-medium">{errors.description}</p>
         )}
       </div>
 
       {/* Categories */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
-          <FolderTree size={14} className="text-brand-500" />
+        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+          <FolderTree size={14} className="text-brand-600 dark:text-brand-400" />
           <span>Categories (Assign 1 or more) <span className="text-rose-500">*</span></span>
         </label>
-        <div className="flex flex-wrap gap-2 mb-3">
+        <div className="flex flex-wrap gap-1.5 mb-2.5">
           {DEFAULT_CATEGORIES.map((cat) => {
             const selected = categories.includes(cat);
             return (
@@ -261,10 +261,10 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
                 type="button"
                 key={cat}
                 onClick={() => toggleCategory(cat)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${
                   selected
-                    ? 'bg-brand-600 text-white border-brand-600 shadow-xs'
-                    : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-brand-500'
+                    ? 'bg-brand-600 text-white border-brand-600'
+                    : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-slate-300'
                 }`}
               >
                 {selected && '✓ '}
@@ -281,7 +281,7 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
             value={customCatInput}
             onChange={(e) => setCustomCatInput(e.target.value)}
             placeholder="Add custom category..."
-            className="flex-1 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="input-base flex-1 text-xs py-1.5"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -292,23 +292,23 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
           <button
             type="button"
             onClick={addCustomCategory}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 transition-colors"
+            className="btn-secondary px-3 py-1.5 text-xs font-medium"
           >
             Add
           </button>
         </div>
         {errors.categories && (
-          <p className="mt-1 text-xs text-rose-500 font-semibold">{errors.categories}</p>
+          <p className="mt-1 text-xs text-rose-500 font-medium">{errors.categories}</p>
         )}
       </div>
 
       {/* Regions */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
-          <Globe2 size={14} className="text-cyan-500" />
+        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+          <Globe2 size={14} className="text-brand-600 dark:text-brand-400" />
           <span>Critical Regions / Geographies</span>
         </label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {DEFAULT_REGIONS.map((reg) => {
             const selected = regions.includes(reg);
             return (
@@ -316,10 +316,10 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
                 type="button"
                 key={reg}
                 onClick={() => toggleRegion(reg)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${
                   selected
-                    ? 'bg-cyan-600 text-white border-cyan-600 shadow-xs'
-                    : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-cyan-500'
+                    ? 'bg-brand-600 text-white border-brand-600'
+                    : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-slate-300'
                 }`}
               >
                 {selected && '✓ '}
@@ -332,23 +332,23 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
 
       {/* Tags Chips */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
-          <TagIcon size={14} className="text-indigo-500" />
+        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
+          <TagIcon size={14} className="text-slate-400" />
           <span>Tags & Keywords</span>
         </label>
-        <div className="flex flex-wrap gap-2 mb-2">
+        <div className="flex flex-wrap gap-1.5 mb-2">
           {tags.map((t) => (
             <span
               key={t}
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800"
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-dark-700"
             >
               #{t}
               <button
                 type="button"
                 onClick={() => removeTag(t)}
-                className="hover:text-rose-500 transition-colors"
+                className="hover:text-rose-500 transition-colors ml-0.5"
               >
-                <X size={13} />
+                <X size={12} />
               </button>
             </span>
           ))}
@@ -359,7 +359,7 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
             value={tagInput}
             onChange={(e) => setTagInput(e.target.value)}
             placeholder="Type tag and press Add (e.g. Clean Water, SDG 6)"
-            className="flex-1 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="input-base flex-1 text-xs py-1.5"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -370,7 +370,7 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
           <button
             type="button"
             onClick={addTag}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 transition-colors"
+            className="btn-secondary inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium"
           >
             <Plus size={13} />
             <span>Add</span>
@@ -383,7 +383,7 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
         
         {/* Impact Level */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
             <Flame size={14} className="text-amber-500" />
             <span>Impact Urgency Score (1 - 10)</span>
           </label>
@@ -396,18 +396,18 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
               onChange={(e) => setImpactLevel(parseInt(e.target.value, 10))}
               className="flex-1 accent-brand-600 cursor-pointer"
             />
-            <span className="w-12 text-center px-2 py-1 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-black text-sm border border-brand-200 dark:border-brand-800">
+            <span className="w-12 text-center px-2 py-0.5 rounded bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-bold text-xs border border-brand-200/60 dark:border-brand-900/40">
               {impactLevel}/10
             </span>
           </div>
-          <span className="text-[11px] text-slate-400">
+          <span className="text-[11px] text-slate-400 mt-1 block">
             {impactLevel >= 9 ? 'Critical Global Emergency' : impactLevel >= 7 ? 'High Global Priority' : 'Substantial Focus Area'}
           </span>
         </div>
 
         {/* Source URL */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
             <LinkIcon size={14} className="text-slate-400" />
             <span>Official Citation / Source URL</span>
           </label>
@@ -416,20 +416,20 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
             value={sourceUrl}
             onChange={(e) => setSourceUrl(e.target.value)}
             placeholder="https://www.who.int/ or https://un.org/..."
-            className="w-full px-4 py-2 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="input-base w-full text-xs py-2"
           />
           {errors.sourceUrl && (
-            <p className="mt-1 text-xs text-rose-500 font-semibold">{errors.sourceUrl}</p>
+            <p className="mt-1 text-xs text-rose-500 font-medium">{errors.sourceUrl}</p>
           )}
         </div>
       </div>
 
       {/* Form Action Buttons */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+      <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-dark-800">
         <button
           type="button"
           onClick={onCancel}
-          className="px-5 py-2.5 rounded-2xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          className="btn-secondary px-4 py-2 text-xs font-medium"
         >
           Cancel
         </button>
@@ -437,9 +437,9 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 shadow-md shadow-brand-500/20 transition-all hover:scale-105 disabled:opacity-50"
+          className="btn-primary inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold disabled:opacity-50"
         >
-          <Save size={15} />
+          <Save size={14} />
           <span>{isSubmitting ? 'Saving Problem...' : initialData ? 'Update Problem' : 'Publish Problem Statement'}</span>
         </button>
       </div>

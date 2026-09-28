@@ -81,27 +81,27 @@ export const RaiseSolutionModal: React.FC<RaiseSolutionModalProps> = ({
           onClose();
         }
       }}
-      title={`💡 Raise a Solution for ${failedStartup.name}'s Problem`}
+      title={`Propose Solution — ${failedStartup.name}`}
       maxWidth="xl"
     >
       {!user ? (
         <div className="py-6 space-y-4 text-center">
-          <div className="w-14 h-14 mx-auto rounded-full bg-amber-50 dark:bg-amber-950/60 flex items-center justify-center text-amber-600 dark:text-amber-400">
-            <Lock size={28} />
+          <div className="w-12 h-12 mx-auto rounded-full bg-amber-50 dark:bg-amber-950/60 flex items-center justify-center text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900">
+            <Lock size={22} />
           </div>
           <div className="space-y-1">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
               Sign In Required
             </h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Please sign in to publish your solution to this failed startup challenge and collaborate with builders.
+              Please sign in to publish your solution to this startup challenge and collaborate with builders.
             </p>
           </div>
           <div className="flex items-center justify-center gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              className="btn-secondary !text-xs !py-1.5 !px-3"
             >
               Cancel
             </button>
@@ -111,51 +111,51 @@ export const RaiseSolutionModal: React.FC<RaiseSolutionModalProps> = ({
                 onClose();
                 navigate('/login');
               }}
-              className="px-5 py-2 text-xs font-bold rounded-xl text-white bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-500/25 cursor-pointer"
+              className="btn-primary !text-xs !py-1.5 !px-3.5"
             >
-              Sign In to Submit Solution
+              Sign In to Submit
             </button>
           </div>
         </div>
       ) : success ? (
-        <div className="py-8 text-center space-y-3">
-          <div className="w-14 h-14 mx-auto rounded-full bg-amber-100 dark:bg-amber-950 flex items-center justify-center text-amber-600 dark:text-amber-400">
-            <CheckCircle2 size={32} />
+        <div className="py-6 text-center space-y-2">
+          <div className="w-12 h-12 mx-auto rounded-full bg-emerald-50 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">
+            <CheckCircle2 size={24} />
           </div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-            Solution Raised Successfully!
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+            Solution Submitted
           </h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Your proposed solution is now published in the Startup Graveyard. Founders, mentors, and investors can upvote, review, and collaborate with you.
+            Your proposed solution is now published. Founders, mentors, and investors can review and collaborate with you.
           </p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5 font-sans">
           {/* Failed Startup Problem Summary */}
-          <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1.5">
+          <div className="p-3 rounded-lg bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 space-y-1">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                <Lightbulb size={14} /> The Unsolved Problem Left by {failedStartup.name}:
+              <span className="font-semibold text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                <Lightbulb size={13} className="text-amber-600" /> Challenge left by {failedStartup.name}:
               </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-800 dark:text-amber-300 font-bold">
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-medium">
                 {failedStartup.peakFunding} lost
               </span>
             </div>
-            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
+            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
               "{failedStartup.unsolvedProblem}"
             </p>
           </div>
 
           {error && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2">
-              <ShieldAlert size={16} className="shrink-0 mt-0.5" />
+            <div className="p-2.5 rounded-md bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-400 flex items-start gap-2">
+              <ShieldAlert size={14} className="shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-              Your Solution Name / Idea Title *
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Solution Title *
             </label>
             <input
               type="text"
@@ -163,40 +163,40 @@ export const RaiseSolutionModal: React.FC<RaiseSolutionModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Distributed Cloud Kitchen Hubs with AI Demand Forecasting"
-              className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="input-base !text-xs !py-2"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-              Detailed Solution Blueprint *
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Solution Blueprint *
             </label>
             <textarea
               required
               rows={4}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="How would your model fix what broke in the original company? What is the business model, unit economics, or tech breakthrough that makes it viable today?"
-              className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+              placeholder="How would your model fix what broke in the original company? What business model or tech makes it viable today?"
+              className="input-base !text-xs !py-2 resize-none"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Target Audience / Ideal Customer
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Target Audience
               </label>
               <input
                 type="text"
                 value={targetAudience}
                 onChange={(e) => setTargetAudience(e.target.value)}
                 placeholder="e.g. Urban busy professionals, SMB merchants"
-                className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="input-base !text-xs !py-2"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Key Differentiation & Moat
               </label>
               <input
@@ -204,26 +204,26 @@ export const RaiseSolutionModal: React.FC<RaiseSolutionModalProps> = ({
                 value={differentiation}
                 onChange={(e) => setDifferentiation(e.target.value)}
                 placeholder="e.g. 80% lower capital expenditure via franchise model"
-                className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="input-base !text-xs !py-2"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-2">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+              className="btn-secondary !text-xs !py-1.5 !px-3"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-xl shadow-md transition-all disabled:opacity-50"
+              className="btn-primary !text-xs !py-1.5 !px-3.5 inline-flex items-center gap-1.5"
             >
-              <Lightbulb size={14} />
-              <span>{loading ? 'Publishing Solution...' : 'Raise Solution'}</span>
+              <Lightbulb size={13} />
+              <span>{loading ? 'Submitting...' : 'Submit Solution'}</span>
             </button>
           </div>
         </form>

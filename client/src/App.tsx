@@ -69,7 +69,7 @@ export const App: React.FC = () => {
       <AuthProvider>
         <BrowserRouter>
           <ErrorBoundary>
-            <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors selection:bg-brand-500 selection:text-white relative w-full max-w-full overflow-x-hidden">
+            <div className="min-h-screen flex flex-col bg-[#F8F9FB] dark:bg-[#0B0F17] text-[#181A1F] dark:text-[#F8F9FB] transition-colors selection:bg-brand-600 selection:text-white relative w-full max-w-full overflow-x-hidden">
 
             <Navbar />
             <NewUserCategoryModal />

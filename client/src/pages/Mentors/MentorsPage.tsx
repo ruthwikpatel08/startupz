@@ -128,41 +128,36 @@ export const MentorsPage: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 p-8 text-white shadow-xl">
-        <div className="relative z-10 max-w-2xl space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold uppercase tracking-wider">
-            <GraduationCap size={15} /> Startup Mentorship
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
-            Learn from seasoned operators & serial founders.
-          </h1>
-          <p className="text-sm sm:text-base text-amber-100 leading-relaxed">
-            Connect 1-on-1 with vetted mentors who have built, scaled, and exited startups. Get honest feedback on pitch decks, architecture, and go-to-market execution.
-          </p>
-        </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+          <GraduationCap className="text-brand-600 dark:text-brand-400" size={24} /> Startup Mentorship & Advisory
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
+          Connect 1-on-1 with vetted mentors who have built, scaled, and exited startups. Get actionable feedback on fundraising, architecture, and go-to-market.
+        </p>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center gap-4">
+      <div className="card-base p-3 flex flex-col md:flex-row items-center gap-2.5">
         <div className="relative flex-1 w-full">
-          <Search size={17} className="absolute left-3.5 top-3 text-slate-400" />
+          <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by mentor name, topic, or company..."
-            className="w-full pl-10 pr-4 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="input-base pl-9 pr-3 py-1.5 text-xs"
           />
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex items-center gap-2.5 w-full md:w-auto">
           <div className="w-1/2 md:w-48">
             <select
               value={expertise}
               onChange={(e) => setExpertise(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="input-base py-1.5 px-2.5 text-xs"
             >
               <option value="ALL">All Expertise</option>
               {expertiseOptions.filter((e) => e !== 'ALL').map((opt) => (
@@ -175,7 +170,7 @@ export const MentorsPage: React.FC = () => {
             <select
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
-              className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="input-base py-1.5 px-2.5 text-xs"
             >
               <option value="ALL">All Industries</option>
               {industryOptions.filter((i) => i !== 'ALL').map((opt) => (
@@ -188,9 +183,9 @@ export const MentorsPage: React.FC = () => {
 
       {/* Mentors Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div key={n} className="h-64 rounded-2xl bg-slate-100 dark:bg-slate-800/40 animate-pulse" />
+            <div key={n} className="h-60 card-base animate-pulse bg-slate-100 dark:bg-dark-850" />
           ))}
         </div>
       ) : mentors.length === 0 ? (
@@ -198,7 +193,7 @@ export const MentorsPage: React.FC = () => {
           icon={GraduationCap}
           title="No mentors found"
           description="Try broadening your search query or reset your expertise and industry filters."
-          actionText="Reset Filters"
+          actionLabel="Reset Filters"
           onAction={() => {
             setSearch('');
             setExpertise('ALL');
@@ -206,7 +201,7 @@ export const MentorsPage: React.FC = () => {
           }}
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {mentors.map((mentor) => {
             const mentorName = mentor.user?.profile?.fullName || 'Distinguished Mentor';
             const avatar = mentor.user?.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${mentorName}`;
@@ -217,20 +212,20 @@ export const MentorsPage: React.FC = () => {
             return (
               <div
                 key={mentor.id}
-                className="flex flex-col justify-between p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-amber-500/50 transition-all group"
+                className="card-base p-5 flex flex-col justify-between space-y-4 hover:border-slate-300 dark:hover:border-dark-700 transition-colors"
               >
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {/* Top: Avatar, Name, Verification */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <img
                         src={avatar}
                         alt={mentorName}
-                        className="w-14 h-14 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shadow-sm"
+                        className="w-11 h-11 rounded-lg object-cover border border-slate-200 dark:border-dark-800"
                       />
                       <div>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <h3 className="font-bold text-base text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                          <h3 className="font-semibold text-sm text-slate-900 dark:text-white truncate">
                             {mentorName}
                           </h3>
                           <VerificationBadge badge="Verified Mentor" isVerified={mentor.isVerified} size="sm" />
@@ -239,11 +234,11 @@ export const MentorsPage: React.FC = () => {
                               href={mentor.website}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-slate-400 hover:text-amber-500 transition-colors p-0.5 rounded"
+                              className="text-slate-400 hover:text-brand-600 transition-colors p-0.5 rounded"
                               title="Official Advisory Portal / Website"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <ExternalLink size={13} />
+                              <ExternalLink size={12} />
                             </a>
                           )}
                         </div>
@@ -253,38 +248,38 @@ export const MentorsPage: React.FC = () => {
                   </div>
 
                   {/* About snippet */}
-                  <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-3 leading-relaxed">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
                     {mentor.about}
                   </p>
 
                   {/* Highlights: Available Hours & Experience */}
                   <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
                     <div className="flex items-center gap-1.5">
-                      <Clock size={14} className="text-amber-500" />
+                      <Clock size={13} className="text-slate-400" />
                       <span>{mentor.availableHours || '2-4 hrs/mo'}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Award size={14} className="text-brand-500" />
+                      <Award size={13} className="text-slate-400" />
                       <span>{mentor.yearsExperience} yrs exp</span>
                     </div>
                   </div>
 
                   {/* Expertise Topics */}
                   <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">
+                    <span className="text-[10px] font-medium text-slate-400 mb-1 block">
                       Mentoring Focus
                     </span>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1">
                       {topics.slice(0, 3).map((topic, i) => (
                         <span
                           key={i}
-                          className="px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-[11px] font-medium border border-amber-200 dark:border-amber-800/60"
+                          className="px-2 py-0.5 rounded bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300 text-[10px] font-medium border border-slate-200/60 dark:border-dark-800"
                         >
                           {topic}
                         </span>
                       ))}
                       {topics.length > 3 && (
-                        <span className="text-[11px] text-slate-400 font-medium self-center">
+                        <span className="text-[10px] text-slate-400 font-medium self-center">
                           +{topics.length - 3} more
                         </span>
                       )}
@@ -293,21 +288,21 @@ export const MentorsPage: React.FC = () => {
                 </div>
 
                 {/* Bottom Actions */}
-                <div className="pt-4 mt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center gap-2">
                   <button
                     onClick={() => handleOpenRequest(mentor)}
-                    className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 shadow-sm shadow-amber-500/20 transition-all hover:scale-[1.02] flex items-center justify-center gap-1.5"
+                    className="btn-primary flex-1 py-1.5 px-3 text-xs font-semibold inline-flex items-center justify-center gap-1.5"
                   >
-                    <BookOpen size={14} />
+                    <BookOpen size={13} />
                     <span>Request Mentorship</span>
                   </button>
 
                   <button
                     onClick={() => setConnectUser(mentor.user || { id: mentor.userId, profile: { fullName: mentorName, avatar, headline } })}
                     title="Send Connection"
-                    className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    className="btn-secondary p-1.5 text-xs font-medium"
                   >
-                    <UserPlus size={16} />
+                    <UserPlus size={14} />
                   </button>
                 </div>
               </div>
@@ -325,29 +320,29 @@ export const MentorsPage: React.FC = () => {
           maxWidth="lg"
         >
           {requestSuccess ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center space-y-3">
-              <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                <CheckCircle size={28} />
+            <div className="flex flex-col items-center justify-center py-6 text-center space-y-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <CheckCircle size={22} />
               </div>
-              <h4 className="text-lg font-bold text-slate-900 dark:text-white">Mentorship Request Sent!</h4>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
+              <h4 className="text-base font-bold text-slate-900 dark:text-white">Mentorship Request Sent!</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 The mentor has been notified. You will receive an alert once they accept your session request.
               </p>
             </div>
           ) : (
             <form onSubmit={handleSubmitRequest} className="space-y-4">
-              <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 text-xs text-amber-800 dark:text-amber-300">
-                💡 Mentors donate their time to support founders. Be specific about your current roadblocks and challenges.
+              <div className="p-3 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/40 text-xs text-amber-800 dark:text-amber-300">
+                Mentors volunteer their time to guide founders. Be specific about your current roadblocks and challenges.
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Select Mentoring Topic *
                 </label>
                 <select
                   value={requestTopic}
                   onChange={(e) => setRequestTopic(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="input-base py-2 px-3 text-xs"
                 >
                   {selectedMentor.mentoringTopics
                     ? selectedMentor.mentoringTopics.split(',').map((t, idx) => (
@@ -360,7 +355,7 @@ export const MentorsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Context & What You Need Help With *
                 </label>
                 <textarea
@@ -369,30 +364,30 @@ export const MentorsPage: React.FC = () => {
                   onChange={(e) => setRequestMessage(e.target.value)}
                   placeholder="Introduce your startup, your current traction or phase, and the specific 1-2 questions you'd love guidance on..."
                   rows={4}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="input-base py-2 px-3 text-xs"
                 />
               </div>
 
               {requestError && (
-                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-medium">
+                <div className="p-2.5 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-medium border border-rose-200 dark:border-rose-900">
                   {requestError}
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-3 pt-2">
+              <div className="flex items-center justify-end gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setSelectedMentor(null)}
-                  className="px-4 py-2 text-sm font-medium rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="btn-secondary py-1.5 px-3 text-xs font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingRequest}
-                  className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl text-white bg-amber-600 hover:bg-amber-500 shadow-md shadow-amber-500/20 disabled:opacity-50 transition-all hover:scale-[1.02]"
+                  className="btn-primary py-1.5 px-3.5 text-xs font-semibold inline-flex items-center gap-1.5"
                 >
-                  <Send size={15} />
+                  <Send size={13} />
                   {submittingRequest ? 'Sending...' : 'Send Mentorship Request'}
                 </button>
               </div>

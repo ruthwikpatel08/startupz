@@ -537,14 +537,14 @@ export const ProfilePage: React.FC = () => {
   const completionPercentage = Math.round((completedFields / totalFields) * 100);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 py-8 px-3 sm:px-6 lg:px-8 font-sans transition-colors selection:bg-[#4F46E5] selection:text-white w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-dark-950 py-8 px-3 sm:px-6 lg:px-8 font-sans transition-colors selection:bg-brand-600 selection:text-white w-full max-w-full overflow-x-hidden">
       <div className="max-w-6xl mx-auto space-y-6 w-full overflow-x-hidden">
 
         {/* 1. TOP HERO / COVER & MAIN PROFILE CARD */}
-        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 shadow-xs overflow-hidden">
+        <div className="card-base overflow-hidden">
           
           {/* Cover Section */}
-          <div className="h-44 sm:h-56 relative overflow-hidden bg-[#064E3B] bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900">
+          <div className="h-44 sm:h-52 relative overflow-hidden bg-slate-800 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900">
             {p.coverImage ? (
               <img
                 src={p.coverImage}
@@ -552,15 +552,15 @@ export const ProfilePage: React.FC = () => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              /* Royal Green Fallback with Subtle Pattern */
-              <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
+              /* Subtle Professional Pattern */
+              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
             )}
 
             <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
               {!isMe && (
                 <button
                   onClick={() => setReportOpen(true)}
-                  className="p-2 rounded-lg bg-black/25 hover:bg-black/40 text-white backdrop-blur-md transition-colors"
+                  className="p-2 rounded-md bg-black/30 hover:bg-black/50 text-white backdrop-blur-xs transition-colors"
                   title="Report user"
                 >
                   <Flag size={15} />
@@ -570,7 +570,7 @@ export const ProfilePage: React.FC = () => {
                 <>
                   <button
                     onClick={() => handleRequestGalleryPermission('cover')}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/40 hover:bg-black/60 text-white backdrop-blur-md text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-black/40 hover:bg-black/60 text-white backdrop-blur-xs text-xs font-medium transition-colors cursor-pointer"
                     title="Change background cover image from gallery"
                   >
                     <Camera size={14} />
@@ -578,9 +578,9 @@ export const ProfilePage: React.FC = () => {
                   </button>
                   <button
                     onClick={handleOpenEdit}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white text-slate-900 text-xs font-bold transition-all shadow-md hover:bg-slate-100 active:scale-95 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-white text-slate-900 text-xs font-medium transition-colors shadow-xs hover:bg-slate-100 cursor-pointer"
                   >
-                    <Edit3 size={14} className="text-[#4F46E5]" />
+                    <Edit3 size={14} className="text-brand-600" />
                     <span>Edit Profile</span>
                   </button>
                 </>
@@ -589,8 +589,8 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* Profile Header Row */}
-          <div className="px-4 sm:px-8 pb-6 pt-0 relative">
-            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 -mt-14 sm:-mt-20 mb-6">
+          <div className="px-4 sm:px-7 pb-6 pt-0 relative">
+            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 -mt-12 sm:-mt-16 mb-6">
               
               {/* Profile Photo (Partially Overlapping) */}
               <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 sm:gap-5 w-full md:w-auto">
@@ -599,52 +599,52 @@ export const ProfilePage: React.FC = () => {
                     <img
                       src={avatar}
                       alt={displayName}
-                      className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white dark:border-slate-900 shadow-md bg-white"
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white dark:border-dark-900 shadow-sm bg-white"
                     />
                   ) : (
-                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-slate-900 shadow-md bg-indigo-50 dark:bg-slate-800 text-[#4F46E5] dark:text-indigo-400 flex items-center justify-center font-bold text-2xl sm:text-4xl">
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white dark:border-dark-900 shadow-sm bg-slate-100 dark:bg-dark-800 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-2xl sm:text-3xl">
                       {initials}
                     </div>
                   )}
                   {isMe && (
                     <button
                       onClick={() => handleRequestGalleryPermission('avatar')}
-                      className="absolute bottom-0 right-0 p-2 rounded-full bg-[#4F46E5] text-white shadow-lg hover:bg-[#4338CA] active:scale-90 transition-transform cursor-pointer"
+                      className="absolute bottom-0 right-0 p-1.5 rounded-full bg-brand-600 text-white shadow-sm hover:bg-brand-700 transition-colors cursor-pointer"
                       title="Upload profile photo from gallery"
                     >
-                      <Camera size={14} />
+                      <Camera size={13} />
                     </button>
                   )}
                 </div>
 
                 <div className="space-y-1 mb-1 min-w-0">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <h1 className="text-2xl sm:text-[32px] font-bold text-[#0F172A] dark:text-white tracking-tight leading-tight">
+                    <h1 className="text-2xl sm:text-[28px] font-bold text-slate-900 dark:text-white tracking-tight leading-tight">
                       {displayName}
                     </h1>
                     <VerificationBadge badge={profileUser.verificationBadge} isVerified={profileUser.isVerified} />
                     <RoleBadge role={profileUser.role} />
                   </div>
 
-                  <p className="text-sm sm:text-lg font-medium text-[#64748B] dark:text-slate-300">
+                  <p className="text-sm sm:text-base font-normal text-slate-600 dark:text-slate-300">
                     {p.headline || (isMe ? 'Add your role or startup vision' : 'Member of StartupZ')}
                   </p>
 
-                  <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-[#64748B] dark:text-slate-400 flex-wrap pt-0.5">
+                  <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex-wrap pt-0.5">
                     {p.location && (
                       <span className="flex items-center gap-1">
-                        <MapPin size={14} className="text-[#4F46E5]" />
+                        <MapPin size={13} className="text-brand-600" />
                         <span>{p.location}</span>
                       </span>
                     )}
                     {industriesList.length > 0 && (
                       <span className="flex items-center gap-1">
-                        <span className="text-[#E2E8F0] hidden sm:inline">•</span>
+                        <span className="text-slate-300 hidden sm:inline">•</span>
                         <span>{industriesList[0]}</span>
                       </span>
                     )}
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-[#16A34A] dark:text-emerald-400 border border-emerald-200/80">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#16A34A] animate-pulse" />
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
                       <span>{p.availability || 'Available'}</span>
                     </span>
                   </div>
@@ -652,48 +652,48 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2.5 w-full md:w-auto flex-wrap sm:flex-nowrap pt-2 md:pt-0">
+              <div className="flex items-center gap-2 w-full md:w-auto flex-wrap sm:flex-nowrap pt-2 md:pt-0">
                 {!isMe && (
                   <>
                     <button
                       onClick={() => setConnectOpen(true)}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-colors shadow-xs"
+                      className="flex-1 sm:flex-none btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium"
                     >
-                      <UserPlus size={16} />
+                      <UserPlus size={15} />
                       <span>Connect</span>
                     </button>
                     <button
                       onClick={() => navigate(`/messages?user=${profileUser.id}`)}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-[#4F46E5] dark:text-indigo-400 bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-xs"
+                      className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium"
                     >
-                      <MessageSquare size={16} />
+                      <MessageSquare size={15} />
                       <span>Message</span>
                     </button>
                     <button
                       onClick={() => setStartupProposalOpen(true)}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors"
+                      className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium"
                       title="Propose Startup Connection"
                     >
-                      <Rocket size={16} className="text-[#4F46E5]" />
+                      <Rocket size={15} className="text-brand-600" />
                       <span>Startup Connection</span>
                     </button>
                   </>
                 )}
 
                 {isMe && (
-                  <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+                  <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
                     <button
                       onClick={handleOpenEdit}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-all shadow-md shadow-indigo-500/20 active:scale-95 cursor-pointer"
+                      className="flex-1 sm:flex-none btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium cursor-pointer"
                     >
-                      <Edit3 size={16} />
+                      <Edit3 size={15} />
                       <span>Edit Profile</span>
                     </button>
                     <button
                       onClick={() => setMeetingOpen(true)}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-[#4F46E5] dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800 hover:bg-indigo-100 transition-colors cursor-pointer"
+                      className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium cursor-pointer"
                     >
-                      <Video size={16} />
+                      <Video size={15} className="text-brand-600" />
                       <span>Host Meeting</span>
                     </button>
                   </div>
@@ -702,30 +702,30 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* Profile Statistics Row */}
-            <div className="pt-5 border-t border-[#E2E8F0] dark:border-slate-800 grid grid-cols-3 gap-2 sm:gap-4 text-center sm:text-left">
+            <div className="pt-4 border-t border-slate-100 dark:border-dark-800 grid grid-cols-3 gap-2 sm:gap-4 text-center sm:text-left">
               <Link to="/network" className="group">
-                <div className="text-xl sm:text-2xl font-bold text-[#0F172A] dark:text-white group-hover:text-[#4F46E5] transition-colors">
+                <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">
                   {connectionsCount}
                 </div>
-                <div className="text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400">
+                <div className="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400">
                   Connections
                 </div>
               </Link>
 
-              <div className="border-l border-[#E2E8F0] dark:border-slate-800 pl-2 sm:pl-8">
-                <div className="text-xl sm:text-2xl font-bold text-[#0F172A] dark:text-white">
+              <div className="border-l border-slate-100 dark:border-dark-800 pl-2 sm:pl-6">
+                <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                   {profileUser.startups?.length || 0}
                 </div>
-                <div className="text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400">
+                <div className="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400">
                   Startups Founded
                 </div>
               </div>
 
-              <div className="border-l border-[#E2E8F0] dark:border-slate-800 pl-2 sm:pl-8">
-                <div className="text-xl sm:text-2xl font-bold text-[#0F172A] dark:text-white">
+              <div className="border-l border-slate-100 dark:border-dark-800 pl-2 sm:pl-6">
+                <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                   {skillsList.length}
                 </div>
-                <div className="text-xs sm:text-sm font-normal text-[#64748B] dark:text-slate-400">
+                <div className="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400">
                   Verified Skills
                 </div>
               </div>
@@ -754,25 +754,25 @@ export const ProfilePage: React.FC = () => {
           <div className="lg:col-span-2 space-y-6">
 
             {/* ABOUT SECTION */}
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 p-6 sm:p-8 space-y-4 shadow-xs">
-              <h2 className="text-[20px] font-semibold text-[#0F172A] dark:text-white tracking-tight">
+            <div className="card-base p-6 sm:p-7 space-y-4">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight">
                 About
               </h2>
-              <p className="text-sm sm:text-base font-normal text-[#0F172A] dark:text-slate-200 leading-relaxed whitespace-pre-line">
+              <p className="text-sm font-normal text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
                 {p.bio || 'No background description shared yet. Add a short summary about your startup journey and vision!'}
               </p>
 
               {/* Interests Tags */}
               {interestsList.length > 0 && (
-                <div className="pt-4 border-t border-[#E2E8F0] dark:border-slate-800 space-y-2">
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#64748B] dark:text-slate-400">
+                <div className="pt-4 border-t border-slate-100 dark:border-dark-800 space-y-2">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                     Startup Interests
                   </h4>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {interestsList.map((interest, idx) => (
                       <span
                         key={idx}
-                        className="px-3 py-1 rounded-full text-xs font-medium bg-[#F8FAFC] dark:bg-slate-800 text-[#0F172A] dark:text-slate-200 border border-[#E2E8F0] dark:border-slate-700"
+                        className="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-50 dark:bg-dark-850 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
                       >
                         {interest}
                       </span>
@@ -783,47 +783,47 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* EXPERIENCE SECTION */}
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-xs">
+            <div className="card-base p-6 sm:p-7 space-y-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-[20px] font-semibold text-[#0F172A] dark:text-white tracking-tight flex items-center gap-2">
-                  <Briefcase size={20} className="text-[#4F46E5]" />
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                  <Briefcase size={18} className="text-brand-600" />
                   <span>Experience</span>
                 </h2>
               </div>
 
               {p.startupExperience ? (
-                <div className="relative pl-6 border-l-2 border-[#E2E8F0] dark:border-slate-800 space-y-6">
+                <div className="relative pl-5 border-l-2 border-slate-200 dark:border-dark-800 space-y-5">
                   <div className="relative">
-                    <div className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-[#4F46E5] border-4 border-white dark:border-slate-900" />
+                    <div className="absolute -left-[27px] top-1 w-3.5 h-3.5 rounded-full bg-brand-600 border-2 border-white dark:border-dark-900" />
                     <div className="space-y-1">
-                      <h3 className="text-base font-semibold text-[#0F172A] dark:text-white">
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
                         {p.preferredRole || 'Founder'}
                       </h3>
                       {profileUser.startups && profileUser.startups.length > 0 && (
-                        <p className="text-sm font-medium text-[#4F46E5]">
+                        <p className="text-xs font-medium text-brand-600">
                           {profileUser.startups[0].name}
                         </p>
                       )}
                       {p.location && (
-                        <p className="text-xs text-[#64748B] dark:text-slate-400 flex items-center gap-2">
-                          <MapPin size={13} />
+                        <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                          <MapPin size={12} />
                           <span>{p.location}</span>
                         </p>
                       )}
-                      <p className="text-sm text-[#64748B] dark:text-slate-300 pt-2 whitespace-pre-line leading-relaxed">
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1.5 whitespace-pre-line leading-relaxed">
                         {p.startupExperience}
                       </p>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-6 border border-dashed border-[#E2E8F0] dark:border-slate-800 rounded-xl">
-                  <Briefcase size={28} className="mx-auto text-slate-300 mb-2" />
-                  <p className="text-sm text-[#64748B] dark:text-slate-400 font-medium">No experience details added yet.</p>
+                <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-lg">
+                  <Briefcase size={24} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-normal">No experience details added yet.</p>
                   {isMe && (
                     <button
                       onClick={handleOpenEdit}
-                      className="mt-2 text-xs font-bold text-[#4F46E5] hover:underline"
+                      className="mt-2 text-xs font-medium text-brand-600 hover:underline"
                     >
                       + Add Experience
                     </button>
@@ -833,31 +833,31 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* EDUCATION SECTION */}
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 p-6 sm:p-8 space-y-6 shadow-xs">
-              <h2 className="text-[20px] font-semibold text-[#0F172A] dark:text-white tracking-tight flex items-center gap-2">
-                <GraduationCap size={20} className="text-[#4F46E5]" />
+            <div className="card-base p-6 sm:p-7 space-y-5">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                <GraduationCap size={18} className="text-brand-600" />
                 <span>Education</span>
               </h2>
 
               {p.education ? (
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-[#4F46E5] flex items-center justify-center font-bold text-sm shrink-0">
-                    <BookOpen size={18} />
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 border border-brand-200/50 flex items-center justify-center font-bold text-sm shrink-0">
+                    <BookOpen size={16} />
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="text-base font-semibold text-[#0F172A] dark:text-white">
+                  <div className="space-y-0.5">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
                       {p.education}
                     </h3>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-6 border border-dashed border-[#E2E8F0] dark:border-slate-800 rounded-xl">
-                  <GraduationCap size={28} className="mx-auto text-slate-300 mb-2" />
-                  <p className="text-sm text-[#64748B] dark:text-slate-400 font-medium">No education details listed.</p>
+                <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-lg">
+                  <GraduationCap size={24} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-normal">No education details listed.</p>
                   {isMe && (
                     <button
                       onClick={handleOpenEdit}
-                      className="mt-2 text-xs font-bold text-[#4F46E5] hover:underline"
+                      className="mt-2 text-xs font-medium text-brand-600 hover:underline"
                     >
                       + Add Education
                     </button>
@@ -867,18 +867,18 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* STARTUPS / PROJECTS SECTION */}
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 p-6 sm:p-8 space-y-4 shadow-xs">
+            <div className="card-base p-6 sm:p-7 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-[20px] font-semibold text-[#0F172A] dark:text-white tracking-tight flex items-center gap-2">
-                  <Rocket size={20} className="text-[#4F46E5]" />
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                  <Rocket size={18} className="text-brand-600" />
                   <span>Startups & Projects</span>
                 </h2>
                 {isMe && (
                   <Link
                     to="/startups/create"
-                    className="text-xs font-bold text-[#4F46E5] hover:underline flex items-center gap-1"
+                    className="text-xs font-medium text-brand-600 hover:underline flex items-center gap-1"
                   >
-                    <Plus size={14} /> Post Startup
+                    <Plus size={13} /> Post Startup
                   </Link>
                 )}
               </div>
@@ -888,44 +888,44 @@ export const ProfilePage: React.FC = () => {
                   {profileUser.startups.map((s) => (
                     <div
                       key={s.id}
-                      className="p-5 rounded-xl bg-[#F8FAFC] dark:bg-slate-800/60 border border-[#E2E8F0] dark:border-slate-800 hover:border-[#4F46E5] transition-all flex flex-col justify-between space-y-3 group"
+                      className="p-4 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700 transition-colors flex flex-col justify-between space-y-3 group"
                     >
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950 text-[#4F46E5]">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200/50">
                             {s.stage}
                           </span>
-                          <span className="text-xs font-medium text-[#64748B]">{s.industry}</span>
+                          <span className="text-xs font-medium text-slate-500">{s.industry}</span>
                         </div>
-                        <h3 className="text-base font-bold text-[#0F172A] dark:text-white group-hover:text-[#4F46E5] transition-colors">
+                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">
                           {s.name}
                         </h3>
-                        <p className="text-xs text-[#64748B] dark:text-slate-300 line-clamp-2 leading-relaxed">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                           {s.oneLineDescription || 'AI & tech platform startup.'}
                         </p>
                       </div>
 
-                      <div className="pt-2 border-t border-[#E2E8F0] dark:border-slate-700/60 flex items-center justify-between">
-                        <span className="text-xs font-medium text-[#64748B]">Founder & CEO</span>
+                      <div className="pt-2 border-t border-slate-200/80 dark:border-dark-700/60 flex items-center justify-between text-xs">
+                        <span className="text-slate-500 font-medium">Founder</span>
                         <Link
                           to={`/startups/${s.id}`}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#4F46E5] hover:underline"
+                          className="inline-flex items-center gap-1 font-semibold text-brand-600 hover:underline"
                         >
-                          <span>View Startup</span>
-                          <ChevronRight size={14} />
+                          <span>View Venture</span>
+                          <ChevronRight size={13} />
                         </Link>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 border border-dashed border-[#E2E8F0] dark:border-slate-800 rounded-xl space-y-2">
-                  <FolderKanban size={28} className="mx-auto text-slate-300" />
-                  <p className="text-sm text-[#64748B] dark:text-slate-400 font-medium">No startups created yet.</p>
+                <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-lg space-y-2">
+                  <FolderKanban size={24} className="mx-auto text-slate-300 dark:text-slate-600" />
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-normal">No startups created yet.</p>
                   {isMe && (
                     <Link
                       to="/startups/create"
-                      className="inline-block px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-colors"
+                      className="btn-primary inline-block px-3 py-1.5 text-xs font-medium"
                     >
                       + Create Startup Listing
                     </Link>
@@ -935,24 +935,24 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* ACTIVITY SECTION */}
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 p-6 sm:p-8 space-y-4 shadow-xs">
+            <div className="card-base p-6 sm:p-7 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-[20px] font-semibold text-[#0F172A] dark:text-white tracking-tight flex items-center gap-2">
-                  <Share2 size={20} className="text-[#4F46E5]" />
-                  <span>Activity & Posts</span>
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                  <Share2 size={18} className="text-brand-600" />
+                  <span>Activity & Updates</span>
                 </h2>
-                <Link to="/feed" className="text-xs font-semibold text-[#4F46E5] hover:underline">
-                  View Community Feed →
+                <Link to="/feed" className="text-xs font-medium text-brand-600 hover:underline">
+                  View Feed →
                 </Link>
               </div>
 
-              <div className="text-center py-6 border border-dashed border-[#E2E8F0] dark:border-slate-800 rounded-xl space-y-1">
-                <Share2 size={24} className="mx-auto text-slate-300 mb-1" />
-                <p className="text-xs text-[#64748B] dark:text-slate-400 font-medium">No activity or posts shared yet.</p>
+              <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-lg space-y-1">
+                <Share2 size={22} className="mx-auto text-slate-300 dark:text-slate-600 mb-1" />
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-normal">No activity or updates published yet.</p>
                 {isMe && (
                   <Link
                     to="/feed"
-                    className="inline-block mt-2 text-xs font-bold text-[#4F46E5] hover:underline"
+                    className="inline-block mt-2 text-xs font-medium text-brand-600 hover:underline"
                   >
                     + Share an update on Feed
                   </Link>
@@ -967,32 +967,32 @@ export const ProfilePage: React.FC = () => {
 
             {/* PROFILE COMPLETENESS CARD */}
             {isMe && (
-              <div className="rounded-2xl bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 p-6 space-y-4 shadow-xs">
+              <div className="card-base p-5 space-y-3.5">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-[#0F172A] dark:text-white">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Profile Completeness
                   </h3>
-                  <span className="text-sm font-bold text-[#4F46E5]">{completionPercentage}%</span>
+                  <span className="text-xs font-bold text-brand-600">{completionPercentage}%</span>
                 </div>
 
-                <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 bg-slate-100 dark:bg-dark-800 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#4F46E5] transition-all duration-500 rounded-full"
+                    className="h-full bg-brand-600 transition-all duration-300 rounded-full"
                     style={{ width: `${completionPercentage}%` }}
                   />
                 </div>
 
-                <div className="space-y-2 text-xs text-[#64748B] pt-1">
+                <div className="space-y-1.5 text-xs text-slate-500 pt-1">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className={p.avatar ? 'text-[#16A34A]' : 'text-slate-300'} />
+                    <CheckCircle2 size={13} className={p.avatar ? 'text-emerald-600' : 'text-slate-300 dark:text-slate-600'} />
                     <span>Upload profile photo</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className={skillsList.length > 0 ? 'text-[#16A34A]' : 'text-slate-300'} />
+                    <CheckCircle2 size={13} className={skillsList.length > 0 ? 'text-emerald-600' : 'text-slate-300 dark:text-slate-600'} />
                     <span>Add verified skills</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 size={14} className={p.startupExperience ? 'text-[#16A34A]' : 'text-slate-300'} />
+                    <CheckCircle2 size={13} className={p.startupExperience ? 'text-emerald-600' : 'text-slate-300 dark:text-slate-600'} />
                     <span>Add startup experience</span>
                   </div>
                 </div>
@@ -1000,12 +1000,12 @@ export const ProfilePage: React.FC = () => {
             )}
 
             {/* SKILLS & ENDORSEMENTS SECTION */}
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 p-6 space-y-4 shadow-xs">
+            <div className="card-base p-5 space-y-3.5">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-[#0F172A] dark:text-white">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Skills & Expertise
                 </h3>
-                <span className="text-xs font-medium text-[#64748B]">{skillsList.length} skills</span>
+                <span className="text-xs text-slate-400">{skillsList.length} skills</span>
               </div>
 
               {/* Add Skill Input */}
@@ -1022,13 +1022,13 @@ export const ProfilePage: React.FC = () => {
                       }
                     }}
                     placeholder="Add skill (e.g. React, AI)..."
-                    className="flex-1 px-3 py-1.5 text-xs rounded-lg bg-[#F8FAFC] dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
+                    className="input-base flex-1 px-3 py-1.5 text-xs"
                   />
                   <button
                     type="button"
                     disabled={savingSkill || !newSkillInput.trim()}
                     onClick={() => handleAddSkill(newSkillInput)}
-                    className="px-3 py-1.5 rounded-lg bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-semibold disabled:opacity-50 transition-colors"
+                    className="btn-primary px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                   >
                     Add
                   </button>
@@ -1037,22 +1037,22 @@ export const ProfilePage: React.FC = () => {
 
               {/* Skills Pill Tags */}
               {skillsList.length === 0 ? (
-                <p className="text-xs text-[#64748B] dark:text-slate-400 py-1">No skills added yet.</p>
+                <p className="text-xs text-slate-400 py-1">No skills added yet.</p>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {skillsList.map((skill, idx) => (
                     <span
                       key={idx}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-[#EEF2FF] text-[#4F46E5] border border-[#C7D2FE] dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-50 dark:bg-dark-850 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
                     >
                       <span>{skill}</span>
                       {isMe && (
                         <button
                           type="button"
                           onClick={() => handleRemoveSkill(skill)}
-                          className="hover:text-rose-600 transition-colors ml-1"
+                          className="hover:text-rose-600 transition-colors ml-0.5"
                         >
-                          <X size={12} />
+                          <X size={11} />
                         </button>
                       )}
                     </span>
@@ -1062,23 +1062,23 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* ECOSYSTEM HUB & LINKS CARD */}
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 p-6 space-y-4 shadow-xs">
-              <h3 className="text-sm font-semibold text-[#0F172A] dark:text-white">
+            <div className="card-base p-5 space-y-3.5">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Profiles & Portfolio
               </h3>
-              <div className="space-y-2.5 text-sm">
+              <div className="space-y-1.5 text-xs">
                 {p.linkedinUrl && (
                   <a
                     href={p.linkedinUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#F8FAFC] dark:hover:bg-slate-800 text-[#64748B] hover:text-[#4F46E5] transition-colors"
+                    className="flex items-center justify-between p-2 rounded-md hover:bg-slate-50 dark:hover:bg-dark-850 text-slate-600 dark:text-slate-300 hover:text-brand-600 transition-colors"
                   >
                     <span className="flex items-center gap-2">
-                      <Globe size={16} />
+                      <Globe size={14} />
                       <span>LinkedIn Profile</span>
                     </span>
-                    <ExternalLink size={14} />
+                    <ExternalLink size={12} />
                   </a>
                 )}
                 {p.githubUrl && (
@@ -1086,13 +1086,13 @@ export const ProfilePage: React.FC = () => {
                     href={p.githubUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#F8FAFC] dark:hover:bg-slate-800 text-[#64748B] hover:text-[#4F46E5] transition-colors"
+                    className="flex items-center justify-between p-2 rounded-md hover:bg-slate-50 dark:hover:bg-dark-850 text-slate-600 dark:text-slate-300 hover:text-brand-600 transition-colors"
                   >
                     <span className="flex items-center gap-2">
-                      <ExternalLink size={16} />
+                      <ExternalLink size={14} />
                       <span>GitHub Profile</span>
                     </span>
-                    <ExternalLink size={14} />
+                    <ExternalLink size={12} />
                   </a>
                 )}
                 {p.websiteUrl && (
@@ -1149,23 +1149,23 @@ export const ProfilePage: React.FC = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Avatar Uploader */}
-                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 space-y-2.5">
-                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2.5">
+                  <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
                     Profile Photo (Avatar)
                   </label>
                   <div className="flex items-center gap-3">
                     <img
                       src={formData.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.fullName || 'User'}`}
                       alt=""
-                      className="w-12 h-12 rounded-full object-cover border border-slate-200 dark:border-slate-700 shadow-xs shrink-0"
+                      className="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-dark-700 shadow-xs shrink-0"
                     />
                     <button
                       type="button"
                       onClick={() => handleRequestGalleryPermission('avatar')}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#4F46E5] dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800 hover:bg-indigo-100 transition-all cursor-pointer"
+                      className="btn-secondary flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium cursor-pointer"
                     >
-                      <Camera size={14} />
-                      <span>Upload from Gallery</span>
+                      <Camera size={13} className="text-brand-600" />
+                      <span>Upload Photo</span>
                     </button>
                   </div>
                   <input
@@ -1173,30 +1173,30 @@ export const ProfilePage: React.FC = () => {
                     value={formData.avatar || ''}
                     onChange={(e) => setFormData({ ...formData, avatar: e.target.value })}
                     placeholder="Or paste image URL"
-                    className="w-full px-3 py-1.5 rounded-lg text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white"
+                    className="input-base w-full px-3 py-1.5 text-xs"
                   />
                 </div>
 
                 {/* Cover Uploader */}
-                <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 space-y-2.5">
-                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2.5">
+                  <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
                     Background Cover Image
                   </label>
                   <div className="flex items-center gap-3">
-                    <div className="w-16 h-12 rounded-lg bg-emerald-900 overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0">
+                    <div className="w-14 h-10 rounded-md bg-slate-800 overflow-hidden border border-slate-200 dark:border-dark-700 shrink-0">
                       {formData.coverImage ? (
                         <img src={formData.coverImage} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-r from-emerald-800 to-teal-800" />
+                        <div className="w-full h-full bg-slate-800" />
                       )}
                     </div>
                     <button
                       type="button"
                       onClick={() => handleRequestGalleryPermission('cover')}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer"
+                      className="btn-secondary flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium cursor-pointer"
                     >
-                      <ImageIcon size={14} />
-                      <span>Upload from Gallery</span>
+                      <ImageIcon size={13} className="text-brand-600" />
+                      <span>Upload Cover</span>
                     </button>
                   </div>
                   <input
@@ -1204,30 +1204,30 @@ export const ProfilePage: React.FC = () => {
                     value={formData.coverImage || ''}
                     onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
                     placeholder="Or paste cover URL"
-                    className="w-full px-3 py-1.5 rounded-lg text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white"
+                    className="input-base w-full px-3 py-1.5 text-xs"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-[#64748B] mb-1">Full Name</label>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Full Name</label>
                 <input
                   type="text"
                   required
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
+                  className="input-base w-full px-3 py-1.5 text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#64748B] mb-1">Primary Category</label>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Primary Category</label>
                 <select
                   value={formData.preferredRole || 'Founders'}
                   onChange={(e) => setFormData({ ...formData, preferredRole: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
+                  className="input-base w-full px-3 py-1.5 text-xs"
                 >
                   <option value="Founders">Founders</option>
                   <option value="Co-Founders">Co-Founders</option>
@@ -1241,135 +1241,135 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#64748B] mb-1">Location</label>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Location</label>
                 <input
                   type="text"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   placeholder="e.g. Bengaluru, India or Remote"
-                  className="w-full px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
+                  className="input-base w-full px-3 py-1.5 text-xs"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#64748B] mb-1">Professional Headline</label>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Professional Headline</label>
               <input
                 type="text"
                 value={formData.headline}
                 onChange={(e) => setFormData({ ...formData, headline: e.target.value })}
                 placeholder="e.g. Founder & CEO at AgriTech Solutions"
-                className="w-full px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
+                className="input-base w-full px-3 py-1.5 text-xs"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#64748B] mb-1">About & Bio</label>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">About & Bio</label>
               <textarea
                 rows={3}
                 value={formData.bio}
                 onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                 placeholder="Passionate about solving real-world problems through technology..."
-                className="w-full px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
+                className="input-base w-full px-3 py-1.5 text-xs resize-none"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-[#64748B] mb-1">Startup Experience</label>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Startup Experience</label>
                 <textarea
                   rows={2}
                   value={formData.startupExperience}
                   onChange={(e) => setFormData({ ...formData, startupExperience: e.target.value })}
                   placeholder="Details about prior ventures or executive experience..."
-                  className="w-full px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
+                  className="input-base w-full px-3 py-1.5 text-xs resize-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#64748B] mb-1">Education</label>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Education</label>
                 <textarea
                   rows={2}
                   value={formData.education}
                   onChange={(e) => setFormData({ ...formData, education: e.target.value })}
                   placeholder="Institution name, degree, and field of study..."
-                  className="w-full px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
+                  className="input-base w-full px-3 py-1.5 text-xs resize-none"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-[#64748B] mb-1">Skills (comma-separated)</label>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Skills (comma-separated)</label>
                 <input
                   type="text"
                   value={formData.skills}
                   onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
                   placeholder="React, Python, Product Development, AI"
-                  className="w-full px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
+                  className="input-base w-full px-3 py-1.5 text-xs"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#64748B] mb-1">Startup Interests (comma-separated)</label>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Startup Interests (comma-separated)</label>
                 <input
                   type="text"
                   value={formData.startupInterests}
                   onChange={(e) => setFormData({ ...formData, startupInterests: e.target.value })}
                   placeholder="Entrepreneurship, Technology, Agriculture, AI"
-                  className="w-full px-3.5 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white focus:outline-none focus:border-[#4F46E5]"
+                  className="input-base w-full px-3 py-1.5 text-xs"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-[#64748B] mb-1">LinkedIn URL</label>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">LinkedIn URL</label>
                 <input
                   type="url"
                   value={formData.linkedinUrl}
                   onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-lg text-xs bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white"
+                  className="input-base w-full px-3 py-1.5 text-xs"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[#64748B] mb-1">GitHub URL</label>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">GitHub URL</label>
                 <input
                   type="url"
                   value={formData.githubUrl}
                   onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-lg text-xs bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white"
+                  className="input-base w-full px-3 py-1.5 text-xs"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[#64748B] mb-1">Website URL</label>
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Website URL</label>
                 <input
                   type="url"
                   value={formData.websiteUrl}
                   onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-lg text-xs bg-white dark:bg-slate-800 border border-[#E2E8F0] dark:border-slate-700 text-[#0F172A] dark:text-white"
+                  className="input-base w-full px-3 py-1.5 text-xs"
                 />
               </div>
             </div>
 
             {saveError && (
-              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 text-[#DC2626] text-xs font-medium">
+              <div className="p-2.5 rounded-md bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 text-xs font-medium border border-red-200 dark:border-red-900">
                 {saveError}
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#E2E8F0]">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-dark-800">
               <button
                 type="button"
                 onClick={() => setEditOpen(false)}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-[#64748B] hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="btn-secondary px-3 py-1.5 text-xs font-medium"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-colors"
+                className="btn-primary px-4 py-1.5 text-xs font-medium disabled:opacity-50"
               >
                 {saving ? 'Saving Changes...' : 'Save Profile'}
               </button>

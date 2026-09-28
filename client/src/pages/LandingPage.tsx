@@ -63,37 +63,34 @@ export const LandingPage: React.FC = () => {
     <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
       
       {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-32">
-        {/* Glow ambient backgrounds */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-gradient-to-tr from-brand-600/20 via-cyan-500/20 to-emerald-500/20 blur-[100px] -z-10 pointer-events-none rounded-full" />
-        
+      <section className="relative pt-12 pb-16 lg:pt-16 lg:pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto space-y-6">
+          <div className="text-center max-w-3xl mx-auto space-y-5">
             
             {/* Tagline Pill */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-50 dark:bg-brand-950/70 border border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-300 text-xs font-bold tracking-wide shadow-sm animate-pulse-subtle">
-              <Sparkles size={14} className="text-brand-500" />
-              <span>StartupZ — Find the right people. Build the right startup.</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium shadow-subtle">
+              <Sparkles size={13} className="text-brand-600 dark:text-brand-400" />
+              <span>Startup ecosystem platform for builders and backers</span>
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.15]">
+            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-slate-900 dark:text-white leading-[1.15]">
               Build your startup team.{' '}
-              <span className="startup-gradient-text">Discover opportunities.</span>{' '}
+              <span className="text-brand-600 dark:text-brand-400">Discover opportunities.</span>{' '}
               Grow together.
             </h1>
 
             {/* Subtext */}
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-normal max-w-2xl mx-auto">
-              StartupZ connects founders, co-founders, developers, designers, mentors, and investors in one dedicated startup-focused professional network.
+            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-normal max-w-2xl mx-auto">
+              StartupZ connects founders, co-founders, developers, designers, mentors, and investors in one structured, professional network.
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 flex-wrap">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2 flex-wrap">
               <button
                 type="button"
                 onClick={handleGoogleClick}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-2xl text-sm font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-xs font-semibold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-subtle transition-colors cursor-pointer"
               >
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                   <path
@@ -119,125 +116,121 @@ export const LandingPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setQuickLoginOpen(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-md text-xs font-semibold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-subtle transition-colors cursor-pointer"
               >
-                <Lock size={15} className="text-brand-500 shrink-0" />
+                <Lock size={14} className="text-slate-400 shrink-0" />
                 <span>Sign In (Password)</span>
               </button>
 
               <Link
                 to="/register"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 shadow-lg shadow-brand-500/25 transition-all hover:scale-105 active:scale-95"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-md text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 transition-colors shadow-subtle"
               >
                 <span>Join StartupZ</span>
-                <ArrowRight size={16} />
+                <ArrowRight size={14} />
               </Link>
               <Link
                 to="/startups"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-dark-850 hover:bg-slate-100 dark:hover:bg-dark-800 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:scale-105 active:scale-95"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-md text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 shadow-subtle transition-colors"
               >
-                <Compass size={16} />
+                <Compass size={14} className="text-slate-400" />
                 <span>Explore Startups</span>
               </Link>
             </div>
 
             {/* Trust metrics */}
-            <div className="pt-8 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs font-semibold text-slate-500 dark:text-slate-400">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-500" />
-                <span>Algorithmic Co-Founder Synergy</span>
+            <div className="pt-6 flex flex-wrap items-center justify-center gap-5 sm:gap-8 text-xs font-medium text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 size={14} className="text-emerald-600" />
+                <span>Co-Founder Synergy Engine</span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-500" />
-                <span>Verified Founders & VCs</span>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 size={14} className="text-emerald-600" />
+                <span>Verified Founders & Investors</span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-500" />
-                <span>Zero Spam Guarantee</span>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 size={14} className="text-emerald-600" />
+                <span>Curated Ecosystem Network</span>
               </div>
             </div>
           </div>
 
           {/* Interactive Startup Network Graph Visual */}
-          <div className="mt-14 relative max-w-4xl mx-auto p-6 sm:p-8 rounded-3xl bg-white/70 dark:bg-dark-900/70 border border-slate-200/80 dark:border-slate-800/80 shadow-2xl backdrop-blur-xl">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 mb-6">
+          <div className="mt-12 relative max-w-4xl mx-auto p-5 sm:p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-rose-500" />
-                <div className="w-3 h-3 rounded-full bg-amber-500" />
-                <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                <span className="text-xs font-mono text-slate-400 ml-2">StartupZ Ecosystem Graph</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">StartupZ Ecosystem Directory</span>
               </div>
-              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400">
-                LIVE NETWORK
+              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                LIVE DIRECTORY
               </span>
             </div>
 
             {/* Network Nodes Grid */}
-            {/* Network Nodes Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               
               {/* Founder Node */}
               <Link
                 to="/cofounders?category=founders"
-                className="p-4 rounded-2xl bg-gradient-to-b from-indigo-50/50 to-white dark:from-dark-850 dark:to-dark-900 border border-indigo-100 dark:border-indigo-900/50 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+                className="p-3.5 rounded-lg bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 hover:border-brand-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
               >
-                <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                  <Rocket size={18} />
+                <div className="w-8 h-8 rounded-md bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-2.5 border border-brand-200/50 dark:border-brand-900/50">
+                  <Rocket size={16} />
                 </div>
-                <div className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">Founders</div>
-                <h4 className="font-bold text-slate-900 dark:text-white text-sm">FarmConnect</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Seeking Founding CTO & GTM Partner</p>
-                <div className="mt-3 flex items-center gap-1.5 text-[11px] text-emerald-600 font-semibold">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                  <span>96% Co-Founder Match →</span>
+                <div className="text-[10px] font-semibold text-brand-600 dark:text-brand-400 uppercase tracking-wider mb-0.5">Founders</div>
+                <h4 className="font-semibold text-slate-900 dark:text-white text-xs">FarmConnect</h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">Seeking Founding CTO & GTM Partner</p>
+                <div className="mt-2.5 flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                  <span>96% Match score →</span>
                 </div>
               </Link>
 
               {/* Developer Node */}
               <Link
                 to="/cofounders?category=cofounders"
-                className="p-4 rounded-2xl bg-gradient-to-b from-cyan-50/50 to-white dark:from-dark-850 dark:to-dark-900 border border-cyan-100 dark:border-cyan-900/50 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+                className="p-3.5 rounded-lg bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 hover:border-brand-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
               >
-                <div className="w-9 h-9 rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-3 group-hover:bg-cyan-600 group-hover:text-white transition-colors">
-                  <Cpu size={18} />
+                <div className="w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center mb-2.5 border border-slate-200 dark:border-slate-700">
+                  <Cpu size={16} />
                 </div>
-                <div className="text-xs font-bold text-cyan-600 uppercase tracking-wider mb-1">Developers</div>
-                <h4 className="font-bold text-slate-900 dark:text-white text-sm">Marcus Brody</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Staff Backend & Rust Engineer</p>
-                <div className="mt-3 inline-block text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-dark-800 px-2 py-0.5 rounded-md">
-                  Open to Founding Equity →
+                <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Developers</div>
+                <h4 className="font-semibold text-slate-900 dark:text-white text-xs">Marcus Brody</h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">Staff Backend & Systems Engineer</p>
+                <div className="mt-2.5 text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                  Open to Equity →
                 </div>
               </Link>
 
               {/* Investor Node */}
               <Link
                 to="/cofounders?category=investors"
-                className="p-4 rounded-2xl bg-gradient-to-b from-emerald-50/50 to-white dark:from-dark-850 dark:to-dark-900 border border-emerald-100 dark:border-emerald-900/50 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+                className="p-3.5 rounded-lg bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 hover:border-brand-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
               >
-                <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                  <TrendingUp size={18} />
+                <div className="w-8 h-8 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2.5 border border-emerald-200/50 dark:border-emerald-900/50">
+                  <TrendingUp size={16} />
                 </div>
-                <div className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Investors</div>
-                <h4 className="font-bold text-slate-900 dark:text-white text-sm">Apex Ventures</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">$250k - $1.5M Pre-Seed Checks</p>
-                <div className="mt-3 inline-block text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 px-2 py-0.5 rounded-md">
-                  Active Pitch Ingestion →
+                <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-0.5">Investors</div>
+                <h4 className="font-semibold text-slate-900 dark:text-white text-xs">Apex Ventures</h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">$250k - $1.5M Pre-Seed Checks</p>
+                <div className="mt-2.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                  Pitch Ingestion Active →
                 </div>
               </Link>
 
               {/* Mentor Node */}
               <Link
                 to="/mentors"
-                className="p-4 rounded-2xl bg-gradient-to-b from-amber-50/50 to-white dark:from-dark-850 dark:to-dark-900 border border-amber-100 dark:border-amber-900/50 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+                className="p-3.5 rounded-lg bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 hover:border-brand-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
               >
-                <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 group-hover:bg-amber-600 group-hover:text-white transition-colors">
-                  <GraduationCap size={18} />
+                <div className="w-8 h-8 rounded-md bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-2.5 border border-amber-200/50 dark:border-amber-900/50">
+                  <GraduationCap size={16} />
                 </div>
-                <div className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">Mentors</div>
-                <h4 className="font-bold text-slate-900 dark:text-white text-sm">James Sterling</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">2x Exited Founder (Ex-YC W16)</p>
-                <div className="mt-3 inline-block text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/80 px-2 py-0.5 rounded-md">
-                  Founder Coaching Open →
+                <div className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-0.5">Mentors</div>
+                <h4 className="font-semibold text-slate-900 dark:text-white text-xs">James Sterling</h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">2x Exited Founder (Ex-YC W16)</p>
+                <div className="mt-2.5 text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                  Advisory Open →
                 </div>
               </Link>
 
@@ -246,124 +239,124 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 1.5 LATEST PLATFORM UPDATES & CHANGELOG SECTION */}
-      <section className="py-16 bg-gradient-to-r from-brand-900/10 via-indigo-900/10 to-teal-900/10 border-y border-brand-200/40 dark:border-brand-800/40">
+      {/* 1.5 LATEST PLATFORM UPDATES SECTION */}
+      <section className="py-14 bg-slate-50/80 dark:bg-slate-900/40 border-y border-slate-200 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-10">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 text-xs font-bold uppercase tracking-wider mb-2">
-                <Sparkles size={13} className="text-brand-500 animate-spin" />
-                Latest Platform Upgrades
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-800 mb-1.5">
+                <Sparkles size={12} className="text-brand-600" />
+                <span>Platform Highlights</span>
               </div>
-              <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                 What's New on StartupZ
               </h2>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
-                Explore recent UI enhancements, interactive navigation upgrades, and profile tools deployed across mobile and desktop.
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Directory tools, co-founder discovery algorithms, and pitch ingestion pipelines.
               </p>
             </div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold shrink-0">
-              <CheckCircle2 size={15} className="text-emerald-500" />
-              Live & Verified Upgrades
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-400 text-xs font-semibold shrink-0">
+              <CheckCircle2 size={14} className="text-emerald-600" />
+              Verified Architecture
             </div>
           </div>
 
           {/* Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             
             {/* 1. Nav Slidebar */}
             <Link
               to="/startups"
-              className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-xl bg-brand-100 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-4 group-hover:bg-brand-600 group-hover:text-white transition-colors">
-                <Globe size={20} />
+              <div className="w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center mb-3 group-hover:text-brand-600 transition-colors border border-slate-200 dark:border-slate-700">
+                <Globe size={16} />
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
-                Mobile & Desktop Nav Slidebar →
+              <h3 className="font-semibold text-slate-900 dark:text-white text-xs mb-1 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                Mobile & Desktop Category Bar →
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                Horizontal slidebar navigation from AI-Scout through Problem Statements, optimized for seamless scrolling on both mobile phones and desktop displays.
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Horizontal slidebar navigation from AI-Scout through Problem Statements, optimized for rapid filtering.
               </p>
             </Link>
 
             {/* 2. Click Dropdowns */}
             <Link
               to="/cofounders"
-              className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                <Users size={20} />
+              <div className="w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center mb-3 group-hover:text-brand-600 transition-colors border border-slate-200 dark:border-slate-700">
+                <Users size={16} />
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                Click-to-Toggle Submenus →
+              <h3 className="font-semibold text-slate-900 dark:text-white text-xs mb-1 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                Ecosystem Directories →
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                Co-Founders & Opportunities categories open reliably on click without layout clipping, cursor hover flickering, or unintended pop-up displacement.
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Categorized access to technical co-founders, verified angel investors, and venture mentors.
               </p>
             </Link>
 
             {/* 3. Search & AI Scout */}
             <Link
               to="/search"
-              className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-xl bg-cyan-100 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mb-4 group-hover:bg-cyan-600 group-hover:text-white transition-colors">
-                <Zap size={20} />
+              <div className="w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center mb-3 group-hover:text-brand-600 transition-colors border border-slate-200 dark:border-slate-700">
+                <Zap size={16} />
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
-                Instant Modal Search & Recommendations →
+              <h3 className="font-semibold text-slate-900 dark:text-white text-xs mb-1 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                AI Scout Candidate Matcher →
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                Search modal styled after AI Scout with 1-letter real-time word recommendations and new-tab search execution.
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Natural-language discovery of builders, operators, and advisors with compatible availability.
               </p>
             </Link>
 
-            {/* 4. Royal Emerald Profile Cover */}
+            {/* 4. Profiles */}
             <Link
               to="/cofounders?category=cofounders"
-              className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                <ShieldCheck size={20} />
+              <div className="w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center mb-3 group-hover:text-brand-600 transition-colors border border-slate-200 dark:border-slate-700">
+                <ShieldCheck size={16} />
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                Royal Emerald Cover & Photos →
+              <h3 className="font-semibold text-slate-900 dark:text-white text-xs mb-1 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                Verified Founder Profiles →
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                Custom avatar and cover photo upload settings on profile page, backed by a default Royal Emerald Green background header.
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Identity badges, role indicators, startup affiliations, and verified work history.
               </p>
             </Link>
 
             {/* 5. Memberships */}
             <Link
               to="/memberships"
-              className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-4 group-hover:bg-amber-600 group-hover:text-white transition-colors">
-                <Rocket size={20} />
+              <div className="w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center mb-3 group-hover:text-brand-600 transition-colors border border-slate-200 dark:border-slate-700">
+                <Rocket size={16} />
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                Tiered Membership Plans →
+              <h3 className="font-semibold text-slate-900 dark:text-white text-xs mb-1 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                Tiered Ecosystem Access →
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                Basic, Standard, and Premium subscription tiers integrated directly into user dashboard, profile menu, and navigation bar.
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Standard and Pro membership options for enhanced outreach, investor pitch slots, and advisory hours.
               </p>
             </Link>
 
-            {/* 6. Community Feed & Network */}
+            {/* 6. Community Feed */}
             <Link
               to="/feed"
-              className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
             >
-              <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-4 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                <Layers size={20} />
+              <div className="w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center mb-3 group-hover:text-brand-600 transition-colors border border-slate-200 dark:border-slate-700">
+                <Layers size={16} />
               </div>
-              <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                Startup Network & Feed →
+              <h3 className="font-semibold text-slate-900 dark:text-white text-xs mb-1 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                Founder Activity Feed →
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                Dedicated founder connections management, saved opportunities, and real-time community feed for founder engagement.
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Real-time updates, hiring calls, launch announcements, and community discussions.
               </p>
             </Link>
 
@@ -372,114 +365,114 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 2. HOW STARTUPZ WORKS */}
-      <section className="py-20 bg-slate-50/60 dark:bg-dark-900/40 border-y border-slate-200/80 dark:border-slate-800/80">
+      <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="text-xs font-bold tracking-wider uppercase text-brand-600 dark:text-brand-400">
-              Complete Lifecycle
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="text-[11px] font-semibold tracking-wider uppercase text-brand-600 dark:text-brand-400">
+              Lifecycle
             </span>
-            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-              How StartupZ Accelerates Your Journey
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-1">
+              How StartupZ Works
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">
+            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">
               From zero-to-one validation to co-founder matchmaking, team hiring, and capital discovery.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Link
               to="/startups"
-              className="relative p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
             >
-              <span className="text-3xl font-black text-brand-200 dark:text-brand-900 mb-2 block group-hover:text-brand-400 transition-colors">01</span>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">Publish & Validate →</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                Post your startup idea with Problem, Solution, Stage, and Required Skills. Run AI stress tests before writing code.
+              <span className="text-xl font-bold text-slate-300 dark:text-slate-700 mb-1 block">01</span>
+              <h3 className="text-xs font-semibold text-slate-900 dark:text-white mb-1 group-hover:text-brand-600 transition-colors">Publish & Validate →</h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Post your startup idea with problem statement, target audience, stage, and required talent.
               </p>
             </Link>
 
             <Link
               to="/cofounders"
-              className="relative p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
             >
-              <span className="text-3xl font-black text-cyan-200 dark:text-cyan-900 mb-2 block group-hover:text-cyan-400 transition-colors">02</span>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">Match Co-Founders →</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                Our algorithmic engine matches technical, business, and marketing co-founders based on overlapping skills and shared vision.
+              <span className="text-xl font-bold text-slate-300 dark:text-slate-700 mb-1 block">02</span>
+              <h3 className="text-xs font-semibold text-slate-900 dark:text-white mb-1 group-hover:text-brand-600 transition-colors">Match Co-Founders →</h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Discover technical, business, and design co-founders based on overlapping skills and shared vision.
               </p>
             </Link>
 
             <Link
               to="/opportunities"
-              className="relative p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
             >
-              <span className="text-3xl font-black text-emerald-200 dark:text-emerald-900 mb-2 block group-hover:text-emerald-400 transition-colors">03</span>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Assemble Teammates →</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                Publish equity or paid opportunities. Attract passionate engineers, UI/UX designers, and growth hackers ready to ship.
+              <span className="text-xl font-bold text-slate-300 dark:text-slate-700 mb-1 block">03</span>
+              <h3 className="text-xs font-semibold text-slate-900 dark:text-white mb-1 group-hover:text-brand-600 transition-colors">Assemble Teammates →</h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Publish equity or paid opportunities to attract engineers, UI/UX designers, and growth leads.
               </p>
             </Link>
 
             <Link
               to="/investors"
-              className="relative p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:scale-[1.02] group block cursor-pointer"
+              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
             >
-              <span className="text-3xl font-black text-purple-200 dark:text-purple-900 mb-2 block group-hover:text-purple-400 transition-colors">04</span>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">Pitch & Scale →</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                Discover active angel syndicates and VCs aligned with your stage and vertical. Send structured pitches with verifiable traction.
+              <span className="text-xl font-bold text-slate-300 dark:text-slate-700 mb-1 block">04</span>
+              <h3 className="text-xs font-semibold text-slate-900 dark:text-white mb-1 group-hover:text-brand-600 transition-colors">Pitch & Scale →</h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Connect with angel investors and venture funds aligned with your stage and market sector.
               </p>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* 3. FEATURE SPOTLIGHTS (Co-Founder Matching & Idea Discovery) */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-24">
+      {/* 3. FEATURE SPOTLIGHTS */}
+      <section className="py-16 bg-slate-50/70 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
           
           {/* Spotlight 1: Co-Founder Matching */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-5">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 text-xs font-bold">
-                <Users size={14} /> Algorithmic Synergy Engine
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-800">
+                <Users size={13} className="text-brand-600" /> Co-Founder Discovery
               </div>
-              <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">
-                Never settle on a Co-Founder. Find your exact match.
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+                Find compatible co-founders with complementary skills
               </h2>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Most startup co-founder relationships fail due to mismatched commitment, redundant skills, or misaligned product vision. StartupZ evaluates:
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                Co-founder relationships require complementary technical capabilities, aligned availability, and shared domain commitment. StartupZ evaluates:
               </p>
-              <ul className="space-y-2.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
-                <li className="flex items-center gap-2.5">
-                  <CheckCircle2 size={16} className="text-indigo-600 shrink-0" />
-                  <span>Technical + Business complementary skill score</span>
+              <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-brand-600 shrink-0" />
+                  <span>Technical and business complementary skill scores</span>
                 </li>
-                <li className="flex items-center gap-2.5">
-                  <CheckCircle2 size={16} className="text-indigo-600 shrink-0" />
-                  <span>Domain industry focus & shared venture interests</span>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-brand-600 shrink-0" />
+                  <span>Sector experience and venture stage targets</span>
                 </li>
-                <li className="flex items-center gap-2.5">
-                  <CheckCircle2 size={16} className="text-indigo-600 shrink-0" />
-                  <span>Availability (Full-time vs Nights & Weekends)</span>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 size={14} className="text-brand-600 shrink-0" />
+                  <span>Current availability (Full-time vs. nights and weekends)</span>
                 </li>
               </ul>
               <Link
                 to="/cofounders"
-                className="inline-flex items-center gap-2 text-sm font-bold text-brand-600 dark:text-brand-400 hover:gap-3 transition-all pt-2"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline pt-1"
               >
-                <span>Find Co-Founders Now</span>
-                <ArrowRight size={16} />
+                <span>Browse Co-Founders Directory</span>
+                <ArrowRight size={13} />
               </Link>
             </div>
 
             <Link
               to="/cofounders?category=cofounders"
-              className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-4 hover:shadow-2xl transition-all hover:scale-[1.01] block cursor-pointer group"
+              className="p-5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle space-y-3 block cursor-pointer group"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-xs font-bold text-slate-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">Match Preview →</span>
-                <span className="text-xs font-black px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-xs font-semibold text-slate-500">Compatibility Preview</span>
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">
                   96% Compatibility
                 </span>
               </div>
@@ -487,68 +480,68 @@ export const LandingPage: React.FC = () => {
                 <img
                   src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
                   alt=""
-                  className="w-12 h-12 rounded-full object-cover"
+                  className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700"
                 />
                 <div>
-                  <h4 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">Marcus Brody</h4>
-                  <p className="text-xs text-slate-500">Staff Full-Stack & Systems Engineer • Seattle, WA</p>
+                  <h4 className="font-semibold text-xs text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">Marcus Brody</h4>
+                  <p className="text-[11px] text-slate-500">Staff Full-Stack & Systems Engineer • Seattle, WA</p>
                 </div>
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-300 italic bg-slate-50 dark:bg-dark-850 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                "Your skills in AgTech & GTM strongly complement their cloud/Rust background. Both targeting Seed-stage climate ventures."
+              <p className="text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-md border border-slate-200 dark:border-slate-800">
+                "Your skills in product and GTM complement their cloud and systems engineering background. Both targeting Seed-stage climate ventures."
               </p>
             </Link>
           </div>
 
           {/* Spotlight 2: Idea Discovery & Opportunities */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <Link
               to="/startups"
-              className="order-2 lg:order-1 p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-4 hover:shadow-2xl transition-all hover:scale-[1.01] block cursor-pointer group"
+              className="order-2 lg:order-1 p-5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle space-y-2.5 block cursor-pointer group"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-brand-600 dark:text-brand-400">AGTECH MVP</span>
-                <span className="text-xs font-bold text-slate-400 group-hover:text-brand-600 transition-colors">Austin, TX →</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-600 dark:text-brand-400">AgTech MVP</span>
+                <span className="text-xs text-slate-400">Austin, TX</span>
               </div>
-              <h4 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">FarmConnect</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-300">
-                AI-powered agronomic advisory platform delivering real-time crop disease detection & yield forecasting.
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">FarmConnect</h4>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Agronomic advisory platform delivering real-time crop disease detection & yield forecasting.
               </p>
-              <div className="flex flex-wrap gap-1.5 pt-2">
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300">
+              <div className="flex flex-wrap gap-1 pt-1">
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                   Python
                 </span>
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300">
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                   Computer Vision
                 </span>
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">
                   Seeking $250k
                 </span>
               </div>
             </Link>
 
-            <div className="order-1 lg:order-2 space-y-5">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-950 text-cyan-600 dark:text-cyan-400 text-xs font-bold">
-                <Compass size={14} /> Idea Discovery & Opportunities
+            <div className="order-1 lg:order-2 space-y-4">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-800">
+                <Compass size={13} className="text-brand-600" /> Venture Directory
               </div>
-              <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">
-                Find high-potential ventures. Join as an early pillar.
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+                Discover early ventures and open opportunities
               </h2>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Have world-class skills but looking for an idea with verified market demand? Browse hundreds of curated ventures looking for engineers, designers, marketers, and sales leaders.
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                Explore hundreds of vetted early ventures actively looking for engineers, designers, marketers, and advisors.
               </p>
-              <div className="pt-2 flex items-center gap-4">
+              <div className="pt-1 flex items-center gap-2.5">
                 <Link
                   to="/startups"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md transition-all"
+                  className="btn-primary !text-xs !py-1.5 !px-3.5"
                 >
-                  Explore Startup Ideas
+                  Explore Startups
                 </Link>
                 <Link
                   to="/opportunities"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors"
+                  className="btn-secondary !text-xs !py-1.5 !px-3.5"
                 >
-                  View Roles & Equity
+                  Open Roles
                 </Link>
               </div>
             </div>
@@ -558,58 +551,58 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 4. SUCCESS STORIES & TESTIMONIALS */}
-      <section className="py-20 bg-slate-50/60 dark:bg-dark-900/40 border-t border-slate-200/80 dark:border-slate-800/80">
+      <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="text-xs font-bold tracking-wider uppercase text-emerald-600 dark:text-emerald-400">
-              Community Traction
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <span className="text-[11px] font-semibold tracking-wider uppercase text-slate-500 dark:text-slate-400">
+              Community Testimonials
             </span>
-            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-              Real Startups Born on StartupZ
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-1">
+              Startups Built on StartupZ
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic mb-4">
                 "StartupZ was born out of the direct need for founders, developers, and investors to cut through noise, find genuine co-founders, and build lasting ventures together."
               </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-brand-600 flex items-center justify-center text-white font-bold text-sm">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-white font-semibold text-xs">
                   RP
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Ruthwik Patel</h4>
+                  <h4 className="text-xs font-semibold text-slate-900 dark:text-white">Ruthwik Patel</h4>
                   <p className="text-[11px] text-slate-500">Founder @ StartupZ</p>
                 </div>
               </div>
             </div>
 
-            <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic mb-6">
+            <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic mb-4">
                 "Finding a co-founder with aligned vision and complementary technical skills used to take months. On StartupZ, connecting directly with real builders changes everything."
               </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-white font-semibold text-xs">
                   LP
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Legacy</h4>
+                  <h4 className="text-xs font-semibold text-slate-900 dark:text-white">Legacy</h4>
                   <p className="text-[11px] text-slate-500">Tech Co-Founder</p>
                 </div>
               </div>
             </div>
 
-            <div className="p-6 rounded-2xl bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic mb-6">
+            <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic mb-4">
                 "StartupZ's direct proposal and co-founder connection system provides clean, genuine startup signals without the spam. Highly recommended for early builders."
               </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white font-semibold text-xs">
                   LY
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Lavan Yadav</h4>
+                  <h4 className="text-xs font-semibold text-slate-900 dark:text-white">Lavan Yadav</h4>
                   <p className="text-[11px] text-slate-500">Investor & Ecosystem Partner</p>
                 </div>
               </div>
@@ -619,25 +612,23 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 5. CALL TO ACTION BANNER */}
-      <section className="py-20 relative overflow-hidden">
+      <section className="py-14">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative p-10 sm:p-14 rounded-3xl bg-gradient-to-r from-brand-600 via-indigo-600 to-cyan-600 text-white shadow-2xl overflow-hidden text-center space-y-6">
-            <div className="absolute inset-0 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] opacity-10" />
-            
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight relative z-10">
-              Ready to find the right people and build your venture?
+          <div className="p-8 sm:p-10 rounded-xl bg-slate-900 text-white border border-slate-850 text-center space-y-4">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Ready to find collaborators and build your venture?
             </h2>
-            <p className="text-sm sm:text-base text-brand-100 max-w-xl mx-auto relative z-10 leading-relaxed">
-              Join thousands of founders, engineers, designers, mentors, and investors building tomorrow's breakout startups.
+            <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
+              Join founders, engineers, designers, mentors, and investors building tomorrow's startup ecosystem.
             </p>
 
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3 relative z-10">
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
               <button
                 type="button"
                 onClick={handleGoogleClick}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-2xl text-sm font-bold text-slate-900 bg-white hover:bg-slate-100 shadow-xl transition-all hover:scale-105 cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs font-semibold text-slate-900 bg-white hover:bg-slate-100 transition-colors cursor-pointer"
               >
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
                     d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
@@ -661,18 +652,18 @@ export const LandingPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setQuickLoginOpen(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl text-sm font-bold text-white bg-brand-700/80 hover:bg-brand-700 border border-white/20 transition-all hover:scale-105 cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors cursor-pointer"
               >
-                <Lock size={15} />
+                <Lock size={13} />
                 <span>Sign In (Password)</span>
               </button>
 
               <Link
                 to="/register"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl text-sm font-bold text-white bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 transition-all hover:scale-105"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 transition-colors"
               >
                 <span>Get Started Free</span>
-                <ArrowRight size={16} />
+                <ArrowRight size={13} />
               </Link>
             </div>
           </div>

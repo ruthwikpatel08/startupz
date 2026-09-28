@@ -131,19 +131,19 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-md w-full space-y-6">
         
         {/* Header */}
         <div className="text-center">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-500 flex items-center justify-center text-white shadow-md">
-              <Rocket size={22} />
+          <Link to="/" className="inline-flex items-center gap-2 mb-3">
+            <div className="w-9 h-9 rounded-md bg-brand-600 flex items-center justify-center text-white shadow-xs">
+              <Rocket size={18} />
             </div>
-            <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
               Startup<span className="text-brand-600 dark:text-brand-400">Z</span>
             </span>
           </Link>
-          <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
             Welcome back to the Network
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -152,63 +152,63 @@ export const LoginPage: React.FC = () => {
         </div>
 
         {/* Quick Platform Exploration Links */}
-        <div className="p-4 rounded-2xl bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900/60 space-y-2.5">
+        <div className="card-base p-3.5 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-brand-700 dark:text-brand-300 flex items-center gap-1.5">
-              <Sparkles size={14} /> Explore Platform Without Sign In:
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <Sparkles size={13} className="text-brand-600" /> Explore Directory Without Sign In:
             </span>
-            <span className="text-[10px] text-brand-500 font-semibold">100% Free & Open</span>
+            <span className="text-[10px] text-slate-400 font-medium">Free Access</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <Link
               to="/cofounders"
-              className="text-left p-2 rounded-xl bg-white dark:bg-dark-850 border border-brand-100 dark:border-brand-900 hover:border-brand-500 text-xs transition-all shadow-xs block cursor-pointer"
+              className="text-left p-2 rounded-md bg-slate-50 dark:bg-dark-850 border border-slate-200/80 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700 text-xs transition-colors block cursor-pointer"
             >
-              <div className="font-bold text-slate-900 dark:text-white truncate">Co-Founders Network</div>
-              <div className="text-[10px] text-brand-600 dark:text-brand-400">Founders, devs & advisors →</div>
+              <div className="font-semibold text-slate-900 dark:text-white truncate">Co-Founders</div>
+              <div className="text-[10px] text-brand-600 dark:text-brand-400">Founders & builders →</div>
             </Link>
             <Link
               to="/opportunities"
-              className="text-left p-2 rounded-xl bg-white dark:bg-dark-850 border border-brand-100 dark:border-brand-900 hover:border-brand-500 text-xs transition-all shadow-xs block cursor-pointer"
+              className="text-left p-2 rounded-md bg-slate-50 dark:bg-dark-850 border border-slate-200/80 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700 text-xs transition-colors block cursor-pointer"
             >
-              <div className="font-bold text-slate-900 dark:text-white truncate">Opportunities</div>
-              <div className="text-[10px] text-cyan-600 dark:text-cyan-400">Internships & startup jobs →</div>
+              <div className="font-semibold text-slate-900 dark:text-white truncate">Opportunities</div>
+              <div className="text-[10px] text-cyan-600 dark:text-cyan-400">Internships & roles →</div>
             </Link>
             <Link
               to="/startups"
-              className="text-left p-2 rounded-xl bg-white dark:bg-dark-850 border border-brand-100 dark:border-brand-900 hover:border-brand-500 text-xs transition-all shadow-xs block cursor-pointer"
+              className="text-left p-2 rounded-md bg-slate-50 dark:bg-dark-850 border border-slate-200/80 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700 text-xs transition-colors block cursor-pointer"
             >
-              <div className="font-bold text-slate-900 dark:text-white truncate">Explore Startups</div>
-              <div className="text-[10px] text-emerald-600 dark:text-emerald-400">Discover live ventures →</div>
+              <div className="font-semibold text-slate-900 dark:text-white truncate">Startups</div>
+              <div className="text-[10px] text-emerald-600 dark:text-emerald-400">Live ventures →</div>
             </Link>
             <Link
               to="/investors"
-              className="text-left p-2 rounded-xl bg-white dark:bg-dark-850 border border-brand-100 dark:border-brand-900 hover:border-brand-500 text-xs transition-all shadow-xs block cursor-pointer"
+              className="text-left p-2 rounded-md bg-slate-50 dark:bg-dark-850 border border-slate-200/80 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700 text-xs transition-colors block cursor-pointer"
             >
-              <div className="font-bold text-slate-900 dark:text-white truncate">Investors & VCs</div>
-              <div className="text-[10px] text-purple-600 dark:text-purple-400">Active funds & angels →</div>
+              <div className="font-semibold text-slate-900 dark:text-white truncate">Investors</div>
+              <div className="text-[10px] text-purple-600 dark:text-purple-400">VCs & angels →</div>
             </Link>
           </div>
         </div>
 
         {/* Login Form */}
-        <div className="p-8 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-xl">
+        <div className="card-base p-6 sm:p-7 shadow-xs">
           
           {/* Continue With Google Button */}
           <button
             type="button"
             onClick={handleGoogleSignInClick}
             disabled={googleLoading || loading}
-            className="w-full inline-flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 hover:bg-slate-50 dark:hover:bg-dark-800 text-sm font-bold text-slate-700 dark:text-slate-200 shadow-xs transition-all hover:border-slate-300 dark:hover:border-slate-600 active:scale-[0.99] disabled:opacity-50"
+            className="btn-secondary w-full inline-flex items-center justify-center gap-2.5 py-2 px-4 text-xs font-semibold disabled:opacity-50"
           >
             {googleLoading ? (
               <>
-                <RefreshCw size={18} className="animate-spin text-brand-500" />
+                <RefreshCw size={15} className="animate-spin text-brand-600" />
                 <span>Redirecting to Google...</span>
               </>
             ) : (
               <>
-                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
                     d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
@@ -232,12 +232,12 @@ export const LoginPage: React.FC = () => {
           </button>
 
           {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200 dark:border-slate-800" />
+              <div className="w-full border-t border-slate-200 dark:border-dark-800" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white dark:bg-dark-900 px-3 text-slate-400 font-semibold tracking-wider text-[11px]">
+              <span className="bg-white dark:bg-dark-900 px-2.5 text-slate-400 font-medium tracking-wider text-[11px]">
                 Or sign in with password
               </span>
             </div>
@@ -245,14 +245,14 @@ export const LoginPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3.5 text-xs rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 space-y-2.5">
+              <div className="p-3 text-xs rounded-md bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 space-y-2">
                 <div className="flex items-start gap-2">
-                  <AlertCircle size={16} className="shrink-0 text-rose-500 mt-0.5" />
-                  <span className="font-semibold leading-relaxed">{error}</span>
+                  <AlertCircle size={15} className="shrink-0 text-rose-500 mt-0.5" />
+                  <span className="font-medium leading-relaxed">{error}</span>
                 </div>
 
                 {/* Helpful troubleshooting options */}
-                <div className="pt-2 border-t border-rose-200/60 dark:border-rose-900/60 space-y-1.5 text-[11px]">
+                <div className="pt-2 border-t border-rose-200/60 dark:border-rose-900/60 space-y-1 text-[11px]">
                   {isEmailUnconfirmed && (
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <span className="text-slate-600 dark:text-slate-400">
@@ -262,7 +262,7 @@ export const LoginPage: React.FC = () => {
                         type="button"
                         disabled={resending}
                         onClick={handleResendVerification}
-                        className="font-bold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer disabled:opacity-50"
+                        className="font-medium text-brand-600 dark:text-brand-400 hover:underline cursor-pointer disabled:opacity-50"
                       >
                         {resending ? 'Sending...' : 'Resend verification email'}
                       </button>
@@ -275,7 +275,7 @@ export const LoginPage: React.FC = () => {
                     </span>
                     <Link
                       to="/forgot-password"
-                      className="font-bold text-brand-600 dark:text-brand-400 hover:underline"
+                      className="font-medium text-brand-600 dark:text-brand-400 hover:underline"
                     >
                       Reset password →
                     </Link>
@@ -285,9 +285,9 @@ export const LoginPage: React.FC = () => {
             )}
 
             {resendSuccess && (
-              <div className="p-3 text-xs rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 flex items-center gap-2">
-                <CheckCircle2 size={16} className="shrink-0 text-emerald-500" />
-                <span>Verification email sent! Please check your inbox and spam folder.</span>
+              <div className="p-2.5 text-xs rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 flex items-center gap-2">
+                <CheckCircle2 size={15} className="shrink-0 text-emerald-500" />
+                <span>Verification email sent! Please check your inbox.</span>
               </div>
             )}
 
@@ -297,7 +297,7 @@ export const LoginPage: React.FC = () => {
                 <span className="text-[10px] text-slate-400 font-normal lowercase">proceed by password</span>
               </label>
               <div className="relative">
-                <Mail size={16} className="absolute left-3.5 top-3 text-slate-400" />
+                <Mail size={15} className="absolute left-3 top-2.5 text-slate-400" />
                 <input
                   type="text"
                   required
@@ -305,12 +305,9 @@ export const LoginPage: React.FC = () => {
                   disabled={loading}
                   onChange={(e) => setIdentifier(e.target.value)}
                   placeholder="e.g. yourname@gmail.com, ruthwik, or user"
-                  className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60"
+                  className="input-base w-full pl-9 pr-3 py-2 text-xs disabled:opacity-60"
                 />
               </div>
-              <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-                Enter your Gmail, username, or email address to sign in with your password.
-              </p>
             </div>
 
             <div>
@@ -326,7 +323,7 @@ export const LoginPage: React.FC = () => {
                 </Link>
               </div>
               <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-3 text-slate-400" />
+                <Lock size={15} className="absolute left-3 top-2.5 text-slate-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
@@ -334,7 +331,7 @@ export const LoginPage: React.FC = () => {
                   disabled={loading}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-10 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60"
+                  className="input-base w-full pl-9 pr-9 py-2 text-xs disabled:opacity-60"
                 />
                 <button
                   type="button"
@@ -342,7 +339,7 @@ export const LoginPage: React.FC = () => {
                   className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
             </div>
@@ -350,26 +347,26 @@ export const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-500/25 transition-all disabled:opacity-50 mt-2"
+              className="btn-primary w-full py-2.5 text-xs font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-50 mt-1"
             >
               {loading ? (
                 <>
-                  <RefreshCw size={16} className="animate-spin" />
+                  <RefreshCw size={14} className="animate-spin" />
                   <span>Signing in...</span>
                 </>
               ) : (
                 <>
                   <span>Sign In</span>
-                  <ArrowRight size={16} />
+                  <ArrowRight size={14} />
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 text-center">
+          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-dark-800 text-center">
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Don't have a StartupZ account yet?{' '}
-              <Link to="/register" className="font-bold text-brand-600 dark:text-brand-400 hover:underline">
+              <Link to="/register" className="font-semibold text-brand-600 dark:text-brand-400 hover:underline">
                 Create an account
               </Link>
             </p>

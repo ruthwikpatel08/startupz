@@ -179,45 +179,40 @@ export const ProblemsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
         {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-8 sm:p-12 shadow-xl border border-indigo-900/50">
-          
-          {/* Subtle Ambient Glow */}
-          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-brand-500/10 blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-            <div className="max-w-3xl space-y-4">
+        <div className="card-base p-6 sm:p-8 bg-slate-900 text-white dark:bg-dark-900 border-slate-800 shadow-xs">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="max-w-3xl space-y-3.5">
               
               {/* Badge & Language Toggle */}
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
-                  <Globe size={13} className="text-cyan-400" />
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-brand-950/60 text-brand-300 border border-brand-800/60">
+                  <Globe size={13} className="text-brand-400" />
                   <span>{t.heroBadge}</span>
                 </div>
 
                 {/* i18n Selector */}
-                <div className="flex items-center gap-1 bg-white/10 backdrop-blur-xs rounded-xl p-1 text-[11px] font-bold">
-                  <Languages size={12} className="text-slate-300 ml-1.5" />
+                <div className="flex items-center gap-0.5 bg-slate-800 rounded-md p-0.5 text-xs font-medium">
+                  <Languages size={13} className="text-slate-400 ml-1.5" />
                   <button
                     onClick={() => setCurrentLang('en')}
-                    className={`px-2 py-0.5 rounded-lg transition-colors ${
-                      currentLang === 'en' ? 'bg-white/20 text-white' : 'text-slate-300 hover:text-white'
+                    className={`px-2 py-0.5 rounded transition-colors ${
+                      currentLang === 'en' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'
                     }`}
                   >
                     EN
                   </button>
                   <button
                     onClick={() => setCurrentLang('es')}
-                    className={`px-2 py-0.5 rounded-lg transition-colors ${
-                      currentLang === 'es' ? 'bg-white/20 text-white' : 'text-slate-300 hover:text-white'
+                    className={`px-2 py-0.5 rounded transition-colors ${
+                      currentLang === 'es' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'
                     }`}
                   >
                     ES
                   </button>
                   <button
                     onClick={() => setCurrentLang('hi')}
-                    className={`px-2 py-0.5 rounded-lg transition-colors ${
-                      currentLang === 'hi' ? 'bg-white/20 text-white' : 'text-slate-300 hover:text-white'
+                    className={`px-2 py-0.5 rounded transition-colors ${
+                      currentLang === 'hi' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'
                     }`}
                   >
                     HI
@@ -226,49 +221,49 @@ export const ProblemsPage: React.FC = () => {
               </div>
 
               {/* Main Heading */}
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
                 {t.heroTitle}
               </h1>
 
               {/* Subtitle */}
-              <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
                 {t.heroSubtitle}
               </p>
 
               {/* Stats Ticker */}
-              <div className="grid grid-cols-3 gap-4 pt-3 max-w-lg">
+              <div className="grid grid-cols-3 gap-4 pt-2 max-w-md">
                 <div className="border-l-2 border-brand-500 pl-3">
-                  <div className="text-xl sm:text-2xl font-black text-white">10+</div>
-                  <div className="text-[11px] text-slate-400 font-semibold">{t.stat1Desc}</div>
+                  <div className="text-lg font-bold text-white">10+</div>
+                  <div className="text-[11px] text-slate-400 font-medium">{t.stat1Desc}</div>
                 </div>
-                <div className="border-l-2 border-cyan-500 pl-3">
-                  <div className="text-xl sm:text-2xl font-black text-white">9</div>
-                  <div className="text-[11px] text-slate-400 font-semibold">{t.stat2Desc}</div>
+                <div className="border-l-2 border-slate-700 pl-3">
+                  <div className="text-lg font-bold text-white">9</div>
+                  <div className="text-[11px] text-slate-400 font-medium">{t.stat2Desc}</div>
                 </div>
-                <div className="border-l-2 border-purple-500 pl-3">
-                  <div className="text-xl sm:text-2xl font-black text-white">AI-Native</div>
-                  <div className="text-[11px] text-slate-400 font-semibold">{t.stat3Desc}</div>
+                <div className="border-l-2 border-slate-700 pl-3">
+                  <div className="text-lg font-bold text-white">AI-Native</div>
+                  <div className="text-[11px] text-slate-400 font-medium">{t.stat3Desc}</div>
                 </div>
               </div>
             </div>
 
             {/* Quick Actions (Admin Create & Co-Founder matching) */}
-            <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-2 shrink-0">
               {user?.isAdmin && (
                 <Link
                   to="/admin/problems/create"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 shadow-lg shadow-brand-500/25 transition-all hover:scale-105"
+                  className="btn-primary py-2 px-4 text-xs font-semibold inline-flex items-center justify-center gap-1.5"
                 >
-                  <Plus size={16} />
+                  <Plus size={14} />
                   <span>{t.createNew}</span>
                 </Link>
               )}
 
               <Link
                 to="/cofounders"
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-xs font-bold text-slate-200 bg-white/10 hover:bg-white/15 border border-white/10 backdrop-blur-xs transition-all hover:scale-105"
+                className="btn-secondary py-2 px-4 text-xs font-medium inline-flex items-center justify-center gap-1.5"
               >
-                <HeartHandshake size={16} className="text-brand-400" />
+                <HeartHandshake size={14} className="text-brand-500" />
                 <span>Find Teammates by Mission</span>
               </Link>
             </div>
@@ -300,10 +295,10 @@ export const ProblemsPage: React.FC = () => {
             {[1, 2, 3, 4, 5, 6].map((idx) => (
               <div
                 key={idx}
-                className="h-80 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-xs animate-pulse space-y-4"
+                className="h-80 card-base p-6 animate-pulse space-y-4"
               >
-                <div className="h-6 w-1/3 bg-slate-200 dark:bg-slate-800 rounded-full" />
-                <div className="h-6 w-3/4 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+                <div className="h-5 w-1/3 bg-slate-200 dark:bg-dark-800 rounded" />
+                <div className="h-5 w-3/4 bg-slate-200 dark:bg-dark-800 rounded" />
                 <div className="space-y-2">
                   <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-lg" />
                   <div className="h-4 w-5/6 bg-slate-100 dark:bg-slate-800 rounded-lg" />

@@ -4,7 +4,7 @@ import { Modal } from './Modal';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Rocket, Sparkles, CheckCircle2, ShieldAlert, Lock } from 'lucide-react';
+import { Rocket, CheckCircle2, ShieldAlert, Lock } from 'lucide-react';
 
 interface StartupConnectionModalProps {
   isOpen: boolean;
@@ -106,27 +106,27 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
           onClose();
         }
       }}
-      title="🚀 Propose Co-Founding a Startup"
+      title="Propose Startup Collaboration"
       maxWidth="lg"
     >
       {!user ? (
         <div className="py-6 text-center space-y-4">
-          <div className="w-12 h-12 mx-auto rounded-full bg-brand-50 dark:bg-brand-950/60 flex items-center justify-center text-brand-600 dark:text-brand-400">
-            <Lock size={24} />
+          <div className="w-10 h-10 mx-auto rounded-md bg-slate-100 dark:bg-dark-800 flex items-center justify-center text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+            <Lock size={18} />
           </div>
           <div className="space-y-1">
-            <h4 className="text-base font-bold text-slate-900 dark:text-white">
+            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
               Sign In Required
             </h4>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Please sign in to send a formal startup co-founder proposal to {displayName}.
+              Please sign in to send a formal startup proposal to {displayName}.
             </p>
           </div>
           <div className="flex items-center justify-center gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              className="btn-secondary"
             >
               Cancel
             </button>
@@ -136,55 +136,55 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
                 onClose();
                 navigate('/login');
               }}
-              className="px-5 py-2 text-xs font-bold rounded-xl text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-500/25 cursor-pointer"
+              className="btn-primary"
             >
               Sign In to Propose
             </button>
           </div>
         </div>
       ) : success ? (
-        <div className="py-8 text-center space-y-3">
-          <div className="w-14 h-14 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-            <CheckCircle2 size={32} />
+        <div className="py-8 text-center space-y-2">
+          <div className="w-10 h-10 mx-auto rounded-md bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+            <CheckCircle2 size={20} />
           </div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-            Startup Proposal Sent!
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+            Startup Proposal Sent
           </h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            {displayName} has been notified and can review your venture idea, proposed role, and equity breakdown.
+            {displayName} has been notified and can review your venture idea and terms.
           </p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Target Profile Card */}
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-3 p-2.5 rounded-md bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800">
             <img
               src={avatar}
               alt={displayName}
-              className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
+              className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
             />
             <div className="min-w-0 flex-1">
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-white truncate">
                 {displayName}
               </h4>
-              <p className="text-xs text-slate-500 line-clamp-1">
+              <p className="text-[11px] text-slate-500 truncate">
                 {targetUser.profile?.headline || 'Startup Builder'}
               </p>
             </div>
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand-50 dark:bg-brand-950/60 text-brand-600 border border-brand-200 dark:border-brand-800">
+            <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-900">
               Co-Founder Pitch
             </span>
           </div>
 
           {error && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2">
-              <ShieldAlert size={16} className="shrink-0 mt-0.5" />
+            <div className="p-2.5 rounded-md bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-xs text-rose-600 dark:text-rose-400 flex items-start gap-2">
+              <ShieldAlert size={14} className="shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
               Venture / Startup Idea Name *
             </label>
             <input
@@ -192,20 +192,20 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
               required
               value={ideaTitle}
               onChange={(e) => setIdeaTitle(e.target.value)}
-              placeholder="e.g. NexusAI — Autonomous CRM for Founders"
-              className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              placeholder="e.g. NexusAI — Enterprise CRM for Startups"
+              className="input-base"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Proposed Role for {displayName}
               </label>
               <select
                 value={proposedRole}
                 onChange={(e) => setProposedRole(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="input-base"
               >
                 <option value="Technical Co-Founder">Technical Co-Founder (CTO)</option>
                 <option value="Product Co-Founder">Product Co-Founder (CPO)</option>
@@ -217,13 +217,13 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Proposed Equity Split
               </label>
               <select
                 value={proposedEquity}
                 onChange={(e) => setProposedEquity(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="input-base"
               >
                 <option value="50/50 Equal Partnership">50/50 Equal Partnership</option>
                 <option value="30% - 40% Co-Founder Equity">30% - 40% Co-Founder Equity</option>
@@ -235,7 +235,7 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
               The Pitch & Problem You're Solving *
             </label>
             <textarea
@@ -244,25 +244,25 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
               value={pitchDescription}
               onChange={(e) => setPitchDescription(e.target.value)}
               placeholder="Explain the problem you're addressing, your early validation, current traction or MVP progress, and why you want to team up with them specifically..."
-              className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+              className="input-base resize-none"
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-2">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+              className="btn-secondary"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 rounded-xl shadow-md transition-all disabled:opacity-50"
+              className="btn-primary"
             >
-              <Rocket size={14} />
-              <span>{loading ? 'Sending Proposal...' : 'Send Startup Proposal'}</span>
+              <Rocket size={13} />
+              <span>{loading ? 'Sending Proposal...' : 'Send Proposal'}</span>
             </button>
           </div>
         </form>

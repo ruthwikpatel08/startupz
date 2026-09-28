@@ -107,7 +107,7 @@ export const StartupDetailPage: React.FC = () => {
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16">
-        <div className="h-64 rounded-3xl bg-slate-100 dark:bg-dark-850 animate-pulse" />
+        <div className="h-64 card-base bg-slate-50 dark:bg-dark-900 animate-pulse" />
       </div>
     );
   }
@@ -128,19 +128,19 @@ export const StartupDetailPage: React.FC = () => {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
       {/* 1. HERO HEADER */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+      <div className="card-base p-6 sm:p-7 space-y-6">
         
         {/* Top Badges & Actions */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 uppercase tracking-wider">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-900/60 uppercase tracking-wider">
               {startup.stage} STAGE
             </span>
-            <span className="text-xs font-semibold text-slate-400 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-800">
+            <span className="text-xs font-medium text-slate-500 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-850 border border-slate-200/60 dark:border-dark-700/60">
               {startup.industry}
             </span>
             {startup.isConfidential && (
-              <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
                 <Lock size={12} /> Confidential Idea
               </span>
             )}
@@ -150,56 +150,56 @@ export const StartupDetailPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={handleFollow}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                 startup.isFollowed
-                  ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                  : 'bg-brand-600 hover:bg-brand-500 text-white'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                  : 'btn-primary'
               }`}
             >
               <UserCheck size={14} />
               <span>{startup.isFollowed ? 'Following' : 'Follow Startup'}</span>
-              <span className="ml-1 px-1.5 py-0.5 rounded-full text-[10px] bg-black/10 dark:bg-white/10">
+              <span className="ml-1 px-1.5 py-0.2 rounded text-[10px] bg-black/10 dark:bg-white/10 font-medium">
                 {startup.followersCount ?? 0}
               </span>
             </button>
 
             <button
               onClick={handleLike}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors border ${
                 startup.isLiked
-                  ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600'
-                  : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 hover:text-rose-500'
+                  ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 border-rose-200 dark:border-rose-900'
+                  : 'bg-white dark:bg-dark-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:text-rose-500'
               }`}
             >
-              <Heart size={15} fill={startup.isLiked ? 'currentColor' : 'none'} />
+              <Heart size={14} fill={startup.isLiked ? 'currentColor' : 'none'} />
               <span>{startup.likesCount}</span>
             </button>
 
             <button
               onClick={handleSave}
-              className={`p-2 rounded-xl transition-colors ${
+              className={`p-2 rounded-md transition-colors border ${
                 startup.isSaved
-                  ? 'bg-brand-50 dark:bg-brand-950 text-brand-600'
-                  : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 hover:text-brand-600'
+                  ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 border-brand-200 dark:border-brand-900'
+                  : 'bg-white dark:bg-dark-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:text-brand-600'
               }`}
               title="Save Startup"
             >
-              <Bookmark size={15} fill={startup.isSaved ? 'currentColor' : 'none'} />
+              <Bookmark size={14} fill={startup.isSaved ? 'currentColor' : 'none'} />
             </button>
 
             <button
               onClick={handleShare}
-              className="p-2 rounded-xl bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 hover:text-brand-600"
+              className="p-2 rounded-md bg-white dark:bg-dark-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-dark-700 hover:text-brand-600 transition-colors"
               title="Share"
             >
-              <Share2 size={15} />
+              <Share2 size={14} />
             </button>
 
             <button
               onClick={() => setFeedbackOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-brand-600 to-cyan-600 hover:from-brand-700 hover:to-cyan-700 shadow-md"
+              className="btn-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
             >
-              <Sparkles size={14} /> AI Validation
+              <Sparkles size={14} className="text-brand-600" /> AI Validation
             </button>
           </div>
         </div>
@@ -209,10 +209,10 @@ export const StartupDetailPage: React.FC = () => {
           <img
             src={startup.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${startup.name}`}
             alt=""
-            className="w-20 h-20 rounded-2xl object-cover border border-slate-200 dark:border-slate-800 shadow-sm shrink-0"
+            className="w-16 h-16 rounded-lg object-cover border border-slate-200 dark:border-dark-700 shrink-0"
           />
           <div className="space-y-1.5">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
               {startup.name}
             </h1>
             <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
@@ -249,57 +249,57 @@ export const StartupDetailPage: React.FC = () => {
         </div>
 
         {/* Quick Highlights Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-100 dark:border-slate-800 text-xs">
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850">
-            <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Funding Status</span>
-            <span className="font-bold text-slate-900 dark:text-white mt-0.5 block">{startup.fundingStatus || 'Bootstrapped'}</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-100 dark:border-dark-800 text-xs">
+          <div className="p-3 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800">
+            <span className="text-slate-400 text-[10px] uppercase font-semibold tracking-wider block">Funding Status</span>
+            <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">{startup.fundingStatus || 'Bootstrapped'}</span>
           </div>
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850">
-            <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Round Target</span>
-            <span className="font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 block">{startup.fundingRequired || 'Not specified'}</span>
+          <div className="p-3 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800">
+            <span className="text-slate-400 text-[10px] uppercase font-semibold tracking-wider block">Round Target</span>
+            <span className="font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5 block">{startup.fundingRequired || 'Not specified'}</span>
           </div>
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850">
-            <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Business Model</span>
-            <span className="font-bold text-slate-900 dark:text-white mt-0.5 block">{startup.businessModel || 'SaaS'}</span>
+          <div className="p-3 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800">
+            <span className="text-slate-400 text-[10px] uppercase font-semibold tracking-wider block">Business Model</span>
+            <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">{startup.businessModel || 'SaaS'}</span>
           </div>
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850">
-            <span className="text-slate-400 text-[10px] uppercase font-bold tracking-wider block">Team Size</span>
-            <span className="font-bold text-slate-900 dark:text-white mt-0.5 block">{startup.teamSize || 1} Builders</span>
+          <div className="p-3 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800">
+            <span className="text-slate-400 text-[10px] uppercase font-semibold tracking-wider block">Team Size</span>
+            <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">{startup.teamSize || 1} Builders</span>
           </div>
         </div>
 
       </div>
 
       {/* 2. MAIN PROBLEM / SOLUTION / DETAILS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Left Column (2 Cols): Problem, Solution, Traction */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-5">
           
           {/* Problem Statement Card */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-            <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs uppercase tracking-wider">
-              <AlertCircle size={16} /> Problem We Are Solving
+          <div className="card-base p-5 sm:p-6 space-y-3">
+            <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-semibold text-xs uppercase tracking-wider">
+              <AlertCircle size={15} /> Problem We Are Solving
             </div>
-            <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed font-normal">
+            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-normal">
               {startup.problem}
             </p>
           </div>
 
           {/* Solution & Value Proposition */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wider">
-              <CheckCircle2 size={16} /> Our Solution & Technology
+          <div className="card-base p-5 sm:p-6 space-y-3">
+            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-xs uppercase tracking-wider">
+              <CheckCircle2 size={15} /> Our Solution & Technology
             </div>
-            <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed font-normal">
+            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-normal">
               {startup.solution}
             </p>
           </div>
 
           {/* Target Customers & Traction */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-5 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+            <div className="card-base p-4 sm:p-5 space-y-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
                 Target Customer Profile
               </span>
               <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -307,8 +307,8 @@ export const StartupDetailPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="p-5 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+            <div className="card-base p-4 sm:p-5 space-y-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
                 Current Traction & Milestones
               </span>
               <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -319,15 +319,15 @@ export const StartupDetailPage: React.FC = () => {
 
           {/* Required Skills */}
           {startup.requiredSkills && (
-            <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-              <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+            <div className="card-base p-5 sm:p-6 space-y-3">
+              <h4 className="font-semibold text-sm text-slate-900 dark:text-white">
                 Looking for Collaborators & Co-Founders with Skills:
               </h4>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {startup.requiredSkills.split(',').map((sk, idx) => (
                   <span
                     key={idx}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-900"
+                    className="px-2.5 py-1 rounded-md text-xs font-medium bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-900/60"
                   >
                     {sk.trim()}
                   </span>
@@ -338,25 +338,25 @@ export const StartupDetailPage: React.FC = () => {
 
           {/* Open Opportunities for this startup */}
           {startup.opportunities && startup.opportunities.length > 0 && (
-            <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-              <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+            <div className="card-base p-5 sm:p-6 space-y-4">
+              <h4 className="font-semibold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                 <Briefcase size={16} className="text-brand-600" /> Open Opportunities at {startup.name}
               </h4>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {startup.opportunities.map((opp) => (
                   <div
                     key={opp.id}
-                    className="p-4 rounded-2xl bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                    className="p-3.5 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200/60 dark:border-dark-700/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                   >
                     <div>
-                      <h5 className="font-bold text-xs text-slate-900 dark:text-white">{opp.role}</h5>
+                      <h5 className="font-semibold text-xs text-slate-900 dark:text-white">{opp.role}</h5>
                       <p className="text-[11px] text-slate-500 mt-0.5">
                         {opp.commitment} • {opp.compensation} • {opp.workplaceType}
                       </p>
                     </div>
                     <Link
                       to="/opportunities"
-                      className="px-3.5 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs"
+                      className="btn-primary px-3 py-1.5 text-xs font-medium"
                     >
                       Apply Now
                     </Link>
@@ -369,11 +369,11 @@ export const StartupDetailPage: React.FC = () => {
         </div>
 
         {/* Right Column: Founder Card & Team */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           
           {/* Founder Card */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+          <div className="card-base p-5 sm:p-6 space-y-4">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
               FOUNDER
             </span>
             <div className="flex items-center gap-3">
@@ -383,12 +383,12 @@ export const StartupDetailPage: React.FC = () => {
                   `https://api.dicebear.com/7.x/initials/svg?seed=${startup.founder?.profile?.fullName}`
                 }
                 alt=""
-                className="w-14 h-14 rounded-2xl object-cover border border-slate-200 dark:border-slate-700"
+                className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-dark-700"
               />
               <div className="min-w-0 flex-1">
                 <Link
                   to={`/profile/${startup.founder?.id}`}
-                  className="font-bold text-sm text-slate-900 dark:text-white hover:text-brand-600 block truncate"
+                  className="font-semibold text-sm text-slate-900 dark:text-white hover:text-brand-600 block truncate"
                 >
                   {startup.founder?.profile?.fullName || 'Founder'}
                 </Link>
@@ -404,52 +404,52 @@ export const StartupDetailPage: React.FC = () => {
             </div>
 
             {startup.founder?.profile?.bio && (
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-100 dark:border-slate-800 pt-3">
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-100 dark:border-dark-800 pt-3">
                 {startup.founder.profile.bio}
               </p>
             )}
 
             <button
               onClick={() => setConnectUser(startup.founder || null)}
-              className="w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md transition-all"
+              className="w-full btn-primary inline-flex items-center justify-center gap-2 py-2 text-xs font-medium"
             >
               <span>Connect with Founder</span>
-              <ArrowRight size={14} />
+              <ArrowRight size={13} />
             </button>
           </div>
 
           {/* Team Members */}
-          <div className="p-6 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+          <div className="card-base p-5 sm:p-6 space-y-3">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
               STARTUP TEAM ({startup.teamSize || (startup.members?.length || 0) + 1})
             </span>
             <div className="space-y-2">
-              <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 dark:bg-dark-850">
+              <div className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800">
                 <img
                   src={startup.founder?.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${startup.founder?.profile?.fullName}`}
                   alt=""
-                  className="w-8 h-8 rounded-full object-cover"
+                  className="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-dark-700"
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                  <div className="font-semibold text-xs text-slate-900 dark:text-white truncate">
                     {startup.founder?.profile?.fullName}
                   </div>
-                  <div className="text-[10px] text-brand-600 font-semibold">Founder / CEO</div>
+                  <div className="text-[10px] text-brand-600 font-medium">Founder / CEO</div>
                 </div>
               </div>
 
               {startup.members?.map((m) => (
-                <div key={m.id} className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 dark:bg-dark-850">
+                <div key={m.id} className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800">
                   <img
                     src={m.user?.profile?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${m.user?.profile?.fullName || m.id}`}
                     alt=""
-                    className="w-8 h-8 rounded-full object-cover"
+                    className="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-dark-700"
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                    <div className="font-semibold text-xs text-slate-900 dark:text-white truncate">
                       {m.user?.profile?.fullName || 'Team Member'}
                     </div>
-                    <div className="text-[10px] text-slate-500 font-semibold">{m.role}</div>
+                    <div className="text-[10px] text-slate-500 font-medium">{m.role}</div>
                   </div>
                 </div>
               ))}

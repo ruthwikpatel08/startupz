@@ -4,7 +4,7 @@ import { Modal } from './Modal';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { Investor, Startup } from '../../types';
-import { Send, CheckCircle, TrendingUp, Lock } from 'lucide-react';
+import { Send, CheckCircle, Lock } from 'lucide-react';
 
 interface SendPitchModalProps {
   investor: Investor | null;
@@ -88,20 +88,20 @@ export const SendPitchModal: React.FC<SendPitchModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title={`Pitch to ${investor.organization}`} maxWidth="lg">
       {!user ? (
         <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <Lock size={24} />
+          <div className="w-10 h-10 rounded-md bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+            <Lock size={18} />
           </div>
           <div className="space-y-1">
-            <h4 className="text-base font-bold text-slate-900 dark:text-white">Sign In Required to Send Pitch</h4>
+            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Sign In Required to Send Pitch</h4>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
-              Please sign in to pitch your startup or venture directly to {investor.organization}.
+              Please sign in to pitch your startup directly to {investor.organization}.
             </p>
           </div>
           <div className="flex items-center gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              className="btn-secondary"
             >
               Cancel
             </button>
@@ -111,37 +111,37 @@ export const SendPitchModal: React.FC<SendPitchModalProps> = ({
                 onClose();
                 navigate('/login');
               }}
-              className="px-5 py-2 text-xs font-bold rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-500/25 cursor-pointer"
+              className="btn-primary"
             >
               Sign In to Pitch
             </button>
           </div>
         </div>
       ) : sent ? (
-        <div className="flex flex-col items-center justify-center py-8 text-center space-y-3">
-          <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <CheckCircle size={28} />
+        <div className="flex flex-col items-center justify-center py-8 text-center space-y-2">
+          <div className="w-10 h-10 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-800">
+            <CheckCircle size={20} />
           </div>
-          <h4 className="text-lg font-bold text-slate-900 dark:text-white">Pitch Dispatched!</h4>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {investor.user?.profile?.fullName || investor.organization} will review your startup profile and materials.
+          <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Pitch Dispatched</h4>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {investor.user?.profile?.fullName || investor.organization} will review your startup profile.
           </p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+          <div className="p-2.5 rounded-md bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
             <div>
               <span className="font-semibold text-slate-900 dark:text-white">{investor.organization}</span>
               <span className="text-slate-400 mx-1.5">•</span>
               <span className="text-slate-500 dark:text-slate-400">{investor.investorType}</span>
             </div>
-            <div className="text-emerald-600 dark:text-emerald-400 font-medium">
-              Check: {investor.minCheckSize || '$25K'} - {investor.maxCheckSize || '$250K'}
+            <div className="text-emerald-600 dark:text-emerald-400 font-medium text-[11px]">
+              Check Size: {investor.minCheckSize || '$25K'} - {investor.maxCheckSize || '$250K'}
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
               Select Startup to Pitch
             </label>
             {fetchingStartups ? (
@@ -150,7 +150,7 @@ export const SendPitchModal: React.FC<SendPitchModalProps> = ({
               <select
                 value={selectedStartupId}
                 onChange={(e) => setSelectedStartupId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="input-base"
               >
                 {myStartups.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -166,7 +166,7 @@ export const SendPitchModal: React.FC<SendPitchModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
               Executive Summary & Traction Highlights *
             </label>
             <textarea
@@ -175,12 +175,12 @@ export const SendPitchModal: React.FC<SendPitchModalProps> = ({
               onChange={(e) => setPitchSummary(e.target.value)}
               placeholder="State what problem you solve, your current revenue or user growth (e.g. 5,000 active users, $12k MRR), and your round target..."
               rows={4}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="input-base resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
               Pitch Deck or Demo Link
             </label>
             <input
@@ -188,31 +188,31 @@ export const SendPitchModal: React.FC<SendPitchModalProps> = ({
               value={pitchDeckUrl}
               onChange={(e) => setPitchDeckUrl(e.target.value)}
               placeholder="https://docsend.com/view/..."
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="input-base"
             />
           </div>
 
           {error && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-medium">
+            <div className="p-2.5 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs border border-rose-200 dark:border-rose-900">
               {error}
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="btn-secondary"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl text-white bg-emerald-600 hover:bg-emerald-500 shadow-md shadow-emerald-500/20 disabled:opacity-50 transition-all hover:scale-[1.02]"
+              className="btn-primary"
             >
-              <Send size={15} />
-              {loading ? 'Submitting...' : 'Send Pitch'}
+              <Send size={13} />
+              <span>{loading ? 'Submitting...' : 'Send Pitch'}</span>
             </button>
           </div>
         </form>

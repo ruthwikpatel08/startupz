@@ -37,41 +37,41 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-900 text-white font-sans">
-          <div className="max-w-md w-full p-8 rounded-3xl bg-slate-800 border border-slate-700 shadow-2xl text-center space-y-6">
-            <div className="w-16 h-16 bg-rose-500/20 text-rose-400 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
-              <AlertTriangle size={32} />
+        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 dark:bg-dark-950 text-slate-900 dark:text-white font-sans">
+          <div className="card-base max-w-md w-full p-8 text-center space-y-5 shadow-sm">
+            <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-lg flex items-center justify-center mx-auto border border-rose-200/60 dark:border-rose-900/40">
+              <AlertTriangle size={24} />
             </div>
 
-            <div className="space-y-2">
-              <h2 className="text-2xl font-black tracking-tight text-white">
+            <div className="space-y-1.5">
+              <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
                 Something went wrong
               </h2>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 An unexpected interface error occurred. You can reset cache and return to the homepage below.
               </p>
             </div>
 
             {this.state.error?.message && (
-              <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-700/60 text-xs text-rose-300 font-mono text-left max-h-32 overflow-auto break-words">
+              <div className="p-3 rounded-md bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-dark-700 text-xs text-rose-600 dark:text-rose-400 font-mono text-left max-h-32 overflow-auto break-words">
                 {this.state.error.message}
               </div>
             )}
 
-            <div className="space-y-3 pt-2">
+            <div className="space-y-2 pt-2">
               <button
                 type="button"
                 onClick={this.handleReset}
-                className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="btn-primary w-full py-2.5 px-4 text-xs font-semibold flex items-center justify-center gap-2"
               >
-                <RefreshCw size={15} />
+                <RefreshCw size={14} />
                 <span>Reset Cache & Return Home</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="w-full py-2.5 px-4 rounded-xl border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-700/50 transition-colors cursor-pointer"
+                className="btn-secondary w-full py-2 px-4 text-xs font-semibold"
               >
                 Reload Page
               </button>

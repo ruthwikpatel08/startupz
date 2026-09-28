@@ -309,20 +309,20 @@ export const AuthCallbackPage: React.FC = () => {
   if (errorMessage) {
     return (
       <div className="min-h-[75vh] flex items-center justify-center p-4">
-        <div className="max-w-md w-full p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl text-center space-y-5">
-          <div className="w-14 h-14 bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mx-auto">
-            <AlertCircle size={28} />
+        <div className="card-base max-w-md w-full p-8 text-center space-y-5">
+          <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-lg flex items-center justify-center mx-auto border border-rose-200/60 dark:border-rose-900/40">
+            <AlertCircle size={24} />
           </div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">
             Authentication Notice
           </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
             {errorMessage}
           </p>
           <div className="pt-2">
             <button
               onClick={() => navigate('/login')}
-              className="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl shadow-md transition-all text-sm cursor-pointer"
+              className="btn-primary w-full py-2.5 px-4 text-sm"
             >
               Back to Sign In
             </button>
@@ -335,26 +335,26 @@ export const AuthCallbackPage: React.FC = () => {
   // NEW USER CATEGORY & PROFILE SETUP VIEW
   if (isNewUser) {
     return (
-      <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="max-w-3xl w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8 animate-in fade-in duration-300">
+      <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 flex items-center justify-center bg-slate-50 dark:bg-dark-950">
+        <div className="card-base max-w-3xl w-full p-6 sm:p-10 space-y-8 animate-in fade-in duration-200">
           
           {/* Welcome Header */}
           <div className="text-center space-y-3">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 text-xs font-bold border border-brand-200 dark:border-brand-800">
-              <Sparkles size={13} /> Welcome to StartupZ
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-900/40">
+              <Sparkles size={12} className="text-brand-600 dark:text-brand-400" /> Welcome to StartupZ
             </div>
             
-            <div className="flex flex-col items-center gap-3 pt-2">
+            <div className="flex flex-col items-center gap-3 pt-1">
               <img
                 src={avatar}
                 alt={fullName}
-                className="w-16 h-16 rounded-full object-cover border-2 border-brand-500 shadow-md"
+                className="w-16 h-16 rounded-full object-cover border-2 border-brand-500 shadow-xs"
               />
               <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
                   Welcome, {fullName.split(' ')[0]}!
                 </h1>
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-lg mx-auto">
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-lg mx-auto leading-relaxed">
                   Which category do you belong to? Choose your role below so we place you in the right directory and connect you with matching co-founders, builders, or investors.
                 </p>
               </div>
@@ -365,7 +365,7 @@ export const AuthCallbackPage: React.FC = () => {
             
             {/* Category Selector Grid */}
             <div className="space-y-2.5">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 1. Select Which Category You Belong To
               </label>
 
@@ -379,31 +379,31 @@ export const AuthCallbackPage: React.FC = () => {
                       key={cat.id}
                       type="button"
                       onClick={() => handleCategorySelect(cat.id, cat.defaultHeadline)}
-                      className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 text-left ${
+                      className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
                         isSelected
-                          ? 'bg-brand-50 dark:bg-brand-950/80 border-brand-600 dark:border-brand-500 ring-2 ring-brand-500/30 shadow-md'
-                          : 'bg-slate-50/70 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/80 hover:border-brand-300 dark:hover:border-slate-600'
+                          ? 'bg-brand-50/60 dark:bg-brand-950/30 border-brand-600 dark:border-brand-500'
+                          : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-750 hover:border-slate-300 dark:hover:border-dark-600'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span
-                          className={`p-2 rounded-xl ${
+                          className={`p-1.5 rounded-md ${
                             isSelected
                               ? 'bg-brand-600 text-white'
-                              : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                              : 'bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300'
                           }`}
                         >
-                          <Icon size={18} />
+                          <Icon size={16} />
                         </span>
                         {isSelected && (
-                          <span className="w-5 h-5 rounded-full bg-brand-600 text-white flex items-center justify-center">
-                            <Check size={12} strokeWidth={3} />
+                          <span className="w-4 h-4 rounded-full bg-brand-600 text-white flex items-center justify-center">
+                            <Check size={10} strokeWidth={3} />
                           </span>
                         )}
                       </div>
 
                       <div>
-                        <div className="font-bold text-sm text-slate-900 dark:text-white">
+                        <div className="font-semibold text-sm text-slate-900 dark:text-white">
                           {cat.label}
                         </div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">
@@ -418,13 +418,13 @@ export const AuthCallbackPage: React.FC = () => {
 
             {/* Profile Fields */}
             <div className="space-y-4 pt-2">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 2. Confirm Your Details
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Full Name
                   </label>
                   <input
@@ -432,29 +432,29 @@ export const AuthCallbackPage: React.FC = () => {
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="input-base w-full text-xs sm:text-sm py-2"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Username
                   </label>
                   <div className="relative">
-                    <AtSign size={14} className="absolute left-3.5 top-3.5 text-slate-400" />
+                    <AtSign size={13} className="absolute left-3 top-3 text-slate-400" />
                     <input
                       type="text"
                       required
                       value={username}
                       onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="input-base w-full pl-8 text-xs sm:text-sm py-2"
                     />
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Professional Headline
                 </label>
                 <input
@@ -463,43 +463,43 @@ export const AuthCallbackPage: React.FC = () => {
                   value={headline}
                   onChange={(e) => setHeadline(e.target.value)}
                   placeholder="e.g. Co-Founder | Full Stack Engineer or Founder & CEO"
-                  className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="input-base w-full text-xs sm:text-sm py-2"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Location
                 </label>
                 <div className="relative">
-                  <MapPin size={14} className="absolute left-3.5 top-3.5 text-slate-400" />
+                  <MapPin size={13} className="absolute left-3 top-3 text-slate-400" />
                   <input
                     type="text"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     placeholder="e.g. Bengaluru, India or Remote"
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="input-base w-full pl-8 text-xs sm:text-sm py-2"
                   />
                 </div>
               </div>
             </div>
 
             {/* Submit Action */}
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+            <div className="pt-4 border-t border-slate-100 dark:border-dark-800">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-6 rounded-2xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm transition-all shadow-lg shadow-brand-500/25 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                className="btn-primary w-full py-2.5 px-4 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <>
-                    <RefreshCw size={16} className="animate-spin" />
+                    <RefreshCw size={15} className="animate-spin" />
                     <span>Saving Profile & Entering StartupZ...</span>
                   </>
                 ) : (
                   <>
                     <span>Complete Profile & Enter StartupZ</span>
-                    <ArrowRight size={16} />
+                    <ArrowRight size={15} />
                   </>
                 )}
               </button>
@@ -513,9 +513,9 @@ export const AuthCallbackPage: React.FC = () => {
   // DEFAULT CONNECTING LOADER
   return (
     <div className="min-h-[75vh] flex items-center justify-center p-4">
-      <div className="max-w-md w-full p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl text-center space-y-5">
-        <div className="w-14 h-14 bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 rounded-2xl flex items-center justify-center mx-auto">
-          <Rocket size={28} className="animate-pulse" />
+      <div className="card-base max-w-md w-full p-8 text-center space-y-4">
+        <div className="w-12 h-12 bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 rounded-lg flex items-center justify-center mx-auto border border-brand-100 dark:border-brand-900/40">
+          <Rocket size={22} className="animate-pulse" />
         </div>
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">
           Connecting to StartupZ...
@@ -524,7 +524,7 @@ export const AuthCallbackPage: React.FC = () => {
           Verifying your Google session and preparing your profile.
         </p>
         <div className="flex justify-center pt-2">
-          <RefreshCw size={22} className="text-brand-500 animate-spin" />
+          <RefreshCw size={20} className="text-brand-600 animate-spin" />
         </div>
       </div>
     </div>

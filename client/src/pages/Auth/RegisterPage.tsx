@@ -203,19 +203,19 @@ export const RegisterPage: React.FC = () => {
   if (verificationRequired) {
     return (
       <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full p-8 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-xl text-center space-y-6">
-          <div className="w-16 h-16 bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 rounded-3xl flex items-center justify-center mx-auto shadow-sm">
-            <MailCheck size={32} />
+        <div className="card-base max-w-md w-full p-6 sm:p-8 text-center space-y-5 shadow-xs">
+          <div className="w-12 h-12 bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400 rounded-lg flex items-center justify-center mx-auto border border-brand-200/50 dark:border-brand-900/50">
+            <MailCheck size={24} />
           </div>
 
-          <div className="space-y-2">
-            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+          <div className="space-y-1.5">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
               Check your email
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               We sent a verification link to:
             </p>
-            <p className="text-sm font-bold text-slate-900 dark:text-white font-mono bg-slate-50 dark:bg-dark-850 p-2 rounded-xl border border-slate-100 dark:border-slate-800">
+            <p className="text-xs font-medium text-slate-900 dark:text-white font-mono bg-slate-50 dark:bg-dark-850 py-2 px-3 rounded-md border border-slate-200 dark:border-dark-800">
               {email}
             </p>
           </div>
@@ -225,25 +225,25 @@ export const RegisterPage: React.FC = () => {
           </p>
 
           {resendSuccess && (
-            <div className="p-3 text-xs rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 flex items-center gap-2">
-              <CheckCircle2 size={16} className="shrink-0 text-emerald-500" />
+            <div className="p-2.5 text-xs rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 flex items-center gap-2 text-left">
+              <CheckCircle2 size={15} className="shrink-0 text-emerald-500" />
               <span>Verification email resent successfully!</span>
             </div>
           )}
 
-          <div className="pt-2 space-y-3">
+          <div className="pt-2 space-y-2.5">
             <button
               type="button"
               disabled={resending}
               onClick={handleResendVerification}
-              className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-dark-800 transition-colors disabled:opacity-50"
+              className="btn-secondary w-full py-2 px-4 text-xs font-medium disabled:opacity-50"
             >
               {resending ? 'Sending...' : 'Resend verification email'}
             </button>
 
             <Link
               to="/login"
-              className="block w-full py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold shadow-md transition-all text-center"
+              className="btn-primary w-full py-2 px-4 text-xs font-semibold block text-center"
             >
               Back to Sign In
             </Link>
@@ -255,19 +255,19 @@ export const RegisterPage: React.FC = () => {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-xl w-full space-y-8">
+      <div className="max-w-xl w-full space-y-6">
         
         {/* Header */}
         <div className="text-center">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-500 flex items-center justify-center text-white shadow-md">
-              <Rocket size={22} />
+          <Link to="/" className="inline-flex items-center gap-2 mb-3">
+            <div className="w-9 h-9 rounded-md bg-brand-600 flex items-center justify-center text-white shadow-xs">
+              <Rocket size={18} />
             </div>
-            <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
               Startup<span className="text-brand-600 dark:text-brand-400">Z</span>
             </span>
           </Link>
-          <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
             Join the Startup Ecosystem
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
@@ -276,23 +276,23 @@ export const RegisterPage: React.FC = () => {
         </div>
 
         {/* Card Form */}
-        <div className="p-8 rounded-3xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 shadow-xl">
+        <div className="card-base p-6 sm:p-7 shadow-xs">
           
           {/* Continue with Google */}
           <button
             type="button"
             onClick={handleGoogleSignUp}
             disabled={googleLoading || loading}
-            className="w-full inline-flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 hover:bg-slate-50 dark:hover:bg-dark-800 text-sm font-bold text-slate-700 dark:text-slate-200 shadow-xs transition-all hover:border-slate-300 dark:hover:border-slate-600 active:scale-[0.99] disabled:opacity-50"
+            className="btn-secondary w-full inline-flex items-center justify-center gap-2.5 py-2 px-4 text-xs font-semibold disabled:opacity-50"
           >
             {googleLoading ? (
               <>
-                <RefreshCw size={18} className="animate-spin text-brand-500" />
+                <RefreshCw size={15} className="animate-spin text-brand-600" />
                 <span>Redirecting to Google...</span>
               </>
             ) : (
               <>
-                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
                     d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
@@ -316,28 +316,28 @@ export const RegisterPage: React.FC = () => {
           </button>
 
           {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200 dark:border-slate-800" />
+              <div className="w-full border-t border-slate-200 dark:border-dark-800" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white dark:bg-dark-900 px-3 text-slate-400 font-semibold tracking-wider text-[11px]">
+              <span className="bg-white dark:bg-dark-900 px-3 text-slate-400 font-medium tracking-wide text-[11px]">
                 Or register with email
               </span>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3.5 text-xs rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 flex items-start gap-2">
-                <AlertCircle size={16} className="shrink-0 text-rose-500 mt-0.5" />
-                <span className="font-semibold leading-relaxed">{error}</span>
+              <div className="p-3 text-xs rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60 flex items-start gap-2">
+                <AlertCircle size={15} className="shrink-0 text-rose-500 mt-0.5" />
+                <span className="font-medium leading-relaxed">{error}</span>
               </div>
             )}
 
             {/* Profile Ecosystem Role */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 I am joining as a <span className="text-rose-500">*</span>
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -346,13 +346,13 @@ export const RegisterPage: React.FC = () => {
                     key={t.value}
                     type="button"
                     onClick={() => setRole(t.value)}
-                    className={`p-2.5 rounded-xl border text-left transition-all ${
+                    className={`p-2.5 rounded-md border text-left transition-colors cursor-pointer ${
                       role === t.value
-                        ? 'border-brand-500 bg-brand-50 dark:bg-brand-950/60 ring-2 ring-brand-500/20'
-                        : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                        ? 'border-brand-600 bg-brand-50/60 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 ring-1 ring-brand-500/30'
+                        : 'border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700 bg-white dark:bg-dark-900'
                     }`}
                   >
-                    <div className="font-bold text-xs text-slate-900 dark:text-white">
+                    <div className="font-semibold text-xs text-slate-900 dark:text-white">
                       {t.label}
                     </div>
                     <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
@@ -363,13 +363,13 @@ export const RegisterPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Full Name <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <User size={16} className="absolute left-3.5 top-3 text-slate-400" />
+                  <User size={14} className="absolute left-3 top-2.5 text-slate-400" />
                   <input
                     type="text"
                     required
@@ -377,17 +377,17 @@ export const RegisterPage: React.FC = () => {
                     disabled={loading}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Alex Vance"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60"
+                    className="input-base pl-9 pr-3 py-2 text-xs disabled:opacity-60"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Email Address <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <Mail size={16} className="absolute left-3.5 top-3 text-slate-400" />
+                  <Mail size={14} className="absolute left-3 top-2.5 text-slate-400" />
                   <input
                     type="email"
                     required
@@ -395,19 +395,19 @@ export const RegisterPage: React.FC = () => {
                     disabled={loading}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@startup.com"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60"
+                    className="input-base pl-9 pr-3 py-2 text-xs disabled:opacity-60"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Password <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-3.5 top-3 text-slate-400" />
+                  <Lock size={14} className="absolute left-3 top-2.5 text-slate-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
@@ -415,24 +415,25 @@ export const RegisterPage: React.FC = () => {
                     disabled={loading}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Min 6 characters"
-                    className="w-full pl-10 pr-10 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60"
+                    className="input-base pl-9 pr-9 py-2 text-xs disabled:opacity-60"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-0.5"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Confirm Password <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <Lock size={16} className="absolute left-3.5 top-3 text-slate-400" />
+                  <Lock size={14} className="absolute left-3 top-2.5 text-slate-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
@@ -440,43 +441,43 @@ export const RegisterPage: React.FC = () => {
                     disabled={loading}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Repeat password"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60"
+                    className="input-base pl-9 pr-3 py-2 text-xs disabled:opacity-60"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Headline (Optional)
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Headline <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <div className="relative">
-                  <Briefcase size={16} className="absolute left-3.5 top-3 text-slate-400" />
+                  <Briefcase size={14} className="absolute left-3 top-2.5 text-slate-400" />
                   <input
                     type="text"
                     value={headline}
                     disabled={loading}
                     onChange={(e) => setHeadline(e.target.value)}
                     placeholder="e.g. AI Founder | Serial Builder"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60"
+                    className="input-base pl-9 pr-3 py-2 text-xs disabled:opacity-60"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Location (Optional)
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Location <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <div className="relative">
-                  <MapPin size={16} className="absolute left-3.5 top-3 text-slate-400" />
+                  <MapPin size={14} className="absolute left-3 top-2.5 text-slate-400" />
                   <input
                     type="text"
                     value={location}
                     disabled={loading}
                     onChange={(e) => setLocation(e.target.value)}
                     placeholder="e.g. San Francisco / Remote"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-60"
+                    className="input-base pl-9 pr-3 py-2 text-xs disabled:opacity-60"
                   />
                 </div>
               </div>
@@ -485,26 +486,26 @@ export const RegisterPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-500/25 transition-all disabled:opacity-50 mt-4"
+              className="btn-primary w-full py-2.5 text-xs font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-50 mt-2"
             >
               {loading ? (
                 <>
-                  <RefreshCw size={16} className="animate-spin" />
+                  <RefreshCw size={14} className="animate-spin" />
                   <span>Creating Account...</span>
                 </>
               ) : (
                 <>
                   <span>Create StartupZ Account</span>
-                  <ArrowRight size={16} />
+                  <ArrowRight size={14} />
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 text-center">
+          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-dark-800 text-center">
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Already have an account?{' '}
-              <Link to="/login" className="font-bold text-brand-600 dark:text-brand-400 hover:underline">
+              <Link to="/login" className="font-semibold text-brand-600 dark:text-brand-400 hover:underline">
                 Sign in here
               </Link>
             </p>

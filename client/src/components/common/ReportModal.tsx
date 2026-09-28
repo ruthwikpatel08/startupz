@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Modal } from './Modal';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { AlertTriangle, CheckCircle, ShieldAlert } from 'lucide-react';
+import { CheckCircle, ShieldAlert } from 'lucide-react';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -61,11 +61,11 @@ export const ReportModal: React.FC<ReportModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Report Inappropriate Content">
       {!user ? (
         <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
-          <div className="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center">
-            <ShieldAlert size={24} />
+          <div className="w-10 h-10 rounded-md bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-200 dark:border-rose-900">
+            <ShieldAlert size={18} />
           </div>
           <div className="space-y-1">
-            <h4 className="text-base font-bold text-slate-900 dark:text-white">Sign In Required</h4>
+            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Sign In Required</h4>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
               Please sign in to submit a safety report to our moderation team.
             </p>
@@ -74,7 +74,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+              className="btn-secondary"
             >
               Cancel
             </button>
@@ -84,39 +84,39 @@ export const ReportModal: React.FC<ReportModalProps> = ({
                 onClose();
                 navigate('/login');
               }}
-              className="px-5 py-2 text-xs font-bold rounded-xl text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-500/25 cursor-pointer"
+              className="btn-danger"
             >
               Sign In to Report
             </button>
           </div>
         </div>
       ) : submitted ? (
-        <div className="flex flex-col items-center justify-center py-8 text-center space-y-3">
-          <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-            <CheckCircle size={28} />
+        <div className="flex flex-col items-center justify-center py-8 text-center space-y-2">
+          <div className="w-10 h-10 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-800">
+            <CheckCircle size={20} />
           </div>
-          <h4 className="text-lg font-bold text-slate-900 dark:text-white">Report Received</h4>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Report Received</h4>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Thank you for helping keep StartupZ safe. Our moderation team will investigate this report promptly.
           </p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
-            <ShieldAlert size={16} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+          <div className="p-3 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
+            <ShieldAlert size={15} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
             <span>
-              Reporting {targetType.toLowerCase()} {targetTitle ? `"${targetTitle}"` : ''}. All reports are reviewed privately by our trust and safety council.
+              Reporting {targetType.toLowerCase()} {targetTitle ? `"${targetTitle}"` : ''}. All reports are reviewed privately by our safety team.
             </span>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
               Reason for reporting
             </label>
             <select
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="input-base"
             >
               <option value="SPAM">Spam or unwanted solicitation</option>
               <option value="SCAM">Fraudulent startup claim or scam</option>
@@ -128,7 +128,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
               Additional Details (Optional)
             </label>
             <textarea
@@ -136,28 +136,28 @@ export const ReportModal: React.FC<ReportModalProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe the issue or evidence..."
               rows={3}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="input-base resize-none"
             />
           </div>
 
           {error && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-medium">
+            <div className="p-2.5 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs border border-rose-200 dark:border-rose-900">
               {error}
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="btn-secondary"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-xl text-white bg-rose-600 hover:bg-rose-500 shadow-md shadow-rose-500/20 disabled:opacity-50 transition-all hover:scale-[1.02]"
+              className="btn-danger"
             >
               {loading ? 'Submitting...' : 'Submit Report'}
             </button>
