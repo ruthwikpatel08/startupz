@@ -89,6 +89,27 @@ export const NotificationsDropdown: React.FC = () => {
               senderMap = new Map((senders || []).map((s) => [s.user_id, s]));
             }
 
+            // Fetch real connection statuses for all CONNECTION_REQUEST notifications
+            // so we know which ones are already accepted/rejected
+            const connectionNotifs = supaNotifs.filter((n) => n.type === 'CONNECTION_REQUEST');
+            const connStatusMap = new Map<string, 'PENDING' | 'ACCEPTED' | 'REJECTED' | null>();
+            if (connectionNotifs.length > 0 && user.id) {
+              const senderIdSet = [...new Set(connectionNotifs.map((n) => n.sender_id).filter(Boolean))];
+              if (senderIdSet.length > 0) {
+                const { data: connRows } = await supabase
+                  .from('connections')
+                  .select('id, sender_id, receiver_id, status')
+                  .or(
+                    senderIdSet
+                      .map((sid) => `and(sender_id.eq.${sid},receiver_id.eq.${user.id})`)
+                      .join(',')
+                  );
+                (connRows || []).forEach((c) => {
+                  connStatusMap.set(c.sender_id, c.status as any);
+                });
+              }
+            }
+
             for (const sn of supaNotifs) {
               const alreadyInList = list.some(
                 (item) =>
@@ -97,6 +118,15 @@ export const NotificationsDropdown: React.FC = () => {
               );
               if (!alreadyInList) {
                 const sProf = sn.sender_id ? senderMap.get(sn.sender_id) : null;
+
+                // For CONNECTION_REQUEST notifications, check real DB status
+                let actionStatus: 'ACCEPTED' | 'DECLINED' | null = null;
+                if (sn.type === 'CONNECTION_REQUEST' && sn.sender_id) {
+                  const realStatus = connStatusMap.get(sn.sender_id);
+                  if (realStatus === 'ACCEPTED') actionStatus = 'ACCEPTED';
+                  else if (realStatus === 'REJECTED') actionStatus = 'DECLINED';
+                }
+
                 list.push({
                   id: sn.id,
                   userId: sn.user_id,
@@ -107,6 +137,7 @@ export const NotificationsDropdown: React.FC = () => {
                   link: sn.link,
                   isRead: sn.is_read,
                   createdAt: sn.created_at,
+                  _actionStatus: actionStatus,
                   sender: sn.sender_id
                     ? {
                         id: sn.sender_id,
@@ -130,12 +161,24 @@ export const NotificationsDropdown: React.FC = () => {
         }
       }
 
-      setNotifications(list);
+      // Preserve in-memory _actionStatus for items already in our local list
+      // (so quick-accept via UI is not lost between polls for backend-sourced items)
+      setNotifications((prev) => {
+        const prevMap = new Map(prev.map((p) => [p.id, p]));
+        return list.map((n) => {
+          const existing = prevMap.get(n.id);
+          if (existing?._actionStatus && !n._actionStatus) {
+            return { ...n, _actionStatus: existing._actionStatus };
+          }
+          return n;
+        });
+      });
       setUnreadCount(unread);
     } catch {
       // Graceful poll fail
     }
   };
+
 
   // Initial load and periodic poll every 10 seconds
   useEffect(() => {
