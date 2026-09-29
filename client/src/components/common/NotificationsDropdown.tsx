@@ -282,7 +282,7 @@ export const NotificationsDropdown: React.FC = () => {
         }
       } catch {}
 
-      // 2. Also update Supabase
+      // 2. Also update Supabase connection status
       if (notif.senderId && user?.id) {
         try {
           const newStatus = action === 'ACCEPT' ? 'ACCEPTED' : 'REJECTED';
@@ -292,8 +292,40 @@ export const NotificationsDropdown: React.FC = () => {
             .or(
               `and(sender_id.eq.${notif.senderId},receiver_id.eq.${user.id}),and(sender_id.eq.${user.id},receiver_id.eq.${notif.senderId})`
             );
+
+          // If accepted, create conversation
+          if (action === 'ACCEPT') {
+            const [p1, p2] = [notif.senderId, user.id].sort();
+            const { data: existingConv } = await supabase
+              .from('conversations')
+              .select('id')
+              .eq('participant1_id', p1)
+              .eq('participant2_id', p2)
+              .maybeSingle();
+            if (!existingConv) {
+              await supabase.from('conversations').insert({
+                participant1_id: p1,
+                participant2_id: p2,
+                last_message: 'Connected! Say hello and start collaborating.',
+                last_message_at: new Date().toISOString(),
+              });
+            }
+          }
         } catch {}
       }
+
+      // 3. Mark notification as read in Supabase so refresh won't re-show Accept/Decline
+      try {
+        await supabase
+          .from('notifications')
+          .update({ is_read: true })
+          .eq('id', notif.id);
+      } catch {}
+
+      // 4. Also mark via backend
+      try {
+        await api.markNotificationAsRead(notif.id);
+      } catch {}
 
       setNotifications((prev) =>
         prev.map((n) =>

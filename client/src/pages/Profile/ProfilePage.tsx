@@ -3,7 +3,16 @@ import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { User, Profile } from '../../types';
-import { supabase, fetchUserProfile as fetchUserProfileFromSupabase, upsertUserProfile } from '../../lib/supabase';
+import {
+  supabase,
+  fetchUserProfile as fetchUserProfileFromSupabase,
+  upsertUserProfile,
+  fetchConnectionStatus,
+  fetchConnectionCount,
+  respondConnectionRequest,
+  removeConnection,
+  ConnectionStatusInfo,
+} from '../../lib/supabase';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { StartupConnectionModal } from '../../components/common/StartupConnectionModal';
@@ -46,6 +55,7 @@ import {
   Trash2,
   AlertTriangle,
   AlertOctagon,
+  UserX,
 } from 'lucide-react';
 
 function resizeImageToDataUrl(file: File, maxDimension = 1200, quality = 0.85): Promise<string> {
@@ -109,7 +119,20 @@ export const ProfilePage: React.FC = () => {
 
   const targetId = id && id !== 'me' ? id : currentUser?.id;
   const [connectionsCount, setConnectionsCount] = useState<number>(0);
+  const [connInfo, setConnInfo] = useState<ConnectionStatusInfo>({
+    status: null,
+    isSender: false,
+    isReceiver: false,
+    connectionId: null,
+  });
+  const [connActionLoading, setConnActionLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Connections list modal
+  const [connectionsModalOpen, setConnectionsModalOpen] = useState(false);
+  const [connectionsList, setConnectionsList] = useState<any[]>([]);
+  const [connectionsListLoading, setConnectionsListLoading] = useState(false);
+  const [removingConnId, setRemovingConnId] = useState<string | null>(null);
 
   // Edit Modal State
   const [editOpen, setEditOpen] = useState(false);
@@ -487,39 +510,165 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
+  const loadConnectionsList = async (userId: string) => {
+    setConnectionsListLoading(true);
+    try {
+      const { data: conns } = await supabase
+        .from('connections')
+        .select('*')
+        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+        .eq('status', 'ACCEPTED');
+
+      if (!conns || conns.length === 0) {
+        setConnectionsList([]);
+        return;
+      }
+
+      const otherIds = conns.map((c) => (c.sender_id === userId ? c.receiver_id : c.sender_id));
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('user_id', otherIds);
+      const profMap = new Map((profiles || []).map((p) => [p.user_id, p]));
+
+      const list = conns.map((c) => {
+        const otherId = c.sender_id === userId ? c.receiver_id : c.sender_id;
+        const p = profMap.get(otherId);
+        return {
+          connectionId: c.id,
+          connectedAt: c.updated_at,
+          userId: otherId,
+          fullName: p?.full_name || 'Startup Builder',
+          avatar: p?.avatar || null,
+          headline: p?.headline || '',
+          preferredRole: p?.preferred_role || 'FOUNDER',
+        };
+      });
+      setConnectionsList(list);
+    } catch (err) {
+      console.warn('Failed to load connections list:', err);
+      setConnectionsList([]);
+    } finally {
+      setConnectionsListLoading(false);
+    }
+  };
+
+  const handleOpenConnectionsModal = () => {
+    setConnectionsModalOpen(true);
+    const userId = targetId || profileUser?.id;
+    if (userId) loadConnectionsList(userId);
+  };
+
+  const handleRemoveFromModal = async (connectionId: string) => {
+    if (!currentUser?.id) return;
+    if (!window.confirm('Remove this connection?')) return;
+    setRemovingConnId(connectionId);
+    try {
+      await supabase
+        .from('connections')
+        .delete()
+        .eq('id', connectionId)
+        .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`);
+      try { await api.removeConnection(connectionId); } catch {}
+      setConnectionsList((prev) => prev.filter((c) => c.connectionId !== connectionId));
+      setConnectionsCount((prev) => Math.max(0, prev - 1));
+      // Refresh connInfo if this was our connection
+      if (connInfo.connectionId === connectionId) {
+        setConnInfo({ status: null, isSender: false, isReceiver: false, connectionId: null });
+      }
+    } catch (err) {
+      alert('Failed to remove connection.');
+    } finally {
+      setRemovingConnId(null);
+    }
+  };
+
+  const loadConnectionsAndStatus = async () => {
+    try {
+      const checkTargetId = targetId || profileUser?.id;
+      if (checkTargetId) {
+        const count = await fetchConnectionCount(checkTargetId);
+        setConnectionsCount(count);
+
+        if (!isMe && currentUser?.id && checkTargetId !== currentUser.id) {
+          const statusInfo = await fetchConnectionStatus(currentUser.id, checkTargetId);
+          setConnInfo(statusInfo);
+        }
+      }
+    } catch {
+      setConnectionsCount(0);
+    }
+  };
+
   useEffect(() => {
     fetchUserProfile();
+    loadConnectionsAndStatus();
+  }, [targetId, currentUser?.id, isMe]);
 
-    let isMounted = true;
-    const loadConnections = async () => {
-      try {
-        if (targetId) {
-          const countRes = await api.getConnectionCount(targetId).catch(() => null);
-          if (countRes && typeof countRes.count === 'number') {
-            if (isMounted) setConnectionsCount(countRes.count);
-            return;
-          }
-        }
-        if (isMe) {
-          const res = await api.getConnections();
-          if (isMounted) setConnectionsCount(res.connections?.length || 0);
-        } else if (targetId) {
-          const { count } = await supabase
-            .from('connections')
-            .select('*', { count: 'exact', head: true })
-            .or(`sender_id.eq.${targetId},receiver_id.eq.${targetId}`)
-            .eq('status', 'ACCEPTED');
-          if (isMounted) setConnectionsCount(count || 0);
-        }
-      } catch {
-        if (isMounted) setConnectionsCount(0);
+  const handleAcceptConnection = async () => {
+    if (!connInfo.connectionId || !currentUser?.id) return;
+    setConnActionLoading(true);
+    try {
+      const res = await respondConnectionRequest(connInfo.connectionId, 'ACCEPT', currentUser.id);
+      if (res.success) {
+        setConnInfo({
+          status: 'ACCEPTED',
+          isSender: false,
+          isReceiver: true,
+          connectionId: connInfo.connectionId,
+        });
+        const checkTargetId = targetId || profileUser?.id || '';
+        const newCount = await fetchConnectionCount(checkTargetId);
+        setConnectionsCount(newCount);
       }
-    };
-    loadConnections();
-    return () => {
-      isMounted = false;
-    };
-  }, [targetId, currentUser, isMe]);
+    } catch (err: any) {
+      alert(err.message || 'Failed to accept connection.');
+    } finally {
+      setConnActionLoading(false);
+    }
+  };
+
+  const handleRejectConnection = async () => {
+    if (!connInfo.connectionId || !currentUser?.id) return;
+    setConnActionLoading(true);
+    try {
+      const res = await respondConnectionRequest(connInfo.connectionId, 'REJECT', currentUser.id);
+      if (res.success) {
+        setConnInfo({
+          status: null,
+          isSender: false,
+          isReceiver: false,
+          connectionId: null,
+        });
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to decline connection.');
+    } finally {
+      setConnActionLoading(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!connInfo.connectionId || !currentUser?.id) return;
+    if (!window.confirm('Are you sure you want to disconnect from this user?')) return;
+    setConnActionLoading(true);
+    try {
+      await removeConnection(connInfo.connectionId, currentUser.id);
+      setConnInfo({
+        status: null,
+        isSender: false,
+        isReceiver: false,
+        connectionId: null,
+      });
+      const checkTargetId = targetId || profileUser?.id || '';
+      const newCount = await fetchConnectionCount(checkTargetId);
+      setConnectionsCount(newCount);
+    } catch (err: any) {
+      alert(err.message || 'Failed to remove connection.');
+    } finally {
+      setConnActionLoading(false);
+    }
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -802,16 +951,47 @@ export const ProfilePage: React.FC = () => {
               <div className="flex items-center gap-2 w-full md:w-auto flex-wrap sm:flex-nowrap pt-2 md:pt-0">
                 {!isMe && (
                   <>
-                    {(profileUser as any).connectionStatus?.status === 'ACCEPTED' ? (
-                      <span className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                        <Check size={14} />
-                        <span>Connected</span>
-                      </span>
-                    ) : (profileUser as any).connectionStatus?.status === 'PENDING' ? (
-                      <span className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                        <Clock size={14} />
-                        <span>Invitation Pending</span>
-                      </span>
+                    {connInfo.status === 'ACCEPTED' ? (
+                      <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
+                        <span className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          <Check size={14} />
+                          <span>Connected</span>
+                        </span>
+                        <button
+                          onClick={handleDisconnect}
+                          disabled={connActionLoading}
+                          className="p-2 rounded-md border border-slate-200 dark:border-dark-800 text-slate-400 hover:text-rose-600 hover:border-rose-300 dark:hover:border-rose-900 transition-colors cursor-pointer"
+                          title="Remove connection"
+                        >
+                          <UserX size={14} />
+                        </button>
+                      </div>
+                    ) : connInfo.status === 'PENDING' ? (
+                      connInfo.isSender ? (
+                        <span className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                          <Clock size={14} />
+                          <span>Request Sent</span>
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
+                          <button
+                            onClick={handleAcceptConnection}
+                            disabled={connActionLoading}
+                            className="btn-primary inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold cursor-pointer disabled:opacity-50"
+                          >
+                            <Check size={14} />
+                            <span>Accept</span>
+                          </button>
+                          <button
+                            onClick={handleRejectConnection}
+                            disabled={connActionLoading}
+                            className="btn-secondary inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium cursor-pointer disabled:opacity-50"
+                          >
+                            <X size={14} />
+                            <span>Reject</span>
+                          </button>
+                        </div>
+                      )
                     ) : (
                       <button
                         onClick={() => setConnectOpen(true)}
@@ -863,14 +1043,17 @@ export const ProfilePage: React.FC = () => {
 
             {/* Profile Statistics Row */}
             <div className="pt-4 border-t border-slate-100 dark:border-dark-800 grid grid-cols-3 gap-2 sm:gap-4 text-center sm:text-left">
-              <Link to="/network" className="group">
+              <button
+                onClick={handleOpenConnectionsModal}
+                className="group text-left cursor-pointer"
+              >
                 <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">
                   {connectionsCount}
                 </div>
-                <div className="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400">
+                <div className="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400 group-hover:text-brand-600 transition-colors">
                   Connections
                 </div>
-              </Link>
+              </button>
 
               <div className="border-l border-slate-100 dark:border-dark-800 pl-2 sm:pl-6">
                 <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
@@ -1826,6 +2009,141 @@ export const ProfilePage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* ===================== CONNECTIONS LIST MODAL ===================== */}
+      {connectionsModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setConnectionsModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-md bg-white dark:bg-dark-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-dark-800 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-dark-800">
+              <div>
+                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                  Connections ({connectionsCount})
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  {isMe ? 'Your network connections' : `${(profileUser?.profile as any)?.fullName?.split(' ')[0] || 'Their'}'s connections`}
+                </p>
+              </div>
+              <button
+                onClick={() => setConnectionsModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="overflow-y-auto max-h-[60vh] divide-y divide-slate-100 dark:divide-dark-800">
+              {connectionsListLoading ? (
+                <div className="py-10 flex flex-col items-center gap-3">
+                  <div className="w-6 h-6 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-xs text-slate-400">Loading connections...</p>
+                </div>
+              ) : connectionsList.length === 0 ? (
+                <div className="py-12 text-center px-6">
+                  <div className="w-12 h-12 mx-auto rounded-full bg-slate-100 dark:bg-dark-800 flex items-center justify-center mb-3">
+                    <Users size={20} className="text-slate-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">No connections yet</p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    {isMe ? 'Start connecting with other founders and builders!' : 'This member has no connections yet.'}
+                  </p>
+                </div>
+              ) : (
+                connectionsList.map((conn) => (
+                  <div
+                    key={conn.connectionId}
+                    className="flex items-center gap-3 p-4 hover:bg-slate-50 dark:hover:bg-dark-850 transition-colors"
+                  >
+                    {/* Avatar */}
+                    <Link
+                      to={`/profile/${conn.userId}`}
+                      onClick={() => setConnectionsModalOpen(false)}
+                      className="shrink-0"
+                    >
+                      {conn.avatar ? (
+                        <img
+                          src={conn.avatar}
+                          alt={conn.fullName}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-dark-900 shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-brand-600 text-white flex items-center justify-center font-bold text-sm">
+                          {conn.fullName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </Link>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <Link
+                        to={`/profile/${conn.userId}`}
+                        onClick={() => setConnectionsModalOpen(false)}
+                        className="font-semibold text-sm text-slate-900 dark:text-white hover:text-brand-600 transition-colors block truncate"
+                      >
+                        {conn.fullName}
+                      </Link>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        {conn.headline || conn.preferredRole}
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => {
+                          setConnectionsModalOpen(false);
+                          navigate(`/messages?user=${conn.userId}`);
+                        }}
+                        className="p-1.5 rounded-lg bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-950 transition-colors"
+                        title="Chat"
+                      >
+                        <MessageSquare size={14} />
+                      </button>
+                      {/* Only show Remove button if viewing own profile */}
+                      {isMe && (
+                        <button
+                          onClick={() => handleRemoveFromModal(conn.connectionId)}
+                          disabled={removingConnId === conn.connectionId}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors disabled:opacity-50"
+                          title="Remove connection"
+                        >
+                          {removingConnId === conn.connectionId ? (
+                            <div className="w-3.5 h-3.5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <UserX size={14} />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            {isMe && (
+              <div className="p-3 border-t border-slate-100 dark:border-dark-800 bg-slate-50/60 dark:bg-dark-850/50">
+                <Link
+                  to="/network"
+                  onClick={() => setConnectionsModalOpen(false)}
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-950/40 transition-colors"
+                >
+                  <Users size={14} />
+                  <span>Manage All Connections in Network</span>
+                  <ChevronRight size={13} />
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

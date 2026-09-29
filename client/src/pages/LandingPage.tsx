@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Rocket,
@@ -17,6 +17,8 @@ import {
   Globe,
   Lock,
   LayoutDashboard,
+  MessageSquare,
+  Network,
 } from 'lucide-react';
 import { GoogleAccountChooserModal } from '../components/auth/GoogleAccountChooserModal';
 import { QuickLoginModal } from '../components/auth/QuickLoginModal';
@@ -27,6 +29,43 @@ export const LandingPage: React.FC = () => {
   const { user } = useAuth();
   const [googleChooserOpen, setGoogleChooserOpen] = useState(false);
   const [quickLoginOpen, setQuickLoginOpen] = useState(false);
+  const [myConnectionCount, setMyConnectionCount] = useState<number>(0);
+  const [recentConnections, setRecentConnections] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchMyConnections = async () => {
+      try {
+        const { data: conns } = await supabase
+          .from('connections')
+          .select('id, sender_id, receiver_id, updated_at')
+          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          .eq('status', 'ACCEPTED')
+          .order('updated_at', { ascending: false })
+          .limit(3);
+
+        if (!conns) return;
+        setMyConnectionCount(conns.length);
+
+        const otherIds = conns.map((c) => (c.sender_id === user.id ? c.receiver_id : c.sender_id));
+        if (otherIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('user_id, full_name, avatar, headline')
+            .in('user_id', otherIds);
+          const profMap = new Map((profiles || []).map((p) => [p.user_id, p]));
+          setRecentConnections(
+            conns.map((c) => {
+              const otherId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
+              const p = profMap.get(otherId);
+              return { userId: otherId, fullName: p?.full_name || 'Member', avatar: p?.avatar, headline: p?.headline };
+            })
+          );
+        }
+      } catch {}
+    };
+    fetchMyConnections();
+  }, [user?.id]);
 
   const handleGoogleClick = async () => {
     try {
@@ -183,6 +222,68 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* My Network Quick Panel — only shown when logged in */}
+          {user && (
+            <div className="mt-8 max-w-2xl mx-auto p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Users size={15} className="text-brand-600 dark:text-brand-400" />
+                  <span className="text-xs font-bold text-slate-900 dark:text-white">My Network</span>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-900/60">
+                    {myConnectionCount} connections
+                  </span>
+                </div>
+                <Link
+                  to="/network"
+                  className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline inline-flex items-center gap-0.5"
+                >
+                  Manage <ArrowRight size={11} />
+                </Link>
+              </div>
+
+              {recentConnections.length > 0 ? (
+                <div className="flex items-center gap-3 flex-wrap">
+                  {recentConnections.map((conn) => (
+                    <Link
+                      key={conn.userId}
+                      to={`/messages?user=${conn.userId}`}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-brand-950/40 border border-slate-200 dark:border-slate-700 transition-colors group"
+                    >
+                      {conn.avatar ? (
+                        <img src={conn.avatar} alt={conn.fullName} className="w-6 h-6 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px] font-bold">
+                          {conn.fullName.charAt(0)}
+                        </div>
+                      )}
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                        {conn.fullName.split(' ')[0]}
+                      </span>
+                      <MessageSquare size={11} className="text-slate-400 group-hover:text-brand-500" />
+                    </Link>
+                  ))}
+                  <Link
+                    to="/cofounders"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-xs text-slate-400 hover:text-brand-600 hover:border-brand-400 transition-colors"
+                  >
+                    <span>+ Connect more</span>
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-slate-400">No connections yet. Start building your network!</p>
+                  <Link
+                    to="/cofounders"
+                    className="btn-primary !text-xs !py-1.5 !px-3 inline-flex items-center gap-1.5"
+                  >
+                    <Users size={12} />
+                    <span>Find Co-Founders</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Interactive Startup Network Graph Visual */}
           <div className="mt-12 relative max-w-4xl mx-auto p-5 sm:p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle">
