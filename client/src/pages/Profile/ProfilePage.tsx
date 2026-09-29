@@ -570,6 +570,23 @@ export const ProfilePage: React.FC = () => {
       if (connInfo.connectionId === connectionId) {
         setConnInfo({ status: null, isSender: false, isReceiver: false, connectionId: null });
       }
+
+      // Broadcast changes so other tabs and components update counts
+      window.dispatchEvent(new CustomEvent('connections_updated'));
+      try {
+        const broadcastChannel = supabase.channel('global-connections-broadcast');
+        await broadcastChannel.send({
+          type: 'broadcast',
+          event: 'connection_changed',
+          payload: {
+            connectionId,
+            userId: currentUser.id,
+            action: 'REMOVED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+        supabase.removeChannel(broadcastChannel);
+      } catch {}
     } catch (err) {
       alert('Failed to remove connection.');
     } finally {
@@ -614,6 +631,14 @@ export const ProfilePage: React.FC = () => {
       )
       .subscribe();
 
+    // Also listen for broadcast events from NotificationsDropdown and NetworkPage
+    const broadcastChannel = supabase
+      .channel('global-connections-broadcast')
+      .on('broadcast', { event: 'connection_changed' }, () => {
+        loadConnectionsAndStatus();
+      })
+      .subscribe();
+
     const handleConnEvt = () => {
       loadConnectionsAndStatus();
     };
@@ -621,6 +646,7 @@ export const ProfilePage: React.FC = () => {
 
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(broadcastChannel);
       window.removeEventListener('connections_updated', handleConnEvt);
     };
   }, [targetId, currentUser?.id, isMe, profileUser?.id]);
@@ -640,6 +666,23 @@ export const ProfilePage: React.FC = () => {
         const checkTargetId = targetId || profileUser?.id || '';
         const newCount = await fetchConnectionCount(checkTargetId);
         setConnectionsCount(newCount);
+
+        // Broadcast to sync counts across tabs and pages
+        window.dispatchEvent(new CustomEvent('connections_updated'));
+        try {
+          const broadcastChannel = supabase.channel('global-connections-broadcast');
+          await broadcastChannel.send({
+            type: 'broadcast',
+            event: 'connection_changed',
+            payload: {
+              connectionId: connInfo.connectionId,
+              userId: currentUser.id,
+              action: 'ACCEPT',
+              timestamp: new Date().toISOString(),
+            },
+          });
+          supabase.removeChannel(broadcastChannel);
+        } catch {}
       }
     } catch (err: any) {
       alert(err.message || 'Failed to accept connection.');
@@ -660,6 +703,7 @@ export const ProfilePage: React.FC = () => {
           isReceiver: false,
           connectionId: null,
         });
+        window.dispatchEvent(new CustomEvent('connections_updated'));
       }
     } catch (err: any) {
       alert(err.message || 'Failed to decline connection.');
@@ -683,6 +727,23 @@ export const ProfilePage: React.FC = () => {
       const checkTargetId = targetId || profileUser?.id || '';
       const newCount = await fetchConnectionCount(checkTargetId);
       setConnectionsCount(newCount);
+
+      // Broadcast removal
+      window.dispatchEvent(new CustomEvent('connections_updated'));
+      try {
+        const broadcastChannel = supabase.channel('global-connections-broadcast');
+        await broadcastChannel.send({
+          type: 'broadcast',
+          event: 'connection_changed',
+          payload: {
+            connectionId: connInfo.connectionId,
+            userId: currentUser.id,
+            action: 'REMOVED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+        supabase.removeChannel(broadcastChannel);
+      } catch {}
     } catch (err: any) {
       alert(err.message || 'Failed to remove connection.');
     } finally {

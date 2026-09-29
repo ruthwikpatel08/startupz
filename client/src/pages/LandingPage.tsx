@@ -76,11 +76,20 @@ export const LandingPage: React.FC = () => {
       })
       .subscribe();
 
+    // Also listen for broadcast events from NotificationsDropdown
+    const broadcastChannel = supabase
+      .channel('landing-global-connections-broadcast')
+      .on('broadcast', { event: 'connection_changed' }, () => {
+        fetchMyConnections();
+      })
+      .subscribe();
+
     const handleConnEvt = () => fetchMyConnections();
     window.addEventListener('connections_updated', handleConnEvt);
 
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(broadcastChannel);
       window.removeEventListener('connections_updated', handleConnEvt);
     };
   }, [user?.id]);

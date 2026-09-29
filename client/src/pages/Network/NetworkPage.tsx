@@ -364,6 +364,21 @@ export const NetworkPage: React.FC = () => {
       // 6. Broadcast event so profile and homepage update instantly
       window.dispatchEvent(new CustomEvent('connections_updated'));
 
+      try {
+        const broadcastChannel = supabase.channel('global-connections-broadcast');
+        await broadcastChannel.send({
+          type: 'broadcast',
+          event: 'connection_changed',
+          payload: {
+            senderId: resolvedSenderId,
+            receiverId: user?.id,
+            action,
+            timestamp: new Date().toISOString(),
+          },
+        });
+        supabase.removeChannel(broadcastChannel);
+      } catch {}
+
       // 7. Clean up local pending list immediately
       setPendingReceived((prev) =>
         prev.filter((r) => r.id !== connectionId && r.senderId !== resolvedSenderId && r.sender?.id !== resolvedSenderId)
@@ -403,6 +418,25 @@ export const NetworkPage: React.FC = () => {
 
       setConnections((prev) => prev.filter((c) => c.connectionId !== connectionId));
       setPendingSent((prev) => prev.filter((r) => r.id !== connectionId));
+
+      // Broadcast event so profile and homepage update instantly
+      window.dispatchEvent(new CustomEvent('connections_updated'));
+
+      try {
+        const broadcastChannel = supabase.channel('global-connections-broadcast');
+        await broadcastChannel.send({
+          type: 'broadcast',
+          event: 'connection_changed',
+          payload: {
+            connectionId,
+            userId: user?.id,
+            action: 'REMOVED',
+            timestamp: new Date().toISOString(),
+          },
+        });
+        supabase.removeChannel(broadcastChannel);
+      } catch {}
+
       await fetchData();
     } catch (err) {
       console.error('Failed to remove connection:', err);

@@ -370,6 +370,22 @@ export const NotificationsDropdown: React.FC = () => {
         window.dispatchEvent(new CustomEvent('connections_updated'));
       } catch {}
 
+      // 6. Broadcast via Supabase channel so OTHER users/tabs also update
+      try {
+        const broadcastChannel = supabase.channel('global-connections-broadcast');
+        await broadcastChannel.send({
+          type: 'broadcast',
+          event: 'connection_changed',
+          payload: {
+            senderId: notif.senderId,
+            receiverId: user?.id,
+            action,
+            timestamp: new Date().toISOString(),
+          },
+        });
+        supabase.removeChannel(broadcastChannel);
+      } catch {}
+
       setNotifications((prev) =>
         prev.map((n) =>
           n.id === notif.id || (notif.senderId && n.senderId === notif.senderId && n.type === 'CONNECTION_REQUEST')
