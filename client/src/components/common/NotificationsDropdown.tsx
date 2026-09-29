@@ -89,27 +89,6 @@ export const NotificationsDropdown: React.FC = () => {
               senderMap = new Map((senders || []).map((s) => [s.user_id, s]));
             }
 
-            // Fetch real connection statuses for all CONNECTION_REQUEST notifications
-            // so we know which ones are already accepted/rejected
-            const connectionNotifs = supaNotifs.filter((n) => n.type === 'CONNECTION_REQUEST');
-            const connStatusMap = new Map<string, 'PENDING' | 'ACCEPTED' | 'REJECTED' | null>();
-            if (connectionNotifs.length > 0 && user.id) {
-              const senderIdSet = [...new Set(connectionNotifs.map((n) => n.sender_id).filter(Boolean))];
-              if (senderIdSet.length > 0) {
-                const { data: connRows } = await supabase
-                  .from('connections')
-                  .select('id, sender_id, receiver_id, status')
-                  .or(
-                    senderIdSet
-                      .map((sid) => `and(sender_id.eq.${sid},receiver_id.eq.${user.id})`)
-                      .join(',')
-                  );
-                (connRows || []).forEach((c) => {
-                  connStatusMap.set(c.sender_id, c.status as any);
-                });
-              }
-            }
-
             for (const sn of supaNotifs) {
               const alreadyInList = list.some(
                 (item) =>
@@ -118,15 +97,6 @@ export const NotificationsDropdown: React.FC = () => {
               );
               if (!alreadyInList) {
                 const sProf = sn.sender_id ? senderMap.get(sn.sender_id) : null;
-
-                // For CONNECTION_REQUEST notifications, check real DB status
-                let actionStatus: 'ACCEPTED' | 'DECLINED' | null = null;
-                if (sn.type === 'CONNECTION_REQUEST' && sn.sender_id) {
-                  const realStatus = connStatusMap.get(sn.sender_id);
-                  if (realStatus === 'ACCEPTED') actionStatus = 'ACCEPTED';
-                  else if (realStatus === 'REJECTED') actionStatus = 'DECLINED';
-                }
-
                 list.push({
                   id: sn.id,
                   userId: sn.user_id,
@@ -137,7 +107,6 @@ export const NotificationsDropdown: React.FC = () => {
                   link: sn.link,
                   isRead: sn.is_read,
                   createdAt: sn.created_at,
-                  _actionStatus: actionStatus,
                   sender: sn.sender_id
                     ? {
                         id: sn.sender_id,
@@ -154,12 +123,48 @@ export const NotificationsDropdown: React.FC = () => {
                 });
               }
             }
-            unread = list.filter((n) => !n.isRead).length;
           }
         } catch (supaErr) {
           console.warn('Supabase notifications load notice:', supaErr);
         }
       }
+
+      // ========== CRITICAL FIX ==========
+      // Check REAL connection status for ALL CONNECTION_REQUEST notifications
+      // (both backend-sourced AND supabase-sourced) so Accept/Decline never re-appears
+      const allConnNotifs = list.filter((n) => n.type === 'CONNECTION_REQUEST' && n.senderId);
+      if (allConnNotifs.length > 0 && user?.id) {
+        const allSenderIds = [...new Set(allConnNotifs.map((n) => n.senderId!).filter(Boolean))];
+        if (allSenderIds.length > 0) {
+          try {
+            const { data: connRows } = await supabase
+              .from('connections')
+              .select('sender_id, status')
+              .or(
+                allSenderIds
+                  .map((sid) => `and(sender_id.eq.${sid},receiver_id.eq.${user.id})`)
+                  .join(',')
+              );
+            const connStatusMap = new Map<string, string>();
+            (connRows || []).forEach((c) => connStatusMap.set(c.sender_id, c.status));
+
+            // Apply _actionStatus to every CONNECTION_REQUEST notification
+            list = list.map((n) => {
+              if (n.type === 'CONNECTION_REQUEST') {
+                const realStatus = n.senderId ? connStatusMap.get(n.senderId) : null;
+                if (realStatus === 'ACCEPTED' || (n.isRead && realStatus !== 'PENDING')) {
+                  return { ...n, isRead: true, _actionStatus: 'ACCEPTED' as const };
+                } else if (realStatus === 'REJECTED') {
+                  return { ...n, isRead: true, _actionStatus: 'DECLINED' as const };
+                }
+              }
+              return n;
+            });
+          } catch {}
+        }
+      }
+
+      unread = list.filter((n) => !n.isRead).length;
 
       // Preserve in-memory _actionStatus for items already in our local list
       // (so quick-accept via UI is not lost between polls for backend-sourced items)
@@ -289,11 +294,16 @@ export const NotificationsDropdown: React.FC = () => {
           await supabase
             .from('connections')
             .update({ status: newStatus, updated_at: new Date().toISOString() })
-            .or(
-              `and(sender_id.eq.${notif.senderId},receiver_id.eq.${user.id}),and(sender_id.eq.${user.id},receiver_id.eq.${notif.senderId})`
-            );
+            .eq('sender_id', notif.senderId)
+            .eq('receiver_id', user.id);
 
-          // If accepted, create conversation
+          await supabase
+            .from('connections')
+            .update({ status: newStatus, updated_at: new Date().toISOString() })
+            .eq('sender_id', user.id)
+            .eq('receiver_id', notif.senderId);
+
+          // If accepted: create conversation + notify sender
           if (action === 'ACCEPT') {
             const [p1, p2] = [notif.senderId, user.id].sort();
             const { data: existingConv } = await supabase
@@ -310,16 +320,44 @@ export const NotificationsDropdown: React.FC = () => {
                 last_message_at: new Date().toISOString(),
               });
             }
+
+            // Send notification to the original sender
+            const { data: myProf } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('user_id', user.id)
+              .maybeSingle();
+            const myName = myProf?.full_name || 'Your connection';
+            await supabase.from('notifications').insert({
+              user_id: notif.senderId,
+              sender_id: user.id,
+              type: 'CONNECTION_ACCEPTED',
+              title: 'Connection Accepted! 🤝',
+              message: `${myName} accepted your connection request. You can now chat!`,
+              link: `/messages?user=${user.id}`,
+              is_read: false,
+              created_at: new Date().toISOString(),
+            });
           }
-        } catch {}
+        } catch (connErr) {
+          console.warn('Supabase respond notice:', connErr);
+        }
       }
 
-      // 3. Mark notification as read in Supabase so refresh won't re-show Accept/Decline
+      // 3. Mark notification as read in Supabase
       try {
         await supabase
           .from('notifications')
           .update({ is_read: true })
           .eq('id', notif.id);
+        if (notif.senderId && user?.id) {
+          await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('user_id', user.id)
+            .eq('sender_id', notif.senderId)
+            .eq('type', 'CONNECTION_REQUEST');
+        }
       } catch {}
 
       // 4. Also mark via backend
@@ -327,9 +365,14 @@ export const NotificationsDropdown: React.FC = () => {
         await api.markNotificationAsRead(notif.id);
       } catch {}
 
+      // 5. Broadcast connections updated to sync counts everywhere
+      try {
+        window.dispatchEvent(new CustomEvent('connections_updated'));
+      } catch {}
+
       setNotifications((prev) =>
         prev.map((n) =>
-          n.id === notif.id
+          n.id === notif.id || (notif.senderId && n.senderId === notif.senderId && n.type === 'CONNECTION_REQUEST')
             ? { ...n, isRead: true, _actionStatus: action === 'ACCEPT' ? 'ACCEPTED' : 'DECLINED' }
             : n
         )

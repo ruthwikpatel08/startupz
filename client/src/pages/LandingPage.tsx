@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { GoogleAccountChooserModal } from '../components/auth/GoogleAccountChooserModal';
 import { QuickLoginModal } from '../components/auth/QuickLoginModal';
-import { supabase } from '../lib/supabase';
+import { supabase, fetchConnectionCount } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
 export const LandingPage: React.FC = () => {
@@ -36,6 +36,9 @@ export const LandingPage: React.FC = () => {
     if (!user?.id) return;
     const fetchMyConnections = async () => {
       try {
+        const trueCount = await fetchConnectionCount(user.id);
+        setMyConnectionCount(trueCount);
+
         const { data: conns } = await supabase
           .from('connections')
           .select('id, sender_id, receiver_id, updated_at')
@@ -44,11 +47,8 @@ export const LandingPage: React.FC = () => {
           .order('updated_at', { ascending: false })
           .limit(3);
 
-        if (!conns) return;
-        setMyConnectionCount(conns.length);
-
-        const otherIds = conns.map((c) => (c.sender_id === user.id ? c.receiver_id : c.sender_id));
-        if (otherIds.length > 0) {
+        if (conns && conns.length > 0) {
+          const otherIds = conns.map((c) => (c.sender_id === user.id ? c.receiver_id : c.sender_id));
           const { data: profiles } = await supabase
             .from('profiles')
             .select('user_id, full_name, avatar, headline')
@@ -61,10 +61,28 @@ export const LandingPage: React.FC = () => {
               return { userId: otherId, fullName: p?.full_name || 'Member', avatar: p?.avatar, headline: p?.headline };
             })
           );
+        } else {
+          setRecentConnections([]);
         }
       } catch {}
     };
     fetchMyConnections();
+
+    // Subscribe to realtime changes so homepage updates immediately
+    const channel = supabase
+      .channel('landing-page-conns')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'connections' }, () => {
+        fetchMyConnections();
+      })
+      .subscribe();
+
+    const handleConnEvt = () => fetchMyConnections();
+    window.addEventListener('connections_updated', handleConnEvt);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener('connections_updated', handleConnEvt);
+    };
   }, [user?.id]);
 
   const handleGoogleClick = async () => {

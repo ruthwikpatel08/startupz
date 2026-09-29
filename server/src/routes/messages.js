@@ -219,4 +219,45 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
+// DELETE /api/messages/conversations/:conversationId or /api/messages/:conversationId
+const deleteConversationHandler = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    let conv = await prisma.conversation.findUnique({ where: { id: conversationId } });
+
+    if (!conv) {
+      // Fallback check if conversationId is other participant's ID
+      const [p1, p2] = [req.user.id, conversationId].sort();
+      conv = await prisma.conversation.findUnique({
+        where: {
+          participant1Id_participant2Id: {
+            participant1Id: p1,
+            participant2Id: p2,
+          },
+        },
+      });
+    }
+
+    if (!conv) {
+      return res.status(404).json({ error: 'Conversation not found.' });
+    }
+
+    if (conv.participant1Id !== req.user.id && conv.participant2Id !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized to delete this conversation.' });
+    }
+
+    await prisma.conversation.delete({ where: { id: conv.id } });
+
+    return res.json({ message: 'Conversation deleted successfully.', conversationId: conv.id });
+  } catch (error) {
+    console.error('Delete conversation error:', error);
+    return res.status(500).json({ error: 'Failed to delete conversation.' });
+  }
+};
+
+router.delete('/conversations/:conversationId', requireAuth, deleteConversationHandler);
+router.delete('/:conversationId', requireAuth, deleteConversationHandler);
+
 export default router;
+

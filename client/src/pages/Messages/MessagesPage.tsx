@@ -13,7 +13,15 @@ import {
   CheckCheck,
   User as UserIcon,
   Sparkles,
+  Trash2,
 } from 'lucide-react';
+import {
+  supabase,
+  getSupabaseConversations,
+  getSupabaseMessages,
+  sendSupabaseMessage,
+  deleteSupabaseConversation,
+} from '../../lib/supabase';
 
 export const MessagesPage: React.FC = () => {
   const { user } = useAuth();
@@ -28,6 +36,7 @@ export const MessagesPage: React.FC = () => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [deletingConv, setDeletingConv] = useState(false);
   const [search, setSearch] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -38,8 +47,23 @@ export const MessagesPage: React.FC = () => {
 
   const fetchConversations = async () => {
     try {
-      const data = await api.getConversations();
-      const list = Array.isArray(data) ? data : (data?.conversations || data?.data || []);
+      // 1. Fetch from Supabase directly for persistent database storage
+      const supaList = user?.id ? await getSupabaseConversations(user.id) : [];
+
+      // 2. Fetch from backend API
+      const apiRes = await api.getConversations().catch(() => []);
+      const apiList = Array.isArray(apiRes) ? apiRes : (apiRes?.conversations || apiRes?.data || []);
+
+      // Merge and deduplicate by conversation id
+      const convMap = new Map<string, Conversation>();
+      supaList.forEach((c) => convMap.set(c.id, c));
+      apiList.forEach((c: any) => {
+        if (!convMap.has(c.id)) {
+          convMap.set(c.id, c);
+        }
+      });
+
+      const list = Array.from(convMap.values());
       setConversations(list);
 
       // 1. If user came via /messages?conversationId=xyz
@@ -64,8 +88,33 @@ export const MessagesPage: React.FC = () => {
         } else {
           // If conversation doesn't exist in list yet, fetch user to start a clean draft conversation
           try {
-            const targetUserRes = await api.getUser(targetUserId);
-            const userObj = targetUserRes?.user || targetUserRes;
+            // Check Supabase profiles first
+            const { data: pData } = await supabase
+              .from('profiles')
+              .select('id, user_id, full_name, avatar, headline, email, preferred_role')
+              .eq('user_id', targetUserId)
+              .maybeSingle();
+
+            let userObj: any = null;
+            if (pData) {
+              userObj = {
+                id: pData.user_id,
+                email: pData.email || '',
+                role: pData.preferred_role || 'FOUNDER',
+                isVerified: true,
+                profile: {
+                  id: pData.id,
+                  userId: pData.user_id,
+                  fullName: pData.full_name || 'Founder',
+                  avatar: pData.avatar || null,
+                  headline: pData.headline || '',
+                },
+              };
+            } else {
+              const targetUserRes = await api.getUser(targetUserId).catch(() => null);
+              userObj = targetUserRes?.user || targetUserRes;
+            }
+
             if (userObj?.id) {
               const draftConv: any = {
                 id: 'draft',
@@ -94,7 +143,31 @@ export const MessagesPage: React.FC = () => {
 
   useEffect(() => {
     fetchConversations();
-  }, [targetUserId, targetConvId]);
+  }, [targetUserId, targetConvId, user?.id]);
+
+  // Realtime subscription for conversation updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const convChannel = supabase
+      .channel(`user_conversations_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversations',
+        },
+        () => {
+          fetchConversations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(convChannel);
+    };
+  }, [user?.id]);
 
   // Fetch messages when selectedConversation changes
   useEffect(() => {
@@ -106,9 +179,17 @@ export const MessagesPage: React.FC = () => {
     const fetchMessages = async () => {
       setLoadingMessages(true);
       try {
-        const res = await api.getMessages(selectedConversation.id);
-        const list = Array.isArray(res) ? res : (res?.messages || res?.data || []);
-        setMessages(list);
+        // 1. Fetch persistent messages from Supabase
+        const supaMsgs = await getSupabaseMessages(selectedConversation.id, user?.id || '');
+
+        if (supaMsgs.length > 0) {
+          setMessages(supaMsgs);
+        } else {
+          // Fallback to backend API
+          const res = await api.getMessages(selectedConversation.id).catch(() => []);
+          const list = Array.isArray(res) ? res : (res?.messages || res?.data || []);
+          setMessages(list);
+        }
         setTimeout(scrollToBottom, 100);
       } catch (err) {
         console.error('Failed to load messages:', err);
@@ -118,32 +199,80 @@ export const MessagesPage: React.FC = () => {
     };
 
     fetchMessages();
-  }, [selectedConversation?.id]);
+  }, [selectedConversation?.id, user?.id]);
 
-  // Live polling for incoming messages every 3.5 seconds
+  // Supabase Realtime subscription for instant message updates in the active conversation
   useEffect(() => {
     if (!selectedConversation || selectedConversation.id === 'draft') return;
 
+    const channel = supabase
+      .channel(`chat_room_${selectedConversation.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${selectedConversation.id}`,
+        },
+        (payload) => {
+          const newRow = payload.new as any;
+          if (newRow && newRow.id) {
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === newRow.id)) return prev;
+              return [
+                ...prev,
+                {
+                  id: newRow.id,
+                  conversationId: newRow.conversation_id,
+                  senderId: newRow.sender_id,
+                  receiverId: newRow.receiver_id,
+                  content: newRow.content,
+                  isRead: newRow.is_read,
+                  createdAt: newRow.created_at,
+                },
+              ];
+            });
+
+            // Mark as read if received by current user
+            if (newRow.receiver_id === user?.id) {
+              (async () => {
+                try {
+                  await supabase
+                    .from('messages')
+                    .update({ is_read: true })
+                    .eq('id', newRow.id);
+                } catch {}
+              })();
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    // Fallback polling every 5 seconds for resilience
     const interval = setInterval(async () => {
       try {
-        const res = await api.getMessages(selectedConversation.id);
-        const list = Array.isArray(res) ? res : (res?.messages || res?.data || []);
-        setMessages((prev) => {
-          if (
-            list.length !== prev.length ||
-            (list.length > 0 && list[list.length - 1]?.id !== prev[prev.length - 1]?.id)
-          ) {
-            return list;
-          }
-          return prev;
-        });
-      } catch {
-        // Silent poll error
-      }
-    }, 3500);
+        const msgs = await getSupabaseMessages(selectedConversation.id, user?.id || '');
+        if (msgs.length > 0) {
+          setMessages((prev) => {
+            if (
+              msgs.length !== prev.length ||
+              (msgs.length > 0 && msgs[msgs.length - 1]?.id !== prev[prev.length - 1]?.id)
+            ) {
+              return msgs;
+            }
+            return prev;
+          });
+        }
+      } catch {}
+    }, 5000);
 
-    return () => clearInterval(interval);
-  }, [selectedConversation?.id]);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [selectedConversation?.id, user?.id]);
 
   useEffect(() => {
     scrollToBottom();
@@ -151,11 +280,11 @@ export const MessagesPage: React.FC = () => {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedConversation) return;
+    if (!newMessage.trim() || !selectedConversation || !user?.id || sending) return;
 
     const receiverId =
       selectedConversation.participant?.id ||
-      (selectedConversation.participant1Id === user?.id
+      (selectedConversation.participant1Id === user.id
         ? selectedConversation.participant2Id
         : selectedConversation.participant1Id);
 
@@ -164,31 +293,53 @@ export const MessagesPage: React.FC = () => {
     setSending(true);
     const contentToSend = newMessage.trim();
     try {
-      const res = await api.sendMessage({
+      const res = await sendSupabaseMessage(
+        user.id,
         receiverId,
-        content: contentToSend,
-      });
+        contentToSend,
+        selectedConversation.id === 'draft' ? undefined : selectedConversation.id
+      );
 
-      const sentMsg = res?.data || (typeof res?.message === 'object' ? res.message : null);
-      if (sentMsg) {
-        setMessages((prev) => [...prev, sentMsg]);
+      if (res.message) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === res.message.id)) return prev;
+          return [...prev, res.message];
+        });
       }
       setNewMessage('');
 
-      // If it was draft, switch to real conversation ID
-      if (selectedConversation.id === 'draft' && res?.conversationId) {
+      if (selectedConversation.id === 'draft' && res.conversationId) {
         setSelectedConversation((prev) =>
           prev ? { ...prev, id: res.conversationId, lastMessage: contentToSend } : null
         );
-        fetchConversations();
       }
+      await fetchConversations();
     } catch (err: any) {
       console.error('Failed to send message:', err);
-      alert(err.message || 'Failed to send message. Please make sure you are connected.');
+      alert(err.message || 'Unable to send message. Please try again.');
     } finally {
       setSending(false);
     }
   };
+
+  const handleDeleteConversation = async () => {
+    if (!selectedConversation || selectedConversation.id === 'draft' || !user?.id || deletingConv) return;
+    if (!window.confirm('Are you sure you want to delete this conversation? All message history will be permanently deleted.')) return;
+
+    setDeletingConv(true);
+    try {
+      await deleteSupabaseConversation(selectedConversation.id, user.id);
+      setConversations((prev) => prev.filter((c) => c.id !== selectedConversation.id));
+      setSelectedConversation(null);
+      setMessages([]);
+    } catch (err: any) {
+      console.error('Failed to delete conversation:', err);
+      alert(err.message || 'Unable to delete conversation. Please try again.');
+    } finally {
+      setDeletingConv(false);
+    }
+  };
+
 
   const safeConversations = Array.isArray(conversations) ? conversations : [];
   const filteredConversations = safeConversations.filter((c) => {
@@ -310,12 +461,25 @@ export const MessagesPage: React.FC = () => {
                   </div>
                 </div>
 
-                <Link
-                  to={`/profile/${selectedConversation.participant?.id}`}
-                  className="btn-secondary py-1 px-2.5 text-xs font-medium"
-                >
-                  View Profile
-                </Link>
+                <div className="flex items-center gap-2">
+                  {selectedConversation.id !== 'draft' && (
+                    <button
+                      onClick={handleDeleteConversation}
+                      disabled={deletingConv}
+                      className="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-dark-800 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 text-xs font-medium"
+                      title="Delete conversation"
+                    >
+                      <Trash2 size={13} />
+                      <span className="hidden sm:inline">Delete</span>
+                    </button>
+                  )}
+                  <Link
+                    to={`/profile/${selectedConversation.participant?.id}`}
+                    className="btn-secondary py-1 px-2.5 text-xs font-medium"
+                  >
+                    View Profile
+                  </Link>
+                </div>
               </div>
 
               {/* Messages Bubble Area */}

@@ -254,28 +254,49 @@ export const NetworkPage: React.FC = () => {
     try {
       const newStatus = action === 'ACCEPT' ? 'ACCEPTED' : 'REJECTED';
 
-      // 1. Fetch connection details
-      const { data: conn } = await supabase
+      // 1. Find the connection in Supabase — try by ID first, then by sender/receiver
+      let conn: any = null;
+      const actualSenderId = senderId || null;
+
+      // Try by ID
+      const { data: connById } = await supabase
         .from('connections')
         .select('*')
         .eq('id', connectionId)
-        .single();
+        .maybeSingle();
 
-      // 2. Update status in Supabase
-      const { error: supaErr } = await supabase
-        .from('connections')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', connectionId)
-        .eq('receiver_id', user.id);
-
-      if (supaErr) {
-        console.warn('Supabase respond notice:', supaErr);
+      if (connById) {
+        conn = connById;
+      } else if (actualSenderId) {
+        // ID from Prisma backend doesn't match Supabase — find by sender/receiver pair
+        const { data: connByPair } = await supabase
+          .from('connections')
+          .select('*')
+          .eq('sender_id', actualSenderId)
+          .eq('receiver_id', user.id)
+          .maybeSingle();
+        conn = connByPair;
       }
 
+      // 2. Update in Supabase by sender_id + receiver_id (reliable regardless of ID source)
+      if (actualSenderId) {
+        await supabase
+          .from('connections')
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq('sender_id', actualSenderId)
+          .eq('receiver_id', user.id);
+      }
+      // Also try by ID as fallback
+      await supabase
+        .from('connections')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', connectionId);
+
       // 3. If accepted: create conversation + notify sender
-      if (action === 'ACCEPT' && conn) {
+      const resolvedSenderId = actualSenderId || conn?.sender_id;
+      if (action === 'ACCEPT' && resolvedSenderId) {
         try {
-          const [p1, p2] = [conn.sender_id, conn.receiver_id].sort();
+          const [p1, p2] = [resolvedSenderId, user.id].sort();
           const { data: existingConv } = await supabase
             .from('conversations')
             .select('id')
@@ -301,34 +322,52 @@ export const NetworkPage: React.FC = () => {
             .eq('user_id', user.id)
             .maybeSingle();
           const myName = myProfile?.full_name || 'Your connection';
-          if (conn?.sender_id) {
-            await supabase.from('notifications').insert({
-              user_id: conn.sender_id,
-              sender_id: user.id,
-              type: 'CONNECTION_ACCEPTED',
-              title: '🎉 Connection Accepted!',
-              message: `${myName} accepted your connection request. You are now connected — start a conversation!`,
-              link: `/messages?user=${user.id}`,
-              is_read: false,
-              created_at: new Date().toISOString(),
-            });
-          }
+          await supabase.from('notifications').insert({
+            user_id: resolvedSenderId,
+            sender_id: user.id,
+            type: 'CONNECTION_ACCEPTED',
+            title: '🎉 Connection Accepted!',
+            message: `${myName} accepted your connection request. You are now connected — start a conversation!`,
+            link: `/messages?user=${user.id}`,
+            is_read: false,
+            created_at: new Date().toISOString(),
+          });
         } catch {}
 
         // Show "Let's Chat" banner
         setJustAccepted({
           name: senderName || 'Your new connection',
-          userId: senderId || conn?.sender_id || '',
+          userId: resolvedSenderId,
         });
         setTimeout(() => setJustAccepted(null), 6000);
       }
 
-      // 4. Mirror to backend API
+      // 4. Mark related notifications as read in Supabase
+      if (resolvedSenderId) {
+        try {
+          await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('user_id', user.id)
+            .eq('sender_id', resolvedSenderId)
+            .eq('type', 'CONNECTION_REQUEST');
+        } catch {}
+      }
+
+      // 5. Mirror to backend API
       try {
         await api.respondConnection(connectionId, action);
       } catch (e) {
         console.warn('Backend respondConnection notice:', e);
       }
+
+      // 6. Broadcast event so profile and homepage update instantly
+      window.dispatchEvent(new CustomEvent('connections_updated'));
+
+      // 7. Clean up local pending list immediately
+      setPendingReceived((prev) =>
+        prev.filter((r) => r.id !== connectionId && r.senderId !== resolvedSenderId && r.sender?.id !== resolvedSenderId)
+      );
 
       await fetchData();
     } catch (err) {
@@ -667,7 +706,7 @@ export const NetworkPage: React.FC = () => {
                           <span>Accept Connection</span>
                         </button>
                         <button
-                          onClick={() => handleRespond(req.id, 'REJECT')}
+                          onClick={() => handleRespond(req.id, 'REJECT', undefined, s?.id || req.senderId)}
                           disabled={actionLoading[req.id]}
                           className="btn-secondary py-1.5 px-3 text-xs font-medium inline-flex items-center gap-1 cursor-pointer"
                         >

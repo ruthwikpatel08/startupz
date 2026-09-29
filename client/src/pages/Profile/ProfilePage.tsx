@@ -494,14 +494,8 @@ export const ProfilePage: React.FC = () => {
           },
         };
         setProfileUser(u);
-        if (typeof backendData?.connectionsCount === 'number') {
-          setConnectionsCount(backendData.connectionsCount);
-        }
       } else if (backendData) {
         setProfileUser(backendData);
-        if (typeof backendData?.connectionsCount === 'number') {
-          setConnectionsCount(backendData.connectionsCount);
-        }
       }
     } catch (err) {
       console.warn('Profile fetch warning:', err);
@@ -585,7 +579,11 @@ export const ProfilePage: React.FC = () => {
 
   const loadConnectionsAndStatus = async () => {
     try {
-      const checkTargetId = targetId || profileUser?.id;
+      const checkTargetId =
+        profileUser?.profile?.userId ||
+        profileUser?.id ||
+        (isMe ? currentUser?.id : targetId);
+
       if (checkTargetId) {
         const count = await fetchConnectionCount(checkTargetId);
         setConnectionsCount(count);
@@ -595,15 +593,37 @@ export const ProfilePage: React.FC = () => {
           setConnInfo(statusInfo);
         }
       }
-    } catch {
-      setConnectionsCount(0);
+    } catch (err) {
+      console.warn('loadConnectionsAndStatus notice:', err);
     }
   };
 
   useEffect(() => {
     fetchUserProfile();
     loadConnectionsAndStatus();
-  }, [targetId, currentUser?.id, isMe]);
+
+    // Subscribe to realtime connection changes so both accounts update live
+    const channel = supabase
+      .channel(`profile-conns-${targetId || currentUser?.id || 'all'}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'connections' },
+        () => {
+          loadConnectionsAndStatus();
+        }
+      )
+      .subscribe();
+
+    const handleConnEvt = () => {
+      loadConnectionsAndStatus();
+    };
+    window.addEventListener('connections_updated', handleConnEvt);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener('connections_updated', handleConnEvt);
+    };
+  }, [targetId, currentUser?.id, isMe, profileUser?.id]);
 
   const handleAcceptConnection = async () => {
     if (!connInfo.connectionId || !currentUser?.id) return;

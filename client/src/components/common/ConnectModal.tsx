@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Modal } from './Modal';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { supabase, sendConnectionRequest } from '../../lib/supabase';
 import { User } from '../../types';
 import { Avatar } from './Avatar';
 import { Send, CheckCircle, Lock, AlertCircle } from 'lucide-react';
@@ -131,24 +131,13 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
       fallbackErrorMsg = msg;
     }
 
-    // Always mirror / fallback directly to Supabase to guarantee 100% delivery and notifications
+    // Always deliver directly to Supabase to guarantee 100% persistent delivery and notifications
     try {
       const isUuid = (str?: string): boolean =>
         Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
 
       let targetSenderId = currentUser.id;
       let targetRecipientId = recipientIdRaw;
-
-      // Ensure UUID format for Supabase queries
-      if (!isUuid(targetSenderId) && currentUser.email) {
-        const { data: sProf } = await supabase
-          .from('profiles')
-          .select('user_id, id')
-          .eq('email', currentUser.email.toLowerCase().trim())
-          .maybeSingle();
-        if (sProf?.user_id && isUuid(sProf.user_id)) targetSenderId = sProf.user_id;
-        else if (sProf?.id && isUuid(sProf.id)) targetSenderId = sProf.id;
-      }
 
       if (!isUuid(targetRecipientId) && recipientEmail) {
         const { data: rProf } = await supabase
@@ -157,78 +146,18 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
           .eq('email', recipientEmail.toLowerCase().trim())
           .maybeSingle();
         if (rProf?.user_id && isUuid(rProf.user_id)) targetRecipientId = rProf.user_id;
-        else if (rProf?.id && isUuid(rProf.id)) targetRecipientId = rProf.id;
       }
-
-      const senderName =
-        currentUser.profile?.fullName ||
-        currentUser.email?.split('@')[0] ||
-        'A startup builder';
 
       if (isUuid(targetSenderId) && isUuid(targetRecipientId)) {
-        // Check existing connection in Supabase
-        const { data: existingConns } = await supabase
-          .from('connections')
-          .select('*')
-          .or(
-            `and(sender_id.eq.${targetSenderId},receiver_id.eq.${targetRecipientId}),and(sender_id.eq.${targetRecipientId},receiver_id.eq.${targetSenderId})`
-          );
-
-        const existing = existingConns && existingConns[0];
-        if (existing) {
-          if (existing.status === 'ACCEPTED') {
-            setSent(true);
-            setTimeout(() => {
-              setSent(false);
-              setNote('');
-              onClose();
-              if (onSuccess) onSuccess();
-            }, 1500);
-            setLoading(false);
-            return;
-          }
-          await supabase
-            .from('connections')
-            .update({
-              note: note.trim() || null,
-              status: 'PENDING',
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', existing.id);
-        } else {
-          const { error: insErr } = await supabase.from('connections').insert({
-            sender_id: targetSenderId,
-            receiver_id: targetRecipientId,
-            status: 'PENDING',
-            note: note.trim() || null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
-          if (insErr) {
-            console.warn('Supabase insert connection notice:', insErr);
-          }
+        const res = await sendConnectionRequest(targetSenderId, targetRecipientId, note.trim() || undefined);
+        if (res.success) {
+          completed = true;
         }
-
-        // Always deliver notification to recipient in Supabase
-        await supabase.from('notifications').insert({
-          user_id: targetRecipientId,
-          sender_id: targetSenderId,
-          type: 'CONNECTION_REQUEST',
-          title: 'New Connection Request 🤝',
-          message: `${senderName} wants to connect with you.${
-            note.trim() ? ` Note: "${note.trim()}"` : ''
-          }`,
-          link: '/network?tab=PENDING',
-          is_read: false,
-          created_at: new Date().toISOString(),
-        });
-
-        completed = true;
       }
     } catch (supaErr: any) {
-      console.warn('Supabase notification/connection fallback notice:', supaErr);
+      console.warn('Supabase sendConnectionRequest notice:', supaErr);
       if (!completed) {
-        setError(fallbackErrorMsg || supaErr?.message || 'Failed to send connection request.');
+        setError(fallbackErrorMsg || supaErr?.message || 'Unable to send connection request. Please try again.');
         setLoading(false);
         return;
       }

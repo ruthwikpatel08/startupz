@@ -254,6 +254,9 @@ export const api = {
   },
   sendMessage: (payload: { receiverId: string; content: string }) =>
     request<any>('/messages', { method: 'POST', body: JSON.stringify(payload) }),
+  deleteConversation: (conversationId: string) =>
+    request<any>(`/messages/${conversationId}`, { method: 'DELETE' }),
+
 
   // SAVED
   getSavedItems: (itemType?: string) => {
