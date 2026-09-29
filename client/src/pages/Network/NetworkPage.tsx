@@ -36,6 +36,7 @@ export const NetworkPage: React.FC = () => {
   const [sentProposals, setSentProposals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  const [justAccepted, setJustAccepted] = useState<{ name: string; userId: string } | null>(null);
 
   useEffect(() => {
     const t = searchParams.get('tab')?.toUpperCase();
@@ -54,8 +55,9 @@ export const NetworkPage: React.FC = () => {
       ]);
 
       let connList = connRes.connections || [];
-      let rxList = pendingRes.received || [];
-      let txList = pendingRes.sent || [];
+      // Only keep PENDING items (backend may include accepted in its sent list in some versions)
+      let rxList = (pendingRes.received || []).filter((r: any) => !r.status || r.status === 'PENDING');
+      let txList = (pendingRes.sent || []).filter((r: any) => !r.status || r.status === 'PENDING');
       let rxProp = (proposalsRes as any)?.received || [];
       let txProp = (proposalsRes as any)?.sent || [];
 
@@ -96,6 +98,7 @@ export const NetworkPage: React.FC = () => {
               };
 
               if (c.status === 'ACCEPTED') {
+                // Ensure ACCEPTED connections are in connList for BOTH sender and receiver
                 if (!connList.some((item: any) => item.connectionId === c.id || item.user?.id === otherId)) {
                   connList.push({
                     connectionId: c.id,
@@ -103,6 +106,9 @@ export const NetworkPage: React.FC = () => {
                     user: otherUserObj,
                   });
                 }
+                // Remove from pending lists if present (cleanup stale state)
+                rxList = rxList.filter((item: any) => item.id !== c.id);
+                txList = txList.filter((item: any) => item.id !== c.id);
               } else if (c.status === 'PENDING') {
                 if (c.receiver_id === user.id) {
                   if (!rxList.some((item: any) => item.id === c.id || item.senderId === c.sender_id)) {
@@ -110,6 +116,7 @@ export const NetworkPage: React.FC = () => {
                       id: c.id,
                       senderId: c.sender_id,
                       receiverId: c.receiver_id,
+                      status: 'PENDING',
                       note: c.note,
                       createdAt: c.created_at,
                       sender: otherUserObj,
@@ -121,6 +128,7 @@ export const NetworkPage: React.FC = () => {
                       id: c.id,
                       senderId: c.sender_id,
                       receiverId: c.receiver_id,
+                      status: 'PENDING',
                       note: c.note,
                       createdAt: c.created_at,
                       receiver: otherUserObj,
@@ -217,46 +225,149 @@ export const NetworkPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [user]);
 
-  const handleRespond = async (connectionId: string, action: 'ACCEPT' | 'REJECT') => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`network-conns:${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'connections',
+        },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
+
+  const handleRespond = async (connectionId: string, action: 'ACCEPT' | 'REJECT', senderName?: string, senderId?: string) => {
+    if (!user?.id) return;
     setActionLoading((prev) => ({ ...prev, [connectionId]: true }));
     try {
+      const newStatus = action === 'ACCEPT' ? 'ACCEPTED' : 'REJECTED';
+
+      // 1. Fetch connection details
+      const { data: conn } = await supabase
+        .from('connections')
+        .select('*')
+        .eq('id', connectionId)
+        .single();
+
+      // 2. Update status in Supabase
+      const { error: supaErr } = await supabase
+        .from('connections')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', connectionId)
+        .eq('receiver_id', user.id);
+
+      if (supaErr) {
+        console.warn('Supabase respond notice:', supaErr);
+      }
+
+      // 3. If accepted: create conversation + notify sender
+      if (action === 'ACCEPT' && conn) {
+        try {
+          const [p1, p2] = [conn.sender_id, conn.receiver_id].sort();
+          const { data: existingConv } = await supabase
+            .from('conversations')
+            .select('id')
+            .eq('participant1_id', p1)
+            .eq('participant2_id', p2)
+            .maybeSingle();
+
+          if (!existingConv) {
+            await supabase.from('conversations').insert({
+              participant1_id: p1,
+              participant2_id: p2,
+              last_message: 'Connected! Say hello and start collaborating.',
+              last_message_at: new Date().toISOString(),
+            });
+          }
+        } catch {}
+
+        // Notify the sender about the acceptance
+        try {
+          const { data: myProfile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          const myName = myProfile?.full_name || 'Your connection';
+          if (conn?.sender_id) {
+            await supabase.from('notifications').insert({
+              user_id: conn.sender_id,
+              sender_id: user.id,
+              type: 'CONNECTION_ACCEPTED',
+              title: '🎉 Connection Accepted!',
+              message: `${myName} accepted your connection request. You are now connected — start a conversation!`,
+              link: `/messages?user=${user.id}`,
+              is_read: false,
+              created_at: new Date().toISOString(),
+            });
+          }
+        } catch {}
+
+        // Show "Let's Chat" banner
+        setJustAccepted({
+          name: senderName || 'Your new connection',
+          userId: senderId || conn?.sender_id || '',
+        });
+        setTimeout(() => setJustAccepted(null), 6000);
+      }
+
+      // 4. Mirror to backend API
       try {
         await api.respondConnection(connectionId, action);
       } catch (e) {
         console.warn('Backend respondConnection notice:', e);
       }
-      try {
-        const newStatus = action === 'ACCEPT' ? 'ACCEPTED' : 'REJECTED';
-        await supabase
-          .from('connections')
-          .update({ status: newStatus, updated_at: new Date().toISOString() })
-          .eq('id', connectionId);
-      } catch {}
+
       await fetchData();
     } catch (err) {
       console.error(`Failed to ${action} connection:`, err);
+      alert(`Unable to ${action.toLowerCase()} connection request. Please try again.`);
     } finally {
       setActionLoading((prev) => ({ ...prev, [connectionId]: false }));
     }
   };
 
   const handleRemove = async (connectionId: string) => {
-    if (!window.confirm('Are you sure you want to disconnect from this user?')) return;
+    if (!user?.id) return;
+    if (!window.confirm('Are you sure you want to remove this connection?')) return;
     setActionLoading((prev) => ({ ...prev, [connectionId]: true }));
     try {
+      // 1. Delete from Supabase
+      const { error: supaErr } = await supabase
+        .from('connections')
+        .delete()
+        .eq('id', connectionId)
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+
+      if (supaErr) {
+        console.warn('Supabase delete connection notice:', supaErr);
+      }
+
+      // 2. Mirror to backend API
       try {
         await api.removeConnection(connectionId);
       } catch (e) {
         console.warn('Backend removeConnection notice:', e);
       }
-      try {
-        await supabase.from('connections').delete().eq('id', connectionId);
-      } catch {}
+
       setConnections((prev) => prev.filter((c) => c.connectionId !== connectionId));
+      setPendingSent((prev) => prev.filter((r) => r.id !== connectionId));
+      await fetchData();
     } catch (err) {
       console.error('Failed to remove connection:', err);
+      alert('Unable to remove connection. Please try again.');
     } finally {
       setActionLoading((prev) => ({ ...prev, [connectionId]: false }));
     }
@@ -284,12 +395,44 @@ export const NetworkPage: React.FC = () => {
     }
   };
 
-  const totalPending = pendingReceived.length;
+  const totalPending = pendingReceived.filter((r: any) => r.status !== 'ACCEPTED').length;
   const pendingProposalsCount = receivedProposals.filter((p) => p.status === 'PENDING').length;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      
+
+      {/* "Let's Chat" success banner shown after accepting a connection */}
+      {justAccepted && (
+        <div className="flex items-center justify-between p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🎉</span>
+            <div>
+              <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200">
+                You're now connected with {justAccepted.name}!
+              </p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                Both of your connection counts have been updated. Start a conversation!
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => navigate(`/messages?user=${justAccepted.userId}`)}
+              className="btn-primary py-1.5 px-3 text-xs font-semibold inline-flex items-center gap-1.5"
+            >
+              <MessageSquare size={13} />
+              <span>Let's Chat</span>
+            </button>
+            <button
+              onClick={() => setJustAccepted(null)}
+              className="p-1 text-emerald-600 hover:text-emerald-800 dark:hover:text-emerald-300"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -507,11 +650,20 @@ export const NetworkPage: React.FC = () => {
 
                       <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-dark-800">
                         <button
-                          onClick={() => handleRespond(req.id, 'ACCEPT')}
+                          onClick={() => handleRespond(
+                            req.id,
+                            'ACCEPT',
+                            s?.profile?.fullName || (s?.email ? s.email.split('@')[0] : 'Your connection'),
+                            s?.id
+                          )}
                           disabled={actionLoading[req.id]}
                           className="btn-primary flex-1 py-1.5 px-3 text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer"
                         >
-                          <Check size={13} />
+                          {actionLoading[req.id] ? (
+                            <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Check size={13} />
+                          )}
                           <span>Accept Connection</span>
                         </button>
                         <button
@@ -566,9 +718,19 @@ export const NetworkPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 shrink-0">
-                        Pending
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900/60 shrink-0">
+                          Pending
+                        </span>
+                        <button
+                          onClick={() => handleRemove(req.id)}
+                          disabled={actionLoading[req.id]}
+                          className="text-[11px] text-slate-400 hover:text-rose-600 transition-colors cursor-pointer px-1 py-0.5"
+                          title="Withdraw invitation"
+                        >
+                          Withdraw
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
