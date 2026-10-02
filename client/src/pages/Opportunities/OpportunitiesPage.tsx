@@ -124,11 +124,17 @@ export const OpportunitiesPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchOpportunities();
-    if (user) {
+    if (user?.id) {
       fetchMyApplications();
     }
-  }, [currentType, role, workplaceType, commitment, search, user]);
+  }, [user?.id]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchOpportunities();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [currentType, role, workplaceType, commitment, search]);
 
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();

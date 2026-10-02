@@ -97,7 +97,7 @@ function sanitizeData(data: any): any {
 
 const inFlightGetRequests = new Map<string, Promise<any>>();
 const getResponseCache = new Map<string, { data: any; expiresAt: number }>();
-const GET_CACHE_TTL = 15000; // 15 seconds: absorbs React StrictMode remounts, component sibling renders, and rapid back-forth navigation
+const GET_CACHE_TTL = 30000; // 30 seconds: absorbs React StrictMode remounts, rapid back-forth navigation, and page exploration
 
 export function clearApiCache() {
   getResponseCache.clear();

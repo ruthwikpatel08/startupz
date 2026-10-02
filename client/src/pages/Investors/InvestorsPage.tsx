@@ -90,14 +90,19 @@ export const InvestorsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchInvestors();
-    // Fetch current user startups for pitch modal
-    if (user) {
+    if (user?.id) {
       api.getMe()
         .then((data) => setUserStartups(data.user?.startups || []))
         .catch(() => {});
     }
-  }, [investorType, stage, industry, search, user]);
+  }, [user?.id]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchInvestors();
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [investorType, stage, industry, search, user?.id]);
 
   const handleToggleSave = async (id: string) => {
     if (!user) {

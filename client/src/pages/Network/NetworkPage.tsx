@@ -48,10 +48,16 @@ export const NetworkPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [connRes, pendingRes, proposalsRes] = await Promise.all([
+      const [connRes, pendingRes, proposalsRes, supaConnsRes, supaPropsRes] = await Promise.all([
         api.getConnections().catch(() => ({ connections: [] })),
         api.getPendingConnections().catch(() => ({ received: [], sent: [] })),
         api.getStartupProposals().catch(() => ({ received: [], sent: [] })),
+        user?.id
+          ? supabase.from('connections').select('*').or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          : Promise.resolve({ data: [] }),
+        user?.id
+          ? supabase.from('startup_proposals').select('*').or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+          : Promise.resolve({ data: [] }),
       ]);
 
       let connList = connRes.connections || [];
@@ -61,153 +67,132 @@ export const NetworkPage: React.FC = () => {
       let rxProp = (proposalsRes as any)?.received || [];
       let txProp = (proposalsRes as any)?.sent || [];
 
-      // Also merge with Supabase live connections and proposals
-      if (user?.id) {
-        try {
-          const { data: supaConns } = await supabase
-            .from('connections')
+      const supaConns = supaConnsRes?.data || [];
+      const supaProps = supaPropsRes?.data || [];
+
+      if (user?.id && (supaConns.length > 0 || supaProps.length > 0)) {
+        const allOtherIds = new Set<string>();
+        supaConns.forEach((c: any) => allOtherIds.add(c.sender_id === user.id ? c.receiver_id : c.sender_id));
+        supaProps.forEach((pr: any) => allOtherIds.add(pr.sender_id === user.id ? pr.receiver_id : pr.sender_id));
+
+        const profMap = new Map<string, any>();
+        if (allOtherIds.size > 0) {
+          const { data: profiles } = await supabase
+            .from('profiles')
             .select('*')
-            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
-
-          if (supaConns && supaConns.length > 0) {
-            const otherIds = supaConns.map((c) => (c.sender_id === user.id ? c.receiver_id : c.sender_id));
-            const { data: profiles } = await supabase
-              .from('profiles')
-              .select('*')
-              .in('user_id', otherIds);
-            const profMap = new Map((profiles || []).map((p) => [p.user_id, p]));
-
-            for (const c of supaConns) {
-              const otherId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
-              const p = profMap.get(otherId);
-              const otherUserObj = {
-                id: otherId,
-                email: p?.email || '',
-                role: p?.preferred_role || 'FOUNDER',
-                isVerified: true,
-                verificationBadge: 'Verified Member',
-                profile: {
-                  id: p?.id || otherId,
-                  userId: otherId,
-                  fullName: p?.full_name || 'Startup Builder',
-                  avatar: p?.avatar,
-                  headline: p?.headline || '',
-                  location: p?.location || 'Remote',
-                  preferredRole: p?.preferred_role,
-                },
-              };
-
-              if (c.status === 'ACCEPTED') {
-                // Ensure ACCEPTED connections are in connList for BOTH sender and receiver
-                if (!connList.some((item: any) => item.connectionId === c.id || item.user?.id === otherId)) {
-                  connList.push({
-                    connectionId: c.id,
-                    connectedAt: c.updated_at,
-                    user: otherUserObj,
-                  });
-                }
-                // Remove from pending lists if present (cleanup stale state)
-                rxList = rxList.filter((item: any) => item.id !== c.id);
-                txList = txList.filter((item: any) => item.id !== c.id);
-              } else if (c.status === 'PENDING') {
-                if (c.receiver_id === user.id) {
-                  if (!rxList.some((item: any) => item.id === c.id || item.senderId === c.sender_id)) {
-                    rxList.push({
-                      id: c.id,
-                      senderId: c.sender_id,
-                      receiverId: c.receiver_id,
-                      status: 'PENDING',
-                      note: c.note,
-                      createdAt: c.created_at,
-                      sender: otherUserObj,
-                    });
-                  }
-                } else if (c.sender_id === user.id) {
-                  if (!txList.some((item: any) => item.id === c.id || item.receiverId === c.receiver_id)) {
-                    txList.push({
-                      id: c.id,
-                      senderId: c.sender_id,
-                      receiverId: c.receiver_id,
-                      status: 'PENDING',
-                      note: c.note,
-                      createdAt: c.created_at,
-                      receiver: otherUserObj,
-                    });
-                  }
-                }
-              }
-            }
-          }
-        } catch (supaErr) {
-          console.warn('Supabase network connections notice:', supaErr);
+            .in('user_id', Array.from(allOtherIds));
+          (profiles || []).forEach((p: any) => profMap.set(p.user_id, p));
         }
 
-        try {
-          const { data: supaProps } = await supabase
-            .from('startup_proposals')
-            .select('*')
-            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+        for (const c of supaConns) {
+          const otherId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
+          const p = profMap.get(otherId);
+          const otherUserObj = {
+            id: otherId,
+            email: p?.email || '',
+            role: p?.preferred_role || 'FOUNDER',
+            isVerified: true,
+            verificationBadge: 'Verified Member',
+            profile: {
+              id: p?.id || otherId,
+              userId: otherId,
+              fullName: p?.full_name || 'Startup Builder',
+              avatar: p?.avatar,
+              headline: p?.headline || '',
+              location: p?.location || 'Remote',
+              preferredRole: p?.preferred_role,
+            },
+          };
 
-          if (supaProps && supaProps.length > 0) {
-            const otherIds = supaProps.map((pr) => (pr.sender_id === user.id ? pr.receiver_id : pr.sender_id));
-            const { data: profiles } = await supabase
-              .from('profiles')
-              .select('*')
-              .in('user_id', otherIds);
-            const profMap = new Map((profiles || []).map((p) => [p.user_id, p]));
-
-            for (const pr of supaProps) {
-              const otherId = pr.sender_id === user.id ? pr.receiver_id : pr.sender_id;
-              const p = profMap.get(otherId);
-              const otherUserObj = {
-                id: otherId,
-                email: p?.email || '',
-                role: p?.preferred_role || 'FOUNDER',
-                isVerified: true,
-                verificationBadge: 'Verified Member',
-                profile: {
-                  id: p?.id || otherId,
-                  fullName: p?.full_name || 'Startup Builder',
-                  avatar: p?.avatar,
-                  headline: p?.headline || '',
-                },
-              };
-
-              if (pr.receiver_id === user.id) {
-                if (!rxProp.some((item: any) => item.id === pr.id)) {
-                  rxProp.push({
-                    id: pr.id,
-                    senderId: pr.sender_id,
-                    receiverId: pr.receiver_id,
-                    ideaTitle: pr.idea_title,
-                    pitchDescription: pr.pitch_description,
-                    proposedRole: pr.proposed_role,
-                    proposedEquity: pr.proposed_equity,
-                    status: pr.status || 'PENDING',
-                    createdAt: pr.created_at,
-                    sender: otherUserObj,
-                  });
-                }
-              } else if (pr.sender_id === user.id) {
-                if (!txProp.some((item: any) => item.id === pr.id)) {
-                  txProp.push({
-                    id: pr.id,
-                    senderId: pr.sender_id,
-                    receiverId: pr.receiver_id,
-                    ideaTitle: pr.idea_title,
-                    pitchDescription: pr.pitch_description,
-                    proposedRole: pr.proposed_role,
-                    proposedEquity: pr.proposed_equity,
-                    status: pr.status || 'PENDING',
-                    createdAt: pr.created_at,
-                    receiver: otherUserObj,
-                  });
-                }
+          if (c.status === 'ACCEPTED') {
+            // Ensure ACCEPTED connections are in connList for BOTH sender and receiver
+            if (!connList.some((item: any) => item.connectionId === c.id || item.user?.id === otherId)) {
+              connList.push({
+                connectionId: c.id,
+                connectedAt: c.updated_at,
+                user: otherUserObj,
+              });
+            }
+            // Remove from pending lists if present (cleanup stale state)
+            rxList = rxList.filter((item: any) => item.id !== c.id);
+            txList = txList.filter((item: any) => item.id !== c.id);
+          } else if (c.status === 'PENDING') {
+            if (c.receiver_id === user.id) {
+              if (!rxList.some((item: any) => item.id === c.id || item.senderId === c.sender_id)) {
+                rxList.push({
+                  id: c.id,
+                  senderId: c.sender_id,
+                  receiverId: c.receiver_id,
+                  status: 'PENDING',
+                  note: c.note,
+                  createdAt: c.created_at,
+                  sender: otherUserObj,
+                });
+              }
+            } else if (c.sender_id === user.id) {
+              if (!txList.some((item: any) => item.id === c.id || item.receiverId === c.receiver_id)) {
+                txList.push({
+                  id: c.id,
+                  senderId: c.sender_id,
+                  receiverId: c.receiver_id,
+                  status: 'PENDING',
+                  note: c.note,
+                  createdAt: c.created_at,
+                  receiver: otherUserObj,
+                });
               }
             }
           }
-        } catch (propErr) {
-          console.warn('Supabase startup proposals notice:', propErr);
+        }
+
+        for (const pr of supaProps) {
+          const otherId = pr.sender_id === user.id ? pr.receiver_id : pr.sender_id;
+          const p = profMap.get(otherId);
+          const otherUserObj = {
+            id: otherId,
+            email: p?.email || '',
+            role: p?.preferred_role || 'FOUNDER',
+            isVerified: true,
+            verificationBadge: 'Verified Member',
+            profile: {
+              id: p?.id || otherId,
+              fullName: p?.full_name || 'Startup Builder',
+              avatar: p?.avatar,
+              headline: p?.headline || '',
+            },
+          };
+
+          if (pr.receiver_id === user.id) {
+            if (!rxProp.some((item: any) => item.id === pr.id)) {
+              rxProp.push({
+                id: pr.id,
+                senderId: pr.sender_id,
+                receiverId: pr.receiver_id,
+                ideaTitle: pr.idea_title,
+                pitchDescription: pr.pitch_description,
+                proposedRole: pr.proposed_role,
+                proposedEquity: pr.proposed_equity,
+                status: pr.status || 'PENDING',
+                createdAt: pr.created_at,
+                sender: otherUserObj,
+              });
+            }
+          } else if (pr.sender_id === user.id) {
+            if (!txProp.some((item: any) => item.id === pr.id)) {
+              txProp.push({
+                id: pr.id,
+                senderId: pr.sender_id,
+                receiverId: pr.receiver_id,
+                ideaTitle: pr.idea_title,
+                pitchDescription: pr.pitch_description,
+                proposedRole: pr.proposed_role,
+                proposedEquity: pr.proposed_equity,
+                status: pr.status || 'PENDING',
+                createdAt: pr.created_at,
+                receiver: otherUserObj,
+              });
+            }
+          }
         }
       }
 

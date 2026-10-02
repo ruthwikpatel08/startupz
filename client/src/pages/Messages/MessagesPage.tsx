@@ -47,11 +47,11 @@ export const MessagesPage: React.FC = () => {
 
   const fetchConversations = async () => {
     try {
-      // 1. Fetch from Supabase directly for persistent database storage
-      const supaList = user?.id ? await getSupabaseConversations(user.id) : [];
-
-      // 2. Fetch from backend API
-      const apiRes = await api.getConversations().catch(() => []);
+      // Fetch from Supabase and backend API in parallel
+      const [supaList, apiRes] = await Promise.all([
+        user?.id ? getSupabaseConversations(user.id) : Promise.resolve([]),
+        api.getConversations().catch(() => []),
+      ]);
       const apiList = Array.isArray(apiRes) ? apiRes : (apiRes?.conversations || apiRes?.data || []);
 
       // Merge and deduplicate by conversation id

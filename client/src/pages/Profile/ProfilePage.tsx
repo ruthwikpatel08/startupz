@@ -450,14 +450,12 @@ export const ProfilePage: React.FC = () => {
     }
 
     try {
-      let backendData: any = null;
-      try {
-        const data = await api.getUser(targetId);
-        backendData = data.user || data;
-      } catch {}
+      const [backendRes, sbProfile] = await Promise.all([
+        api.getUser(targetId).catch(() => null),
+        fetchUserProfileFromSupabase(targetId).catch(() => null),
+      ]);
+      const backendData = backendRes?.user || backendRes;
 
-      // 1. Check Supabase profiles table directly for authenticated UUID
-      const sbProfile = await fetchUserProfileFromSupabase(targetId);
       if (sbProfile) {
         const u: any = {
           id: sbProfile.user_id || targetId,
@@ -602,13 +600,14 @@ export const ProfilePage: React.FC = () => {
         (isMe ? currentUser?.id : targetId);
 
       if (checkTargetId) {
-        const count = await fetchConnectionCount(checkTargetId);
-        setConnectionsCount(count);
+        const countPromise = fetchConnectionCount(checkTargetId);
+        const statusPromise = (!isMe && currentUser?.id && checkTargetId !== currentUser.id)
+          ? fetchConnectionStatus(currentUser.id, checkTargetId)
+          : Promise.resolve({ status: null, isSender: false, isReceiver: false, connectionId: null });
 
-        if (!isMe && currentUser?.id && checkTargetId !== currentUser.id) {
-          const statusInfo = await fetchConnectionStatus(currentUser.id, checkTargetId);
-          setConnInfo(statusInfo);
-        }
+        const [count, statusInfo] = await Promise.all([countPromise, statusPromise]);
+        setConnectionsCount(count);
+        setConnInfo(statusInfo);
       }
     } catch (err) {
       console.warn('loadConnectionsAndStatus notice:', err);
@@ -649,7 +648,7 @@ export const ProfilePage: React.FC = () => {
       supabase.removeChannel(broadcastChannel);
       window.removeEventListener('connections_updated', handleConnEvt);
     };
-  }, [targetId, currentUser?.id, isMe, profileUser?.id]);
+  }, [targetId, currentUser?.id, isMe]);
 
   const handleAcceptConnection = async () => {
     if (!connInfo.connectionId || !currentUser?.id) return;
@@ -903,6 +902,7 @@ export const ProfilePage: React.FC = () => {
                 src={p.coverImage}
                 alt="Profile Cover Banner"
                 className="w-full h-full object-cover"
+                decoding="async"
               />
             ) : (
               /* Subtle Professional Pattern */
@@ -963,6 +963,7 @@ export const ProfilePage: React.FC = () => {
                     <img
                       src={avatar!}
                       alt={displayName}
+                      decoding="async"
                       className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white dark:border-dark-900 shadow-sm bg-white"
                     />
                   ) : (

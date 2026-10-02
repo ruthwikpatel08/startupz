@@ -759,20 +759,20 @@ export async function getSupabaseConversations(userId: string): Promise<Conversa
 
   if (otherIds.length === 0) return [];
 
-  // Fetch profiles for all other participants
-  const { data: profileRows } = await supabase
-    .from('profiles')
-    .select('id, user_id, full_name, avatar, headline, email, preferred_role, created_at')
-    .in('user_id', otherIds);
+  // Fetch profiles for all other participants and unread counts in parallel
+  const [{ data: profileRows }, { data: unreadRows }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, user_id, full_name, avatar, headline, email, preferred_role, created_at')
+      .in('user_id', otherIds),
+    supabase
+      .from('messages')
+      .select('conversation_id')
+      .eq('receiver_id', userId)
+      .eq('is_read', false),
+  ]);
 
   const profileMap = new Map((profileRows || []).map((p) => [p.user_id, p]));
-
-  // Count unread messages for this user in each conversation
-  const { data: unreadRows } = await supabase
-    .from('messages')
-    .select('conversation_id')
-    .eq('receiver_id', userId)
-    .eq('is_read', false);
 
   const unreadMap = new Map<string, number>();
   (unreadRows || []).forEach((r) => {
