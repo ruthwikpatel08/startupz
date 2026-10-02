@@ -60,9 +60,12 @@ export const NotificationsDropdown: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const isFetchingRef = useRef(false);
+  const senderProfilesCacheRef = useRef<Map<string, any>>(new Map());
 
   const fetchNotifications = async () => {
-    if (!user) return;
+    if (!user?.id || isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       let list: NotificationItem[] = [];
       let unread = 0;
@@ -85,14 +88,17 @@ export const NotificationsDropdown: React.FC = () => {
             .order('created_at', { ascending: false });
 
           if (supaNotifs && supaNotifs.length > 0) {
-            const senderIds = supaNotifs.map((n) => n.sender_id).filter(Boolean);
-            let senderMap = new Map<string, any>();
-            if (senderIds.length > 0) {
+            const allSenderIds = supaNotifs.map((n) => n.sender_id).filter(Boolean);
+            const uncachedSenderIds = allSenderIds.filter(
+              (id) => !senderProfilesCacheRef.current.has(id)
+            );
+
+            if (uncachedSenderIds.length > 0) {
               const { data: senders } = await supabase
                 .from('profiles')
                 .select('*')
-                .in('user_id', senderIds);
-              senderMap = new Map((senders || []).map((s) => [s.user_id, s]));
+                .in('user_id', uncachedSenderIds);
+              (senders || []).forEach((s) => senderProfilesCacheRef.current.set(s.user_id, s));
             }
 
             for (const sn of supaNotifs) {
@@ -102,7 +108,7 @@ export const NotificationsDropdown: React.FC = () => {
                   (item.title === sn.title && item.message === sn.message)
               );
               if (!alreadyInList) {
-                const sProf = sn.sender_id ? senderMap.get(sn.sender_id) : null;
+                const sProf = sn.sender_id ? senderProfilesCacheRef.current.get(sn.sender_id) : null;
                 list.push({
                   id: sn.id,
                   userId: sn.user_id,
@@ -135,9 +141,7 @@ export const NotificationsDropdown: React.FC = () => {
         }
       }
 
-      // ========== CRITICAL FIX ==========
       // Check REAL connection status for ALL CONNECTION_REQUEST notifications
-      // (both backend-sourced AND supabase-sourced) so Accept/Decline never re-appears
       const allConnNotifs = list.filter((n) => n.type === 'CONNECTION_REQUEST' && n.senderId);
       if (allConnNotifs.length > 0 && user?.id) {
         const allSenderIds = [...new Set(allConnNotifs.map((n) => n.senderId!).filter(Boolean))];
@@ -173,7 +177,6 @@ export const NotificationsDropdown: React.FC = () => {
       unread = list.filter((n) => !n.isRead).length;
 
       // Preserve in-memory _actionStatus for items already in our local list
-      // (so quick-accept via UI is not lost between polls for backend-sourced items)
       setNotifications((prev) => {
         const prevMap = new Map(prev.map((p) => [p.id, p]));
         return list.map((n) => {
@@ -187,17 +190,33 @@ export const NotificationsDropdown: React.FC = () => {
       setUnreadCount(unread);
     } catch {
       // Graceful poll fail
+    } finally {
+      isFetchingRef.current = false;
     }
   };
 
-
-  // Initial load and periodic poll every 10 seconds
+  // Initial load and periodic poll every 30 seconds (pauses when browser tab is hidden)
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000);
-    return () => clearInterval(interval);
-  }, [user]);
+
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchNotifications();
+    }, 30000);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchNotifications();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user?.id]);
 
   // Close dropdown on outside click or touch or Escape key
   useEffect(() => {

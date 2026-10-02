@@ -95,36 +95,82 @@ function sanitizeData(data: any): any {
   return cleaned;
 }
 
+const inFlightGetRequests = new Map<string, Promise<any>>();
+const getResponseCache = new Map<string, { data: any; expiresAt: number }>();
+const GET_CACHE_TTL = 15000; // 15 seconds: absorbs React StrictMode remounts, component sibling renders, and rapid back-forth navigation
+
+export function clearApiCache() {
+  getResponseCache.clear();
+  inFlightGetRequests.clear();
+}
+
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...getAuthHeader(),
-    ...(options.headers as Record<string, string> || {}),
+  const method = (options.method || 'GET').toUpperCase();
+  const isGet = method === 'GET';
+  const token = localStorage.getItem('startupz_token') || 'anon';
+  const cacheKey = `${token}:${endpoint}`;
+
+  // If a mutation occurs, invalidate cached GET responses so subsequent reads reflect new state
+  if (!isGet && !endpoint.startsWith('/auth/sync') && !endpoint.startsWith('/auth/login')) {
+    getResponseCache.clear();
+  }
+
+  if (isGet) {
+    const cached = getResponseCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiresAt) {
+      return Promise.resolve(cached.data as T);
+    }
+    if (inFlightGetRequests.has(cacheKey)) {
+      return inFlightGetRequests.get(cacheKey)!;
+    }
+  }
+
+  const executeRequest = async (): Promise<T> => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+      ...(options.headers as Record<string, string> || {}),
+    };
+
+    try {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers,
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const errorMsg = data.message || data.error || `HTTP error ${response.status}`;
+        throw new Error(errorMsg);
+      }
+
+      const sanitized = sanitizeData(data) as T;
+      if (isGet) {
+        getResponseCache.set(cacheKey, { data: sanitized, expiresAt: Date.now() + GET_CACHE_TTL });
+      }
+      return sanitized;
+    } catch (err: any) {
+      if (err.name === 'TypeError' && (err.message || '').includes('fetch')) {
+        throw new Error('Cloud backend is waking up or updating. Please wait 10-20 seconds or use Continue with Google.');
+      }
+      throw err;
+    }
   };
 
-  try {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-      ...options,
-      headers,
+  if (isGet) {
+    const promise = executeRequest().finally(() => {
+      inFlightGetRequests.delete(cacheKey);
     });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      const errorMsg = data.message || data.error || `HTTP error ${response.status}`;
-      throw new Error(errorMsg);
-    }
-
-    return sanitizeData(data) as T;
-  } catch (err: any) {
-    if (err.name === 'TypeError' && (err.message || '').includes('fetch')) {
-      throw new Error('Cloud backend is waking up or updating. Please wait 10-20 seconds or use Continue with Google.');
-    }
-    throw err;
+    inFlightGetRequests.set(cacheKey, promise);
+    return promise;
   }
+
+  return executeRequest();
 }
 
 export const api = {
+  clearCache: clearApiCache,
   // AUTH
   register: (payload: any) => request<any>('/auth/register', { method: 'POST', body: JSON.stringify(payload) }),
   login: (payload: any) => request<any>('/auth/login', { method: 'POST', body: JSON.stringify(payload) }),

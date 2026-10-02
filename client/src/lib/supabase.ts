@@ -118,26 +118,65 @@ export function mapSupabaseToAppUser(
   };
 }
 
+const userProfileCache = new Map<string, { data: any; expiresAt: number }>();
+const inFlightProfileRequests = new Map<string, Promise<any | null>>();
+const PROFILE_CACHE_TTL_MS = 60000; // 60 seconds
+
+export function invalidateUserProfileCache(userId?: string): void {
+  if (userId) {
+    userProfileCache.delete(userId);
+    inFlightProfileRequests.delete(userId);
+  } else {
+    userProfileCache.clear();
+    inFlightProfileRequests.clear();
+  }
+}
+
 /**
  * Fetch a profile row from Supabase public.profiles by user UUID.
+ * Includes in-memory caching and in-flight request deduplication to prevent redundant network requests.
  */
-export async function fetchUserProfile(userId: string): Promise<any | null> {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
+export async function fetchUserProfile(userId: string, forceRefresh = false): Promise<any | null> {
+  if (!userId) return null;
 
-    if (error) {
-      console.warn('Error fetching profile from Supabase:', error.message);
+  if (!forceRefresh) {
+    const cached = userProfileCache.get(userId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+  }
+
+  if (inFlightProfileRequests.has(userId)) {
+    return inFlightProfileRequests.get(userId)!;
+  }
+
+  const fetchPromise = (async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.warn('Error fetching profile from Supabase:', error.message);
+        return null;
+      }
+
+      if (data) {
+        userProfileCache.set(userId, { data, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
+      }
+      return data;
+    } catch (err) {
+      console.warn('Network exception fetching profile:', err);
       return null;
     }
-    return data;
-  } catch (err) {
-    console.warn('Network exception fetching profile:', err);
-    return null;
-  }
+  })().finally(() => {
+    inFlightProfileRequests.delete(userId);
+  });
+
+  inFlightProfileRequests.set(userId, fetchPromise);
+  return fetchPromise;
 }
 
 /**
@@ -199,6 +238,9 @@ export async function upsertUserProfile(
         console.warn('Error updating profile in Supabase:', error.message);
         return existing;
       }
+      if (data) {
+        userProfileCache.set(userId, { data, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
+      }
       return data;
     } else {
       const { data, error } = await supabase
@@ -213,6 +255,9 @@ export async function upsertUserProfile(
       if (error) {
         console.warn('Error creating profile in Supabase:', error.message);
         return null;
+      }
+      if (data) {
+        userProfileCache.set(userId, { data, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
       }
       return data;
     }

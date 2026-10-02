@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Session, User as SupabaseAuthUser } from '@supabase/supabase-js';
 import { User } from '../types';
 import { supabase, mapSupabaseToAppUser, fetchUserProfile, upsertUserProfile, recordAuthProviderHint, resolveEmailOrUsername } from '../lib/supabase';
@@ -38,67 +38,93 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Loading starts as true to prevent premature redirects and authentication flickering
   const [loading, setLoading] = useState<boolean>(true);
   const isInitializingRef = useRef(true);
+  const inFlightUserLoadRef = useRef<Map<string, Promise<User | null>>>(new Map());
+  const lastSyncedPayloadRef = useRef<string>(localStorage.getItem('startupz_last_synced') || '');
+  const lastHandledTokenRef = useRef<string>('');
 
   /**
    * Internal helper to load user profile from Supabase profiles table,
    * create default profile if missing (e.g. OAuth first-time login), and update state.
+   * Includes in-flight deduplication and reference stabilization to prevent cascade re-renders.
    */
   const loadUserFromSupabase = useCallback(async (currentSession: Session): Promise<User | null> => {
     const authUser = currentSession.user;
     if (!authUser) return null;
+    const userId = authUser.id;
 
-    try {
-      // 1. Fetch StartupZ profile from Supabase public.profiles
-      let profileRow = await fetchUserProfile(authUser.id);
+    // Deduplicate concurrent loadUserFromSupabase calls for the same user ID
+    if (inFlightUserLoadRef.current.has(userId)) {
+      return inFlightUserLoadRef.current.get(userId)!;
+    }
 
-      // 2. If profile does not exist yet (e.g. first-time Google OAuth or new sign-up),
-      // create it automatically to ensure every auth user has a StartupZ profile
-      if (!profileRow) {
-        const metadata = authUser.user_metadata || {};
-        const isGoogle =
-          authUser.app_metadata?.provider === 'google' ||
-          authUser.identities?.some((id) => id.provider === 'google');
-
-        const role = metadata.role || 'FOUNDER';
-        const fullName = metadata.full_name || metadata.name || authUser.email?.split('@')[0] || 'Founder';
-        const avatar =
-          metadata.avatar_url ||
-          metadata.picture ||
-          null;
-
-        profileRow = await upsertUserProfile(authUser.id, {
-          full_name: fullName,
-          headline: metadata.headline || `${role} | Startup Builder`,
-          location: metadata.location || 'Remote',
-          avatar,
-          preferred_role: role,
-          is_category_selected: isGoogle ? false : true,
-          auth_provider: isGoogle ? 'google' : 'email',
-          email: authUser.email || '',
-        });
-      }
-
-      // 3. Map to full application User model
-      const appUser = mapSupabaseToAppUser(authUser, profileRow);
-
-      // 4. Record provider hint for smart Google identity guidance
-      if (authUser.email) {
-        const isGoogle =
-          authUser.app_metadata?.provider === 'google' ||
-          authUser.identities?.some((id) => id.provider === 'google');
-        recordAuthProviderHint(authUser.email, isGoogle ? 'google' : 'email');
-      }
-
-      // 5. Update cached state
-      setUser(appUser);
-      setSession(currentSession);
-      setToken(currentSession.access_token);
-      localStorage.setItem('startupz_user', JSON.stringify(appUser));
-      localStorage.setItem('startupz_token', currentSession.access_token);
-
-      // 6. Sync to backend API for unified token and user persistence
+    const loadPromise = (async (): Promise<User | null> => {
       try {
-        const syncRes = await api.syncAuth({
+        // 1. Fetch StartupZ profile from Supabase public.profiles (cached & deduplicated in lib/supabase)
+        let profileRow = await fetchUserProfile(userId);
+
+        // 2. If profile does not exist yet (e.g. first-time Google OAuth or new sign-up),
+        // create it automatically to ensure every auth user has a StartupZ profile
+        if (!profileRow) {
+          const metadata = authUser.user_metadata || {};
+          const isGoogle =
+            authUser.app_metadata?.provider === 'google' ||
+            authUser.identities?.some((id) => id.provider === 'google');
+
+          const role = metadata.role || 'FOUNDER';
+          const fullName = metadata.full_name || metadata.name || authUser.email?.split('@')[0] || 'Founder';
+          const avatar =
+            metadata.avatar_url ||
+            metadata.picture ||
+            null;
+
+          profileRow = await upsertUserProfile(userId, {
+            full_name: fullName,
+            headline: metadata.headline || `${role} | Startup Builder`,
+            location: metadata.location || 'Remote',
+            avatar,
+            preferred_role: role,
+            is_category_selected: isGoogle ? false : true,
+            auth_provider: isGoogle ? 'google' : 'email',
+            email: authUser.email || '',
+          });
+        }
+
+        // 3. Map to full application User model
+        const appUser = mapSupabaseToAppUser(authUser, profileRow);
+
+        // 4. Record provider hint for smart Google identity guidance
+        if (authUser.email) {
+          const isGoogle =
+            authUser.app_metadata?.provider === 'google' ||
+            authUser.identities?.some((id) => id.provider === 'google');
+          recordAuthProviderHint(authUser.email, isGoogle ? 'google' : 'email');
+        }
+
+        // 5. Update cached state with reference stability check
+        setUser((prevUser) => {
+          if (
+            prevUser &&
+            prevUser.id === appUser.id &&
+            prevUser.email === appUser.email &&
+            prevUser.role === appUser.role &&
+            prevUser.profile?.fullName === appUser.profile?.fullName &&
+            prevUser.profile?.headline === appUser.profile?.headline &&
+            prevUser.profile?.avatar === appUser.profile?.avatar &&
+            prevUser.profile?.isCategorySelected === appUser.profile?.isCategorySelected
+          ) {
+            return prevUser;
+          }
+          return appUser;
+        });
+
+        setSession(currentSession);
+        setToken(currentSession.access_token);
+        lastHandledTokenRef.current = currentSession.access_token;
+        localStorage.setItem('startupz_user', JSON.stringify(appUser));
+        localStorage.setItem('startupz_token', currentSession.access_token);
+
+        // 6. Sync to backend API for unified token and user persistence (deduplicated by payload)
+        const syncPayload = JSON.stringify({
           id: appUser.id,
           email: appUser.email,
           fullName: appUser.profile?.fullName,
@@ -107,24 +133,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           location: appUser.profile?.location,
           avatar: appUser.profile?.avatar,
         });
-        if (syncRes && syncRes.token) {
-          setToken(syncRes.token);
-          localStorage.setItem('startupz_token', syncRes.token);
-        }
-      } catch {
-        // Backend offline / waking up
-      }
 
-      return appUser;
-    } catch (err) {
-      console.warn('StartupZ Auth: Error loading user profile:', err);
-      // Fallback with basic mapped user if profile fetch throws
-      const fallbackUser = mapSupabaseToAppUser(authUser);
-      setUser(fallbackUser);
-      setSession(currentSession);
-      setToken(currentSession.access_token);
-      return fallbackUser;
-    }
+        const storedSync = localStorage.getItem('startupz_last_synced');
+        const hasToken = !!localStorage.getItem('startupz_token');
+
+        if (syncPayload !== lastSyncedPayloadRef.current && (!hasToken || syncPayload !== storedSync)) {
+          lastSyncedPayloadRef.current = syncPayload;
+          try {
+            const syncRes = await api.syncAuth(JSON.parse(syncPayload));
+            if (syncRes && syncRes.token && syncRes.token !== currentSession.access_token) {
+              setToken(syncRes.token);
+              localStorage.setItem('startupz_token', syncRes.token);
+            }
+            localStorage.setItem('startupz_last_synced', syncPayload);
+          } catch {
+            // Backend offline / waking up
+          }
+        }
+
+        return appUser;
+      } catch (err) {
+        console.warn('StartupZ Auth: Error loading user profile:', err);
+        // Fallback with basic mapped user if profile fetch throws
+        const fallbackUser = mapSupabaseToAppUser(authUser);
+        setUser(fallbackUser);
+        setSession(currentSession);
+        setToken(currentSession.access_token);
+        return fallbackUser;
+      }
+    })().finally(() => {
+      inFlightUserLoadRef.current.delete(userId);
+    });
+
+    inFlightUserLoadRef.current.set(userId, loadPromise);
+    return loadPromise;
   }, []);
 
   /**
@@ -205,14 +247,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         setSession(null);
         setToken(null);
+        lastHandledTokenRef.current = '';
+        lastSyncedPayloadRef.current = '';
         localStorage.removeItem('startupz_user');
         localStorage.removeItem('startupz_token');
+        localStorage.removeItem('startupz_last_synced');
+        api.clearCache();
         setLoading(false);
         return;
       }
 
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
         if (newSession) {
+          // If session token is already handled, skip duplicate profile query and sync call
+          if (newSession.access_token === lastHandledTokenRef.current) {
+            setLoading(false);
+            return;
+          }
           await loadUserFromSupabase(newSession);
         }
         setLoading(false);
@@ -231,7 +282,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * 2. Clears all authenticated state and cached tokens
    * 3. Completely removes old session
    */
-  const logout = async (): Promise<void> => {
+  const logout = useCallback(async (): Promise<void> => {
     try {
       await supabase.auth.signOut();
     } catch (err) {
@@ -240,19 +291,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setSession(null);
       setToken(null);
+      lastHandledTokenRef.current = '';
+      lastSyncedPayloadRef.current = '';
       localStorage.removeItem('startupz_user');
       localStorage.removeItem('startupz_token');
       localStorage.removeItem('startupz_oauth_meta');
+      localStorage.removeItem('startupz_last_synced');
+      api.clearCache();
       setLoading(false);
     }
-  };
+  }, []);
 
   /**
    * Instant Google Identity Sign-In
    * Establishes a verified Google profile session in StartupZ,
    * saving the user into public.profiles and initializing full platform access.
    */
-  const loginWithGoogleAccount = async (account: {
+  const loginWithGoogleAccount = useCallback(async (account: {
     email: string;
     name?: string;
     avatar?: string;
@@ -333,14 +388,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     return appUser;
-  };
+  }, []);
 
   /**
    * Log in with Gmail, username, or email and password.
    * Resolves handles, checks Supabase Auth credentials, handles unconfirmed email,
    * and falls back to profile-based authentication if created via Google or OAuth.
    */
-  const loginWithPasswordOrUsername = async (
+  const loginWithPasswordOrUsername = useCallback(async (
     identifier: string,
     password: string
   ): Promise<User> => {
@@ -468,34 +523,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     return appUser;
-  };
+  }, [loadUserFromSupabase]);
 
   /**
    * Update authenticated user state in memory & cache
    */
-  const updateUser = (updatedUser: User) => {
+  const updateUser = useCallback((updatedUser: User) => {
     setUser(updatedUser);
     try {
       localStorage.setItem('startupz_user', JSON.stringify(updatedUser));
     } catch {
       // Storage error ignored
     }
-  };
+  }, []);
+
+  const contextValue = useMemo(
+    () => ({
+      user,
+      session,
+      token,
+      loading,
+      logout,
+      refreshUser,
+      updateUser,
+      loginWithGoogleAccount,
+      loginWithPasswordOrUsername,
+    }),
+    [
+      user,
+      session,
+      token,
+      loading,
+      logout,
+      refreshUser,
+      updateUser,
+      loginWithGoogleAccount,
+      loginWithPasswordOrUsername,
+    ]
+  );
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        token,
-        loading,
-        logout,
-        refreshUser,
-        updateUser,
-        loginWithGoogleAccount,
-        loginWithPasswordOrUsername,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

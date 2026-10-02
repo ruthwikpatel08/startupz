@@ -65,7 +65,6 @@ export const Navbar: React.FC = () => {
   const [mobileCoFoundersOpen, setMobileCoFoundersOpen] = useState(true);
   const [mobileOpportunitiesOpen, setMobileOpportunitiesOpen] = useState(true);
 
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [aiScoutOpen, setAiScoutOpen] = useState(false);
   const [googleChooserOpen, setGoogleChooserOpen] = useState(false);
   const [quickLoginOpen, setQuickLoginOpen] = useState(false);
@@ -176,21 +175,6 @@ export const Navbar: React.FC = () => {
     setCoFoundersDropdownOpen(false);
     setOpportunitiesDropdownOpen(false);
   }, [location.pathname, location.search]);
-
-  useEffect(() => {
-    if (user) {
-      api.getNotifications()
-        .then((res: any) => {
-          const unread = typeof res?.unreadCount === 'number'
-            ? res.unreadCount
-            : (Array.isArray(res?.notifications)
-                ? res.notifications.filter((n: any) => !n.isRead).length
-                : (Array.isArray(res) ? res.filter((n: any) => !n.isRead).length : 0));
-          setUnreadNotifications(unread);
-        })
-        .catch(() => {});
-    }
-  }, [user, location.pathname]);
 
   const coFoundersDropdownItems = [
     { name: 'All Members', categoryKey: 'all', href: '/cofounders?category=all', description: 'Browse all platform members', icon: Users },

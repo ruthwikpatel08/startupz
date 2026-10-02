@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api, isDemoRecord } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -83,14 +83,22 @@ export function getUserCategory(user: any): 'founders' | 'cofounders' | 'markete
   return 'other';
 }
 
+// Module-level caches to eliminate duplicate and N+1 network requests
+const categoryDataCache = new Map<string, { rawCandidates: any[]; rawInvestors: any[]; expiresAt: number }>();
+let cachedSupaProfiles: any[] | null = null;
+let cachedSupaProfilesExpiresAt = 0;
+let cachedSupaInvestors: any[] | null = null;
+let cachedSupaInvestorsExpiresAt = 0;
+const CACHE_TTL_MS = 60000; // 60 seconds
+
 export const FindCoFounderPage: React.FC = () => {
   const { user: currentUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const rawCategory = (searchParams.get('category') || 'all').toLowerCase();
   const currentCategory = rawCategory === 'co-founders' ? 'cofounders' : rawCategory;
 
-  const [matches, setMatches] = useState<any[]>([]);
-  const [investors, setInvestors] = useState<Investor[]>([]);
+  const [rawCandidates, setRawCandidates] = useState<any[]>([]);
+  const [rawInvestors, setRawInvestors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Search input state
@@ -125,12 +133,22 @@ export const FindCoFounderPage: React.FC = () => {
     setSearchParams(params);
   };
 
-  const fetchCategoryData = async () => {
+  const fetchCategoryData = async (force = false) => {
+    const cacheKey = `${currentCategory}_${industry}_${availability}`;
+    if (!force) {
+      const cached = categoryDataCache.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) {
+        setRawCandidates(cached.rawCandidates);
+        setRawInvestors(cached.rawInvestors);
+        setLoading(false);
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       if (currentCategory === 'investors') {
         const params = new URLSearchParams();
-        if (investorSearch) params.append('search', investorSearch);
         if (investorType !== 'ALL') params.append('investorType', investorType);
         if (investorStage !== 'ALL') params.append('preferredStages', investorStage);
 
@@ -144,99 +162,59 @@ export const FindCoFounderPage: React.FC = () => {
           // Backend loading fallback
         }
 
-        // Also query live Supabase profiles for real investor accounts
+        // Live Supabase profiles for investor accounts (cached with TTL)
         let supaMappedInvestors: any[] = [];
-        try {
-          const { data: supaInvestors } = await supabase
-            .from('profiles')
-            .select('*')
-            .or('preferred_role.ilike.%investor%,skills.ilike.%investor%,skills.ilike.%investing%,headline.ilike.%investor%');
+        if (!force && cachedSupaInvestors && cachedSupaInvestorsExpiresAt > Date.now()) {
+          supaMappedInvestors = cachedSupaInvestors;
+        } else {
+          try {
+            const { data: supaInvestors } = await supabase
+              .from('profiles')
+              .select('*')
+              .or('preferred_role.ilike.%investor%,skills.ilike.%investor%,skills.ilike.%investing%,headline.ilike.%investor%');
 
-          if (supaInvestors && supaInvestors.length > 0) {
-            supaMappedInvestors = supaInvestors.map((p) => ({
-              id: p.id || p.user_id,
-              userId: p.user_id || p.id,
-              organization: p.full_name || 'Angel Investor',
-              investorType: 'Angel / Early Investor',
-              preferredStages: 'Pre-Seed, Seed',
-              industries: p.industries || p.skills || 'Technology, Artificial Intelligence, SaaS',
-              location: p.location || 'Remote',
-              about: p.bio || p.headline || 'Active startup investor in the StartupZ ecosystem.',
-              isVerified: true,
-              minCheckSize: '$25K',
-              maxCheckSize: '$250K',
-              user: {
-                id: p.user_id || p.id,
-                email: p.email,
-                role: 'INVESTOR',
-                profile: {
-                  fullName: p.full_name,
-                  username: p.username || (p.email ? p.email.split('@')[0] : 'user'),
-                  avatar: p.avatar,
-                  headline: p.headline,
-                  location: p.location,
+            if (supaInvestors && supaInvestors.length > 0) {
+              supaMappedInvestors = supaInvestors.map((p) => ({
+                id: p.id || p.user_id,
+                userId: p.user_id || p.id,
+                organization: p.full_name || 'Angel Investor',
+                investorType: 'Angel / Early Investor',
+                preferredStages: 'Pre-Seed, Seed',
+                industries: p.industries || p.skills || 'Technology, Artificial Intelligence, SaaS',
+                location: p.location || 'Remote',
+                about: p.bio || p.headline || 'Active startup investor in the StartupZ ecosystem.',
+                isVerified: true,
+                minCheckSize: '$25K',
+                maxCheckSize: '$250K',
+                user: {
+                  id: p.user_id || p.id,
+                  email: p.email,
+                  role: 'INVESTOR',
+                  profile: {
+                    fullName: p.full_name,
+                    username: p.username || (p.email ? p.email.split('@')[0] : 'user'),
+                    avatar: p.avatar,
+                    headline: p.headline,
+                    location: p.location,
+                  },
                 },
-              },
-            }));
+              }));
+              cachedSupaInvestors = supaMappedInvestors;
+              cachedSupaInvestorsExpiresAt = Date.now() + CACHE_TTL_MS;
+            }
+          } catch (supaErr) {
+            console.warn('Supabase investor query notice:', supaErr);
           }
-        } catch (supaErr) {
-          console.warn('Supabase investor query notice:', supaErr);
         }
 
         const rawAllInvestors = [...supaMappedInvestors, ...loadedInvestors];
-        const seenInvEmails = new Set<string>();
-        const seenInvIds = new Set<string>();
-        const seenInvNames = new Set<string>();
-        const filteredInvestors: Investor[] = [];
-
-        const term = (investorSearch || searchQuery).trim().toLowerCase().replace(/^@/, '');
-
-        for (const inv of rawAllInvestors) {
-          if (isDemoRecord(inv)) continue;
-
-          const invEmail = (inv.user?.email || '').toLowerCase().trim();
-          const invId = (inv.id || inv.userId || inv.user?.id || '').trim();
-          const invOrg = (inv.organization || '').toLowerCase().trim();
-
-          // 1. Exclude the currently logged-in user from their own view!
-          if (currentUser) {
-            const curEmail = (currentUser.email || '').toLowerCase().trim();
-            const curId = (currentUser.id || '').trim();
-            if (curEmail && invEmail && curEmail === invEmail) continue;
-            if (curId && invId && curId === invId) continue;
-          }
-
-          // 2. Strict deduplication - never show the same profile twice
-          if (invEmail && seenInvEmails.has(invEmail)) continue;
-          if (invId && seenInvIds.has(invId)) continue;
-          if (invOrg && seenInvNames.has(invOrg)) continue;
-
-          if (invEmail) seenInvEmails.add(invEmail);
-          if (invId) seenInvIds.add(invId);
-          if (invOrg) seenInvNames.add(invOrg);
-
-          // 3. Search and type filters
-          if (term) {
-            const org = invOrg;
-            const ind = (inv.industries || '').toLowerCase();
-            const abt = (inv.about || '').toLowerCase();
-            const un = (inv.user?.profile?.username || (invEmail ? invEmail.split('@')[0] : '')).toLowerCase();
-            if (!org.includes(term) && !ind.includes(term) && !abt.includes(term) && !un.includes(term)) {
-              continue;
-            }
-          }
-
-          if (investorType !== 'ALL' && inv.investorType !== investorType) {
-            continue;
-          }
-          if (investorStage !== 'ALL' && !inv.preferredStages?.includes(investorStage)) {
-            continue;
-          }
-
-          filteredInvestors.push(inv);
-        }
-
-        setInvestors(filteredInvestors);
+        setRawInvestors(rawAllInvestors);
+        setRawCandidates([]);
+        categoryDataCache.set(cacheKey, {
+          rawCandidates: [],
+          rawInvestors: rawAllInvestors,
+          expiresAt: Date.now() + CACHE_TTL_MS,
+        });
       } else {
         const params = new URLSearchParams();
         params.append('category', currentCategory);
@@ -254,40 +232,46 @@ export const FindCoFounderPage: React.FC = () => {
           // Backend load fallback
         }
 
-        // Also query live Supabase profiles table to guarantee real registered users are displayed
+        // Live Supabase profiles table (cached with TTL to avoid duplicate full table scans)
         let supaMappedProfiles: any[] = [];
-        try {
-          const { data: supaProfiles } = await supabase.from('profiles').select('*');
-          if (supaProfiles && supaProfiles.length > 0) {
-            supaMappedProfiles = supaProfiles.map((p) => {
-              const uName = p.username || (p.email ? p.email.split('@')[0] : 'user');
-              return {
-                id: p.user_id || p.id,
-                email: p.email,
-                role: (p.preferred_role || 'FOUNDER').toUpperCase(),
-                preferred_role: p.preferred_role,
-                verificationBadge: p.auth_provider === 'google' ? 'Verified via Google' : 'Verified Member',
-                matchPercentage: null,
-                matchExplanation: null,
-                profile: {
-                  id: p.id,
-                  userId: p.user_id || p.id,
-                  fullName: p.full_name,
-                  username: uName,
-                  headline: p.headline || '',
-                  location: p.location || '',
-                  bio: p.bio || '',
-                  avatar: p.avatar,
-                  skills: p.skills || '',
-                  preferredRole: p.preferred_role,
-                  availability: p.availability || 'Full-time',
-                  openTo: p.open_to,
-                },
-              };
-            });
+        if (!force && cachedSupaProfiles && cachedSupaProfilesExpiresAt > Date.now()) {
+          supaMappedProfiles = cachedSupaProfiles;
+        } else {
+          try {
+            const { data: supaProfiles } = await supabase.from('profiles').select('*');
+            if (supaProfiles && supaProfiles.length > 0) {
+              supaMappedProfiles = supaProfiles.map((p) => {
+                const uName = p.username || (p.email ? p.email.split('@')[0] : 'user');
+                return {
+                  id: p.user_id || p.id,
+                  email: p.email,
+                  role: (p.preferred_role || 'FOUNDER').toUpperCase(),
+                  preferred_role: p.preferred_role,
+                  verificationBadge: p.auth_provider === 'google' ? 'Verified via Google' : 'Verified Member',
+                  matchPercentage: null,
+                  matchExplanation: null,
+                  profile: {
+                    id: p.id,
+                    userId: p.user_id || p.id,
+                    fullName: p.full_name,
+                    username: uName,
+                    headline: p.headline || '',
+                    location: p.location || '',
+                    bio: p.bio || '',
+                    avatar: p.avatar,
+                    skills: p.skills || '',
+                    preferredRole: p.preferred_role,
+                    availability: p.availability || 'Full-time',
+                    openTo: p.open_to,
+                  },
+                };
+              });
+              cachedSupaProfiles = supaMappedProfiles;
+              cachedSupaProfilesExpiresAt = Date.now() + CACHE_TTL_MS;
+            }
+          } catch (supaErr) {
+            console.warn('Supabase profiles query notice:', supaErr);
           }
-        } catch (supaErr) {
-          console.warn('Supabase profiles query notice:', supaErr);
         }
 
         // If category is 'all', also load registered investors so All Members includes every member
@@ -324,100 +308,166 @@ export const FindCoFounderPage: React.FC = () => {
         }
 
         const rawAllCandidates = [...supaMappedProfiles, ...loadedMatches, ...extraAllInvestors];
-        const seenCandEmails = new Set<string>();
-        const seenCandIds = new Set<string>();
-        const seenCandUsernames = new Set<string>();
-        const filteredCandidates: any[] = [];
-
-        const qTerm = searchQuery.trim().toLowerCase().replace(/^@/, '');
-
-        for (const cand of rawAllCandidates) {
-          if (isDemoRecord(cand)) continue;
-
-          const candEmail = (cand.email || '').toLowerCase().trim();
-          const candId = (cand.id || cand.profile?.userId || cand.profile?.id || '').trim();
-          const candUsername = (cand.profile?.username || (candEmail ? candEmail.split('@')[0] : '')).toLowerCase().trim();
-
-          // 1. DO NOT show the currently logged-in user's profile to themselves!
-          if (currentUser) {
-            const curEmail = (currentUser.email || '').toLowerCase().trim();
-            const curId = (currentUser.id || '').trim();
-            const curUsername = (currentUser.profile?.username || (curEmail ? curEmail.split('@')[0] : '')).toLowerCase().trim();
-            const curFullName = (currentUser.profile?.fullName || '').toLowerCase().trim();
-            const candFullName = (cand.profile?.fullName || cand.organization || '').toLowerCase().trim();
-
-            if (curEmail && candEmail && curEmail === candEmail) continue;
-            if (curId && candId && curId === candId) continue;
-            if (curUsername && candUsername && curUsername === candUsername) continue;
-            if (curFullName && candFullName && curFullName === candFullName) continue;
-          }
-
-          // 2. Strict deduplication - never show the same profile multiple times!
-          if (candEmail && seenCandEmails.has(candEmail)) continue;
-          if (candId && seenCandIds.has(candId)) continue;
-          if (candUsername && seenCandUsernames.has(candUsername)) continue;
-
-          if (candEmail) seenCandEmails.add(candEmail);
-          if (candId) seenCandIds.add(candId);
-          if (candUsername) seenCandUsernames.add(candUsername);
-
-          // 3. Strict category separation:
-          // Never show founders in co-founders or vice versa!
-          // When currentCategory === 'all', show ALL members.
-          if (currentCategory !== 'all') {
-            const candCategory = getUserCategory(cand);
-            if (candCategory !== currentCategory) {
-              continue;
-            }
-          }
-
-          // 4. Search and role filters
-          if (qTerm) {
-            const uname = candUsername;
-            const fname = (cand.profile?.fullName || '').toLowerCase();
-            const email = candEmail;
-            const skills = (cand.profile?.skills || '').toLowerCase();
-            const headline = (cand.profile?.headline || '').toLowerCase();
-            const prefRole = (cand.profile?.preferredRole || cand.role || '').toLowerCase();
-
-            const match =
-              uname.includes(qTerm) ||
-              fname.includes(qTerm) ||
-              email.includes(qTerm) ||
-              skills.includes(qTerm) ||
-              headline.includes(qTerm) ||
-              prefRole.includes(qTerm);
-
-            if (!match) continue;
-          }
-
-          if (targetRole !== 'ALL') {
-            const roleMatch = (
-              cand.profile?.headline ||
-              cand.profile?.preferredRole ||
-              cand.role ||
-              ''
-            ).toLowerCase();
-            if (!roleMatch.includes(targetRole.toLowerCase())) continue;
-          }
-
-          filteredCandidates.push(cand);
-        }
-
-        setMatches(filteredCandidates);
+        setRawCandidates(rawAllCandidates);
+        setRawInvestors([]);
+        categoryDataCache.set(cacheKey, {
+          rawCandidates: rawAllCandidates,
+          rawInvestors: [],
+          expiresAt: Date.now() + CACHE_TTL_MS,
+        });
       }
     } catch (err) {
       console.error('Failed to load category data:', err);
-      setMatches([]);
-      setInvestors([]);
+      setRawCandidates([]);
+      setRawInvestors([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Compute filtered matches in-memory with useMemo to completely prevent network requests on keystrokes
+  const matches = useMemo(() => {
+    const seenCandEmails = new Set<string>();
+    const seenCandIds = new Set<string>();
+    const seenCandUsernames = new Set<string>();
+    const filteredCandidates: any[] = [];
+
+    const qTerm = searchQuery.trim().toLowerCase().replace(/^@/, '');
+
+    for (const cand of rawCandidates) {
+      if (isDemoRecord(cand)) continue;
+
+      const candEmail = (cand.email || '').toLowerCase().trim();
+      const candId = (cand.id || cand.profile?.userId || cand.profile?.id || '').trim();
+      const candUsername = (cand.profile?.username || (candEmail ? candEmail.split('@')[0] : '')).toLowerCase().trim();
+
+      // 1. DO NOT show the currently logged-in user's profile to themselves!
+      if (currentUser) {
+        const curEmail = (currentUser.email || '').toLowerCase().trim();
+        const curId = (currentUser.id || '').trim();
+        const curUsername = (currentUser.profile?.username || (curEmail ? curEmail.split('@')[0] : '')).toLowerCase().trim();
+        const curFullName = (currentUser.profile?.fullName || '').toLowerCase().trim();
+        const candFullName = (cand.profile?.fullName || cand.organization || '').toLowerCase().trim();
+
+        if (curEmail && candEmail && curEmail === candEmail) continue;
+        if (curId && candId && curId === candId) continue;
+        if (curUsername && candUsername && curUsername === candUsername) continue;
+        if (curFullName && candFullName && curFullName === candFullName) continue;
+      }
+
+      // 2. Strict deduplication - never show the same profile multiple times!
+      if (candEmail && seenCandEmails.has(candEmail)) continue;
+      if (candId && seenCandIds.has(candId)) continue;
+      if (candUsername && seenCandUsernames.has(candUsername)) continue;
+
+      if (candEmail) seenCandEmails.add(candEmail);
+      if (candId) seenCandIds.add(candId);
+      if (candUsername) seenCandUsernames.add(candUsername);
+
+      // 3. Strict category separation
+      if (currentCategory !== 'all') {
+        const candCategory = getUserCategory(cand);
+        if (candCategory !== currentCategory) {
+          continue;
+        }
+      }
+
+      // 4. Search and role filters
+      if (qTerm) {
+        const uname = candUsername;
+        const fname = (cand.profile?.fullName || '').toLowerCase();
+        const email = candEmail;
+        const skills = (cand.profile?.skills || '').toLowerCase();
+        const headline = (cand.profile?.headline || '').toLowerCase();
+        const prefRole = (cand.profile?.preferredRole || cand.role || '').toLowerCase();
+
+        const match =
+          uname.includes(qTerm) ||
+          fname.includes(qTerm) ||
+          email.includes(qTerm) ||
+          skills.includes(qTerm) ||
+          headline.includes(qTerm) ||
+          prefRole.includes(qTerm);
+
+        if (!match) continue;
+      }
+
+      if (targetRole !== 'ALL') {
+        const roleMatch = (
+          cand.profile?.headline ||
+          cand.profile?.preferredRole ||
+          cand.role ||
+          ''
+        ).toLowerCase();
+        if (!roleMatch.includes(targetRole.toLowerCase())) continue;
+      }
+
+      filteredCandidates.push(cand);
+    }
+
+    return filteredCandidates;
+  }, [rawCandidates, searchQuery, targetRole, currentCategory, currentUser?.id]);
+
+  // Compute filtered investors in-memory with useMemo
+  const investors = useMemo(() => {
+    const seenInvEmails = new Set<string>();
+    const seenInvIds = new Set<string>();
+    const seenInvNames = new Set<string>();
+    const filteredInvestors: Investor[] = [];
+
+    const term = (investorSearch || searchQuery).trim().toLowerCase().replace(/^@/, '');
+
+    for (const inv of rawInvestors) {
+      if (isDemoRecord(inv)) continue;
+
+      const invEmail = (inv.user?.email || '').toLowerCase().trim();
+      const invId = (inv.id || inv.userId || inv.user?.id || '').trim();
+      const invOrg = (inv.organization || '').toLowerCase().trim();
+
+      // 1. Exclude the currently logged-in user from their own view!
+      if (currentUser) {
+        const curEmail = (currentUser.email || '').toLowerCase().trim();
+        const curId = (currentUser.id || '').trim();
+        if (curEmail && invEmail && curEmail === invEmail) continue;
+        if (curId && invId && curId === invId) continue;
+      }
+
+      // 2. Strict deduplication - never show the same profile twice
+      if (invEmail && seenInvEmails.has(invEmail)) continue;
+      if (invId && seenInvIds.has(invId)) continue;
+      if (invOrg && seenInvNames.has(invOrg)) continue;
+
+      if (invEmail) seenInvEmails.add(invEmail);
+      if (invId) seenInvIds.add(invId);
+      if (invOrg) seenInvNames.add(invOrg);
+
+      // 3. Search and type filters
+      if (term) {
+        const org = invOrg;
+        const ind = (inv.industries || '').toLowerCase();
+        const abt = (inv.about || '').toLowerCase();
+        const un = (inv.user?.profile?.username || (invEmail ? invEmail.split('@')[0] : '')).toLowerCase();
+        if (!org.includes(term) && !ind.includes(term) && !abt.includes(term) && !un.includes(term)) {
+          continue;
+        }
+      }
+
+      if (investorType !== 'ALL' && inv.investorType !== investorType) {
+        continue;
+      }
+      if (investorStage !== 'ALL' && !inv.preferredStages?.includes(investorStage)) {
+        continue;
+      }
+
+      filteredInvestors.push(inv);
+    }
+
+    return filteredInvestors;
+  }, [rawInvestors, investorSearch, searchQuery, investorType, investorStage, currentUser?.id]);
+
   useEffect(() => {
     fetchCategoryData();
-  }, [currentCategory, searchQuery, targetRole, industry, availability, investorSearch, investorType, investorStage, currentUser]);
+  }, [currentCategory, targetRole, industry, availability, investorType, investorStage, currentUser?.id]);
 
   const targetRoles = [
     { label: 'All Roles', value: 'ALL' },
@@ -849,7 +899,7 @@ export const FindCoFounderPage: React.FC = () => {
         isOpen={!!connectUser}
         onClose={() => setConnectUser(null)}
         targetUser={connectUser}
-        onSuccess={fetchCategoryData}
+        onSuccess={() => fetchCategoryData(true)}
       />
 
       {/* Startup Proposal Connection Modal */}
@@ -857,7 +907,7 @@ export const FindCoFounderPage: React.FC = () => {
         isOpen={!!startupConnectUser}
         onClose={() => setStartupConnectUser(null)}
         targetUser={startupConnectUser}
-        onSuccess={fetchCategoryData}
+        onSuccess={() => fetchCategoryData(true)}
       />
     </div>
   );
