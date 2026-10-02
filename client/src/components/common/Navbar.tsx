@@ -130,7 +130,7 @@ export const Navbar: React.FC = () => {
 
   // Close dropdowns on outside click or Escape key
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const target = event.target as Node;
       if (
         coFoundersRef.current &&
@@ -160,9 +160,11 @@ export const Navbar: React.FC = () => {
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
@@ -484,28 +486,6 @@ export const Navbar: React.FC = () => {
                     <Bookmark size={16} />
                   </Link>
 
-                  {/* Profile Bar at Top in Mobile View */}
-                  <Link
-                    to={`/profile/${user.id}`}
-                    aria-label="My Profile Bar"
-                    className={`sm:hidden flex items-center gap-1 px-2 py-1 rounded-md border text-xs font-medium transition-colors shrink-0 ${
-                      location.pathname.startsWith('/profile')
-                        ? 'bg-brand-50 dark:bg-brand-950/80 border-brand-300 dark:border-brand-800 text-brand-700 dark:text-brand-300'
-                        : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-slate-300'
-                    }`}
-                  >
-                    <Avatar
-                      src={user.profile?.avatar}
-                      name={user.profile?.fullName || user.email}
-                      size="xs"
-                      className="!w-4 !h-4"
-                    />
-                    <span className="text-[11px] truncate max-w-[70px]">
-                      {user.profile?.fullName?.split(' ')[0] || 'Profile'}
-                    </span>
-                    <Edit3 size={10} className="text-brand-600 shrink-0" />
-                  </Link>
-
                   {/* Post Startup Action */}
                   <Link
                     to="/startups/create"
@@ -526,11 +506,39 @@ export const Navbar: React.FC = () => {
                     </Link>
                   )}
 
-                  {/* User Avatar & Dropdown (Desktop) */}
-                  <div ref={profileRef} className="relative hidden sm:block">
+                  {/* User Avatar & Dropdown (Desktop & Mobile) */}
+                  <div ref={profileRef} className="relative">
+                    {/* Mobile Profile Trigger Button */}
                     <button
+                      type="button"
+                      onClick={() => {
+                        setProfileDropdownOpen(!profileDropdownOpen);
+                        setMobileMenuOpen(false);
+                      }}
+                      aria-label="My Profile Menu"
+                      className={`sm:hidden flex items-center gap-1 px-2 py-1 rounded-md border text-xs font-medium transition-colors shrink-0 cursor-pointer ${
+                        profileDropdownOpen || location.pathname.startsWith('/profile')
+                          ? 'bg-brand-50 dark:bg-brand-950/80 border-brand-300 dark:border-brand-800 text-brand-700 dark:text-brand-300'
+                          : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-slate-300'
+                      }`}
+                    >
+                      <Avatar
+                        src={user.profile?.avatar}
+                        name={user.profile?.fullName || user.email}
+                        size="xs"
+                        className="!w-4 !h-4"
+                      />
+                      <span className="text-[11px] truncate max-w-[70px]">
+                        {user.profile?.fullName?.split(' ')[0] || 'Profile'}
+                      </span>
+                      <ChevronDown size={11} className={`text-slate-400 transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {/* Desktop Avatar Trigger Button */}
+                    <button
+                      type="button"
                       onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                      className="flex items-center gap-2 p-0.5 rounded-full border border-slate-200 dark:border-slate-700 hover:border-brand-600 transition-colors focus:outline-none cursor-pointer"
+                      className="hidden sm:flex items-center gap-2 p-0.5 rounded-full border border-slate-200 dark:border-slate-700 hover:border-brand-600 transition-colors focus:outline-none cursor-pointer"
                     >
                       <Avatar
                         src={user.profile?.avatar}
@@ -540,91 +548,99 @@ export const Navbar: React.FC = () => {
                     </button>
 
                     {profileDropdownOpen && (
-                      <div className="absolute right-0 mt-1.5 w-56 bg-white dark:bg-dark-900 rounded-lg shadow-modal border border-slate-200 dark:border-slate-800 py-1.5 z-50 animate-fade-in">
-                        <div className="px-3.5 py-2 border-b border-slate-100 dark:border-slate-800">
-                          <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
-                            {user.profile?.fullName || 'Founder'}
-                          </p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                            {user.email}
-                          </p>
-                        </div>
+                      <>
+                        {/* Mobile backdrop */}
+                        <div
+                          className="fixed inset-0 bg-black/20 dark:bg-black/40 z-40 sm:hidden"
+                          onClick={() => setProfileDropdownOpen(false)}
+                        />
+                        <div className="absolute right-0 mt-1.5 w-56 max-w-[calc(100vw-1rem)] bg-white dark:bg-dark-900 rounded-lg shadow-modal border border-slate-200 dark:border-slate-800 py-1.5 z-50 animate-fade-in">
+                          <div className="px-3.5 py-2 border-b border-slate-100 dark:border-slate-800">
+                            <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                              {user.profile?.fullName || 'Founder'}
+                            </p>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                              {user.email}
+                            </p>
+                          </div>
 
-                        <div className="py-1">
-                          <Link
-                            to="/dashboard"
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
-                          >
-                            <LayoutDashboard size={14} className="text-slate-400" />
-                            <span>Dashboard</span>
-                          </Link>
-                          <Link
-                            to={`/profile/${user.id}`}
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
-                          >
-                            <UserIcon size={14} className="text-slate-400" />
-                            <span>My Startup Profile</span>
-                          </Link>
-                          <Link
-                            to="/network"
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
-                          >
-                            <Users size={14} className="text-slate-400" />
-                            <span>My Startup Network</span>
-                          </Link>
-                          <Link
-                            to="/memberships"
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
-                          >
-                            <Crown size={14} className="text-slate-400" />
-                            <span>Memberships & Plans</span>
-                          </Link>
-                          <Link
-                            to="/feed"
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
-                          >
-                            <Share2 size={14} className="text-slate-400" />
-                            <span>Community Feed</span>
-                          </Link>
-                          <Link
-                            to="/saved"
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
-                          >
-                            <Bookmark size={14} className="text-slate-400" />
-                            <span>Saved Items</span>
-                          </Link>
-                          {user.isAdmin && (
+                          <div className="py-1">
                             <Link
-                              to="/admin"
+                              to="/dashboard"
                               onClick={() => setProfileDropdownOpen(false)}
-                              className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                              className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
                             >
-                              <Shield size={14} />
-                              <span>Admin Panel</span>
+                              <LayoutDashboard size={14} className="text-slate-400" />
+                              <span>Dashboard</span>
                             </Link>
-                          )}
-                        </div>
+                            <Link
+                              to={`/profile/${user.id}`}
+                              onClick={() => setProfileDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
+                            >
+                              <UserIcon size={14} className="text-slate-400" />
+                              <span>My Startup Profile</span>
+                            </Link>
+                            <Link
+                              to="/network"
+                              onClick={() => setProfileDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
+                            >
+                              <Users size={14} className="text-slate-400" />
+                              <span>My Startup Network</span>
+                            </Link>
+                            <Link
+                              to="/memberships"
+                              onClick={() => setProfileDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
+                            >
+                              <Crown size={14} className="text-slate-400" />
+                              <span>Memberships & Plans</span>
+                            </Link>
+                            <Link
+                              to="/feed"
+                              onClick={() => setProfileDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
+                            >
+                              <Share2 size={14} className="text-slate-400" />
+                              <span>Community Feed</span>
+                            </Link>
+                            <Link
+                              to="/saved"
+                              onClick={() => setProfileDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
+                            >
+                              <Bookmark size={14} className="text-slate-400" />
+                              <span>Saved Items</span>
+                            </Link>
+                            {user.isAdmin && (
+                              <Link
+                                to="/admin"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="flex items-center gap-2.5 px-3.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                              >
+                                <Shield size={14} />
+                                <span>Admin Panel</span>
+                              </Link>
+                            )}
+                          </div>
 
-                        <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
-                          <button
-                            onClick={async () => {
-                              setProfileDropdownOpen(false);
-                              await logout();
-                              navigate('/');
-                            }}
-                            className="flex items-center gap-2.5 w-full text-left px-3.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-                          >
-                            <LogOut size={14} />
-                            <span>Log Out</span>
-                          </button>
+                          <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                setProfileDropdownOpen(false);
+                                await logout();
+                                navigate('/');
+                              }}
+                              className="flex items-center gap-2.5 w-full text-left px-3.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                            >
+                              <LogOut size={14} />
+                              <span>Log Out</span>
+                            </button>
+                          </div>
                         </div>
-                      </div>
+                      </>
                     )}
                   </div>
                 </>
@@ -676,7 +692,10 @@ export const Navbar: React.FC = () => {
 
               {/* Mobile Hamburger Button */}
               <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                onClick={() => {
+                  setMobileMenuOpen(!mobileMenuOpen);
+                  setProfileDropdownOpen(false);
+                }}
                 className="lg:hidden p-1.5 rounded-md text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
                 aria-label="Toggle Navigation Menu"
               >
@@ -688,16 +707,6 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile Horizontal Slidebar */}
         <div className="flex lg:hidden items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap px-3 py-1.5 bg-slate-50 dark:bg-dark-950 border-t border-slate-200 dark:border-slate-800 scroll-smooth shrink-0">
-          {/* 0. Search */}
-          <button
-            onClick={() => setSearchModalOpen(true)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800 shrink-0 shadow-subtle cursor-pointer"
-            title="Search Usernames & Platform"
-          >
-            <Search size={12} className="text-slate-400" />
-            <span>Search</span>
-          </button>
-
           {/* 1. AI-Scout */}
           <button
             onClick={() => setAiScoutOpen(true)}
@@ -707,21 +716,6 @@ export const Navbar: React.FC = () => {
             <Sparkles size={12} className="text-brand-600 dark:text-brand-400" />
             <span>AI - Scout</span>
           </button>
-
-          {/* User Profile Quick Link on Mobile Slidebar */}
-          {user && (
-            <Link
-              to={`/profile/${user.id}`}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium shrink-0 shadow-subtle transition-colors ${
-                location.pathname.startsWith('/profile')
-                  ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/70 border border-brand-200 dark:border-brand-800'
-                  : 'text-slate-700 dark:text-slate-200 bg-white dark:bg-dark-850 border border-slate-200 dark:border-slate-800'
-              }`}
-            >
-              <UserIcon size={12} className="text-slate-400" />
-              <span>My Profile</span>
-            </Link>
-          )}
 
           {/* 2. Startups */}
           <Link

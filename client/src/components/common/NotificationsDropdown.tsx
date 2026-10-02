@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -46,8 +46,14 @@ interface NotificationItem {
 export const NotificationsDropdown: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [isOpen, setIsOpen] = useState(false);
+
+  // Close dropdown on route change
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname, location.search]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
@@ -193,17 +199,28 @@ export const NotificationsDropdown: React.FC = () => {
     return () => clearInterval(interval);
   }, [user]);
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click or touch or Escape key
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
         setIsOpen(false);
       }
     };
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+      document.addEventListener('keydown', handleKeyDown);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isOpen]);
 
   const handleToggle = () => {
@@ -485,33 +502,49 @@ export const NotificationsDropdown: React.FC = () => {
 
       {/* Notifications Panel Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-dark-900 rounded-xl shadow-modal border border-slate-200 dark:border-slate-800 z-50 overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[580px] animate-in fade-in zoom-in-95 duration-150">
-          
-          {/* Header */}
-          <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/60 dark:bg-dark-850/50">
-            <div className="flex items-center gap-2">
-              <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <Bell size={14} className="text-brand-600 dark:text-brand-400" />
-                <span>Notifications</span>
-              </h3>
-              {unreadCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60">
-                  {unreadCount} new
-                </span>
-              )}
-            </div>
+        <>
+          {/* Mobile backdrop to easily close by tapping outside */}
+          <div
+            className="fixed inset-0 bg-black/20 dark:bg-black/40 z-40 sm:hidden"
+            onClick={() => setIsOpen(false)}
+          />
 
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={handleMarkAllAsRead}
-                className="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors inline-flex items-center gap-1 cursor-pointer"
-              >
-                <CheckCheck size={12} />
-                <span>Mark all read</span>
-              </button>
-            )}
-          </div>
+          <div className="fixed left-3 right-3 top-14 mt-1.5 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 bg-white dark:bg-dark-900 rounded-xl shadow-modal border border-slate-200 dark:border-slate-800 z-50 overflow-hidden flex flex-col max-h-[calc(100vh-70px)] sm:max-h-[580px] animate-in fade-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/60 dark:bg-dark-850/50">
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                  <Bell size={14} className="text-brand-600 dark:text-brand-400" />
+                  <span>Notifications</span>
+                </h3>
+                {unreadCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60">
+                    {unreadCount} new
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleMarkAllAsRead}
+                    className="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <CheckCheck size={12} />
+                    <span>Mark all read</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="sm:hidden p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md cursor-pointer ml-1"
+                  aria-label="Close notifications"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            </div>
 
           {/* Filter Tabs */}
           <div className="flex items-center px-3 pt-2 pb-1 border-b border-slate-100 dark:border-slate-800 gap-2 text-xs">
@@ -771,7 +804,8 @@ export const NotificationsDropdown: React.FC = () => {
               <ChevronRight size={12} />
             </Link>
           </div>
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
