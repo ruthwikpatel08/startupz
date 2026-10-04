@@ -62,9 +62,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // 1. Fetch StartupZ profile from Supabase public.profiles (cached & deduplicated in lib/supabase)
         let profileRow = await fetchUserProfile(userId);
 
-        // 2. If profile does not exist yet (e.g. first-time Google OAuth or new sign-up),
-        // create it automatically to ensure every auth user has a StartupZ profile
-        if (!profileRow) {
+        // 2. If profile does not exist yet or was marked deleted,
+        // treat user as a brand-new user and prompt from first (is_category_selected: false)
+        if (!profileRow || profileRow.is_deleted === true) {
           const metadata = authUser.user_metadata || {};
           const isGoogle =
             authUser.app_metadata?.provider === 'google' ||
@@ -83,9 +83,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             location: metadata.location || 'Remote',
             avatar,
             preferred_role: role,
-            is_category_selected: isGoogle ? false : true,
+            is_category_selected: false, // Always ask from first for new and deleted re-entered users
+            is_deleted: false,
             auth_provider: isGoogle ? 'google' : 'email',
             email: authUser.email || '',
+            startup_experience: '',
+            education: '',
+            bio: '',
+            skills: '',
           });
         }
 

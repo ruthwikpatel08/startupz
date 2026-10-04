@@ -313,7 +313,13 @@ export const LandingPage: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {otherProfiles.map((p) => {
+                {otherProfiles
+                  .filter((p) => {
+                    if (user?.id && (p.user_id === user.id || p.id === user.id)) return false;
+                    if (user?.email && p.email && p.email.toLowerCase() === user.email.toLowerCase()) return false;
+                    return true;
+                  })
+                  .map((p) => {
                   const displayName = p.full_name || 'Community Member';
                   const displayRole = p.role_label || 'Other';
                   const username = p.username || displayName.toLowerCase().replace(/\s+/g, '_');

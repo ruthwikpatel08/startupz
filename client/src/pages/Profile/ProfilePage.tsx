@@ -12,6 +12,7 @@ import {
   respondConnectionRequest,
   removeConnection,
   ConnectionStatusInfo,
+  invalidateUserProfileCache,
 } from '../../lib/supabase';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
@@ -58,6 +59,41 @@ import {
   AlertOctagon,
   UserX,
 } from 'lucide-react';
+
+export interface WorkExperienceItem {
+  id?: string;
+  category: string;
+  company: string;
+  description: string;
+}
+
+export function parseWorkExperiences(raw: string | undefined | null): WorkExperienceItem[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.map((item, index) => ({
+        id: item.id || `exp-${index}`,
+        category: item.category || 'Founders',
+        company: item.company || '',
+        description: item.description || '',
+      }));
+    }
+  } catch {}
+
+  const trimmed = String(raw).trim();
+  if (trimmed) {
+    return [
+      {
+        id: 'exp-0',
+        category: 'Founders',
+        company: '',
+        description: trimmed,
+      },
+    ];
+  }
+  return [];
+}
 
 function resizeImageToDataUrl(file: File, maxDimension = 1200, quality = 0.85): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -152,6 +188,7 @@ export const ProfilePage: React.FC = () => {
   const handleOpenEdit = () => {
     const currentP = profileUser?.profile || currentUser?.profile;
     if (currentP) {
+      const exps = parseWorkExperiences(currentP.startupExperience);
       setFormData({
         avatar: currentP.avatar || '',
         coverImage: currentP.coverImage || '',
@@ -162,9 +199,17 @@ export const ProfilePage: React.FC = () => {
         skills: currentP.skills || '',
         startupInterests: currentP.startupInterests || '',
         industries: currentP.industries || '',
-        preferredRole: currentP.preferredRole || '',
+        preferredRole: currentP.preferredRole || 'Founders',
         availability: currentP.availability || 'Full-time',
         startupExperience: currentP.startupExperience || '',
+        experiences: exps.length > 0 ? exps : [
+          {
+            id: `exp-${Date.now()}`,
+            category: currentP.preferredRole || 'Founders',
+            company: '',
+            description: currentP.startupExperience && !currentP.startupExperience.startsWith('[') ? currentP.startupExperience : '',
+          },
+        ],
         achievements: currentP.achievements || '',
         education: currentP.education || '',
         githubUrl: currentP.githubUrl || '',
@@ -176,6 +221,39 @@ export const ProfilePage: React.FC = () => {
       setCollegeSuggestions([]);
     }
     setEditOpen(true);
+  };
+
+  const handleAddExperienceItem = () => {
+    setFormData((prev: any) => ({
+      ...prev,
+      experiences: [
+        ...(prev.experiences || []),
+        {
+          id: `exp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          category: 'Founders',
+          company: '',
+          description: '',
+        },
+      ],
+    }));
+  };
+
+  const handleUpdateExperienceItem = (index: number, field: string, value: string) => {
+    setFormData((prev: any) => {
+      const list = [...(prev.experiences || [])];
+      if (list[index]) {
+        list[index] = { ...list[index], [field]: value };
+      }
+      return { ...prev, experiences: list };
+    });
+  };
+
+  const handleRemoveExperienceItem = (index: number) => {
+    setFormData((prev: any) => {
+      const list = [...(prev.experiences || [])];
+      list.splice(index, 1);
+      return { ...prev, experiences: list };
+    });
   };
 
   // Auto-open edit modal if requested via URL (?edit=true)
@@ -359,13 +437,15 @@ export const ProfilePage: React.FC = () => {
       try { await supabase.from('notifications').delete().or(`user_id.eq.${uid},sender_id.eq.${uid}`); } catch {}
       try { await supabase.from('startup_members').delete().eq('user_id', uid); } catch {}
 
-      // 2. Mark profile as deleted to hide from others while preserving details (education, role, skills)
+      // 2. Mark profile as deleted and reset category selection so re-entering starts completely fresh as new user
       try {
         await supabase.from('profiles').update({
           is_deleted: true,
+          is_category_selected: false,
           updated_at: new Date().toISOString()
         }).eq('user_id', uid);
       } catch {}
+      invalidateUserProfileCache(uid);
 
       // 3. Clear all browser storage so re-logging in starts completely fresh
       localStorage.clear();
@@ -778,6 +858,11 @@ export const ProfilePage: React.FC = () => {
     e.preventDefault();
     setSaving(true);
     setSaveError(null);
+
+    const exps = formData.experiences || [];
+    const serializedExp = JSON.stringify(exps);
+    const primaryCat = exps[0]?.category || formData.preferredRole || 'Founders';
+
     try {
       // 1. Update Supabase public.profiles table
       if (currentUser?.id) {
@@ -791,10 +876,10 @@ export const ProfilePage: React.FC = () => {
           skills: formData.skills,
           startup_interests: formData.startupInterests,
           industries: formData.industries,
-          preferred_role: formData.preferredRole,
+          preferred_role: primaryCat,
           is_category_selected: true,
           availability: formData.availability,
-          startup_experience: formData.startupExperience,
+          startup_experience: serializedExp,
           achievements: formData.achievements,
           education: formData.education,
           github_url: formData.githubUrl,
@@ -802,22 +887,31 @@ export const ProfilePage: React.FC = () => {
           website_url: formData.websiteUrl,
           open_to: formData.openTo,
         });
+        invalidateUserProfileCache(currentUser.id);
       }
 
       // 2. Optionally mirror to backend API if reachable
       let updatedUser: User | null = null;
       try {
-        const res = await api.updateProfile(formData);
+        const res = await api.updateProfile({
+          ...formData,
+          startupExperience: serializedExp,
+          preferredRole: primaryCat,
+        });
         if (res?.user) updatedUser = res.user;
       } catch (backendErr) {
         console.warn('Backend profile mirror warning (non-fatal):', backendErr);
       }
 
-      const mergedUser: User = updatedUser || {
-        ...(profileUser || currentUser!),
+      const mergedUser: User = {
+        ...(updatedUser || profileUser || currentUser!),
         profile: {
           ...(profileUser?.profile || currentUser?.profile!),
+          ...(updatedUser?.profile || {}),
           ...formData,
+          startupExperience: serializedExp,
+          preferredRole: primaryCat,
+          isCategorySelected: true, // EXPLICITLY TRUE to prevent category selection modal from re-triggering
         },
       };
 
@@ -901,6 +995,7 @@ export const ProfilePage: React.FC = () => {
     ? p.startupInterests.split(',').map((i) => i.trim()).filter(Boolean)
     : [];
   const industriesList = p.industries ? p.industries.split(',').map((i) => i.trim()).filter(Boolean) : [];
+  const parsedExperiences = parseWorkExperiences(p.startupExperience);
 
   // Calculate profile completion percentage
   let completedFields = 0;
@@ -909,7 +1004,7 @@ export const ProfilePage: React.FC = () => {
   if (p.headline) completedFields++;
   if (p.bio) completedFields++;
   if (skillsList.length > 0) completedFields++;
-  if (p.startupExperience) completedFields++;
+  if (parsedExperiences.length > 0 || p.startupExperience) completedFields++;
   if (profileUser.startups && profileUser.startups.length > 0) completedFields++;
   const completionPercentage = Math.round((completedFields / totalFields) * 100);
 
@@ -1250,32 +1345,42 @@ export const ProfilePage: React.FC = () => {
                   <Briefcase size={18} className="text-brand-600" />
                   <span>Experience</span>
                 </h2>
+                {isMe && (
+                  <button
+                    onClick={handleOpenEdit}
+                    className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={13} />
+                    <span>Add Experience</span>
+                  </button>
+                )}
               </div>
 
-              {p.startupExperience ? (
+              {parsedExperiences.length > 0 ? (
                 <div className="relative pl-5 border-l-2 border-slate-200 dark:border-dark-800 space-y-5">
-                  <div className="relative">
-                    <div className="absolute -left-[27px] top-1 w-3.5 h-3.5 rounded-full bg-brand-600 border-2 border-white dark:border-dark-900" />
-                    <div className="space-y-1">
-                      <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                        {p.preferredRole || 'Founder'}
-                      </h3>
-                      {profileUser.startups && profileUser.startups.length > 0 && (
-                        <p className="text-xs font-medium text-brand-600">
-                          {profileUser.startups[0].name}
-                        </p>
-                      )}
-                      {p.location && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                          <MapPin size={12} />
-                          <span>{p.location}</span>
-                        </p>
-                      )}
-                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-1.5 whitespace-pre-line leading-relaxed">
-                        {p.startupExperience}
-                      </p>
+                  {parsedExperiences.map((exp, idx) => (
+                    <div key={exp.id || idx} className="relative">
+                      <div className="absolute -left-[27px] top-1.5 w-3.5 h-3.5 rounded-full bg-brand-600 border-2 border-white dark:border-dark-900" />
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                            {exp.category || p.preferredRole || 'Founders'}
+                          </h3>
+                          {exp.company && (
+                            <span className="text-xs font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/70 px-2 py-0.5 rounded border border-brand-200/60 dark:border-brand-900/60 font-mono">
+                              {exp.company.toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+
+                        {exp.description && (
+                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-0.5 whitespace-pre-line leading-relaxed">
+                            {exp.description}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
               ) : (
                 <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-lg">
@@ -1284,7 +1389,7 @@ export const ProfilePage: React.FC = () => {
                   {isMe && (
                     <button
                       onClick={handleOpenEdit}
-                      className="mt-2 text-xs font-medium text-brand-600 hover:underline"
+                      className="mt-2 text-xs font-medium text-brand-600 hover:underline cursor-pointer"
                     >
                       + Add Experience
                     </button>
@@ -1737,7 +1842,7 @@ export const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Full Name</label>
                 <input
@@ -1747,24 +1852,6 @@ export const ProfilePage: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   className="input-base w-full px-3 py-1.5 text-xs"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Primary Category</label>
-                <select
-                  value={formData.preferredRole || 'Founders'}
-                  onChange={(e) => setFormData({ ...formData, preferredRole: e.target.value })}
-                  className="input-base w-full px-3 py-1.5 text-xs"
-                >
-                  <option value="Founders">Founders</option>
-                  <option value="Co-Founders">Co-Founders</option>
-                  <option value="Marketers">Marketers</option>
-                  <option value="Investors">Investors</option>
-                  <option value="Developer">Developer / Technical</option>
-                  <option value="Designer">Designer / UI-UX</option>
-                  <option value="Mentor">Mentor / Advisor</option>
-                  <option value="Other">Other</option>
-                </select>
               </div>
 
               <div className="relative">
@@ -1932,6 +2019,122 @@ export const ProfilePage: React.FC = () => {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Work Experience Section */}
+            <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <Briefcase size={14} className="text-brand-600 dark:text-brand-400" />
+                    <span>Work Experience & Company Roles</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Add your work history. Select primary category, your company name, and describe your work.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddExperienceItem}
+                  className="px-2.5 py-1 text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-900/60 rounded border border-brand-200 dark:border-brand-900 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus size={12} />
+                  <span>Add Experience</span>
+                </button>
+              </div>
+
+              {(!formData.experiences || formData.experiences.length === 0) ? (
+                <div className="p-4 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 text-center">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">No work experiences added yet.</p>
+                  <button
+                    type="button"
+                    onClick={handleAddExperienceItem}
+                    className="mt-1.5 text-xs font-semibold text-brand-600 hover:underline cursor-pointer"
+                  >
+                    + Add your first experience
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {formData.experiences.map((exp: any, idx: number) => (
+                    <div
+                      key={exp.id || idx}
+                      className="p-3 rounded-lg bg-slate-50/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 space-y-2 relative"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          Experience #{idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveExperienceItem(idx)}
+                          className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                          title="Remove experience"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            Primary Category
+                          </label>
+                          <select
+                            value={exp.category || 'Founders'}
+                            onChange={(e) => handleUpdateExperienceItem(idx, 'category', e.target.value)}
+                            className="input-base w-full px-2.5 py-1.5 text-xs"
+                          >
+                            <option value="Founders">Founders</option>
+                            <option value="Co-Founders">Co-Founders</option>
+                            <option value="Marketers">Marketers</option>
+                            <option value="Investors">Investors</option>
+                            <option value="Developer">Developer / Technical</option>
+                            <option value="Designer">Designer / UI-UX</option>
+                            <option value="Mentor">Mentor / Advisor</option>
+                            <option value="Other">Other / Operator</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            Company Name
+                          </label>
+                          <input
+                            type="text"
+                            value={exp.company || ''}
+                            onChange={(e) => handleUpdateExperienceItem(idx, 'company', e.target.value)}
+                            placeholder="e.g. Google, Microsoft, StartupZ"
+                            className="input-base w-full px-2.5 py-1.5 text-xs uppercase"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          Describe Work & Impact at Company
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={exp.description || ''}
+                          onChange={(e) => handleUpdateExperienceItem(idx, 'description', e.target.value)}
+                          placeholder="Describe your role, what you built, achievements, technologies used..."
+                          className="input-base w-full px-2.5 py-1.5 text-xs"
+                        />
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={handleAddExperienceItem}
+                    className="w-full py-1.5 rounded-md border border-dashed border-brand-300 dark:border-brand-800 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:bg-brand-50/50 dark:hover:bg-brand-950/20 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={13} />
+                    <span>Add Another Experience</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

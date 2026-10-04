@@ -426,7 +426,13 @@ export const BusinessPage: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {founders.map((f) => {
+              {founders
+                .filter((f) => {
+                  if (user?.id && (f.user_id === user.id || f.id === user.id)) return false;
+                  if (user?.email && f.email && f.email.toLowerCase() === user.email.toLowerCase()) return false;
+                  return true;
+                })
+                .map((f) => {
                 const displayName = f.full_name || 'Founder';
                 const username = f.username || displayName.toLowerCase().replace(/\s+/g, '_');
                 const profileUrl = f.user_id ? `/profile/${f.user_id}` : '/cofounders?category=founders';

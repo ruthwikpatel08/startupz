@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase, getAuthErrorMessage, recordAuthProviderHint, resolveEmailOrUsername } from '../../lib/supabase';
+import { supabase, getAuthErrorMessage, recordAuthProviderHint, resolveEmailOrUsername, upsertUserProfile, invalidateUserProfileCache } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Rocket, Lock, Mail, ArrowRight, Sparkles, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw, UserCheck } from 'lucide-react';
 import { GoogleAccountChooserModal } from '../../components/auth/GoogleAccountChooserModal';
@@ -99,11 +99,18 @@ export const LoginPage: React.FC = () => {
     try {
       const loggedIn = await loginWithPasswordOrUsername(cleanIdentifier, password);
       if (loggedIn?.profile && (loggedIn.profile as any).is_deleted) {
-        await supabase.auth.signOut();
-        localStorage.clear();
-        sessionStorage.clear();
-        setError('This account was deleted or not found in our data. Please sign up to create or reactivate your account.');
-        return;
+        // Deleted account re-logging in: Reactivate as brand new user and ask from first!
+        try {
+          await upsertUserProfile(loggedIn.id, {
+            is_deleted: false,
+            is_category_selected: false,
+            startup_experience: '',
+            education: '',
+            bio: '',
+            skills: '',
+          });
+          invalidateUserProfileCache(loggedIn.id);
+        } catch {}
       }
       navigate('/');
     } catch (err: any) {
@@ -112,10 +119,9 @@ export const LoginPage: React.FC = () => {
       if (
         friendlyMessage.toLowerCase().includes('invalid login credentials') ||
         friendlyMessage.toLowerCase().includes('not found') ||
-        friendlyMessage.toLowerCase().includes('no user') ||
-        friendlyMessage.toLowerCase().includes('deleted')
+        friendlyMessage.toLowerCase().includes('no user')
       ) {
-        setError('This account was deleted or not found in our data. Please sign up to create your account.');
+        setError('Account not found in our data. Please sign up to create your account.');
       } else {
         setError(friendlyMessage);
       }

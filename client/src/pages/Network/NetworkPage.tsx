@@ -147,6 +147,7 @@ export const NetworkPage: React.FC = () => {
 
         for (const pr of supaProps) {
           const otherId = pr.sender_id === user.id ? pr.receiver_id : pr.sender_id;
+          if (!otherId || otherId === user.id) continue;
           const p = profMap.get(otherId);
           const otherUserObj = {
             id: otherId,
@@ -196,11 +197,20 @@ export const NetworkPage: React.FC = () => {
         }
       }
 
-      setConnections(connList);
-      setPendingReceived(rxList);
-      setPendingSent(txList);
-      setReceivedProposals(rxProp);
-      setSentProposals(txProp);
+      // Filter out self so user profile is NEVER shown in Network page
+      const cleanConnList = connList.filter((item: any) => {
+        const otherUserId = item.user?.id || item.userId;
+        const otherEmail = item.user?.email || item.email;
+        if (user?.id && otherUserId === user.id) return false;
+        if (user?.email && otherEmail && otherEmail.toLowerCase() === user.email.toLowerCase()) return false;
+        return true;
+      });
+
+      setConnections(cleanConnList);
+      setPendingReceived(rxList.filter((r: any) => (r.sender?.id || r.senderId) !== user?.id));
+      setPendingSent(txList.filter((r: any) => (r.receiver?.id || r.receiverId) !== user?.id));
+      setReceivedProposals(rxProp.filter((r: any) => (r.sender?.id || r.senderId) !== user?.id));
+      setSentProposals(txProp.filter((r: any) => (r.receiver?.id || r.receiverId) !== user?.id));
     } catch (err) {
       console.error('Failed to load network connections:', err);
     } finally {
