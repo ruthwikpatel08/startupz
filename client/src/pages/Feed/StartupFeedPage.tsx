@@ -386,79 +386,84 @@ export const StartupFeedPage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
-      {/* 3 Core Pillars Header (Horizontal scrollable option on mobile, grid on desktop) */}
-      <div className="flex sm:grid sm:grid-cols-3 gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar pb-1 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x">
+      {/* 3 Core Pillars Header (Fixed on mobile view, no sliding) */}
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-3 w-full">
         {/* 1. Achievements */}
         <button
           type="button"
           onClick={() => handlePillarChange('ACHIEVEMENTS')}
-          className={`p-3.5 sm:p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between shrink-0 min-w-[200px] xs:min-w-[220px] sm:min-w-0 flex-1 snap-start ${
+          className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 ${
             activePillar === 'ACHIEVEMENTS'
               ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
           }`}
         >
-          <div className="flex items-center justify-between mb-1">
-            <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-              <Award size={16} className="text-amber-500" />
-              Achievements
-            </span>
-            {activePillar === 'ACHIEVEMENTS' && (
-              <span className="w-2 h-2 rounded-full bg-brand-600 shrink-0" />
-            )}
-          </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-            see what others achieved
-          </p>
+          <Award size={16} className="text-amber-500 shrink-0" />
+          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+            Achievements
+          </span>
+          {activePillar === 'ACHIEVEMENTS' && (
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-600 shrink-0 hidden sm:block" />
+          )}
         </button>
 
         {/* 2. Ideas */}
         <button
           type="button"
           onClick={() => handlePillarChange('IDEAS')}
-          className={`p-3.5 sm:p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between shrink-0 min-w-[200px] xs:min-w-[220px] sm:min-w-0 flex-1 snap-start ${
+          className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 ${
             activePillar === 'IDEAS'
               ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
           }`}
         >
-          <div className="flex items-center justify-between mb-1">
-            <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-              <Rocket size={16} className="text-brand-600 dark:text-brand-400" />
-              Ideas
-            </span>
-            {activePillar === 'IDEAS' && (
-              <span className="w-2 h-2 rounded-full bg-brand-600 shrink-0" />
-            )}
-          </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-            work on their ideas to build
-          </p>
+          <Rocket size={16} className="text-brand-600 dark:text-brand-400 shrink-0" />
+          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+            Ideas
+          </span>
+          {activePillar === 'IDEAS' && (
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-600 shrink-0 hidden sm:block" />
+          )}
         </button>
 
         {/* 3. Problem Statements */}
         <button
           type="button"
           onClick={() => handlePillarChange('PROBLEMS')}
-          className={`p-3.5 sm:p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between shrink-0 min-w-[200px] xs:min-w-[220px] sm:min-w-0 flex-1 snap-start ${
+          className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 ${
             activePillar === 'PROBLEMS'
               ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
           }`}
         >
-          <div className="flex items-center justify-between mb-1">
-            <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-              <Globe size={16} className="text-blue-500" />
-              Problem Statements
-            </span>
-            {activePillar === 'PROBLEMS' && (
-              <span className="w-2 h-2 rounded-full bg-brand-600 shrink-0" />
-            )}
-          </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-            work on real world problems
-          </p>
+          <Globe size={16} className="text-blue-500 shrink-0" />
+          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+            <span className="sm:hidden">Problems</span>
+            <span className="hidden sm:inline">Problem Statements</span>
+          </span>
+          {activePillar === 'PROBLEMS' && (
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-600 shrink-0 hidden sm:block" />
+          )}
         </button>
+      </div>
+
+      {/* Active Category Header Banner (Displays category caption on the page at top) */}
+      <div className="card-base p-3.5 sm:p-4 bg-gradient-to-r from-slate-50 via-white to-white dark:from-dark-900 dark:via-dark-900 dark:to-dark-850 border border-slate-200/80 dark:border-dark-800 transition-colors">
+        <div className="flex items-center gap-2 mb-1">
+          {activePillar === 'ACHIEVEMENTS' && <Award size={18} className="text-amber-500 shrink-0" />}
+          {activePillar === 'IDEAS' && <Rocket size={18} className="text-brand-600 dark:text-brand-400 shrink-0" />}
+          {activePillar === 'PROBLEMS' && <Globe size={18} className="text-blue-500 shrink-0" />}
+          <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+            {activePillar === 'ACHIEVEMENTS' && 'Achievements'}
+            {activePillar === 'IDEAS' && 'Startup Ideas'}
+            {activePillar === 'PROBLEMS' && 'Real-World Problem Statements'}
+          </h2>
+        </div>
+        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+          {activePillar === 'ACHIEVEMENTS' && 'See what others achieved across product launches, funding rounds, milestones, and work experiences.'}
+          {activePillar === 'IDEAS' && 'Work on their ideas to build — discover concepts, pitch synergies, or find dedicated co-founders.'}
+          {activePillar === 'PROBLEMS' && 'Work on real-world problems and Sustainable Development Goals to build high-impact global solutions.'}
+        </p>
       </div>
 
       {/* Post Composer Card */}

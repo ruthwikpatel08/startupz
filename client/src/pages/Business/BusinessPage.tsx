@@ -205,79 +205,84 @@ export const BusinessPage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
-      {/* 3 Core Business Pillars Header (Horizontal scrollable option on mobile, grid on desktop) */}
-      <div className="flex sm:grid sm:grid-cols-3 gap-2.5 sm:gap-3.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x">
+      {/* 3 Core Business Pillars Header (Fixed on mobile view, no sliding) */}
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-3.5 w-full">
         {/* 1. Startups Pillar */}
         <button
           type="button"
           onClick={() => handleTabChange('startups')}
-          className={`p-3.5 sm:p-5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between shrink-0 min-w-[210px] xs:min-w-[230px] sm:min-w-0 flex-1 snap-start ${
+          className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 ${
             activeTab === 'startups'
               ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
           }`}
         >
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
-              <Compass size={19} className="text-brand-600 dark:text-brand-400" />
-              Startups
-            </span>
-            {activeTab === 'startups' && (
-              <span className="w-2.5 h-2.5 rounded-full bg-brand-600 shrink-0" />
-            )}
-          </div>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
-            Explore innovative ventures and products
-          </p>
+          <Compass size={16} className="text-brand-600 dark:text-brand-400 shrink-0" />
+          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+            Startups
+          </span>
+          {activeTab === 'startups' && (
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-600 shrink-0 hidden sm:block" />
+          )}
         </button>
 
         {/* 2. Founders & Network Pillar */}
         <button
           type="button"
           onClick={() => handleTabChange('network')}
-          className={`p-3.5 sm:p-5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between shrink-0 min-w-[210px] xs:min-w-[230px] sm:min-w-0 flex-1 snap-start ${
+          className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 ${
             activeTab === 'network'
               ? 'bg-purple-50/90 dark:bg-purple-950/50 border-purple-500 ring-2 ring-purple-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
           }`}
         >
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
-              <Users size={19} className="text-purple-600 dark:text-purple-400" />
-              Founders & Network
-            </span>
-            {activeTab === 'network' && (
-              <span className="w-2.5 h-2.5 rounded-full bg-purple-600 shrink-0" />
-            )}
-          </div>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
-            Verified founders, co-founders & investors
-          </p>
+          <Users size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />
+          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+            <span className="sm:hidden">Network</span>
+            <span className="hidden sm:inline">Founders & Network</span>
+          </span>
+          {activeTab === 'network' && (
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0 hidden sm:block" />
+          )}
         </button>
 
         {/* 3. Graveyard Pillar */}
         <button
           type="button"
           onClick={() => handleTabChange('graveyard')}
-          className={`p-3.5 sm:p-5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between shrink-0 min-w-[210px] xs:min-w-[230px] sm:min-w-0 flex-1 snap-start ${
+          className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 ${
             activeTab === 'graveyard'
               ? 'bg-rose-50/90 dark:bg-rose-950/50 border-rose-500 ring-2 ring-rose-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
           }`}
         >
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
-              <Skull size={19} className="text-rose-600 dark:text-rose-400" />
-              Graveyard
-            </span>
-            {activeTab === 'graveyard' && (
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-600 shrink-0" />
-            )}
-          </div>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
-            Startup post-mortems and key learnings
-          </p>
+          <Skull size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
+          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+            Graveyard
+          </span>
+          {activeTab === 'graveyard' && (
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0 hidden sm:block" />
+          )}
         </button>
+      </div>
+
+      {/* Active Category Header Banner (Displays category caption on the page at top) */}
+      <div className="card-base p-3.5 sm:p-4 bg-gradient-to-r from-slate-50 via-white to-white dark:from-dark-900 dark:via-dark-900 dark:to-dark-850 border border-slate-200/80 dark:border-dark-800 transition-colors">
+        <div className="flex items-center gap-2 mb-1">
+          {activeTab === 'startups' && <Compass size={18} className="text-brand-600 dark:text-brand-400 shrink-0" />}
+          {activeTab === 'network' && <Users size={18} className="text-purple-600 dark:text-purple-400 shrink-0" />}
+          {activeTab === 'graveyard' && <Skull size={18} className="text-rose-600 dark:text-rose-400 shrink-0" />}
+          <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+            {activeTab === 'startups' && 'Startups & Ventures'}
+            {activeTab === 'network' && 'Founders & Professional Network'}
+            {activeTab === 'graveyard' && 'Startup Graveyard & Post-Mortems'}
+          </h2>
+        </div>
+        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+          {activeTab === 'startups' && 'Explore innovative ventures, customer-backed initiatives, and disruptive products building in the ecosystem.'}
+          {activeTab === 'network' && 'Verified founders, co-founders, advisors & tech talent available for collaborations, equity, and partnerships.'}
+          {activeTab === 'graveyard' && 'Real startup post-mortems, honest post-mortem breakdowns, and key learnings to build resilient ventures.'}
+        </p>
       </div>
 
       {/* 1. Featured Startups Section (Direct view when entering Business) */}
@@ -574,14 +579,14 @@ export const BusinessPage: React.FC = () => {
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
               Explore Network Categories
             </h3>
-            <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-3 overflow-x-auto no-scrollbar pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 w-full">
               {networkCategories.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.title}
                     to={item.href}
-                    className="p-3.5 rounded-xl card-base hover:border-brand-400 dark:hover:border-dark-700 transition-all flex flex-col justify-between group cursor-pointer shrink-0 min-w-[200px] xs:min-w-[220px] sm:min-w-0 flex-1 snap-start"
+                    className="p-3.5 rounded-xl card-base hover:border-brand-400 dark:hover:border-dark-700 transition-all flex flex-col justify-between group cursor-pointer"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-2">
