@@ -19,6 +19,7 @@ import { StartupConnectionModal } from '../../components/common/StartupConnectio
 import { ScheduleMeetingModal } from '../../components/common/ScheduleMeetingModal';
 import { ReportModal } from '../../components/common/ReportModal';
 import { Modal } from '../../components/common/Modal';
+import { searchLocations, searchColleges, resolveIndianLocation } from '../../data/indiaData';
 import {
   MapPin,
   Briefcase,
@@ -140,6 +141,14 @@ export const ProfilePage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  // Smart India Location & College Autocomplete states for Edit Profile
+  const [locationSuggestions, setLocationSuggestions] = useState<any[]>([]);
+  const [showLocDropdown, setShowLocDropdown] = useState(false);
+  const [collegeSuggestions, setCollegeSuggestions] = useState<any[]>([]);
+  const [showCollegeDropdown, setShowCollegeDropdown] = useState(false);
+
+  const { logout } = useAuth();
+
   const handleOpenEdit = () => {
     const currentP = profileUser?.profile || currentUser?.profile;
     if (currentP) {
@@ -163,6 +172,8 @@ export const ProfilePage: React.FC = () => {
         websiteUrl: currentP.websiteUrl || '',
         openTo: currentP.openTo || 'Co-Founder, Startup Team, Mentorship',
       });
+      setLocationSuggestions([]);
+      setCollegeSuggestions([]);
     }
     setEditOpen(true);
   };
@@ -340,23 +351,37 @@ export const ProfilePage: React.FC = () => {
     setIsDeletingAccount(true);
     setDeleteError(null);
     try {
+      const uid = currentUser.id;
+
+      // 1. Permanently delete all user records from Supabase tables
+      try { await supabase.from('messages').delete().or(`sender_id.eq.${uid},receiver_id.eq.${uid}`); } catch {}
+      try { await supabase.from('connections').delete().or(`sender_id.eq.${uid},receiver_id.eq.${uid}`); } catch {}
+      try { await supabase.from('notifications').delete().or(`user_id.eq.${uid},sender_id.eq.${uid}`); } catch {}
+      try { await supabase.from('startup_members').delete().eq('user_id', uid); } catch {}
+      try { await supabase.from('startups').delete().eq('founder_id', uid); } catch {}
+      try { await supabase.from('profiles').delete().eq('user_id', uid); } catch {}
+
+      // 2. Permanently delete from backend Prisma DB
       try {
         await api.deleteAccount();
       } catch (err: any) {
         console.warn('Backend delete notice:', err);
       }
 
-      try {
-        await supabase.from('profiles').delete().eq('user_id', currentUser.id);
-      } catch {}
+      // 3. Clear all browser storage so re-logging in starts completely fresh
+      localStorage.clear();
+      sessionStorage.clear();
 
+      // 4. Sign out completely
       try {
         await supabase.auth.signOut();
       } catch {}
+      try {
+        await logout();
+      } catch {}
 
-      localStorage.removeItem('startupz_token');
-      localStorage.removeItem('startupz_user');
-      window.location.href = '/?deleted=true';
+      // 5. Redirect straight to login page (not main dashboard/home)
+      window.location.href = '/login?deleted=true';
     } catch (err: any) {
       setDeleteError(err?.message || 'Failed to delete account.');
       setIsDeletingAccount(false);
@@ -1010,10 +1035,21 @@ export const ProfilePage: React.FC = () => {
 
                   <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex-wrap pt-0.5">
                     {p.location && (
-                      <span className="flex items-center gap-1">
-                        <MapPin size={13} className="text-brand-600" />
-                        <span>{p.location}</span>
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="flex items-center gap-1">
+                          <MapPin size={13} className="text-brand-600" />
+                          <span>{p.location}</span>
+                        </span>
+                        {(() => {
+                          const resolved = resolveIndianLocation(p.location);
+                          if (!resolved) return null;
+                          return (
+                            <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 font-semibold">
+                              {resolved.district ? `${resolved.district} • ` : ''}{resolved.state}
+                            </span>
+                          );
+                        })()}
+                      </div>
                     )}
                     {industriesList.length > 0 && (
                       <span className="flex items-center gap-1">
@@ -1269,9 +1305,41 @@ export const ProfilePage: React.FC = () => {
                   <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 border border-brand-200/50 flex items-center justify-center font-bold text-sm shrink-0">
                     <BookOpen size={16} />
                   </div>
-                  <div className="space-y-0.5">
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                      {p.education}
+                  <div className="space-y-1">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
+                      <span>{p.education}</span>
+                      {(() => {
+                        const low = p.education.toLowerCase();
+                        if (low.includes('niat')) {
+                          return (
+                            <span className="text-[10px] px-2 py-0.5 rounded-md font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50">
+                              Advanced Tech Institute
+                            </span>
+                          );
+                        }
+                        if (low.includes('iit') || low.includes('indian institute of technology')) {
+                          return (
+                            <span className="text-[10px] px-2 py-0.5 rounded-md font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/50">
+                              Premier IIT
+                            </span>
+                          );
+                        }
+                        if (low.includes('nit') || low.includes('national institute of technology')) {
+                          return (
+                            <span className="text-[10px] px-2 py-0.5 rounded-md font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-200/50">
+                              NIT
+                            </span>
+                          );
+                        }
+                        if (low.includes('bits') || low.includes('vit') || low.includes('srm') || low.includes('manipal') || low.includes('amity') || low.includes('thapar')) {
+                          return (
+                            <span className="text-[10px] px-2 py-0.5 rounded-md font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200/50">
+                              Premier University
+                            </span>
+                          );
+                        }
+                        return null;
+                      })()}
                     </h3>
                   </div>
                 </div>
@@ -1693,15 +1761,76 @@ export const ProfilePage: React.FC = () => {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Location</label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="e.g. Bengaluru, India or Remote"
-                  className="input-base w-full px-3 py-1.5 text-xs"
-                />
+              <div className="relative">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center justify-between">
+                  <span>Location</span>
+                  {(() => {
+                    const res = resolveIndianLocation(formData.location);
+                    if (!res) return null;
+                    return (
+                      <span className="text-[10px] text-brand-600 dark:text-brand-400 font-semibold">
+                        {res.district ? `${res.district}, ` : ''}{res.state}
+                      </span>
+                    );
+                  })()}
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={formData.location || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData({ ...formData, location: val });
+                      setLocationSuggestions(searchLocations(val));
+                      setShowLocDropdown(true);
+                    }}
+                    onFocus={() => {
+                      if (formData.location) {
+                        setLocationSuggestions(searchLocations(formData.location));
+                      }
+                      setShowLocDropdown(true);
+                    }}
+                    placeholder="e.g. Warangal, Bengaluru, Delhi, or Remote"
+                    className="input-base w-full px-3 py-1.5 text-xs pr-7"
+                  />
+                  {formData.location && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({ ...formData, location: '' });
+                        setLocationSuggestions([]);
+                        setShowLocDropdown(false);
+                      }}
+                      className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+                {/* Autocomplete Dropdown */}
+                {showLocDropdown && locationSuggestions.length > 0 && (
+                  <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-lg shadow-xl py-1 text-xs">
+                    {locationSuggestions.map((loc, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          const formatted = `${loc.district ? loc.district + ', ' : ''}${loc.state}, India`;
+                          setFormData({ ...formData, location: formatted });
+                          setShowLocDropdown(false);
+                        }}
+                        className="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 flex items-center justify-between cursor-pointer"
+                      >
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {loc.district ? `${loc.district}, ` : ''}{loc.state}
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-dark-800 text-slate-500 capitalize">
+                          {loc.type}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1739,15 +1868,55 @@ export const ProfilePage: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Education</label>
-                <textarea
-                  rows={2}
-                  value={formData.education}
-                  onChange={(e) => setFormData({ ...formData, education: e.target.value })}
-                  placeholder="Institution name, degree, and field of study..."
-                  className="input-base w-full px-3 py-1.5 text-xs resize-none"
-                />
+              <div className="relative">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center justify-between">
+                  <span>Education / College</span>
+                  <span className="text-[10px] text-slate-400 font-medium">IITs, NITs, NIAT, Universities</span>
+                </label>
+                <div className="relative">
+                  <textarea
+                    rows={2}
+                    value={formData.education || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData({ ...formData, education: val });
+                      setCollegeSuggestions(searchColleges(val));
+                      setShowCollegeDropdown(true);
+                    }}
+                    onFocus={() => {
+                      if (formData.education) {
+                        setCollegeSuggestions(searchColleges(formData.education));
+                      }
+                      setShowCollegeDropdown(true);
+                    }}
+                    placeholder="Institution name, degree (e.g. NIAT, IIT Madras, NIT Trichy, VIT, BITS Pilani)..."
+                    className="input-base w-full px-3 py-1.5 text-xs resize-none"
+                  />
+                </div>
+                {/* College Autocomplete Dropdown */}
+                {showCollegeDropdown && collegeSuggestions.length > 0 && (
+                  <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-lg shadow-xl py-1 text-xs">
+                    {collegeSuggestions.map((col, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, education: `${col.name} (${col.category.toUpperCase()})` });
+                          setShowCollegeDropdown(false);
+                        }}
+                        className="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 flex items-center justify-between cursor-pointer"
+                      >
+                        <div className="truncate pr-2">
+                          <span className="font-semibold text-slate-900 dark:text-white">{col.name}</span>
+                          <span className="text-slate-400 ml-1">({col.city}, {col.state})</span>
+                        </div>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-semibold shrink-0">
+                          {col.category.toUpperCase()}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

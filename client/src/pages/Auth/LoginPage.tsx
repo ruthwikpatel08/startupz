@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase, getAuthErrorMessage, recordAuthProviderHint, resolveEmailOrUsername } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Rocket, Lock, Mail, ArrowRight, Sparkles, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw, UserCheck } from 'lucide-react';
@@ -7,6 +7,8 @@ import { GoogleAccountChooserModal } from '../../components/auth/GoogleAccountCh
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isDeletedNotice = searchParams.get('deleted') === 'true';
   const { user, loginWithPasswordOrUsername } = useAuth();
 
   useEffect(() => {
@@ -253,6 +255,18 @@ export const LoginPage: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {isDeletedNotice && (
+              <div className="p-3 text-xs rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 space-y-1">
+                <div className="flex items-center gap-2 font-semibold">
+                  <CheckCircle2 size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <span>Account Permanently Deleted</span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-emerald-700 dark:text-emerald-300 pl-6">
+                  All your profile data, connections, messages, and listings have been permanently wiped from StartupZ. If you log in again, you will be registered as a brand new user.
+                </p>
+              </div>
+            )}
+
             {error && (
               <div className="p-3 text-xs rounded-md bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 space-y-2">
                 <div className="flex items-start gap-2">

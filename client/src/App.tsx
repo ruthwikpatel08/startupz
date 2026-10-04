@@ -83,6 +83,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean 
 
 const AppContent: React.FC = () => {
   const location = useLocation();
+  const { user, loading } = useAuth();
 
   const isAuthOrMeetingPage =
     location.pathname.startsWith('/login') ||
@@ -92,22 +93,30 @@ const AppContent: React.FC = () => {
     location.pathname.startsWith('/auth/callback') ||
     location.pathname.startsWith('/meeting');
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F8F9FB] dark:bg-[#0B0F17]">
+        <PageLoader />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F8F9FB] dark:bg-[#0B0F17] text-[#181A1F] dark:text-[#F8F9FB] transition-colors selection:bg-brand-600 selection:text-white relative w-full max-w-full overflow-x-hidden">
       <Navbar />
       <NewUserCategoryModal />
       <div className="flex-1 flex w-full pt-14">
-        <Sidebar />
+        {user && <Sidebar />}
         <main
           className={`flex-1 min-w-0 flex flex-col justify-between overflow-x-hidden pb-16 lg:pb-0 ${
-            isAuthOrMeetingPage ? '' : 'lg:pl-60 xl:pl-64'
+            !user || isAuthOrMeetingPage ? '' : 'lg:pl-60 xl:pl-64'
           }`}
         >
           <div className="flex-1 min-w-0">
             <React.Suspense fallback={<PageLoader />}>
               <Routes>
-                {/* Public / Ecosystem Routes */}
-                <Route path="/" element={<LandingPage />} />
+                {/* When logged out, direct / to /login so main interface only shows when logged in */}
+                <Route path="/" element={user ? <LandingPage /> : <Navigate to="/login" replace />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />

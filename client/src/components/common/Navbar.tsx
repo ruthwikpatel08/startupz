@@ -138,14 +138,14 @@ export const Navbar: React.FC = () => {
             
             {/* Brand Logo */}
             <Link
-              to={user ? '/dashboard' : '/'}
+              to={user ? '/dashboard' : '/login'}
               title="StartupZ"
               className="flex items-center gap-2 shrink-0 cursor-pointer"
             >
               <div className="w-7 h-7 rounded-md bg-brand-600 flex items-center justify-center text-white shadow-subtle">
                 <Rocket size={15} />
               </div>
-              <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
+              <span className="text-base font-extrabold startupz-logo-title tracking-tight text-slate-900 dark:text-white">
                 Startup<span className="text-brand-600">Z</span>
               </span>
             </Link>
@@ -378,7 +378,7 @@ export const Navbar: React.FC = () => {
                               onClick={async () => {
                                 setProfileDropdownOpen(false);
                                 await logout();
-                                navigate('/');
+                                navigate('/login');
                               }}
                               className="flex items-center gap-2.5 w-full text-left px-3.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                             >
@@ -667,7 +667,7 @@ export const Navbar: React.FC = () => {
                   onClick={async () => {
                     setMobileMenuOpen(false);
                     await logout();
-                    navigate('/');
+                    navigate('/login');
                   }}
                   className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-colors cursor-pointer"
                 >

@@ -8,10 +8,10 @@
 
   --bg-primary: #F8F9FB;
   --bg-surface: #FFFFFF;
-  --text-primary: #181A1F;
-  --text-secondary: #667085;
-  --text-muted: #98A2B3;
-  --border-subtle: #E4E7EC;
+  --text-primary: #0F172A;
+  --text-secondary: #334155;
+  --text-muted: #475569;
+  --border-subtle: #CBD5E1;
   --brand-primary: #2457D6;
   --brand-hover: #1D4ED8;
   --status-success: #16803C;
@@ -51,6 +51,60 @@ body {
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Light Theme Font Thickness & Rich Appearance */
+html:not(.dark) body {
+  font-weight: 500;
+  color: #0F172A;
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: auto;
+}
+
+html:not(.dark) p,
+html:not(.dark) span,
+html:not(.dark) label,
+html:not(.dark) li,
+html:not(.dark) a {
+  font-weight: 500;
+}
+
+html:not(.dark) h1,
+html:not(.dark) h2,
+html:not(.dark) h3,
+html:not(.dark) h4,
+html:not(.dark) h5,
+html:not(.dark) h6 {
+  font-weight: 700;
+  color: #0F172A;
+}
+
+html:not(.dark) .text-slate-500,
+html:not(.dark) .text-slate-600 {
+  color: #334155;
+  font-weight: 500;
+}
+
+html:not(.dark) .text-slate-400 {
+  color: #475569;
+}
+
+/* Logos & Brand Names - Extra Thick & Bold */
+.startupz-logo-title,
+.brand-logo-text,
+[data-logo="true"] {
+  font-weight: 800 !important;
+  letter-spacing: -0.025em;
+}
+
+/* System Logs, Code, and Badges - Thick and Crisp */
+code,
+pre,
+.log-text,
+[data-log="true"],
+.font-mono {
+  font-weight: 600 !important;
+  letter-spacing: 0.015em;
 }
 
 /* Subtle, elegant scrollbars */

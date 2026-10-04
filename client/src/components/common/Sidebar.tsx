@@ -22,7 +22,7 @@ export const Sidebar: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
 
-  // Hide on auth or meeting pages
+  // Hide on auth or meeting pages, or if not logged in
   const isAuthOrMeetingPage =
     location.pathname.startsWith('/login') ||
     location.pathname.startsWith('/register') ||
@@ -31,7 +31,8 @@ export const Sidebar: React.FC = () => {
     location.pathname.startsWith('/auth/callback') ||
     location.pathname.startsWith('/meeting');
 
-  if (isAuthOrMeetingPage) {
+  // Only show main navigation tools when user is logged in
+  if (!user || isAuthOrMeetingPage) {
     return null;
   }
 

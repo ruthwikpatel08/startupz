@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import {
   Home,
   Share2,
@@ -10,8 +11,9 @@ import {
 
 export const MobileBottomBar: React.FC = () => {
   const location = useLocation();
+  const { user } = useAuth();
 
-  // Hide on auth or meeting rooms
+  // Hide on auth or meeting rooms or when logged out
   const isAuthOrMeeting =
     location.pathname.startsWith('/login') ||
     location.pathname.startsWith('/register') ||
@@ -20,7 +22,7 @@ export const MobileBottomBar: React.FC = () => {
     location.pathname.startsWith('/auth/callback') ||
     location.pathname.startsWith('/meeting');
 
-  if (isAuthOrMeeting) {
+  if (!user || isAuthOrMeeting) {
     return null;
   }
 
