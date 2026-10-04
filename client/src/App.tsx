@@ -96,7 +96,7 @@ const AppContent: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-[#F8F9FB] dark:bg-[#0B0F17] text-[#181A1F] dark:text-[#F8F9FB] transition-colors selection:bg-brand-600 selection:text-white relative w-full max-w-full overflow-x-hidden">
       <Navbar />
       <NewUserCategoryModal />
-      <div className="flex-1 flex w-full">
+      <div className="flex-1 flex w-full pt-14">
         <Sidebar />
         <main
           className={`flex-1 min-w-0 flex flex-col justify-between overflow-x-hidden pb-16 lg:pb-0 ${
