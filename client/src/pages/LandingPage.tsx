@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Rocket,
   Users,
@@ -19,20 +19,32 @@ import {
   LayoutDashboard,
   MessageSquare,
   Network,
+  UserPlus,
+  Check,
+  MapPin,
+  Clock,
 } from 'lucide-react';
 import { GoogleAccountChooserModal } from '../components/auth/GoogleAccountChooserModal';
 import { QuickLoginModal } from '../components/auth/QuickLoginModal';
+import { ConnectModal } from '../components/common/ConnectModal';
+import { StartupConnectionModal } from '../components/common/StartupConnectionModal';
+import { Avatar } from '../components/common/Avatar';
+import { RoleBadge, VerificationBadge } from '../components/common/Badge';
 import { supabase, fetchConnectionCount } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
 export const LandingPage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [googleChooserOpen, setGoogleChooserOpen] = useState(false);
   const [quickLoginOpen, setQuickLoginOpen] = useState(false);
   const [myConnectionCount, setMyConnectionCount] = useState<number>(0);
   const [recentConnections, setRecentConnections] = useState<any[]>([]);
   const [otherProfiles, setOtherProfiles] = useState<any[]>([]);
   const [otherProfilesLoading, setOtherProfilesLoading] = useState<boolean>(true);
+  const [connectUser, setConnectUser] = useState<any | null>(null);
+  const [startupConnectUser, setStartupConnectUser] = useState<any | null>(null);
+  const [connectionStatusMap, setConnectionStatusMap] = useState<Map<string, string>>(new Map());
 
   // Fetch profiles of members who selected 'other' / custom roles
   useEffect(() => {
@@ -180,6 +192,21 @@ export const LandingPage: React.FC = () => {
         } else {
           setRecentConnections([]);
         }
+
+        // Also fetch all connection statuses for logged-in user
+        const { data: allUserConns } = await supabase
+          .from('connections')
+          .select('sender_id, receiver_id, status')
+          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+
+        if (allUserConns) {
+          const map = new Map<string, string>();
+          allUserConns.forEach((c) => {
+            const otherId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
+            map.set(otherId, c.status);
+          });
+          setConnectionStatusMap(map);
+        }
       } catch {}
     };
     fetchMyConnections();
@@ -209,6 +236,22 @@ export const LandingPage: React.FC = () => {
       window.removeEventListener('connections_updated', handleConnEvt);
     };
   }, [user?.id]);
+
+  const handleConnectClick = (target: any) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setConnectUser(target);
+  };
+
+  const handlePitchClick = (target: any) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setStartupConnectUser(target);
+  };
 
   const handleGoogleClick = async () => {
     try {
@@ -252,26 +295,16 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Community Profiles: Members who selected 'Other' (Students, Salesmen, Designers & Specialists) */}
           <div className="max-w-5xl mx-auto mb-10">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-              <div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 text-xs font-semibold border border-brand-200/60 dark:border-brand-900/60 mb-1.5">
-                  <Sparkles size={12} /> Community Talent Showcase
-                </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                  Members & Independent Specialists
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                  Discover students, salesmen, designers & operators who selected custom roles
-                </p>
+            <div className="mb-6">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 text-xs font-semibold border border-brand-200/60 dark:border-brand-900/60 mb-1.5">
+                <Sparkles size={12} /> Community Talent Showcase
               </div>
-
-              <Link
-                to="/cofounders?category=other"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors shrink-0"
-              >
-                <span>View all custom profiles</span>
-                <ArrowRight size={13} />
-              </Link>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                Members & Independent Specialists
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                Discover students, salesmen, designers & operators who selected custom roles
+              </p>
             </div>
 
             {otherProfilesLoading ? (
@@ -279,57 +312,77 @@ export const LandingPage: React.FC = () => {
                 <div className="w-7 h-7 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {otherProfiles.map((p) => {
                   const displayName = p.full_name || 'Community Member';
                   const displayRole = p.role_label || 'Other';
-                  const initial = displayName.charAt(0);
+                  const username = p.username || displayName.toLowerCase().replace(/\s+/g, '_');
                   const profileUrl = p.user_id ? `/profile/${p.user_id}` : '/cofounders?category=other';
+                  const connStatus = p.user_id ? connectionStatusMap.get(p.user_id) : undefined;
+                  const targetUserObj = {
+                    id: p.user_id || p.id,
+                    email: p.email || '',
+                    profile: {
+                      fullName: displayName,
+                      username: username,
+                      avatar: p.avatar,
+                      headline: p.headline,
+                    },
+                  };
 
                   return (
                     <div
                       key={p.id}
-                      className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-brand-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between group"
+                      className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3"
                     >
-                      <div>
-                        <div className="flex items-start gap-3 mb-3">
-                          {p.avatar ? (
-                            <img
+                      <div className="space-y-2.5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar
                               src={p.avatar}
-                              alt={displayName}
-                              className="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                              name={displayName}
+                              size="lg"
                             />
-                          ) : (
-                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-brand-500 to-indigo-600 text-white flex items-center justify-center text-sm font-bold shadow-subtle shrink-0">
-                              {initial}
+                            <div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <Link
+                                  to={profileUrl}
+                                  className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                                >
+                                  {displayName}
+                                </Link>
+                                <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
+                                  @{username}
+                                </span>
+                                <RoleBadge role={displayRole} size="sm" />
+                                <VerificationBadge badge="Active Member" isVerified={true} size="sm" />
+                              </div>
+                              <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{p.headline}</p>
+                              <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                                <span className="flex items-center gap-1">
+                                  <MapPin size={11} /> {p.location || 'Remote'}
+                                </span>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                  <Clock size={11} /> Full-time
+                                </span>
+                              </div>
                             </div>
-                          )}
-
-                          <div className="min-w-0 flex-1">
-                            <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
-                              {displayName}
-                            </h4>
-                            <div className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200/50 dark:border-brand-900/50 truncate max-w-full">
-                              {displayRole}
-                            </div>
-                            {p.location && (
-                              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 truncate">
-                                📍 {p.location}
-                              </p>
-                            )}
                           </div>
                         </div>
 
-                        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed mb-3 font-normal">
-                          {p.headline || p.bio || 'Independent builder and ecosystem member open to synergy.'}
-                        </p>
+                        {p.bio && (
+                          <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                            {p.bio}
+                          </p>
+                        )}
 
                         {p.skills && (
-                          <div className="flex flex-wrap gap-1 mb-3">
-                            {p.skills.split(',').slice(0, 2).map((sk: string, idx: number) => (
+                          <div className="flex flex-wrap gap-1 pt-0.5">
+                            {p.skills.split(',').slice(0, 4).map((sk: string, idx: number) => (
                               <span
                                 key={idx}
-                                className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                                className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                               >
                                 {sk.trim()}
                               </span>
@@ -338,22 +391,54 @@ export const LandingPage: React.FC = () => {
                         )}
                       </div>
 
-                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
-                        <Link
-                          to={profileUrl}
-                          className="flex-1 text-center py-1.5 px-2.5 rounded-md text-[11px] font-semibold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 transition-colors"
-                        >
-                          View Profile
-                        </Link>
-                        {user && p.user_id && p.user_id !== user.id && (
+                      <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-xs text-slate-400 font-normal">
+                          Active Builder
+                        </span>
+
+                        <div className="flex items-center gap-1.5">
                           <Link
-                            to={`/messages?user=${p.user_id}`}
-                            className="p-1.5 rounded-md bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 hover:bg-brand-100 transition-colors"
-                            title="Direct Message"
+                            to={profileUrl}
+                            className="btn-tertiary !text-xs !py-1 !px-2"
                           >
-                            <MessageSquare size={13} />
+                            View Profile
                           </Link>
-                        )}
+
+                          {/* Startup Connection (Pitch) Button */}
+                          <button
+                            onClick={() => handlePitchClick(targetUserObj)}
+                            className="btn-secondary !text-xs !py-1 !px-2.5 flex items-center gap-1"
+                            title="Propose Co-Founding a Startup"
+                          >
+                            <Rocket size={12} /> Pitch
+                          </button>
+
+                          {/* User Connection Button */}
+                          {connStatus === 'ACCEPTED' ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
+                                <Check size={12} /> Connected
+                              </span>
+                              <Link
+                                to={`/messages?user=${p.user_id}`}
+                                className="btn-primary !text-xs !py-1 !px-2 flex items-center gap-1"
+                              >
+                                <MessageSquare size={12} /> Chat
+                              </Link>
+                            </div>
+                          ) : connStatus === 'PENDING' ? (
+                            <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
+                              Pending
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleConnectClick(targetUserObj)}
+                              className="btn-primary !text-xs !py-1 !px-2.5 flex items-center gap-1"
+                            >
+                              <UserPlus size={12} /> Connect
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -969,6 +1054,20 @@ export const LandingPage: React.FC = () => {
       <GoogleAccountChooserModal
         isOpen={googleChooserOpen}
         onClose={() => setGoogleChooserOpen(false)}
+      />
+
+      {/* Connect Modal */}
+      <ConnectModal
+        isOpen={!!connectUser}
+        onClose={() => setConnectUser(null)}
+        targetUser={connectUser}
+      />
+
+      {/* Startup Proposal Connection (Pitch) Modal */}
+      <StartupConnectionModal
+        isOpen={!!startupConnectUser}
+        onClose={() => setStartupConnectUser(null)}
+        targetUser={startupConnectUser}
       />
 
     </div>

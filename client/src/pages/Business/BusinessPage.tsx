@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 import { Startup } from '../../types';
+import { Avatar } from '../../components/common/Avatar';
+import { RoleBadge, VerificationBadge } from '../../components/common/Badge';
+import { ConnectModal } from '../../components/common/ConnectModal';
+import { StartupConnectionModal } from '../../components/common/StartupConnectionModal';
 import {
   Compass,
   Users,
@@ -11,18 +17,49 @@ import {
   Megaphone,
   GraduationCap,
   Plus,
-  Briefcase,
   ShieldCheck,
+  UserPlus,
+  Check,
+  MessageSquare,
+  MapPin,
+  Clock,
+  Sparkles,
+  ArrowRight,
 } from 'lucide-react';
 
 export const BusinessPage: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'all' | 'startups' | 'network' | 'graveyard'>('all');
+  const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Direct enter to startups by default (matching Feed directing to Achievements)
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<'startups' | 'network' | 'graveyard'>(
+    tabParam === 'network' || tabParam === 'graveyard' ? tabParam : 'startups'
+  );
+
   const [startups, setStartups] = useState<Startup[]>([]);
   const [loadingStartups, setLoadingStartups] = useState(true);
 
+  // Founders data & loading state
+  const [founders, setFounders] = useState<any[]>([]);
+  const [loadingFounders, setLoadingFounders] = useState(false);
+
+  // Modals for Pitch & Connect
+  const [connectUser, setConnectUser] = useState<any | null>(null);
+  const [startupConnectUser, setStartupConnectUser] = useState<any | null>(null);
+  const [connectionStatusMap, setConnectionStatusMap] = useState<Map<string, string>>(new Map());
+
+  // Handle Tab Switch
+  const handleTabChange = (tab: 'startups' | 'network' | 'graveyard') => {
+    setActiveTab(tab);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('tab', tab);
+    setSearchParams(newParams);
+  };
+
   useEffect(() => {
-    const loadBusinessData = async () => {
+    const loadStartups = async () => {
       try {
         const res = await api.getStartups('limit=6');
         setStartups(res.startups || []);
@@ -32,13 +69,118 @@ export const BusinessPage: React.FC = () => {
         setLoadingStartups(false);
       }
     };
-    loadBusinessData();
+    loadStartups();
   }, []);
+
+  useEffect(() => {
+    const loadFounders = async () => {
+      setLoadingFounders(true);
+      try {
+        const { data: supaProfiles } = await supabase
+          .from('profiles')
+          .select('id, user_id, full_name, username, headline, avatar, location, skills, preferred_role, bio')
+          .or('preferred_role.ilike.%founder%,headline.ilike.%founder%')
+          .limit(8);
+
+        const starterFounders = [
+          {
+            id: 'founder-1',
+            user_id: 'founder-1',
+            full_name: 'Vikram Sengupta',
+            username: 'vikram_founder',
+            headline: 'Founder & CEO @ NeuroScale | Ex-Stripe Tech Lead',
+            preferred_role: 'Founder',
+            location: 'Bengaluru, India',
+            bio: 'Building developer infrastructure for multimodal AI agents. Raised pre-seed, scaling team & product.',
+            skills: 'Distributed Systems, Go, Python, Venture Strategy',
+          },
+          {
+            id: 'founder-2',
+            user_id: 'founder-2',
+            full_name: 'Sarah Chen',
+            username: 'sarah_chen',
+            headline: 'Solo Founder @ FlowPulse | B2B SaaS Automations',
+            preferred_role: 'Founder',
+            location: 'San Francisco, CA',
+            bio: 'Building workflow automation platform for modern operations teams. Bootstrapped to $15k MRR.',
+            skills: 'Product Architecture, Next.js, Growth Marketing',
+          },
+          {
+            id: 'founder-3',
+            user_id: 'founder-3',
+            full_name: 'David Okafor',
+            username: 'david_okafor',
+            headline: 'Founder @ AgriLink | Climate & Agritech Pioneer',
+            preferred_role: 'Founder',
+            location: 'Nairobi / Remote',
+            bio: 'Connecting smallholder farmers directly to commodity aggregators using mobile-first IoT telemetry.',
+            skills: 'IoT, Supply Chain, Operations, Seed Fundraising',
+          },
+          {
+            id: 'founder-4',
+            user_id: 'founder-4',
+            full_name: 'Anya Lindqvist',
+            username: 'anya_lind',
+            headline: 'Co-Founder & CTO @ CygnusBio | Synthetic Biology',
+            preferred_role: 'Founder',
+            location: 'Stockholm, Sweden',
+            bio: 'Biochemist turned computational biology founder. Developing rapid enzymatic synthesis assays.',
+            skills: 'Biotech, Machine Learning, Rust, IP Strategy',
+          },
+        ];
+
+        const combined = [...(supaProfiles || []), ...starterFounders];
+        const unique = Array.from(new Map(combined.map((f) => [f.full_name || f.id, f])).values());
+        setFounders(unique.slice(0, 6));
+
+        // Fetch connection status if user logged in
+        if (user?.id) {
+          const { data: userConns } = await supabase
+            .from('connections')
+            .select('sender_id, receiver_id, status')
+            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+
+          if (userConns) {
+            const map = new Map<string, string>();
+            userConns.forEach((c) => {
+              const otherId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
+              map.set(otherId, c.status);
+            });
+            setConnectionStatusMap(map);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load founders:', err);
+      } finally {
+        setLoadingFounders(false);
+      }
+    };
+
+    if (activeTab === 'network') {
+      loadFounders();
+    }
+  }, [activeTab, user?.id]);
+
+  const handleConnectClick = (target: any) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setConnectUser(target);
+  };
+
+  const handlePitchClick = (target: any) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setStartupConnectUser(target);
+  };
 
   const networkCategories = [
     {
       title: 'Founders',
-      desc: 'Active venture creators building the next generation of breakout companies.',
+      desc: 'Active venture creators building breakout companies.',
       href: '/cofounders?category=founders',
       icon: Rocket,
       badge: 'Visionaries',
@@ -46,7 +188,7 @@ export const BusinessPage: React.FC = () => {
     },
     {
       title: 'Co-Founders',
-      desc: 'Technical & product architects seeking equity partnerships & synergy.',
+      desc: 'Technical & product architects seeking equity partnerships.',
       href: '/cofounders?category=cofounders',
       icon: Users,
       badge: 'Builders',
@@ -81,122 +223,122 @@ export const BusinessPage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
-      {/* 3 Core Business Pillars Header (Matching Feed Layout) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {/* 1. Startups */}
+      {/* 3 Core Business Pillars Header (Enhanced readable typography & comfortable spacing) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        {/* 1. Startups Pillar */}
         <button
           type="button"
-          onClick={() => setActiveTab(activeTab === 'startups' ? 'all' : 'startups')}
-          className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+          onClick={() => handleTabChange('startups')}
+          className={`p-4 sm:p-5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
             activeTab === 'startups'
               ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
           }`}
         >
-          <div className="flex items-center justify-between mb-1">
-            <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-              <Compass size={16} className="text-brand-600 dark:text-brand-400" />
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <Compass size={19} className="text-brand-600 dark:text-brand-400" />
               Startups
             </span>
             {activeTab === 'startups' && (
-              <span className="w-2 h-2 rounded-full bg-brand-600 shrink-0" />
+              <span className="w-2.5 h-2.5 rounded-full bg-brand-600 shrink-0" />
             )}
           </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-            explore innovative ventures and products
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
+            Explore innovative ventures and products
           </p>
         </button>
 
-        {/* 2. Network */}
+        {/* 2. Founders & Network Pillar */}
         <button
           type="button"
-          onClick={() => setActiveTab(activeTab === 'network' ? 'all' : 'network')}
-          className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+          onClick={() => handleTabChange('network')}
+          className={`p-4 sm:p-5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
             activeTab === 'network'
               ? 'bg-purple-50/90 dark:bg-purple-950/50 border-purple-500 ring-2 ring-purple-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
           }`}
         >
-          <div className="flex items-center justify-between mb-1">
-            <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-              <Users size={16} className="text-purple-600 dark:text-purple-400" />
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <Users size={19} className="text-purple-600 dark:text-purple-400" />
               Founders & Network
             </span>
             {activeTab === 'network' && (
-              <span className="w-2 h-2 rounded-full bg-purple-600 shrink-0" />
+              <span className="w-2.5 h-2.5 rounded-full bg-purple-600 shrink-0" />
             )}
           </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-            founders, cofounders, investors, marketers & mentors
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
+            Verified founders, co-founders & investors
           </p>
         </button>
 
-        {/* 3. Graveyard */}
+        {/* 3. Graveyard Pillar */}
         <button
           type="button"
-          onClick={() => setActiveTab(activeTab === 'graveyard' ? 'all' : 'graveyard')}
-          className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+          onClick={() => handleTabChange('graveyard')}
+          className={`p-4 sm:p-5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
             activeTab === 'graveyard'
               ? 'bg-rose-50/90 dark:bg-rose-950/50 border-rose-500 ring-2 ring-rose-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
           }`}
         >
-          <div className="flex items-center justify-between mb-1">
-            <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
-              <Skull size={16} className="text-rose-600 dark:text-rose-400" />
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="font-bold text-base sm:text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <Skull size={19} className="text-rose-600 dark:text-rose-400" />
               Graveyard
             </span>
             {activeTab === 'graveyard' && (
-              <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0" />
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-600 shrink-0" />
             )}
           </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
-            startup post-mortems and key learnings
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium">
+            Startup post-mortems and key learnings
           </p>
         </button>
       </div>
 
-      {/* Featured Startups Section */}
-      {(activeTab === 'all' || activeTab === 'startups') && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-200 dark:border-dark-800 pb-3">
+      {/* 1. Featured Startups Section (Direct view when entering Business) */}
+      {activeTab === 'startups' && (
+        <div className="space-y-5 animate-in fade-in duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-dark-800 pb-3.5">
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Compass size={18} className="text-brand-600" />
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
+                <Compass size={22} className="text-brand-600" />
                 Verified Startups
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                 Active ventures building solutions across artificial intelligence, fintech, and climate tech
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Link
                 to="/startups/create"
-                className="btn-primary !text-xs !py-1.5 !px-3 inline-flex items-center gap-1"
+                className="btn-primary !text-xs sm:!text-sm !py-2 !px-3.5 inline-flex items-center gap-1.5"
               >
-                <Plus size={12} /> Post Startup
+                <Plus size={14} /> Post Startup
               </Link>
               <Link
                 to="/startups"
-                className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline px-2 py-1"
+                className="text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-400 hover:underline px-2.5 py-1.5"
               >
-                Explore All
+                Explore All Startups →
               </Link>
             </div>
           </div>
 
           {loadingStartups ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[1, 2, 3].map((n) => (
-                <div key={n} className="h-44 rounded-xl bg-slate-100 dark:bg-dark-850 animate-pulse border border-slate-200 dark:border-dark-800" />
+              {[1, 2, 3, 4, 5, 6].map((n) => (
+                <div key={n} className="h-48 rounded-xl bg-slate-100 dark:bg-dark-850 animate-pulse border border-slate-200 dark:border-dark-800" />
               ))}
             </div>
           ) : startups.length === 0 ? (
-            <div className="p-8 text-center card-base space-y-3">
-              <Compass size={28} className="mx-auto text-slate-400" />
-              <p className="text-xs text-slate-500">No startups listed yet. Be the first to launch!</p>
-              <Link to="/startups/create" className="btn-primary !text-xs !py-1.5 !px-3 inline-flex items-center gap-1">
-                <Plus size={12} /> Post Startup
+            <div className="p-10 text-center card-base space-y-3.5">
+              <Compass size={32} className="mx-auto text-slate-400" />
+              <p className="text-sm text-slate-500">No startups listed yet. Be the first to launch!</p>
+              <Link to="/startups/create" className="btn-primary !text-xs sm:!text-sm !py-2 !px-4 inline-flex items-center gap-1.5">
+                <Plus size={14} /> Post Startup
               </Link>
             </div>
           ) : (
@@ -205,41 +347,41 @@ export const BusinessPage: React.FC = () => {
                 <Link
                   key={startup.id}
                   to={`/startups/${startup.id}`}
-                  className="card-base p-4 hover:border-brand-400 dark:hover:border-dark-700 transition-all flex flex-col justify-between group"
+                  className="card-base p-4 sm:p-5 hover:border-brand-400 dark:hover:border-dark-700 transition-all flex flex-col justify-between group"
                 >
                   <div>
-                    <div className="flex items-center gap-3 mb-2.5">
+                    <div className="flex items-center gap-3 mb-3">
                       {startup.logo ? (
-                        <img src={startup.logo} alt={startup.name} className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-slate-800" />
+                        <img src={startup.logo} alt={startup.name} className="w-11 h-11 rounded-lg object-cover border border-slate-200 dark:border-slate-800" />
                       ) : (
-                        <div className="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-sm border border-brand-200/50 dark:border-brand-900/50">
+                        <div className="w-11 h-11 rounded-lg bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-base border border-brand-200/50 dark:border-brand-900/50">
                           {startup.name.charAt(0)}
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                          <h4 className="font-bold text-base text-slate-900 dark:text-white truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                             {startup.name}
                           </h4>
-                          {startup.isVerified && <ShieldCheck size={14} className="text-brand-600 shrink-0" />}
+                          {startup.isVerified && <ShieldCheck size={15} className="text-brand-600 shrink-0" />}
                         </div>
-                        <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                           {startup.industry} • {startup.stage}
                         </span>
                       </div>
                     </div>
 
-                    <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
                       {startup.oneLineDescription || startup.solution}
                     </p>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs">
-                    <span className="text-slate-400 text-[11px] truncate">
+                  <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs sm:text-sm">
+                    <span className="text-slate-400 text-xs truncate">
                       {startup.location || 'Remote'}
                     </span>
                     <span className="font-semibold text-brand-600 dark:text-brand-400">
-                      View Startup
+                      View Startup →
                     </span>
                   </div>
                 </Link>
@@ -249,88 +391,256 @@ export const BusinessPage: React.FC = () => {
         </div>
       )}
 
-      {/* Network Roles Grid: Founders, Co-Founders, Investors, Marketers, Mentors */}
-      {(activeTab === 'all' || activeTab === 'network') && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-200 dark:border-dark-800 pb-3">
+      {/* 2. Founders & Network Section (Shows Founders only without 'All Members') */}
+      {activeTab === 'network' && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-dark-800 pb-3.5">
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Users size={18} className="text-purple-600" />
-                Founders & Network Directory
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 text-xs font-semibold border border-brand-200/60 dark:border-brand-900/60 mb-1.5">
+                <Rocket size={12} /> Venture Creators
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
+                <Users size={22} className="text-purple-600" />
+                Founders Directory
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Connect with active founders, synergy co-founders, angel investors, growth marketers, and seasoned mentors
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                Verified founders actively building and scaling ventures. Connect directly or pitch synergy.
               </p>
             </div>
+
             <Link
-              to="/cofounders?category=all"
-              className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline px-2 py-1"
+              to="/cofounders?category=founders"
+              className="btn-primary !text-xs sm:!text-sm !py-2 !px-3.5 inline-flex items-center gap-1.5 shrink-0"
             >
-              All Members
+              <span>Explore All Founders</span>
+              <ArrowRight size={14} />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {networkCategories.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.title}
-                  to={item.href}
-                  className="p-4 rounded-xl card-base hover:border-brand-400 dark:hover:border-dark-700 transition-all flex flex-col justify-between group cursor-pointer"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <span className={`p-2 rounded-lg border ${item.color}`}>
-                        <Icon size={16} />
-                      </span>
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400">
-                        {item.badge}
-                      </span>
+          {/* Real Founder Profiles Grid */}
+          {loadingFounders ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((n) => (
+                <div key={n} className="h-44 rounded-xl bg-slate-100 dark:bg-dark-850 animate-pulse border border-slate-200 dark:border-dark-800" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {founders.map((f) => {
+                const displayName = f.full_name || 'Founder';
+                const username = f.username || displayName.toLowerCase().replace(/\s+/g, '_');
+                const profileUrl = f.user_id ? `/profile/${f.user_id}` : '/cofounders?category=founders';
+                const connStatus = f.user_id ? connectionStatusMap.get(f.user_id) : undefined;
+                const targetUserObj = {
+                  id: f.user_id || f.id,
+                  email: f.email || '',
+                  profile: {
+                    fullName: displayName,
+                    username: username,
+                    avatar: f.avatar,
+                    headline: f.headline,
+                  },
+                };
+
+                return (
+                  <div
+                    key={f.id}
+                    className="p-4 sm:p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3.5"
+                  >
+                    <div className="space-y-2.5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            src={f.avatar}
+                            name={displayName}
+                            size="lg"
+                          />
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <Link
+                                to={profileUrl}
+                                className="font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                              >
+                                {displayName}
+                              </Link>
+                              <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
+                                @{username}
+                              </span>
+                              <RoleBadge role="FOUNDER" size="sm" />
+                              <VerificationBadge badge="Verified Founder" isVerified={true} size="sm" />
+                            </div>
+                            <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 mt-0.5">{f.headline}</p>
+                            <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                              <span className="flex items-center gap-1">
+                                <MapPin size={12} /> {f.location || 'Remote'}
+                              </span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <Clock size={12} /> Full-time Founder
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {f.bio && (
+                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                          {f.bio}
+                        </p>
+                      )}
+
+                      {f.skills && (
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                          {f.skills.split(',').slice(0, 4).map((sk: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                            >
+                              {sk.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                      {item.desc}
-                    </p>
-                  </div>
 
-                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
-                    <span>Browse Category</span>
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
+                      <span className="text-xs text-slate-400 font-medium">
+                        Active Venture Creator
+                      </span>
+
+                      <div className="flex items-center gap-2">
+                        <Link
+                          to={profileUrl}
+                          className="btn-tertiary !text-xs sm:!text-sm !py-1.5 !px-2.5"
+                        >
+                          View Profile
+                        </Link>
+
+                        {/* Pitch Button */}
+                        <button
+                          onClick={() => handlePitchClick(targetUserObj)}
+                          className="btn-secondary !text-xs sm:!text-sm !py-1.5 !px-3 flex items-center gap-1"
+                          title="Propose Co-Founding or Synergy"
+                        >
+                          <Rocket size={13} /> Pitch
+                        </button>
+
+                        {/* Connection Button */}
+                        {connStatus === 'ACCEPTED' ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
+                              <Check size={12} /> Connected
+                            </span>
+                            <Link
+                              to={`/messages?user=${f.user_id}`}
+                              className="btn-primary !text-xs sm:!text-sm !py-1.5 !px-2.5 flex items-center gap-1"
+                            >
+                              <MessageSquare size={13} /> Chat
+                            </Link>
+                          </div>
+                        ) : connStatus === 'PENDING' ? (
+                          <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
+                            Pending
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleConnectClick(targetUserObj)}
+                            className="btn-primary !text-xs sm:!text-sm !py-1.5 !px-3 flex items-center gap-1"
+                          >
+                            <UserPlus size={13} /> Connect
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </Link>
-              );
-            })}
+                );
+              })}
+            </div>
+          )}
+
+          {/* Explore Other Specific Network Roles */}
+          <div className="pt-4 border-t border-slate-200 dark:border-dark-800">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+              Explore Network Categories
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              {networkCategories.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.title}
+                    to={item.href}
+                    className="p-3.5 rounded-xl card-base hover:border-brand-400 dark:hover:border-dark-700 transition-all flex flex-col justify-between group cursor-pointer"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`p-1.5 rounded-lg border ${item.color}`}>
+                          <Icon size={15} />
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400">
+                          {item.badge}
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                        {item.title}
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                        {item.desc}
+                      </p>
+                    </div>
+                    <div className="mt-3 pt-2 border-t border-slate-100 dark:border-dark-800 text-xs font-semibold text-brand-600 dark:text-brand-400">
+                      Explore →
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Startup Graveyard Banner Callout */}
-      {(activeTab === 'all' || activeTab === 'graveyard') && (
-        <div className="p-6 rounded-2xl bg-gradient-to-r from-rose-950/30 via-slate-900 to-slate-900 border border-rose-900/30 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0 border border-rose-500/20">
-              <Skull size={24} />
+      {/* 3. Startup Graveyard Section */}
+      {activeTab === 'graveyard' && (
+        <div className="space-y-5 animate-in fade-in duration-200">
+          <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-rose-950/40 via-slate-900 to-slate-900 border border-rose-900/40 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0 border border-rose-500/20">
+                <Skull size={28} />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base sm:text-lg text-white">
+                  Learn from the Fallen in Startup Graveyard
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed max-w-xl">
+                  Read transparent post-mortems of failed ventures, understand root causes of failure, and solve their unfinished problem statements.
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold text-sm text-white">
-                Learn from the Fallen in Startup Graveyard
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Read transparent post-mortems of failed ventures, why they collapsed, and solve their unfinished problems.
-              </p>
-            </div>
+            <Link
+              to="/failed-startups"
+              className="btn-primary !bg-rose-600 hover:!bg-rose-700 !text-xs sm:!text-sm !py-2.5 !px-5 whitespace-nowrap shrink-0 shadow-md"
+            >
+              Explore Graveyard →
+            </Link>
           </div>
-          <Link
-            to="/failed-startups"
-            className="btn-primary !bg-rose-600 hover:!bg-rose-700 !text-xs !py-2 !px-4 whitespace-nowrap shrink-0"
-          >
-            Explore Graveyard
-          </Link>
         </div>
       )}
+
+      {/* Connect Modal */}
+      <ConnectModal
+        isOpen={!!connectUser}
+        onClose={() => setConnectUser(null)}
+        targetUser={connectUser}
+      />
+
+      {/* Startup Pitch Modal */}
+      <StartupConnectionModal
+        isOpen={!!startupConnectUser}
+        onClose={() => setStartupConnectUser(null)}
+        targetUser={startupConnectUser}
+      />
 
     </div>
   );
 };
+export default BusinessPage;

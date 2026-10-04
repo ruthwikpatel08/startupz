@@ -100,7 +100,7 @@ const AppContent: React.FC = () => {
         <Sidebar />
         <main
           className={`flex-1 min-w-0 flex flex-col justify-between overflow-x-hidden pb-16 lg:pb-0 ${
-            isAuthOrMeetingPage ? '' : 'lg:pl-56 xl:pl-60'
+            isAuthOrMeetingPage ? '' : 'lg:pl-60 xl:pl-64'
           }`}
         >
           <div className="flex-1 min-w-0">
