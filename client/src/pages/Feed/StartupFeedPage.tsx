@@ -30,8 +30,10 @@ import {
   Globe,
   Flame,
   ArrowRight,
+  Trash2,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 
 export const StartupFeedPage: React.FC = () => {
   const { user } = useAuth();
@@ -112,16 +114,44 @@ export const StartupFeedPage: React.FC = () => {
     if (activePillar === 'IDEAS') {
       if (filterType !== 'ALL') return p.postType === filterType;
       return (
+        p.postType === 'IDEA' ||
+        p.postType === 'EXPERIENCE' ||
         p.postType === 'COFOUNDER' ||
         p.postType === 'HIRING' ||
         p.postType === 'ADVICE' ||
         p.postType === 'UPDATE' ||
-        (p.title && /idea|build|concept|mvp|vision|seeking/i.test(p.title)) ||
-        /idea|build|concept|mvp|vision|seeking|collaborat/i.test(p.content)
+        (p.title && /idea|build|concept|mvp|vision|seeking|experience/i.test(p.title)) ||
+        /idea|build|concept|mvp|vision|seeking|collaborat|experience/i.test(p.content)
       );
     }
     return true;
   });
+
+  const handleDeletePost = async (postId: string) => {
+    if (!user) return;
+    if (!window.confirm('Are you sure you want to delete this post?')) return;
+    try {
+      try { await api.deletePost(postId); } catch {}
+      try { await supabase.from('posts').delete().eq('id', postId); } catch {}
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+    } catch (err: any) {
+      console.error('Failed to delete post:', err);
+      alert(err.message || 'Failed to delete post.');
+    }
+  };
+
+  const handleDeleteProblem = async (problemId: string) => {
+    if (!user) return;
+    if (!window.confirm('Are you sure you want to delete this problem statement?')) return;
+    try {
+      try { await api.deleteProblem(problemId); } catch {}
+      try { await supabase.from('problems').delete().eq('id', problemId); } catch {}
+      setProblems((prev) => prev.filter((p) => p.id !== problemId));
+    } catch (err: any) {
+      console.error('Failed to delete problem:', err);
+      alert(err.message || 'Failed to delete problem statement.');
+    }
+  };
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,15 +167,52 @@ export const StartupFeedPage: React.FC = () => {
     setSubmittingPost(true);
     setComposerError(null);
     try {
-      const res = await api.createPost({
-        postType,
-        title: postTitle.trim() || undefined,
-        content: postContent.trim(),
-        links: postLinks.trim() || undefined,
-      });
+      let createdPost: any = null;
+      try {
+        const res = await api.createPost({
+          postType,
+          title: postTitle.trim() || undefined,
+          content: postContent.trim(),
+          links: postLinks.trim() || undefined,
+        });
+        createdPost = res?.post || res;
+      } catch (apiErr) {
+        // Fallback: direct Supabase insert
+        const { data, error } = await supabase
+          .from('posts')
+          .insert({
+            user_id: user.id,
+            post_type: postType,
+            title: postTitle.trim() || null,
+            content: postContent.trim(),
+            links: postLinks.trim() ? [postLinks.trim()] : [],
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        createdPost = {
+          id: data.id,
+          authorId: user.id,
+          postType: data.post_type || postType,
+          title: data.title,
+          content: data.content,
+          links: data.links,
+          createdAt: data.created_at || new Date().toISOString(),
+          likesCount: 0,
+          commentsCount: 0,
+          author: {
+            id: user.id,
+            email: user.email,
+            profile: user.profile,
+          },
+        };
+      }
 
       // Insert new post at top of feed
-      setPosts((prev) => [res.post, ...prev]);
+      if (createdPost) {
+        setPosts((prev) => [createdPost, ...prev]);
+      }
       setPostTitle('');
       setPostContent('');
       setPostLinks('');
@@ -234,6 +301,8 @@ export const StartupFeedPage: React.FC = () => {
 
   const postTypes = [
     { key: 'ALL', label: 'All Updates' },
+    { key: 'IDEA', label: '💡 Ideas' },
+    { key: 'EXPERIENCE', label: '⭐ Experiences' },
     { key: 'UPDATE', label: '🚀 Updates' },
     { key: 'LAUNCH', label: '🎉 Launches' },
     { key: 'COFOUNDER', label: '🤝 Co-Founder' },
@@ -244,6 +313,10 @@ export const StartupFeedPage: React.FC = () => {
 
   const getPostTypeBadge = (type: string) => {
     switch (type) {
+      case 'IDEA':
+        return 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800';
+      case 'EXPERIENCE':
+        return 'bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800';
       case 'LAUNCH':
         return 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800';
       case 'COFOUNDER':
@@ -369,6 +442,8 @@ export const StartupFeedPage: React.FC = () => {
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-xs font-medium text-slate-500 mr-1">Post Type:</span>
                 {[
+                  { id: 'IDEA', label: '🚀 Idea' },
+                  { id: 'EXPERIENCE', label: '⭐ Experience' },
                   { id: 'UPDATE', label: 'Update' },
                   { id: 'LAUNCH', label: 'Product Launch' },
                   { id: 'COFOUNDER', label: 'Seeking Co-Founder' },
@@ -486,7 +561,7 @@ export const StartupFeedPage: React.FC = () => {
           ) : (
             <div className="space-y-4">
               {problems.map((problem) => (
-                <ProblemCard key={problem.id} problem={problem} />
+                <ProblemCard key={problem.id} problem={problem} onDelete={handleDeleteProblem} />
               ))}
             </div>
           )}
@@ -516,6 +591,7 @@ export const StartupFeedPage: React.FC = () => {
             const authorName = author?.profile?.fullName || author?.email || 'Founder';
             const authorHeadline = author?.profile?.headline || author?.role;
             const isCommentsOpen = !!expandedComments[post.id];
+            const isAuthor = user && (user.id === post.authorId || user.id === author?.id || (user.email && author?.email && user.email.toLowerCase() === author.email.toLowerCase()) || user.isAdmin);
 
             return (
               <div
@@ -556,7 +632,7 @@ export const StartupFeedPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Post Type Badge & Report Dropdown */}
+                  {/* Post Type Badge & Delete / Report Actions */}
                   <div className="flex items-center gap-2">
                     <span
                       className={`text-[11px] font-medium px-2 py-0.5 rounded-md border ${getPostTypeBadge(
@@ -565,6 +641,17 @@ export const StartupFeedPage: React.FC = () => {
                     >
                       {post.postType}
                     </span>
+
+                    {/* Delete option for the author */}
+                    {isAuthor && (
+                      <button
+                        onClick={() => handleDeletePost(post.id)}
+                        title="Delete Post"
+                        className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
 
                     <button
                       onClick={() => setReportTarget({ id: post.id, title: post.title || post.content.slice(0, 30) })}

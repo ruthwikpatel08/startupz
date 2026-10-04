@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
+import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
@@ -25,6 +26,7 @@ import {
   AlertCircle,
   FileText,
   UserCheck,
+  Trash2,
 } from 'lucide-react';
 
 export const StartupDetailPage: React.FC = () => {
@@ -105,6 +107,23 @@ export const StartupDetailPage: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleDeleteStartup = async () => {
+    if (!startup) return;
+    if (!window.confirm('Are you sure you want to delete this startup? This action cannot be undone.')) {
+      return;
+    }
+    try {
+      try {
+        await api.deleteStartup(startup.id);
+      } catch (err) {
+        await supabase.from('startups').delete().eq('id', startup.id);
+      }
+      navigate('/startups');
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete startup.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16">
@@ -124,6 +143,14 @@ export const StartupDetailPage: React.FC = () => {
       </div>
     );
   }
+
+  const isOwner = Boolean(
+    user && (
+      user.id === startup.founderId ||
+      user.id === startup.founder?.id ||
+      user.isAdmin
+    )
+  );
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -202,6 +229,17 @@ export const StartupDetailPage: React.FC = () => {
             >
               <Sparkles size={14} className="text-brand-600" /> AI Validation
             </button>
+
+            {isOwner && (
+              <button
+                onClick={handleDeleteStartup}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors"
+                title="Delete this startup"
+              >
+                <Trash2 size={14} />
+                <span>Delete</span>
+              </button>
+            )}
           </div>
         </div>
 

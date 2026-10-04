@@ -35,6 +35,7 @@ import {
   Building2,
   Check,
   Globe,
+  Users,
 } from 'lucide-react';
 
 interface AIScoutModalProps {
@@ -213,75 +214,8 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
         // Backend optional
       }
 
-      // 3. Fallback ecosystem talent for comprehensive matching
-      const starterEcosystemBuilders = [
-        {
-          id: 'other-talent-1',
-          user_id: 'other-talent-1',
-          full_name: 'Aarav Sharma',
-          username: 'aarav_builder',
-          headline: 'Computer Science Student & Junior AI Builder',
-          preferred_role: 'Other: Student',
-          location: 'Bengaluru, Karnataka, India',
-          education: 'NIT Surathkal (Karnataka)',
-          bio: 'Final year CS student exploring early-stage AI startups. Proficient in PyTorch, FastApi and React.',
-          skills: 'React, TypeScript, Python, FastApi, PyTorch',
-        },
-        {
-          id: 'other-talent-2',
-          user_id: 'other-talent-2',
-          full_name: 'Marcus Brody',
-          username: 'marcus_sales',
-          headline: 'Enterprise Salesman & B2B GTM Specialist',
-          preferred_role: 'Other: Salesman',
-          location: 'Hyderabad, Telangana, India',
-          education: 'Symbiosis International University (SIU Pune)',
-          bio: '10 years experience closing high-ticket B2B SaaS deals. Advising founders on outbound customer acquisition.',
-          skills: 'B2B Sales, Outbound Prospecting, GTM Strategy, Closing',
-        },
-        {
-          id: 'other-talent-3',
-          user_id: 'other-talent-3',
-          full_name: 'Elena Rostova',
-          username: 'elena_design',
-          headline: 'Frontend Designer & Design Systems Architect',
-          preferred_role: 'Other: Frontend Designer',
-          location: 'Khammam, Telangana, India',
-          education: 'NIAT (National Institute of Advanced Technologies)',
-          bio: 'Crafting pixel-perfect web interfaces and micro-interactions. Graduate of advanced technology systems.',
-          skills: 'Figma, TailwindCSS, React, Motion Design, UI/UX',
-        },
-        {
-          id: 'other-talent-4',
-          user_id: 'other-talent-4',
-          full_name: 'Rohan Mehra',
-          username: 'rohan_student',
-          headline: 'Student Researcher & ML Systems Enthusiast',
-          preferred_role: 'Other: Student',
-          location: 'Warangal, Telangana, India',
-          education: 'NIT Warangal',
-          bio: 'Student building open-source LLM evaluation tools. Looking to join pre-establishment builder projects.',
-          skills: 'PyTorch, Hugging Face, Data Pipelines, Python',
-        },
-        {
-          id: 'founder-1',
-          user_id: 'founder-1',
-          full_name: 'Vikram Sengupta',
-          username: 'vikram_founder',
-          headline: 'Founder & CEO @ NeuroScale | Ex-Stripe Tech Lead',
-          preferred_role: 'Founder',
-          location: 'Bengaluru, Karnataka, India',
-          education: 'IIT Bombay',
-          bio: 'Building developer infrastructure for multimodal AI agents. Raised pre-seed, scaling team.',
-          skills: 'Distributed Systems, Go, Python, Venture Strategy',
-        },
-      ];
-
-      // Format & merge all candidates
+      // Format & merge all real candidates from database and API
       const allCandidatesMap = new Map<string, any>();
-
-      // Put starters
-      starterEcosystemBuilders.forEach((item) => allCandidatesMap.set(item.full_name, item));
 
       // Put Supabase profiles
       supaProfiles.forEach((p) => {
@@ -369,100 +303,111 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
       });
 
       // Intelligent scoring engine with 100% match capability
-      const scoredCandidates = candidatesList.map((cand) => {
-        const text = `${cand.full_name} ${cand.headline || ''} ${cand.bio || ''} ${cand.skills || ''} ${cand.preferred_role || ''} ${cand.location || ''} ${cand.education || ''}`.toLowerCase();
-        
-        let score = 60;
-        const matchReasons: string[] = [];
+      const scoredCandidates = candidatesList
+        .map((cand) => {
+          const text = `${cand.full_name} ${cand.headline || ''} ${cand.bio || ''} ${cand.skills || ''} ${cand.preferred_role || ''} ${cand.location || ''} ${cand.education || ''}`.toLowerCase();
 
-        let hasLocMatch = false;
-        let hasDistrictMatch = false;
-        let hasProfMatch = false;
-        let hasColMatch = false;
-        let hasSkillMatch = false;
+          let score = 0;
+          const matchReasons: string[] = [];
 
-        // 1. Location match
-        if (interpretation.detectedDistrict && text.includes(interpretation.detectedDistrict.toLowerCase())) {
-          score += 35;
-          hasDistrictMatch = true;
-          hasLocMatch = true;
-          matchReasons.push(`District: ${interpretation.detectedDistrict} (${interpretation.detectedState})`);
-        } else if (interpretation.detectedState && text.includes(interpretation.detectedState.toLowerCase())) {
-          score += 25;
-          hasLocMatch = true;
-          matchReasons.push(`State: ${interpretation.detectedState}`);
-        } else if (interpretation.detectedLocation && text.includes(interpretation.detectedLocation.toLowerCase())) {
-          score += 20;
-          hasLocMatch = true;
-          matchReasons.push(`Location: ${interpretation.detectedLocation}`);
-        }
+          let hasLocMatch = false;
+          let hasDistrictMatch = false;
+          let hasProfMatch = false;
+          let hasColMatch = false;
+          let hasSkillMatch = false;
+          let wordMatchCount = 0;
 
-        // 2. Profession / Role match
-        if (interpretation.detectedProfession) {
-          const prof = interpretation.detectedProfession.toLowerCase();
-          if (text.includes(prof) || (cand.preferred_role || '').toLowerCase().includes(prof)) {
+          // 1. Location match
+          if (interpretation.detectedDistrict && text.includes(interpretation.detectedDistrict.toLowerCase())) {
+            score += 40;
+            hasDistrictMatch = true;
+            hasLocMatch = true;
+            matchReasons.push(`District: ${interpretation.detectedDistrict} (${interpretation.detectedState || 'India'})`);
+          } else if (interpretation.detectedState && text.includes(interpretation.detectedState.toLowerCase())) {
             score += 30;
-            hasProfMatch = true;
-            matchReasons.push(`Role match: ${interpretation.detectedProfession}`);
+            hasLocMatch = true;
+            matchReasons.push(`State: ${interpretation.detectedState}`);
+          } else if (interpretation.detectedLocation && text.includes(interpretation.detectedLocation.toLowerCase())) {
+            score += 25;
+            hasLocMatch = true;
+            matchReasons.push(`Location: ${interpretation.detectedLocation}`);
           }
-        }
 
-        // 3. College / Institution match
-        if (interpretation.detectedCollege) {
-          const colShort = interpretation.detectedCollege.toLowerCase().split('(')[0].trim();
-          if (text.includes(colShort) || (text.includes('niat') && interpretation.detectedCollege.includes('NIAT'))) {
-            score += 30;
-            hasColMatch = true;
-            matchReasons.push(`Institution: ${interpretation.detectedCollege.split('(')[0].trim()}`);
+          // 2. Profession / Role match
+          if (interpretation.detectedProfession) {
+            const prof = interpretation.detectedProfession.toLowerCase();
+            if (text.includes(prof) || (cand.preferred_role || '').toLowerCase().includes(prof)) {
+              score += 35;
+              hasProfMatch = true;
+              matchReasons.push(`Role match: ${interpretation.detectedProfession}`);
+            }
           }
-        }
 
-        // 4. Skills match
-        interpretation.detectedSkills.forEach((sk) => {
-          if (text.includes(sk)) {
-            score += 15;
-            hasSkillMatch = true;
-            matchReasons.push(`Skill: ${(sk || '').toUpperCase()}`);
+          // 3. College / Institution match
+          if (interpretation.detectedCollege) {
+            const colShort = interpretation.detectedCollege.toLowerCase().split('(')[0].trim();
+            if (text.includes(colShort) || (text.includes('niat') && interpretation.detectedCollege.includes('NIAT'))) {
+              score += 35;
+              hasColMatch = true;
+              matchReasons.push(`Institution: ${interpretation.detectedCollege.split('(')[0].trim()}`);
+            }
           }
-        });
 
-        // Basic query word overlap
-        const queryWords = adjustedText.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
-        queryWords.forEach((word) => {
-          if (text.includes(word) && !interpretation.detectedSkills.includes(word)) {
-            score += 6;
+          // 4. Skills match
+          interpretation.detectedSkills.forEach((sk) => {
+            if (text.includes(sk.toLowerCase())) {
+              score += 25;
+              hasSkillMatch = true;
+              matchReasons.push(`Skill: ${sk.toUpperCase()}`);
+            }
+          });
+
+          // 5. Basic query word overlap (filtering common stop words)
+          const stopWords = new Set(['and', 'for', 'the', 'with', 'who', 'any', 'from', 'in', 'at', 'to', 'is', 'are', 'find', 'show', 'me', 'want', 'need']);
+          const queryWords = adjustedText.toLowerCase().split(/\s+/).filter((w) => w.length > 2 && !stopWords.has(w));
+          queryWords.forEach((word) => {
+            if (text.includes(word) && !interpretation.detectedSkills.includes(word)) {
+              score += 10;
+              wordMatchCount++;
+            }
+          });
+
+          // Check if candidate matched ANY search criteria
+          const isMatched = hasLocMatch || hasProfMatch || hasColMatch || hasSkillMatch || wordMatchCount > 0;
+          if (!isMatched) {
+            return null; // Exclude unrelated candidate completely
           }
-        });
 
-        // 100% Match Engine: If candidate fulfills user-requested criteria, grant 100%!
-        const criteriaCount = [
-          Boolean(interpretation.detectedDistrict || interpretation.detectedState || interpretation.detectedLocation),
-          Boolean(interpretation.detectedProfession),
-          Boolean(interpretation.detectedCollege),
-          interpretation.detectedSkills.length > 0
-        ].filter(Boolean).length;
+          // 100% Match Engine: If candidate fulfills user-requested criteria, grant 100%!
+          const criteriaCount = [
+            Boolean(interpretation.detectedDistrict || interpretation.detectedState || interpretation.detectedLocation),
+            Boolean(interpretation.detectedProfession),
+            Boolean(interpretation.detectedCollege),
+            interpretation.detectedSkills.length > 0
+          ].filter(Boolean).length;
 
-        if (criteriaCount > 0) {
-          const matchedCount = [hasLocMatch, hasProfMatch, hasColMatch, hasSkillMatch].filter(Boolean).length;
-          if (
-            matchedCount >= criteriaCount ||
-            (criteriaCount >= 2 && matchedCount >= 2) ||
-            (hasDistrictMatch && (hasProfMatch || hasColMatch)) ||
-            (hasProfMatch && hasLocMatch) ||
-            score >= 95
-          ) {
-            score = 100;
+          if (criteriaCount > 0) {
+            const matchedCount = [hasLocMatch, hasProfMatch, hasColMatch, hasSkillMatch].filter(Boolean).length;
+            if (
+              matchedCount >= criteriaCount ||
+              (criteriaCount >= 2 && matchedCount >= 2) ||
+              (hasDistrictMatch && (hasProfMatch || hasColMatch)) ||
+              (hasProfMatch && hasLocMatch) ||
+              score >= 55
+            ) {
+              score = 100;
+            }
           }
-        }
 
-        const finalScore = Math.min(100, Math.max(70, score));
+          const finalScore = Math.min(100, Math.max(score, 70));
 
-        return {
-          ...cand,
-          matchScore: finalScore,
-          matchReasons: matchReasons.length > 0 ? matchReasons : ['Active StartupZ verified ecosystem talent'],
-        };
-      });
+          return {
+            ...cand,
+            matchScore: finalScore,
+            matchReasons: matchReasons.length > 0 ? matchReasons : [`Keyword matched: "${rawQ}"`],
+          };
+        })
+        .filter(Boolean) as any[];
 
       // Filter and sort by highest match
       scoredCandidates.sort((a, b) => b.matchScore - a.matchScore);
@@ -643,16 +588,24 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
               {/* Candidate Cards Grid */}
               <div className="space-y-3 max-h-[52vh] overflow-y-auto pr-1">
                 {results.results?.length === 0 ? (
-                  <div className="py-8 text-center space-y-2">
-                    <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                      No exact match found for these parameters. Try broadening your query.
-                    </p>
+                  <div className="py-12 text-center space-y-3">
+                    <div className="w-12 h-12 mx-auto rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                      <Users size={22} />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                        No users found
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                        There is no person related to "{results.query}". Try searching with different keywords, locations, or skills.
+                      </p>
+                    </div>
                     <button
                       onClick={() => {
                         onClose();
                         navigate('/cofounders');
                       }}
-                      className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
+                      className="inline-block mt-2 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
                     >
                       Browse full Talent Directory →
                     </button>

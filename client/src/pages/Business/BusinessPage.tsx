@@ -82,56 +82,7 @@ export const BusinessPage: React.FC = () => {
           .or('preferred_role.ilike.%founder%,headline.ilike.%founder%')
           .limit(8);
 
-        const starterFounders = [
-          {
-            id: 'founder-1',
-            user_id: 'founder-1',
-            full_name: 'Vikram Sengupta',
-            username: 'vikram_founder',
-            headline: 'Founder & CEO @ NeuroScale | Ex-Stripe Tech Lead',
-            preferred_role: 'Founder',
-            location: 'Bengaluru, India',
-            bio: 'Building developer infrastructure for multimodal AI agents. Raised pre-seed, scaling team & product.',
-            skills: 'Distributed Systems, Go, Python, Venture Strategy',
-          },
-          {
-            id: 'founder-2',
-            user_id: 'founder-2',
-            full_name: 'Sarah Chen',
-            username: 'sarah_chen',
-            headline: 'Solo Founder @ FlowPulse | B2B SaaS Automations',
-            preferred_role: 'Founder',
-            location: 'San Francisco, CA',
-            bio: 'Building workflow automation platform for modern operations teams. Bootstrapped to $15k MRR.',
-            skills: 'Product Architecture, Next.js, Growth Marketing',
-          },
-          {
-            id: 'founder-3',
-            user_id: 'founder-3',
-            full_name: 'David Okafor',
-            username: 'david_okafor',
-            headline: 'Founder @ AgriLink | Climate & Agritech Pioneer',
-            preferred_role: 'Founder',
-            location: 'Nairobi / Remote',
-            bio: 'Connecting smallholder farmers directly to commodity aggregators using mobile-first IoT telemetry.',
-            skills: 'IoT, Supply Chain, Operations, Seed Fundraising',
-          },
-          {
-            id: 'founder-4',
-            user_id: 'founder-4',
-            full_name: 'Anya Lindqvist',
-            username: 'anya_lind',
-            headline: 'Co-Founder & CTO @ CygnusBio | Synthetic Biology',
-            preferred_role: 'Founder',
-            location: 'Stockholm, Sweden',
-            bio: 'Biochemist turned computational biology founder. Developing rapid enzymatic synthesis assays.',
-            skills: 'Biotech, Machine Learning, Rust, IP Strategy',
-          },
-        ];
-
-        const combined = [...(supaProfiles || []), ...starterFounders];
-        const unique = Array.from(new Map(combined.map((f) => [f.full_name || f.id, f])).values());
-        setFounders(unique.slice(0, 6));
+        setFounders((supaProfiles || []).slice(0, 6));
 
         // Fetch connection status if user logged in
         if (user?.id) {

@@ -77,58 +77,6 @@ export const LandingPage: React.FC = () => {
           });
         }
 
-        // Default ecosystem community talent (students, salesmen, frontend designers, etc.)
-        const starterProfiles = [
-          {
-            id: 'other-talent-1',
-            user_id: 'other-talent-1',
-            full_name: 'Aarav Sharma',
-            username: 'aarav_builder',
-            headline: 'Computer Science Student & Junior AI Builder',
-            preferred_role: 'Other: Student',
-            location: 'Bengaluru, India',
-            bio: 'Final year CS student exploring early-stage AI startups. Looking to join a pre-establishment project team as a junior builder.',
-            skills: 'React, TypeScript, Python, FastApi',
-            role_label: 'Student',
-          },
-          {
-            id: 'other-talent-2',
-            user_id: 'other-talent-2',
-            full_name: 'Marcus Brody',
-            username: 'marcus_sales',
-            headline: 'Enterprise Salesman & B2B GTM Specialist',
-            preferred_role: 'Other: Salesman',
-            location: 'San Francisco, CA / Remote',
-            bio: '10 years experience closing high-ticket SaaS deals. Advising founders on outbound sales and initial customer discovery.',
-            skills: 'B2B Sales, Outbound Prospecting, Closing, Enterprise SaaS',
-            role_label: 'Salesman',
-          },
-          {
-            id: 'other-talent-3',
-            user_id: 'other-talent-3',
-            full_name: 'Elena Rostova',
-            username: 'elena_design',
-            headline: 'Frontend Designer & Design Systems Architect',
-            preferred_role: 'Other: Frontend Designer',
-            location: 'Berlin / Remote',
-            bio: 'Crafting pixel-perfect web interfaces and micro-interactions. Excited to team up with technical founders on ambitious MVP builds.',
-            skills: 'Figma, TailwindCSS, React, Motion Design, UI/UX',
-            role_label: 'Frontend Designer',
-          },
-          {
-            id: 'other-talent-4',
-            user_id: 'other-talent-4',
-            full_name: 'Rohan Mehra',
-            username: 'rohan_student',
-            headline: 'Student Researcher & ML Systems Enthusiast',
-            preferred_role: 'Other: Student',
-            location: 'Hyderabad, India',
-            bio: 'Student building open-source LLM evaluation tools. Looking to join pre-establishment builder projects to gain production experience.',
-            skills: 'PyTorch, Hugging Face, Data Pipelines, Python',
-            role_label: 'Student',
-          },
-        ];
-
         // Format raw profiles to extract clean role label
         const mappedFiltered = filtered.map((p) => {
           let roleLabel = 'Other';
@@ -143,10 +91,8 @@ export const LandingPage: React.FC = () => {
           return { ...p, role_label: roleLabel };
         });
 
-        const combined = [...mappedFiltered, ...starterProfiles];
-        const unique = Array.from(new Map(combined.map((item) => [item.full_name || item.id, item])).values());
         if (isMounted) {
-          setOtherProfiles(unique.slice(0, 8));
+          setOtherProfiles(mappedFiltered.slice(0, 8));
         }
       } catch {
         // Fallback

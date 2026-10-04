@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Problem } from '../../types';
 import { api } from '../../services/api';
+import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { ProblemCard } from '../../components/problems/ProblemCard';
 import { ProblemFilters } from '../../components/problems/ProblemFilters';
@@ -209,7 +210,11 @@ export const ProblemsPage: React.FC = () => {
       return;
     }
     try {
-      await api.deleteProblem(problemId);
+      try {
+        await api.deleteProblem(problemId);
+      } catch (apiErr) {
+        await supabase.from('problems').delete().eq('id', problemId);
+      }
       setProblems((prev) => prev.filter((p) => p.id !== problemId));
     } catch (err: any) {
       alert(err.message || 'Failed to delete problem statement.');
@@ -367,7 +372,7 @@ export const ProblemsPage: React.FC = () => {
                 key={problem.id}
                 problem={problem}
                 onSaveToggle={handleSaveToggle}
-                onDelete={user?.isAdmin ? handleDeleteProblem : undefined}
+                onDelete={handleDeleteProblem}
                 onShare={(prob) => setSharingProblem(prob)}
               />
             ))}

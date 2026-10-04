@@ -19,6 +19,7 @@ import {
   Lock,
   Globe,
   Bell,
+  Trash2,
 } from 'lucide-react';
 import { Avatar } from '../../components/common/Avatar';
 
@@ -63,72 +64,7 @@ export interface BuilderProject {
   createdAt: string;
 }
 
-const INITIAL_PROJECTS: BuilderProject[] = [
-  {
-    id: 'proj-1',
-    title: 'PulseAgent AI — Autonomous Customer Success',
-    ideaSummary: 'AI agent that proactively detects customer friction and automates resolution before users churn.',
-    problemSolved: 'Customer support teams are overwhelmed with reactive tickets and lack automated root cause fixes.',
-    stage: 'Prototyping',
-    visibility: 'PUBLIC',
-    creator: {
-      userId: 'creator-1',
-      fullName: 'Vikram Sethi',
-      role: 'Founder / Product Lead',
-    },
-    roles: [
-      { id: 'r1', roleName: 'Project Lead & AI Prompt Architect', iconType: 'product', status: 'ASSIGNED', assignedTo: { userId: 'creator-1', fullName: 'Vikram Sethi' } },
-      { id: 'r2', roleName: 'Frontend Engineer (React + Tailwind)', iconType: 'code', status: 'OPEN' },
-      { id: 'r3', roleName: 'Python Backend & LangChain Dev', iconType: 'code', status: 'OPEN' },
-      { id: 'r4', roleName: 'UI/UX Interaction Designer', iconType: 'design', status: 'OPEN' },
-      { id: 'r5', roleName: 'Growth & Developer Marketing Lead', iconType: 'marketing', status: 'OPEN' },
-    ],
-    tags: ['AI Agent', 'FastAPI', 'React', 'B2B SaaS'],
-    createdAt: '2 days ago',
-  },
-  {
-    id: 'proj-2',
-    title: 'SolarGrid P2P — Community Clean Power Trading',
-    ideaSummary: 'A decentralized microgrid marketplace for rooftop solar owners to sell surplus power to neighbors.',
-    problemSolved: 'Rooftop solar producers receive rock-bottom utility feed-in tariffs while grid power prices skyrocket.',
-    stage: 'MVP Build',
-    visibility: 'PUBLIC',
-    creator: {
-      userId: 'creator-2',
-      fullName: 'Aarav Patel',
-      role: 'CleanTech Specialist',
-    },
-    roles: [
-      { id: 'r21', roleName: 'Project Lead & Power Grid Architect', iconType: 'product', status: 'ASSIGNED', assignedTo: { userId: 'creator-2', fullName: 'Aarav Patel' } },
-      { id: 'r22', roleName: 'Smart Contract & Web3 Engineer', iconType: 'code', status: 'OPEN' },
-      { id: 'r23', roleName: 'Mobile App Developer (Flutter/React Native)', iconType: 'code', status: 'OPEN' },
-      { id: 'r24', roleName: 'B2B Sales & Regulatory Lead', iconType: 'marketing', status: 'OPEN' },
-    ],
-    tags: ['CleanTech', 'Energy', 'IoT', 'Mobile'],
-    createdAt: '5 days ago',
-  },
-  {
-    id: 'proj-3',
-    title: 'MediDoc Voice — Doctor Consultation Scribe',
-    ideaSummary: 'Ambient voice AI that listens to multilingual doctor-patient chats and drafts EHR records automatically.',
-    problemSolved: 'Doctors spend 2+ hours every day on clerical EHR data entry instead of patient care.',
-    stage: 'Ideation',
-    visibility: 'PUBLIC',
-    creator: {
-      userId: 'creator-3',
-      fullName: 'Dr. Meera Iyer',
-      role: 'Clinical Lead & Physician',
-    },
-    roles: [
-      { id: 'r31', roleName: 'Medical Lead & Domain Expert', iconType: 'product', status: 'ASSIGNED', assignedTo: { userId: 'creator-3', fullName: 'Dr. Meera Iyer' } },
-      { id: 'r32', roleName: 'Speech-to-Text Whisper AI Engineer', iconType: 'code', status: 'OPEN' },
-      { id: 'r33', roleName: 'Full-Stack Developer (Next.js)', iconType: 'code', status: 'OPEN' },
-      { id: 'r34', roleName: 'HIPAA & Compliance Security Advisor', iconType: 'general', status: 'OPEN' },
-    ],
-    tags: ['HealthTech', 'Whisper AI', 'HIPAA', 'Voice'],
-    createdAt: '1 week ago',
-  },
-];
+const INITIAL_PROJECTS: BuilderProject[] = [];
 
 export const syncProjectGroup = (project: BuilderProject) => {
   try {
@@ -186,10 +122,18 @@ export const ProjectsPage: React.FC = () => {
       const stored = localStorage.getItem('startupz_builder_projects');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          // Strictly filter out any legacy fake/starter projects
+          return parsed.filter(
+            (p: any) =>
+              p &&
+              !['proj-1', 'proj-2', 'proj-3'].includes(p.id) &&
+              !['creator-1', 'creator-2', 'creator-3'].includes(p?.creator?.userId)
+          );
+        }
       }
     } catch {}
-    return INITIAL_PROJECTS;
+    return [];
   });
 
   const [filterTab, setFilterTab] = useState<'all' | 'open_roles' | 'my_projects'>('all');
@@ -232,6 +176,25 @@ export const ProjectsPage: React.FC = () => {
     try {
       localStorage.setItem('startupz_builder_projects', JSON.stringify(updated));
     } catch {}
+  };
+
+  const handleDeleteProject = (projectId: string) => {
+    if (!window.confirm('Are you sure you want to delete this project idea?')) {
+      return;
+    }
+    const updated = projects.filter((p) => p.id !== projectId);
+    saveProjects(updated);
+    try {
+      const raw = localStorage.getItem('startupz_project_groups');
+      if (raw) {
+        const groups = JSON.parse(raw);
+        const filteredGroups = groups.filter(
+          (g: any) => g.projectId !== projectId && g.id !== `proj-group-${projectId}`
+        );
+        localStorage.setItem('startupz_project_groups', JSON.stringify(filteredGroups));
+      }
+    } catch {}
+    showToast('Project deleted successfully.');
   };
 
   const handleAddCustomRole = () => {
@@ -644,15 +607,28 @@ export const ProjectsPage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Team Chat Link */}
-                    <Link
-                      to={`/messages?projectGroupId=proj-group-${project.id}`}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900 hover:bg-brand-100 transition-colors"
-                      title="Open project group team chat"
-                    >
-                      <MessageSquare size={12} />
-                      <span>Team Chat</span>
-                    </Link>
+                    {/* Team Chat Link & Delete Action */}
+                    <div className="flex items-center gap-1.5">
+                      {isCreator && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteProject(project.id)}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors"
+                          title="Delete this project"
+                        >
+                          <Trash2 size={12} />
+                          <span>Delete</span>
+                        </button>
+                      )}
+                      <Link
+                        to={`/messages?projectGroupId=proj-group-${project.id}`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900 hover:bg-brand-100 transition-colors"
+                        title="Open project group team chat"
+                      >
+                        <MessageSquare size={12} />
+                        <span>Team Chat</span>
+                      </Link>
+                    </div>
                   </div>
 
                   {/* Title & Idea */}

@@ -219,21 +219,23 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
             </a>
           )}
 
-          {/* Admin Management Controls */}
-          {user?.isAdmin && (
+          {/* Management Controls for Creator and Admin */}
+          {(user?.isAdmin || (user && (user.id === (problem as any).authorId || user.id === (problem as any).userId || ((problem as any).author?.id && user.id === (problem as any).author.id)))) && (
             <div className="flex items-center gap-1 ml-1 border-l border-slate-200 dark:border-dark-800 pl-1.5">
-              <Link
-                to={`/admin/problems/${problem.id}/edit`}
-                className="p-1 rounded text-slate-400 hover:text-brand-600 transition-colors"
-                title="Edit Problem Statement (Admin)"
-              >
-                <Edit size={13} />
-              </Link>
+              {user?.isAdmin && (
+                <Link
+                  to={`/admin/problems/${problem.id}/edit`}
+                  className="p-1 rounded text-slate-400 hover:text-brand-600 transition-colors"
+                  title="Edit Problem Statement (Admin)"
+                >
+                  <Edit size={13} />
+                </Link>
+              )}
               {onDelete && (
                 <button
                   onClick={() => onDelete(problem.id)}
                   className="p-1 rounded text-slate-400 hover:text-rose-500 transition-colors"
-                  title="Delete Problem (Admin)"
+                  title="Delete Problem Statement"
                 >
                   <Trash2 size={13} />
                 </button>
