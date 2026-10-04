@@ -1,10 +1,19 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Rocket, ShieldCheck, Heart, Globe, Share2, ExternalLink } from 'lucide-react';
 
 export const Footer: React.FC = () => {
+  const location = useLocation();
+
+  // Hide footer on full-screen interactive pages
+  const isExcluded =
+    location.pathname.startsWith('/meeting') ||
+    location.pathname.startsWith('/messages');
+
+  if (isExcluded) return null;
+
   return (
-    <footer className="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-dark-900 transition-colors">
+    <footer className="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-dark-900 transition-colors w-full">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           

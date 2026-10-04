@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/common/Navbar';
@@ -81,147 +81,168 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean 
   return <>{children}</>;
 };
 
+const AppContent: React.FC = () => {
+  const location = useLocation();
+
+  const isAuthOrMeetingPage =
+    location.pathname.startsWith('/login') ||
+    location.pathname.startsWith('/register') ||
+    location.pathname.startsWith('/forgot-password') ||
+    location.pathname.startsWith('/reset-password') ||
+    location.pathname.startsWith('/auth/callback') ||
+    location.pathname.startsWith('/meeting');
+
+  return (
+    <div className="min-h-screen flex flex-col bg-[#F8F9FB] dark:bg-[#0B0F17] text-[#181A1F] dark:text-[#F8F9FB] transition-colors selection:bg-brand-600 selection:text-white relative w-full max-w-full overflow-x-hidden">
+      <Navbar />
+      <NewUserCategoryModal />
+      <div className="flex-1 flex w-full">
+        <Sidebar />
+        <main
+          className={`flex-1 min-w-0 flex flex-col justify-between overflow-x-hidden pb-16 lg:pb-0 ${
+            isAuthOrMeetingPage ? '' : 'lg:pl-56 xl:pl-60'
+          }`}
+        >
+          <div className="flex-1 min-w-0">
+            <React.Suspense fallback={<PageLoader />}>
+              <Routes>
+                {/* Public / Ecosystem Routes */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                <Route path="/business" element={<BusinessPage />} />
+                <Route path="/projects" element={<ProjectsPage />} />
+                <Route path="/startups" element={<ExploreStartupsPage />} />
+                <Route path="/startups/:id" element={<StartupDetailPage />} />
+                <Route path="/cofounders" element={<FindCoFounderPage />} />
+                <Route path="/opportunities" element={<OpportunitiesPage />} />
+                <Route path="/investors" element={<InvestorsPage />} />
+                <Route path="/mentors" element={<MentorsPage />} />
+                <Route path="/feed" element={<StartupFeedPage />} />
+                <Route path="/failed-startups" element={<FailedStartupsPage />} />
+                <Route path="/problems" element={<ProblemsPage />} />
+                <Route path="/problems/:id" element={<ProblemDetailPage />} />
+                <Route path="/profile/:id" element={<ProfilePage />} />
+                <Route path="/search" element={<GlobalSearchPage />} />
+                <Route path="/memberships" element={<MembershipsPage />} />
+
+                {/* Video Meeting Room */}
+                <Route
+                  path="/meeting/:roomCode"
+                  element={
+                    <ProtectedRoute>
+                      <VideoMeetingRoomPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Protected Routes */}
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <DashboardPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/startups/create"
+                  element={
+                    <ProtectedRoute>
+                      <CreateStartupPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <ProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/network"
+                  element={
+                    <ProtectedRoute>
+                      <NetworkPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/messages"
+                  element={
+                    <ProtectedRoute>
+                      <MessagesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/saved"
+                  element={
+                    <ProtectedRoute>
+                      <SavedItemsPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Admin Portal */}
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute adminOnly>
+                      <AdminDashboardPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/problems"
+                  element={
+                    <ProtectedRoute adminOnly>
+                      <ManageProblemsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/problems/create"
+                  element={
+                    <ProtectedRoute adminOnly>
+                      <ProblemFormPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/problems/:id/edit"
+                  element={
+                    <ProtectedRoute adminOnly>
+                      <ProblemFormPage />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </React.Suspense>
+          </div>
+          <Footer />
+        </main>
+      </div>
+      <MobileBottomBar />
+    </div>
+  );
+};
+
 export const App: React.FC = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
           <ErrorBoundary>
-            <div className="min-h-screen flex flex-col bg-[#F8F9FB] dark:bg-[#0B0F17] text-[#181A1F] dark:text-[#F8F9FB] transition-colors selection:bg-brand-600 selection:text-white relative w-full max-w-full overflow-x-hidden">
-
-            <Navbar />
-            <NewUserCategoryModal />
-            <div className="flex-1 flex w-full">
-              <Sidebar />
-              <main className="flex-1 min-w-0 pb-16 lg:pb-0 lg:pl-56 xl:pl-60 overflow-x-hidden">
-                <React.Suspense fallback={<PageLoader />}>
-                  <Routes>
-                    {/* Public / Ecosystem Routes */}
-                    <Route path="/" element={<LandingPage />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
-                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                    <Route path="/reset-password" element={<ResetPasswordPage />} />
-                    <Route path="/auth/callback" element={<AuthCallbackPage />} />
-                    <Route path="/business" element={<BusinessPage />} />
-                    <Route path="/projects" element={<ProjectsPage />} />
-                    <Route path="/startups" element={<ExploreStartupsPage />} />
-                    <Route path="/startups/:id" element={<StartupDetailPage />} />
-                    <Route path="/cofounders" element={<FindCoFounderPage />} />
-                    <Route path="/opportunities" element={<OpportunitiesPage />} />
-                  <Route path="/investors" element={<InvestorsPage />} />
-                  <Route path="/mentors" element={<MentorsPage />} />
-                  <Route path="/feed" element={<StartupFeedPage />} />
-                  <Route path="/failed-startups" element={<FailedStartupsPage />} />
-                  <Route path="/problems" element={<ProblemsPage />} />
-                  <Route path="/problems/:id" element={<ProblemDetailPage />} />
-                  <Route path="/profile/:id" element={<ProfilePage />} />
-                  <Route path="/search" element={<GlobalSearchPage />} />
-                  <Route path="/memberships" element={<MembershipsPage />} />
-
-                  {/* Video Meeting Room */}
-                  <Route
-                    path="/meeting/:roomCode"
-                    element={
-                      <ProtectedRoute>
-                        <VideoMeetingRoomPage />
-                      </ProtectedRoute>
-                    }
-                  />
-
-                  {/* Protected Routes */}
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <ProtectedRoute>
-                        <DashboardPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/startups/create"
-                    element={
-                      <ProtectedRoute>
-                        <CreateStartupPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/profile"
-                    element={
-                      <ProtectedRoute>
-                        <ProfilePage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/network"
-                    element={
-                      <ProtectedRoute>
-                        <NetworkPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/messages"
-                    element={
-                      <ProtectedRoute>
-                        <MessagesPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/saved"
-                    element={
-                      <ProtectedRoute>
-                        <SavedItemsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-
-                  {/* Admin Portal */}
-                  <Route
-                    path="/admin"
-                    element={
-                      <ProtectedRoute adminOnly>
-                        <AdminDashboardPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/admin/problems"
-                    element={
-                      <ProtectedRoute adminOnly>
-                        <ManageProblemsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/admin/problems/create"
-                    element={
-                      <ProtectedRoute adminOnly>
-                        <ProblemFormPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/admin/problems/:id/edit"
-                    element={
-                      <ProtectedRoute adminOnly>
-                        <ProblemFormPage />
-                      </ProtectedRoute>
-                    }
-                  />
-
-                  {/* Fallback */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </React.Suspense>
-            </main>
-            </div>
-            <MobileBottomBar />
-            <Footer />
-          </div>
+            <AppContent />
           </ErrorBoundary>
         </BrowserRouter>
       </AuthProvider>
