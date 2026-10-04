@@ -107,7 +107,8 @@ const AppContent: React.FC = () => {
             <React.Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public / Ecosystem Routes */}
-                <Route path="/" element={<LandingPage />} />
+                <Route path="/" element={<LoginPage />} />
+                <Route path="/landing" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />

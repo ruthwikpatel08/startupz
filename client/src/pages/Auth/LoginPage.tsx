@@ -139,21 +139,24 @@ export const LoginPage: React.FC = () => {
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-6">
         
-        {/* Header */}
-        <div className="text-center">
-          <Link to="/" className="inline-flex items-center gap-2 mb-3">
-            <div className="w-9 h-9 rounded-md bg-brand-600 flex items-center justify-center text-white shadow-xs">
-              <Rocket size={18} />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Startup<span className="text-brand-600 dark:text-brand-400">Z</span>
-            </span>
-          </Link>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Welcome back to the Network
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Sign in to discover co-founders, opportunities, and startup updates.
+        {/* Hero Section Banner */}
+        <div className="text-center space-y-3">
+          {/* Tagline Pill */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-xs font-medium shadow-subtle">
+            <Sparkles size={13} className="text-brand-600 dark:text-brand-400" />
+            <span>Startup ecosystem platform for builders and backers</span>
+          </div>
+
+          {/* Main Headline */}
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white leading-[1.2]">
+            Build your startup team.{' '}
+            <span className="text-brand-600 dark:text-brand-400">Discover opportunities.</span>{' '}
+            Grow together.
+          </h1>
+
+          {/* Subtext */}
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-normal max-w-sm mx-auto">
+            StartupZ connects founders, co-founders, developers, designers, mentors, and investors in one structured, professional network.
           </p>
         </div>
 
