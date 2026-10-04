@@ -81,6 +81,7 @@ export function mapSupabaseToAppUser(
     userId: authUser.id,
     fullName,
     headline: profileRow?.headline || metadata.headline || `${role} | Startup Builder`,
+    oneLineBio: profileRow?.one_line_bio || profileRow?.headline || metadata.one_line_bio || '',
     location: profileRow?.location || metadata.location || 'Remote',
     bio: profileRow?.bio || metadata.bio || '',
     avatar,
@@ -188,6 +189,7 @@ export async function upsertUserProfile(
     full_name: string;
     username: string;
     headline: string;
+    one_line_bio: string;
     location: string;
     bio: string;
     avatar: string;

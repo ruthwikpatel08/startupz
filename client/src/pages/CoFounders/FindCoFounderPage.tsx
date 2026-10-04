@@ -928,9 +928,9 @@ export const FindCoFounderPage: React.FC = () => {
                     </div>
                   )}
 
-                  {cand.profile?.bio && (
-                    <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                      {cand.profile.bio}
+                  {(cand.profile?.oneLineBio || cand.profile?.headline) && (
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300 line-clamp-2 leading-relaxed italic">
+                      "{cand.profile.oneLineBio || cand.profile.headline}"
                     </p>
                   )}
 

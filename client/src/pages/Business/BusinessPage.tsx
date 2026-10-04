@@ -498,9 +498,9 @@ export const BusinessPage: React.FC = () => {
                           </div>
                         </div>
 
-                        {f.bio && (
-                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                            {f.bio}
+                        {(f.oneLineBio || f.headline) && (
+                          <p className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-2 leading-relaxed italic">
+                            "{f.oneLineBio || f.headline}"
                           </p>
                         )}
 

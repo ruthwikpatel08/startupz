@@ -360,9 +360,9 @@ export const LandingPage: React.FC = () => {
                             </div>
                           </div>
 
-                          {p.bio && (
-                            <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                              {p.bio}
+                          {(p.oneLineBio || p.headline) && (
+                            <p className="text-xs font-medium text-slate-700 dark:text-slate-300 line-clamp-2 leading-relaxed italic">
+                              "{p.oneLineBio || p.headline}"
                             </p>
                           )}
 

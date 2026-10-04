@@ -137,49 +137,9 @@ export const AuthCallbackPage: React.FC = () => {
           const existingProfile = await fetchUserProfile(user.id);
 
           // If existing profile has already selected a category, they are an existing user!
-          // Proceed directly to dashboard without interrupting them.
-          if (existingProfile && existingProfile.is_category_selected === true) {
-            if (isSubscribed) {
-              navigate('/', { replace: true });
-            }
-            return;
-          }
-
-          // BRAND NEW USER: prompt them to choose their category and set their profile!
-          const userFullName =
-            user.user_metadata?.full_name ||
-            user.user_metadata?.name ||
-            user.email?.split('@')[0] ||
-            'Member';
-
-          const userAvatar =
-            user.user_metadata?.avatar_url ||
-            user.user_metadata?.picture ||
-            null;
-
-          const cleanUsername = (user.email?.split('@')[0] || 'user').toLowerCase().replace(/[^a-z0-9_]/g, '');
-
-          // Check if user pre-selected a role on the register page
-          let savedMeta: any = {};
-          try {
-            const rawMeta = localStorage.getItem('startupz_oauth_meta');
-            if (rawMeta) savedMeta = JSON.parse(rawMeta);
-          } catch {
-            // Ignore
-          }
-
-          const initialRole = savedMeta.role === 'COFOUNDER' ? 'Co-Founders' : (savedMeta.role ? savedMeta.role : 'Founders');
-          const matchedCategory = roleCategories.find((r) => r.id.toLowerCase() === initialRole.toLowerCase());
-
+          // NEW USER: auto-provision profile with is_category_selected: true and navigate straight to dashboard
           if (isSubscribed) {
-            setAuthUser(user);
-            setFullName(userFullName);
-            setUsername(cleanUsername);
-            setAvatar(userAvatar);
-            setSelectedRole(matchedCategory ? matchedCategory.id : 'Founders');
-            setHeadline(savedMeta.headline || matchedCategory?.defaultHeadline || 'Founder & Visionary | Startup Builder');
-            setLocation(savedMeta.location || 'Remote');
-            setIsNewUser(true);
+            navigate('/', { replace: true });
           }
           return;
         }

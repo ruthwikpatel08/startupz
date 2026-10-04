@@ -83,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             location: metadata.location || 'Remote',
             avatar,
             preferred_role: role,
-            is_category_selected: false, // Always ask from first for new and deleted re-entered users
+            is_category_selected: true, // Set to true so no login popup interrupts new users
             auth_provider: isGoogle ? 'google' : 'email',
             email: authUser.email || '',
             startup_experience: '',

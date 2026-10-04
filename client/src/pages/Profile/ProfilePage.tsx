@@ -194,6 +194,7 @@ export const ProfilePage: React.FC = () => {
         coverImage: currentP.coverImage || '',
         fullName: currentP.fullName || '',
         headline: currentP.headline || '',
+        oneLineBio: currentP.oneLineBio || currentP.headline || '',
         location: currentP.location || '',
         bio: currentP.bio || '',
         skills: currentP.skills || '',
@@ -592,6 +593,7 @@ export const ProfilePage: React.FC = () => {
         coverImage: currentUser.profile?.coverImage || '',
         fullName: currentUser.profile?.fullName || '',
         headline: currentUser.profile?.headline || '',
+        oneLineBio: currentUser.profile?.oneLineBio || currentUser.profile?.headline || '',
         location: currentUser.profile?.location || '',
         bio: currentUser.profile?.bio || '',
         skills: currentUser.profile?.skills || '',
@@ -633,6 +635,7 @@ export const ProfilePage: React.FC = () => {
             userId: sbProfile.user_id || targetId,
             fullName: sbProfile.full_name || 'Founder',
             headline: sbProfile.headline || '',
+            oneLineBio: sbProfile.one_line_bio || sbProfile.headline || '',
             location: sbProfile.location || '',
             bio: sbProfile.bio || '',
             avatar: sbProfile.avatar || '',
@@ -925,6 +928,7 @@ export const ProfilePage: React.FC = () => {
         await upsertUserProfile(currentUser.id, {
           full_name: formData.fullName,
           headline: formData.headline,
+          one_line_bio: formData.oneLineBio || formData.headline,
           location: formData.location,
           bio: formData.bio,
           avatar: formData.avatar,
@@ -1072,7 +1076,7 @@ export const ProfilePage: React.FC = () => {
         <div className="card-base overflow-hidden">
           
           {/* Cover Section */}
-          <div className="h-44 sm:h-52 relative overflow-hidden bg-slate-800 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900">
+          <div className="h-44 sm:h-52 relative overflow-hidden bg-[#768aab] dark:bg-slate-800 dark:bg-gradient-to-r dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
             {p.coverImage ? (
               <img
                 src={p.coverImage}
@@ -1082,7 +1086,7 @@ export const ProfilePage: React.FC = () => {
               />
             ) : (
               /* Subtle Professional Pattern */
-              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
+              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
             )}
 
             <div className="absolute top-4 right-4 flex items-center gap-2 z-10 flex-wrap justify-end">
@@ -1183,6 +1187,12 @@ export const ProfilePage: React.FC = () => {
                   <p className="text-sm sm:text-base font-normal text-slate-600 dark:text-slate-300">
                     {p.headline || (isMe ? 'Add your role or startup vision' : 'Member of StartupZ')}
                   </p>
+
+                  {p.oneLineBio && (
+                    <p className="text-xs sm:text-sm font-medium text-brand-600 dark:text-brand-400 italic">
+                      "{p.oneLineBio}"
+                    </p>
+                  )}
 
                   <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex-wrap pt-0.5">
                     {p.location && (
@@ -1367,9 +1377,20 @@ export const ProfilePage: React.FC = () => {
 
             {/* ABOUT SECTION */}
             <div className="card-base p-6 sm:p-7 space-y-4">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight">
-                About
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight">
+                  About
+                </h2>
+                {isMe && (
+                  <button
+                    onClick={handleOpenEdit}
+                    className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Edit3 size={13} />
+                    <span>Edit About</span>
+                  </button>
+                )}
+              </div>
               <p className="text-sm font-normal text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
                 {p.bio || 'No background description shared yet. Add a short summary about your startup journey and vision!'}
               </p>
@@ -1468,10 +1489,21 @@ export const ProfilePage: React.FC = () => {
 
             {/* EDUCATION SECTION */}
             <div className="card-base p-6 sm:p-7 space-y-5">
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                <GraduationCap size={18} className="text-brand-600" />
-                <span>Education</span>
-              </h2>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                  <GraduationCap size={18} className="text-brand-600" />
+                  <span>Education</span>
+                </h2>
+                {isMe && (
+                  <button
+                    onClick={handleOpenEdit}
+                    className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Edit3 size={13} />
+                    <span>Edit Education</span>
+                  </button>
+                )}
+              </div>
 
               {p.education ? (
                 <div className="flex items-start gap-3">
@@ -1729,9 +1761,20 @@ export const ProfilePage: React.FC = () => {
 
             {/* ECOSYSTEM HUB & LINKS CARD */}
             <div className="card-base p-5 space-y-3.5">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Profiles & Portfolio
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Profiles & Portfolio
+                </h3>
+                {isMe && (
+                  <button
+                    onClick={handleOpenEdit}
+                    className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Edit3 size={12} />
+                    <span>Edit Links</span>
+                  </button>
+                )}
+              </div>
               <div className="space-y-1.5 text-xs">
                 {p.linkedinUrl && (
                   <a
@@ -2002,6 +2045,20 @@ export const ProfilePage: React.FC = () => {
                 value={formData.headline}
                 onChange={(e) => setFormData({ ...formData, headline: e.target.value })}
                 placeholder="e.g. Founder & CEO at AgriTech Solutions"
+                className="input-base w-full px-3 py-1.5 text-xs"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center justify-between">
+                <span>Describe Yourself in One Line</span>
+                <span className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">Displayed on profile preview cards</span>
+              </label>
+              <input
+                type="text"
+                value={formData.oneLineBio || ''}
+                onChange={(e) => setFormData({ ...formData, oneLineBio: e.target.value })}
+                placeholder="e.g. AI Founder & Full-Stack Architect building scalable GTM tools"
                 className="input-base w-full px-3 py-1.5 text-xs"
               />
             </div>

@@ -32,6 +32,7 @@ export interface Profile {
   fullName: string;
   username?: string | null;
   headline?: string | null;
+  oneLineBio?: string | null;
   location?: string | null;
   bio?: string | null;
   avatar?: string | null;
