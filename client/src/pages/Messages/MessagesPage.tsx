@@ -14,6 +14,8 @@ import {
   User as UserIcon,
   Sparkles,
   Trash2,
+  FolderKanban,
+  Users,
 } from 'lucide-react';
 import {
   supabase,
@@ -28,6 +30,7 @@ export const MessagesPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const targetUserId = searchParams.get('user');
   const targetConvId = searchParams.get('conversationId');
+  const targetProjectGroupId = searchParams.get('projectGroupId');
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -63,8 +66,54 @@ export const MessagesPage: React.FC = () => {
         }
       });
 
+      // Load project groups from local storage
+      try {
+        const rawGroups = localStorage.getItem('startupz_project_groups');
+        if (rawGroups) {
+          const parsed = JSON.parse(rawGroups);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((g: any) => {
+              const groupConv: any = {
+                id: g.id,
+                projectId: g.projectId,
+                isProjectGroup: true,
+                projectTitle: g.title,
+                participant: {
+                  id: g.id,
+                  email: 'team@startupz.build',
+                  role: 'PROJECT_TEAM',
+                  isVerified: true,
+                  profile: {
+                    id: g.id,
+                    userId: g.id,
+                    fullName: `[Project Group] ${g.title}`,
+                    avatar: null,
+                    headline: `${g.members?.length || 1} team members`,
+                  },
+                },
+                lastMessage: g.lastMessage || 'Project team group established.',
+                lastMessageAt: g.lastMessageAt || g.createdAt || new Date().toISOString(),
+                members: g.members || [],
+              };
+              convMap.set(g.id, groupConv);
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load project groups:', err);
+      }
+
       const list = Array.from(convMap.values());
       setConversations(list);
+
+      // Check project group link: /messages?projectGroupId=xyz
+      if (targetProjectGroupId && list.length > 0) {
+        const found = list.find((c: any) => c.id === targetProjectGroupId || c.projectId === targetProjectGroupId || (c.id && c.id.includes(targetProjectGroupId)));
+        if (found) {
+          setSelectedConversation(found);
+          return;
+        }
+      }
 
       // 1. If user came via /messages?conversationId=xyz
       if (targetConvId && list.length > 0) {
@@ -179,6 +228,32 @@ export const MessagesPage: React.FC = () => {
     const fetchMessages = async () => {
       setLoadingMessages(true);
       try {
+        // Handle Project Group Messages
+        if ((selectedConversation as any)?.isProjectGroup) {
+          const pId = (selectedConversation as any).projectId || selectedConversation.id;
+          const raw = localStorage.getItem(`startupz_project_messages_${pId}`);
+          const parsed = raw ? JSON.parse(raw) : [
+            {
+              id: `init-${selectedConversation.id}`,
+              conversationId: selectedConversation.id,
+              senderId: 'system',
+              content: `Welcome to the team chat for "${(selectedConversation as any).projectTitle || 'Project'}"! Team members and collaborators can coordinate and chat here.`,
+              createdAt: selectedConversation.lastMessageAt || new Date().toISOString(),
+              sender: {
+                id: 'system',
+                profile: {
+                  fullName: 'StartupZ System',
+                  avatar: null,
+                  headline: 'Workspace',
+                },
+              },
+            },
+          ];
+          setMessages(parsed);
+          setTimeout(scrollToBottom, 100);
+          return;
+        }
+
         // 1. Fetch persistent messages from Supabase
         const supaMsgs = await getSupabaseMessages(selectedConversation.id, user?.id || '');
 
@@ -292,6 +367,58 @@ export const MessagesPage: React.FC = () => {
 
     setSending(true);
     const contentToSend = newMessage.trim();
+
+    // Handle sending message in Project Group Chat
+    if ((selectedConversation as any)?.isProjectGroup) {
+      const pId = (selectedConversation as any).projectId || selectedConversation.id;
+      const newMsg: any = {
+        id: `pmsg-${Date.now()}`,
+        conversationId: selectedConversation.id,
+        senderId: user.id,
+        content: contentToSend,
+        createdAt: new Date().toISOString(),
+        sender: {
+          id: user.id,
+          email: user.email || '',
+          role: (user as any).role || 'BUILDER',
+          isVerified: true,
+          profile: {
+            id: user.profile?.id || user.id,
+            userId: user.id,
+            fullName: user.profile?.fullName || user.email?.split('@')[0] || 'Team Member',
+            avatar: user.profile?.avatar || null,
+            headline: user.profile?.headline || 'Team Collaborator',
+          },
+        },
+      };
+
+      const storageKey = `startupz_project_messages_${pId}`;
+      try {
+        const raw = localStorage.getItem(storageKey);
+        const existing: any[] = raw ? JSON.parse(raw) : [];
+        const updatedMsgs = [...existing, newMsg];
+        localStorage.setItem(storageKey, JSON.stringify(updatedMsgs));
+        setMessages((prev) => [...prev, newMsg]);
+        setNewMessage('');
+
+        // Update lastMessage in group list
+        const rawGroups = localStorage.getItem('startupz_project_groups');
+        if (rawGroups) {
+          const groups = JSON.parse(rawGroups);
+          const idx = groups.findIndex((g: any) => g.id === selectedConversation.id || g.projectId === pId);
+          if (idx >= 0) {
+            groups[idx].lastMessage = `${user.profile?.fullName?.split(' ')[0] || 'Member'}: ${contentToSend}`;
+            groups[idx].lastMessageAt = new Date().toISOString();
+            localStorage.setItem('startupz_project_groups', JSON.stringify(groups));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to save project message:', err);
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
     try {
       const res = await sendSupabaseMessage(
         user.id,
@@ -396,12 +523,18 @@ export const MessagesPage: React.FC = () => {
                         : 'hover:bg-slate-100/70 dark:hover:bg-dark-800/40'
                     }`}
                   >
-                    <Avatar
-                      src={p?.profile?.avatar}
-                      name={name}
-                      size="md"
-                      className="!w-9 !h-9"
-                    />
+                    {(conv as any).isProjectGroup ? (
+                      <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-200/60 dark:border-brand-900/60 shrink-0">
+                        <FolderKanban size={16} />
+                      </div>
+                    ) : (
+                      <Avatar
+                        src={p?.profile?.avatar}
+                        name={name}
+                        size="md"
+                        className="!w-9 !h-9"
+                      />
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-1">
                         <span className="font-semibold text-xs text-slate-900 dark:text-white truncate">
@@ -432,31 +565,47 @@ export const MessagesPage: React.FC = () => {
               {/* Chat Header */}
               <div className="p-3.5 border-b border-slate-200 dark:border-dark-800 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <Avatar
-                    src={selectedConversation.participant?.profile?.avatar}
-                    name={
-                      selectedConversation.participant?.profile?.fullName ||
-                      selectedConversation.participant?.email
-                    }
-                    size="md"
-                    className="!w-9 !h-9"
-                  />
+                  {(selectedConversation as any).isProjectGroup ? (
+                    <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-200/60 dark:border-brand-900/60 shrink-0">
+                      <FolderKanban size={18} />
+                    </div>
+                  ) : (
+                    <Avatar
+                      src={selectedConversation.participant?.profile?.avatar}
+                      name={
+                        selectedConversation.participant?.profile?.fullName ||
+                        selectedConversation.participant?.email
+                      }
+                      size="md"
+                      className="!w-9 !h-9"
+                    />
+                  )}
                   <div>
                     <div className="flex items-center gap-1.5">
                       <h3 className="font-semibold text-xs text-slate-900 dark:text-white">
-                        {selectedConversation.participant?.profile?.fullName ||
-                          selectedConversation.participant?.email ||
-                          'Founder'}
+                        {(selectedConversation as any).isProjectGroup
+                          ? `[Project Group] ${(selectedConversation as any).projectTitle || selectedConversation.participant?.profile?.fullName}`
+                          : selectedConversation.participant?.profile?.fullName ||
+                            selectedConversation.participant?.email ||
+                            'Founder'}
                       </h3>
-                      <VerificationBadge
-                        badge={selectedConversation.participant?.verificationBadge}
-                        isVerified={selectedConversation.participant?.isVerified}
-                        size="sm"
-                      />
+                      {(selectedConversation as any).isProjectGroup ? (
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300">
+                          Team Group
+                        </span>
+                      ) : (
+                        <VerificationBadge
+                          badge={selectedConversation.participant?.verificationBadge}
+                          isVerified={selectedConversation.participant?.isVerified}
+                          size="sm"
+                        />
+                      )}
                     </div>
                     <p className="text-[10px] text-slate-400">
-                      {selectedConversation.participant?.profile?.headline ||
-                        selectedConversation.participant?.role}
+                      {(selectedConversation as any).isProjectGroup
+                        ? `${(selectedConversation as any).members?.length || 1} team members • Pre-establishment workspace`
+                        : selectedConversation.participant?.profile?.headline ||
+                          selectedConversation.participant?.role}
                     </p>
                   </div>
                 </div>
@@ -473,12 +622,21 @@ export const MessagesPage: React.FC = () => {
                       <span className="hidden sm:inline">Delete</span>
                     </button>
                   )}
-                  <Link
-                    to={`/profile/${selectedConversation.participant?.id}`}
-                    className="btn-secondary py-1 px-2.5 text-xs font-medium"
-                  >
-                    View Profile
-                  </Link>
+                  {(selectedConversation as any).isProjectGroup ? (
+                    <Link
+                      to="/projects"
+                      className="btn-secondary py-1 px-2.5 text-xs font-medium"
+                    >
+                      View Project
+                    </Link>
+                  ) : (
+                    <Link
+                      to={`/profile/${selectedConversation.participant?.id}`}
+                      className="btn-secondary py-1 px-2.5 text-xs font-medium"
+                    >
+                      View Profile
+                    </Link>
+                  )}
                 </div>
               </div>
 

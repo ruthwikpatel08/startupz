@@ -345,24 +345,6 @@ export const StartupFeedPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Feed Sub-Filter Tabs (for posts) */}
-      {activePillar !== 'PROBLEMS' && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          {postTypes.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setFilterType(tab.key)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0 ${
-                filterType === tab.key
-                  ? 'bg-brand-600 text-white shadow-xs'
-                  : 'bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-dark-700'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      )}
 
       {/* Post Composer Card */}
       {user && (

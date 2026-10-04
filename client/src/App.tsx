@@ -93,7 +93,7 @@ export const App: React.FC = () => {
             <NewUserCategoryModal />
             <div className="flex-1 flex w-full">
               <Sidebar />
-              <main className="flex-1 min-w-0 pb-16 lg:pb-0 overflow-x-hidden">
+              <main className="flex-1 min-w-0 pb-16 lg:pb-0 lg:pl-56 xl:pl-60 overflow-x-hidden">
                 <React.Suspense fallback={<PageLoader />}>
                   <Routes>
                     {/* Public / Ecosystem Routes */}

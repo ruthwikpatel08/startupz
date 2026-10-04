@@ -426,7 +426,7 @@ export const OpportunitiesPage: React.FC = () => {
                         onClick={(e) => e.stopPropagation()}
                         className="font-medium text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors"
                       >
-                        Startup Profile →
+                        Startup Profile
                       </Link>
                       {(() => {
                         const urlMatch = opp.description.match(/https?:\/\/[^\s)]+/);
