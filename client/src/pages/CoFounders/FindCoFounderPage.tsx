@@ -153,6 +153,30 @@ export const FindCoFounderPage: React.FC = () => {
   const [connectUser, setConnectUser] = useState<any | null>(null);
   const [startupConnectUser, setStartupConnectUser] = useState<any | null>(null);
 
+  // Exclude already connected users state
+  const [connectedUserIds, setConnectedUserIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const loadConnected = async () => {
+      try {
+        const { data } = await supabase
+          .from('connections')
+          .select('sender_id, receiver_id, status')
+          .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+          .eq('status', 'ACCEPTED');
+
+        const ids = new Set<string>();
+        (data || []).forEach((c: any) => {
+          if (c.sender_id && c.sender_id !== currentUser.id) ids.add(c.sender_id);
+          if (c.receiver_id && c.receiver_id !== currentUser.id) ids.add(c.receiver_id);
+        });
+        setConnectedUserIds(ids);
+      } catch {}
+    };
+    loadConnected();
+  }, [currentUser?.id]);
+
   const categories = [
     { label: 'All Members', value: 'all', icon: Users, hint: 'All registered platform members' },
     { label: 'Founders', value: 'founders', icon: Rocket, hint: 'Active founders building startups' },
@@ -390,6 +414,18 @@ export const FindCoFounderPage: React.FC = () => {
         if (curFullName && candFullName && curFullName === candFullName) continue;
       }
 
+      // 2. DO NOT show already connected people to the user!
+      if (
+        (candId && connectedUserIds.has(candId)) ||
+        (cand.userId && connectedUserIds.has(cand.userId)) ||
+        (cand.user_id && connectedUserIds.has(cand.user_id)) ||
+        (cand.user?.id && connectedUserIds.has(cand.user.id)) ||
+        cand.connectionStatus === 'CONNECTED' ||
+        cand.connectionStatus === 'ACCEPTED'
+      ) {
+        continue;
+      }
+
       // 2. Strict deduplication - never show the same profile multiple times!
       if (candEmail && seenCandEmails.has(candEmail)) continue;
       if (candId && seenCandIds.has(candId)) continue;
@@ -441,7 +477,7 @@ export const FindCoFounderPage: React.FC = () => {
     }
 
     return filteredCandidates;
-  }, [rawCandidates, searchQuery, targetRole, currentCategory, currentUser?.id]);
+  }, [rawCandidates, searchQuery, targetRole, currentCategory, currentUser?.id, connectedUserIds]);
 
   // Compute filtered investors in-memory with useMemo
   const investors = useMemo(() => {
@@ -459,12 +495,14 @@ export const FindCoFounderPage: React.FC = () => {
       const invId = (inv.id || inv.userId || inv.user?.id || '').trim();
       const invOrg = (inv.organization || '').toLowerCase().trim();
 
-      // 1. Exclude the currently logged-in user from their own view!
+      // 1. Exclude the currently logged-in user and connected users from their own view!
       if (currentUser) {
         const curEmail = (currentUser.email || '').toLowerCase().trim();
         const curId = (currentUser.id || '').trim();
         if (curEmail && invEmail && curEmail === invEmail) continue;
         if (curId && invId && curId === invId) continue;
+        if (invId && connectedUserIds.has(invId)) continue;
+        if (inv.userId && connectedUserIds.has(inv.userId)) continue;
       }
 
       // 2. Strict deduplication - never show the same profile twice
@@ -498,7 +536,7 @@ export const FindCoFounderPage: React.FC = () => {
     }
 
     return filteredInvestors;
-  }, [rawInvestors, investorSearch, searchQuery, investorType, investorStage, currentUser?.id]);
+  }, [rawInvestors, investorSearch, searchQuery, investorType, investorStage, currentUser?.id, connectedUserIds]);
 
   useEffect(() => {
     fetchCategoryData();

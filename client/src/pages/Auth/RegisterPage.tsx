@@ -26,7 +26,7 @@ export const RegisterPage: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/dashboard', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [user, navigate]);
 
@@ -185,7 +185,7 @@ export const RegisterPage: React.FC = () => {
           profile_completion: 65,
         });
 
-        navigate('/dashboard');
+        navigate('/');
       } else if (data.user) {
         // Email confirmation is enabled on this Supabase project
         recordAuthProviderHint(normalizedEmail, 'email');

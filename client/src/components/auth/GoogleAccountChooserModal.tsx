@@ -67,7 +67,7 @@ export const GoogleAccountChooserModal: React.FC<GoogleAccountChooserModalProps>
         role: account.role,
       });
       onClose();
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
       console.error('Google account selection error:', err);
     } finally {
@@ -89,7 +89,7 @@ export const GoogleAccountChooserModal: React.FC<GoogleAccountChooserModalProps>
         role: customRole,
       });
       onClose();
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
       console.error('Custom Google sign-in error:', err);
     } finally {

@@ -353,20 +353,19 @@ export const ProfilePage: React.FC = () => {
     try {
       const uid = currentUser.id;
 
-      // 1. Permanently delete all user records from Supabase tables
-      try { await supabase.from('messages').delete().or(`sender_id.eq.${uid},receiver_id.eq.${uid}`); } catch {}
+      // 1. Delete user connections, messages, and notifications
       try { await supabase.from('connections').delete().or(`sender_id.eq.${uid},receiver_id.eq.${uid}`); } catch {}
+      try { await supabase.from('messages').delete().or(`sender_id.eq.${uid},receiver_id.eq.${uid}`); } catch {}
       try { await supabase.from('notifications').delete().or(`user_id.eq.${uid},sender_id.eq.${uid}`); } catch {}
       try { await supabase.from('startup_members').delete().eq('user_id', uid); } catch {}
-      try { await supabase.from('startups').delete().eq('founder_id', uid); } catch {}
-      try { await supabase.from('profiles').delete().eq('user_id', uid); } catch {}
 
-      // 2. Permanently delete from backend Prisma DB
+      // 2. Mark profile as deleted to hide from others while preserving details (education, role, skills)
       try {
-        await api.deleteAccount();
-      } catch (err: any) {
-        console.warn('Backend delete notice:', err);
-      }
+        await supabase.from('profiles').update({
+          is_deleted: true,
+          updated_at: new Date().toISOString()
+        }).eq('user_id', uid);
+      } catch {}
 
       // 3. Clear all browser storage so re-logging in starts completely fresh
       localStorage.clear();
@@ -874,14 +873,15 @@ export const ProfilePage: React.FC = () => {
     );
   }
 
-  const p = profileUser.profile || ({} as Profile);
-  const displayName = p.fullName || profileUser.email;
-  const initials = displayName
+  const p = profileUser?.profile || ({} as Profile);
+  const displayName = p.fullName || profileUser?.email || 'Startup Founder';
+  const initials = String(displayName)
     .split(' ')
-    .map((n) => n[0])
+    .filter(Boolean)
+    .map((n) => n[0] || '')
     .join('')
     .substring(0, 2)
-    .toUpperCase();
+    .toUpperCase() || 'SZ';
   const avatar = p.avatar;
   const hasCustomAvatar = Boolean(
     avatar &&
@@ -1655,7 +1655,13 @@ export const ProfilePage: React.FC = () => {
                       />
                     ) : (
                       <div className="w-11 h-11 rounded-full bg-brand-600 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-brand-500/30">
-                        {formData.fullName?.split(' ').filter(Boolean).map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || 'SZ'}
+                        {String(formData.fullName || displayName || 'SZ')
+                          .split(' ')
+                          .filter(Boolean)
+                          .map((n: string) => n[0] || '')
+                          .join('')
+                          .substring(0, 2)
+                          .toUpperCase() || 'SZ'}
                       </div>
                     )}
                     <button
@@ -1896,25 +1902,33 @@ export const ProfilePage: React.FC = () => {
                 {/* College Autocomplete Dropdown */}
                 {showCollegeDropdown && collegeSuggestions.length > 0 && (
                   <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-lg shadow-xl py-1 text-xs">
-                    {collegeSuggestions.map((col, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => {
-                          setFormData({ ...formData, education: `${col.name} (${col.category.toUpperCase()})` });
-                          setShowCollegeDropdown(false);
-                        }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 flex items-center justify-between cursor-pointer"
-                      >
-                        <div className="truncate pr-2">
-                          <span className="font-semibold text-slate-900 dark:text-white">{col.name}</span>
-                          <span className="text-slate-400 ml-1">({col.city}, {col.state})</span>
-                        </div>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-semibold shrink-0">
-                          {col.category.toUpperCase()}
-                        </span>
-                      </button>
-                    ))}
+                    {collegeSuggestions.map((col, idx) => {
+                      const colName = typeof col === 'string' ? col : col?.name || '';
+                      const colCategory = typeof col === 'string' ? 'COLLEGE' : (col?.category || 'COLLEGE').toUpperCase();
+                      const colCity = typeof col === 'object' && col?.city ? col.city : '';
+                      const colState = typeof col === 'object' && col?.state ? col.state : '';
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setFormData({ ...formData, education: `${colName} (${colCategory})` });
+                            setShowCollegeDropdown(false);
+                          }}
+                          className="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 flex items-center justify-between cursor-pointer"
+                        >
+                          <div className="truncate pr-2">
+                            <span className="font-semibold text-slate-900 dark:text-white">{colName}</span>
+                            {(colCity || colState) && (
+                              <span className="text-slate-400 ml-1">({[colCity, colState].filter(Boolean).join(', ')})</span>
+                            )}
+                          </div>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-semibold shrink-0">
+                            {colCategory}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -2326,7 +2340,7 @@ export const ProfilePage: React.FC = () => {
                         />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-brand-600 text-white flex items-center justify-center font-bold text-sm">
-                          {conn.fullName.charAt(0).toUpperCase()}
+                          {(conn?.fullName?.charAt?.(0) || 'U').toUpperCase()}
                         </div>
                       )}
                     </Link>

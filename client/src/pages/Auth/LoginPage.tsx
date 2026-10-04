@@ -13,7 +13,7 @@ export const LoginPage: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/dashboard', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [user, navigate]);
 
@@ -97,12 +97,28 @@ export const LoginPage: React.FC = () => {
     }
 
     try {
-      await loginWithPasswordOrUsername(cleanIdentifier, password);
-      navigate('/dashboard');
+      const loggedIn = await loginWithPasswordOrUsername(cleanIdentifier, password);
+      if (loggedIn?.profile && (loggedIn.profile as any).is_deleted) {
+        await supabase.auth.signOut();
+        localStorage.clear();
+        sessionStorage.clear();
+        setError('This account was deleted or not found in our data. Please sign up to create or reactivate your account.');
+        return;
+      }
+      navigate('/');
     } catch (err: any) {
       console.warn('Sign-in error:', err);
       const friendlyMessage = getAuthErrorMessage(err, cleanIdentifier);
-      setError(friendlyMessage);
+      if (
+        friendlyMessage.toLowerCase().includes('invalid login credentials') ||
+        friendlyMessage.toLowerCase().includes('not found') ||
+        friendlyMessage.toLowerCase().includes('no user') ||
+        friendlyMessage.toLowerCase().includes('deleted')
+      ) {
+        setError('This account was deleted or not found in our data. Please sign up to create your account.');
+      } else {
+        setError(friendlyMessage);
+      }
     } finally {
       setLoading(false);
     }

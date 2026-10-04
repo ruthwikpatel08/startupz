@@ -140,7 +140,7 @@ export const AuthCallbackPage: React.FC = () => {
           // Proceed directly to dashboard without interrupting them.
           if (existingProfile && existingProfile.is_category_selected === true) {
             if (isSubscribed) {
-              navigate('/dashboard', { replace: true });
+              navigate('/', { replace: true });
             }
             return;
           }
@@ -195,7 +195,7 @@ export const AuthCallbackPage: React.FC = () => {
             const existing = await fetchUserProfile(user.id);
             if (existing && existing.is_category_selected === true) {
               if (isSubscribed) {
-                navigate('/dashboard', { replace: true });
+                navigate('/', { replace: true });
               }
             } else {
               const userFullName =
@@ -307,8 +307,8 @@ export const AuthCallbackPage: React.FC = () => {
         // Backend offline fallback
       }
 
-      // 4. Navigate to dashboard
-      navigate('/dashboard', { replace: true });
+      // 4. Navigate to home
+      navigate('/', { replace: true });
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to save your profile category. Please try again.');
       setIsSubmitting(false);

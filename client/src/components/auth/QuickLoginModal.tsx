@@ -46,7 +46,7 @@ export const QuickLoginModal: React.FC<QuickLoginModalProps> = ({
     try {
       await loginWithPasswordOrUsername(cleanId, password);
       onClose();
-      navigate('/dashboard');
+      navigate('/');
     } catch (err: any) {
       console.warn('Quick login error:', err);
       setError(getAuthErrorMessage(err, cleanId));

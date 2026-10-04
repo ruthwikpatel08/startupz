@@ -321,19 +321,139 @@ export function searchLocations(query: string, maxResults = 8): LocationItem[] {
   return results;
 }
 
+export interface CollegeItem {
+  name: string;
+  category: string;
+  city?: string;
+  state?: string;
+}
+
 /**
  * Search colleges for autocomplete suggestions
  */
-export function searchColleges(query: string, maxResults = 8): string[] {
+export function searchColleges(query: string, maxResults = 8): CollegeItem[] {
   if (!query || !query.trim()) return [];
   const q = query.trim().toLowerCase();
 
-  const results: string[] = [];
+  const results: CollegeItem[] = [];
   for (const college of INDIAN_COLLEGES_AND_UNIVERSITIES) {
     if (college.toLowerCase().includes(q)) {
-      results.push(college);
+      let category = 'University';
+      const low = college.toLowerCase();
+      if (low.includes('niat')) category = 'NIAT Tech';
+      else if (low.includes('iit') || low.includes('indian institute of technology')) category = 'IIT';
+      else if (low.includes('nit') || low.includes('national institute of technology')) category = 'NIT';
+      else if (low.includes('iiit')) category = 'IIIT';
+      else if (low.includes('bits')) category = 'BITS';
+      else if (low.includes('vit') || low.includes('srm') || low.includes('manipal') || low.includes('amity') || low.includes('thapar')) category = 'Private Univ';
+
+      results.push({ name: college, category });
       if (results.length >= maxResults) break;
     }
   }
   return results;
+}
+
+// Typo & Misspelling Correction Dictionary for AI Scout
+export const TYPO_DICTIONARY: Record<string, string> = {
+  // Districts & Locations
+  wrangal: 'Warangal',
+  warngal: 'Warangal',
+  warnagal: 'Warangal',
+  hydrabad: 'Hyderabad',
+  hydrabaad: 'Hyderabad',
+  hyd: 'Hyderabad',
+  banglore: 'Bengaluru',
+  benguluru: 'Bengaluru',
+  bengalore: 'Bengaluru',
+  blr: 'Bengaluru',
+  chenai: 'Chennai',
+  chennay: 'Chennai',
+  mumbay: 'Mumbai',
+  bombay: 'Mumbai',
+  delhy: 'Delhi',
+  dilli: 'Delhi',
+  khamam: 'Khammam',
+  khamm: 'Khammam',
+  kolkatta: 'Kolkata',
+  calcutta: 'Kolkata',
+  puna: 'Pune',
+  poona: 'Pune',
+  visakapatnam: 'Visakhapatnam',
+  vizag: 'Visakhapatnam',
+  coimbator: 'Coimbatore',
+  coimbatur: 'Coimbatore',
+  ernakulam: 'Ernakulam',
+  kochi: 'Ernakulam',
+  cochin: 'Ernakulam',
+  telengana: 'Telangana',
+  andhra: 'Andhra Pradesh',
+  karnatka: 'Karnataka',
+  maharastra: 'Maharashtra',
+  tamilnadu: 'Tamil Nadu',
+  up: 'Uttar Pradesh',
+
+  // Professions & Roles
+  stuent: 'Student',
+  studnt: 'Student',
+  studet: 'Student',
+  collegian: 'Student',
+  saleman: 'Salesman',
+  salesmn: 'Salesman',
+  salsman: 'Salesman',
+  salesperson: 'Salesman',
+  foundr: 'Founder',
+  funder: 'Founder',
+  foudner: 'Founder',
+  cofoundr: 'Co-Founder',
+  cofunder: 'Co-Founder',
+  devloper: 'Developer',
+  develper: 'Developer',
+  devlpor: 'Developer',
+  coder: 'Developer',
+  desgner: 'Designer',
+  desiner: 'Designer',
+  uiux: 'Designer',
+  investr: 'Investor',
+  invstr: 'Investor',
+  mntr: 'Mentor',
+  mentr: 'Mentor',
+
+  // Colleges & Tech Institutes
+  nat: 'NIAT',
+  naat: 'NIAT',
+  itt: 'IIT',
+  iits: 'IIT',
+  nitt: 'NIT',
+  nits: 'NIT',
+  bit: 'BITS Pilani',
+  bits: 'BITS Pilani',
+  vt: 'VIT',
+  vitt: 'VIT',
+  srmm: 'SRM',
+};
+
+/**
+ * Adjusts query by correcting common spelling mistakes and typos
+ */
+export function fuzzyAdjustQuery(text: string): { adjustedText: string; corrections: { from: string; to: string }[] } {
+  if (!text || !text.trim()) return { adjustedText: text, corrections: [] };
+
+  const words = text.split(/\s+/);
+  const corrections: { from: string; to: string }[] = [];
+
+  const adjustedWords = words.map((rawWord) => {
+    const cleanWord = rawWord.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (TYPO_DICTIONARY[cleanWord]) {
+      const match = TYPO_DICTIONARY[cleanWord];
+      corrections.push({ from: rawWord, to: match });
+      return match;
+    }
+    return rawWord;
+  });
+
+  return {
+    adjustedText: adjustedWords.join(' '),
+    corrections,
+  };
 }

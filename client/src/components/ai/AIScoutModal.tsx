@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../common/Modal';
 import { api } from '../../services/api';
 import { supabase } from '../../lib/supabase';
@@ -13,6 +14,7 @@ import {
   INDIAN_STATES_AND_DISTRICTS,
   INDIAN_COLLEGES_AND_UNIVERSITIES,
   resolveIndianLocation,
+  fuzzyAdjustQuery,
 } from '../../data/indiaData';
 import {
   Sparkles,
@@ -42,10 +44,12 @@ interface AIScoutModalProps {
 
 export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [typoCorrections, setTypoCorrections] = useState<{ from: string; to: string }[]>([]);
 
   // Sub-modals for 1-click actions
   const [connectUser, setConnectUser] = useState<any | null>(null);
@@ -171,12 +175,16 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
   };
 
   const handleSearch = async (promptText?: string) => {
-    const q = promptText || query;
-    if (!q.trim()) return;
+    const rawQ = promptText || query;
+    if (!rawQ.trim()) return;
     setLoading(true);
     setError(null);
 
-    const interpretation = parseQuery(q);
+    // 1. Smart Typo & Spelling Correction
+    const { adjustedText, corrections } = fuzzyAdjustQuery(rawQ.trim());
+    setTypoCorrections(corrections);
+
+    const interpretation = parseQuery(adjustedText);
 
     try {
       // 1. Fetch real Supabase profiles
@@ -197,7 +205,7 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
       // 2. Fetch API backend matches if available
       let apiCandidates: any[] = [];
       try {
-        const apiRes = await api.aiFindPeople(q.trim());
+        const apiRes = await api.aiFindPeople(adjustedText);
         if (apiRes?.results) {
           apiCandidates = apiRes.results;
         }
@@ -313,24 +321,58 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
         }
       });
 
-      const candidatesList = Array.from(allCandidatesMap.values());
+      // Fetch connected user IDs to exclude already connected people
+      let connectedIds = new Set<string>();
+      if (currentUser?.id) {
+        try {
+          const { data: conns } = await supabase
+            .from('connections')
+            .select('sender_id, receiver_id')
+            .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
+            .eq('status', 'ACCEPTED');
+          (conns || []).forEach((c: any) => {
+            if (c.sender_id && c.sender_id !== currentUser.id) connectedIds.add(c.sender_id);
+            if (c.receiver_id && c.receiver_id !== currentUser.id) connectedIds.add(c.receiver_id);
+          });
+        } catch {}
+      }
 
-      // Intelligent scoring engine
+      // Filter out self and already connected people
+      const candidatesList = Array.from(allCandidatesMap.values()).filter((cand) => {
+        if (currentUser) {
+          if (cand.user_id === currentUser.id || cand.id === currentUser.id) return false;
+          if (cand.email && currentUser.email && cand.email.toLowerCase() === currentUser.email.toLowerCase()) return false;
+        }
+        if (connectedIds.has(cand.user_id) || connectedIds.has(cand.id)) return false;
+        return true;
+      });
+
+      // Intelligent scoring engine with 100% match capability
       const scoredCandidates = candidatesList.map((cand) => {
         const text = `${cand.full_name} ${cand.headline || ''} ${cand.bio || ''} ${cand.skills || ''} ${cand.preferred_role || ''} ${cand.location || ''} ${cand.education || ''}`.toLowerCase();
         
-        let score = 55;
+        let score = 60;
         const matchReasons: string[] = [];
+
+        let hasLocMatch = false;
+        let hasDistrictMatch = false;
+        let hasProfMatch = false;
+        let hasColMatch = false;
+        let hasSkillMatch = false;
 
         // 1. Location match
         if (interpretation.detectedDistrict && text.includes(interpretation.detectedDistrict.toLowerCase())) {
-          score += 30;
+          score += 35;
+          hasDistrictMatch = true;
+          hasLocMatch = true;
           matchReasons.push(`District: ${interpretation.detectedDistrict} (${interpretation.detectedState})`);
         } else if (interpretation.detectedState && text.includes(interpretation.detectedState.toLowerCase())) {
-          score += 20;
+          score += 25;
+          hasLocMatch = true;
           matchReasons.push(`State: ${interpretation.detectedState}`);
         } else if (interpretation.detectedLocation && text.includes(interpretation.detectedLocation.toLowerCase())) {
-          score += 18;
+          score += 20;
+          hasLocMatch = true;
           matchReasons.push(`Location: ${interpretation.detectedLocation}`);
         }
 
@@ -338,7 +380,8 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
         if (interpretation.detectedProfession) {
           const prof = interpretation.detectedProfession.toLowerCase();
           if (text.includes(prof) || (cand.preferred_role || '').toLowerCase().includes(prof)) {
-            score += 25;
+            score += 30;
+            hasProfMatch = true;
             matchReasons.push(`Role match: ${interpretation.detectedProfession}`);
           }
         }
@@ -346,8 +389,9 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
         // 3. College / Institution match
         if (interpretation.detectedCollege) {
           const colShort = interpretation.detectedCollege.toLowerCase().split('(')[0].trim();
-          if (text.includes(colShort) || text.includes('niat') && interpretation.detectedCollege.includes('NIAT')) {
-            score += 25;
+          if (text.includes(colShort) || (text.includes('niat') && interpretation.detectedCollege.includes('NIAT'))) {
+            score += 30;
+            hasColMatch = true;
             matchReasons.push(`Institution: ${interpretation.detectedCollege.split('(')[0].trim()}`);
           }
         }
@@ -355,20 +399,42 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
         // 4. Skills match
         interpretation.detectedSkills.forEach((sk) => {
           if (text.includes(sk)) {
-            score += 12;
-            matchReasons.push(`Skill: ${sk.toUpperCase()}`);
+            score += 15;
+            hasSkillMatch = true;
+            matchReasons.push(`Skill: ${(sk || '').toUpperCase()}`);
           }
         });
 
         // Basic query word overlap
-        const queryWords = q.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+        const queryWords = adjustedText.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
         queryWords.forEach((word) => {
           if (text.includes(word) && !interpretation.detectedSkills.includes(word)) {
-            score += 5;
+            score += 6;
           }
         });
 
-        const finalScore = Math.min(99, Math.max(68, score));
+        // 100% Match Engine: If candidate fulfills user-requested criteria, grant 100%!
+        const criteriaCount = [
+          Boolean(interpretation.detectedDistrict || interpretation.detectedState || interpretation.detectedLocation),
+          Boolean(interpretation.detectedProfession),
+          Boolean(interpretation.detectedCollege),
+          interpretation.detectedSkills.length > 0
+        ].filter(Boolean).length;
+
+        if (criteriaCount > 0) {
+          const matchedCount = [hasLocMatch, hasProfMatch, hasColMatch, hasSkillMatch].filter(Boolean).length;
+          if (
+            matchedCount >= criteriaCount ||
+            (criteriaCount >= 2 && matchedCount >= 2) ||
+            (hasDistrictMatch && (hasProfMatch || hasColMatch)) ||
+            (hasProfMatch && hasLocMatch) ||
+            score >= 95
+          ) {
+            score = 100;
+          }
+        }
+
+        const finalScore = Math.min(100, Math.max(70, score));
 
         return {
           ...cand,
@@ -382,7 +448,7 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
       const topResults = scoredCandidates.slice(0, 10);
 
       setResults({
-        query: q,
+        query: rawQ,
         interpretation,
         results: topResults,
       });
@@ -496,6 +562,28 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
           {/* Results Display */}
           {results && (
             <div className="space-y-3.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+              {/* Typo & Misspelling Adjustment Banner */}
+              {typoCorrections.length > 0 && (
+                <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-1.5 text-amber-900 dark:text-amber-200 font-semibold flex-wrap">
+                    <span>⚡ Corrected Spellings:</span>
+                    {typoCorrections.map((tc, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-800 text-[11px] font-mono shadow-2xs"
+                      >
+                        <span className="line-through text-slate-400">{tc.from}</span>
+                        <span>→</span>
+                        <span className="font-bold text-amber-600 dark:text-amber-400">{tc.to}</span>
+                      </span>
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-amber-700/90 dark:text-amber-400/90 font-medium shrink-0">
+                    Showing 100% matched profiles for corrected terms
+                  </span>
+                </div>
+              )}
+
               {/* Detected Interpretation Badges */}
               <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -590,8 +678,14 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
                                     @{candidate.username}
                                   </span>
                                 )}
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">
-                                  {candidate.matchScore}% Match
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    candidate.matchScore === 100
+                                      ? 'bg-emerald-600 text-white shadow-xs'
+                                      : 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900'
+                                  }`}
+                                >
+                                  {candidate.matchScore === 100 ? '⭐ 100% Match' : `${candidate.matchScore}% Match`}
                                 </span>
                               </div>
 
