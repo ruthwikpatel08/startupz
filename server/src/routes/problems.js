@@ -50,12 +50,29 @@ function formatProblem(prob, savedProblemIds = new Set()) {
   };
 }
 
+let cachedProblemMeta = null;
+let cachedProblemMetaExpiresAt = 0;
+let cachedProblemsDefault = null;
+let cachedProblemsDefaultExpiresAt = 0;
+
+export function invalidateProblemsCache() {
+  cachedProblemMeta = null;
+  cachedProblemMetaExpiresAt = 0;
+  cachedProblemsDefault = null;
+  cachedProblemsDefaultExpiresAt = 0;
+}
+
 /**
  * GET /api/problems/meta
  * Returns all existing categories, regions, tags, and summary stats
  */
 router.get('/meta', async (req, res) => {
   try {
+    if (cachedProblemMeta && Date.now() < cachedProblemMetaExpiresAt) {
+      res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
+      return res.json(cachedProblemMeta);
+    }
+
     const [categories, regions, tags, totalProblems] = await Promise.all([
       prisma.category.findMany({ orderBy: { name: 'asc' } }),
       prisma.region.findMany({ orderBy: { name: 'asc' } }),
@@ -63,12 +80,17 @@ router.get('/meta', async (req, res) => {
       prisma.problem.count(),
     ]);
 
-    res.json({
+    const result = {
       categories,
       regions,
       tags,
       totalProblems,
-    });
+    };
+
+    cachedProblemMeta = result;
+    cachedProblemMetaExpiresAt = Date.now() + 60000;
+    res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
+    res.json(result);
   } catch (error) {
     console.error('Failed to get problem metadata:', error);
     res.status(500).json({ error: 'Failed to retrieve metadata.' });
@@ -178,6 +200,20 @@ router.get('/', optionalAuth, async (req, res) => {
     const takeNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 50));
     const skipNum = (pageNum - 1) * takeNum;
 
+    const isDefaultFeed =
+      !req.user &&
+      !searchTerm &&
+      categoryFilters.length === 0 &&
+      regionFilters.length === 0 &&
+      tagFilters.length === 0 &&
+      !minImpactNum &&
+      pageNum === 1;
+
+    if (isDefaultFeed && cachedProblemsDefault && Date.now() < cachedProblemsDefaultExpiresAt) {
+      res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
+      return res.json(cachedProblemsDefault);
+    }
+
     const [total, rawProblems] = await Promise.all([
       prisma.problem.count({ where }),
       prisma.problem.findMany({
@@ -218,13 +254,21 @@ router.get('/', optionalAuth, async (req, res) => {
 
     const formatted = rawProblems.map((p) => formatProblem(p, savedProblemIds));
 
-    res.json({
+    const responsePayload = {
       problems: formatted,
       total,
       page: pageNum,
       totalPages: Math.ceil(total / takeNum),
       limit: takeNum,
-    });
+    };
+
+    if (isDefaultFeed) {
+      cachedProblemsDefault = responsePayload;
+      cachedProblemsDefaultExpiresAt = Date.now() + 60000;
+    }
+
+    res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
+    res.json(responsePayload);
   } catch (error) {
     console.error('Error fetching problems:', error);
     res.status(500).json({ error: 'Failed to retrieve problem statements.' });
@@ -404,6 +448,7 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
       },
     });
 
+    invalidateProblemsCache();
     res.status(201).json(formatProblem(newProblem));
   } catch (error) {
     console.error('Error creating problem:', error);
@@ -505,6 +550,7 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
       },
     });
 
+    invalidateProblemsCache();
     res.json(formatProblem(updated));
   } catch (error) {
     console.error('Error updating problem:', error);
@@ -535,6 +581,7 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
       },
     });
 
+    invalidateProblemsCache();
     res.json({ success: true, message: 'Problem statement deleted successfully.', id });
   } catch (error) {
     console.error('Error deleting problem:', error);

@@ -42,6 +42,7 @@ import { GoogleAccountChooserModal } from '../auth/GoogleAccountChooserModal';
 import { QuickLoginModal } from '../auth/QuickLoginModal';
 import { NotificationsDropdown } from './NotificationsDropdown';
 import { supabase } from '../../lib/supabase';
+import { prefetchRouteData } from '../../utils/prefetch';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -250,6 +251,8 @@ export const Navbar: React.FC = () => {
               {/* 2. Startups */}
               <Link
                 to="/startups"
+                onMouseEnter={() => prefetchRouteData('startups')}
+                onFocus={() => prefetchRouteData('startups')}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0 ${
                   isActive('/startups')
                     ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
@@ -261,10 +264,16 @@ export const Navbar: React.FC = () => {
               </Link>
 
               {/* 3. Co-Founders Dropdown Trigger */}
-              <div ref={coFoundersRef} className="shrink-0">
+              <div
+                ref={coFoundersRef}
+                className="shrink-0"
+                onMouseEnter={() => prefetchRouteData('cofounders')}
+              >
                 <button
                   type="button"
                   onClick={handleToggleCoFounders}
+                  onMouseEnter={() => prefetchRouteData('cofounders')}
+                  onFocus={() => prefetchRouteData('cofounders')}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                     isCoFoundersActive || coFoundersDropdownOpen
                       ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
@@ -285,10 +294,16 @@ export const Navbar: React.FC = () => {
               </div>
 
               {/* 4. Opportunities Dropdown Trigger */}
-              <div ref={opportunitiesRef} className="shrink-0">
+              <div
+                ref={opportunitiesRef}
+                className="shrink-0"
+                onMouseEnter={() => prefetchRouteData('opportunities')}
+              >
                 <button
                   type="button"
                   onClick={handleToggleOpportunities}
+                  onMouseEnter={() => prefetchRouteData('opportunities')}
+                  onFocus={() => prefetchRouteData('opportunities')}
                   className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                     isOpportunitiesActive || opportunitiesDropdownOpen
                       ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
@@ -312,10 +327,13 @@ export const Navbar: React.FC = () => {
               {otherNavLinks.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.href);
+                const routeTarget = item.name === 'Problem Statements' ? 'problems' : item.href.replace('/', '');
                 return (
                   <Link
                     key={item.name}
                     to={item.href}
+                    onMouseEnter={() => prefetchRouteData(routeTarget)}
+                    onFocus={() => prefetchRouteData(routeTarget)}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0 ${
                       active
                         ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
@@ -351,6 +369,8 @@ export const Navbar: React.FC = () => {
                       <Link
                         key={item.name}
                         to={item.href}
+                        onMouseEnter={() => prefetchRouteData(item.categoryKey)}
+                        onFocus={() => prefetchRouteData(item.categoryKey)}
                         onClick={() => setCoFoundersDropdownOpen(false)}
                         className={`flex items-start gap-2.5 px-3 py-1.5 mx-1 rounded-md text-xs transition-colors ${
                           isOptionActive
@@ -704,6 +724,8 @@ export const Navbar: React.FC = () => {
           {/* 2. Startups */}
           <Link
             to="/startups"
+            onTouchStart={() => prefetchRouteData('startups')}
+            onMouseEnter={() => prefetchRouteData('startups')}
             className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium shrink-0 transition-colors ${
               isActive('/startups')
                 ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
@@ -718,6 +740,8 @@ export const Navbar: React.FC = () => {
           <button
             type="button"
             onClick={handleToggleCoFounders}
+            onTouchStart={() => prefetchRouteData('cofounders')}
+            onMouseEnter={() => prefetchRouteData('cofounders')}
             className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium shrink-0 cursor-pointer transition-colors ${
               isCoFoundersActive || coFoundersDropdownOpen
                 ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
@@ -733,6 +757,8 @@ export const Navbar: React.FC = () => {
           <button
             type="button"
             onClick={handleToggleOpportunities}
+            onTouchStart={() => prefetchRouteData('opportunities')}
+            onMouseEnter={() => prefetchRouteData('opportunities')}
             className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium shrink-0 cursor-pointer transition-colors ${
               isOpportunitiesActive || opportunitiesDropdownOpen
                 ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
@@ -748,10 +774,13 @@ export const Navbar: React.FC = () => {
           {otherNavLinks.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
+            const routeTarget = item.name === 'Problem Statements' ? 'problems' : item.href.replace('/', '');
             return (
               <Link
                 key={item.name}
                 to={item.href}
+                onTouchStart={() => prefetchRouteData(routeTarget)}
+                onMouseEnter={() => prefetchRouteData(routeTarget)}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium shrink-0 transition-colors ${
                   active
                     ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'

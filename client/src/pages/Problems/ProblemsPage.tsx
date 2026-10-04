@@ -69,15 +69,35 @@ const i18nDictionary: Record<string, Record<string, string>> = {
   },
 };
 
+// In-memory cache for instant subsequent opens
+let cachedProblemsList: Problem[] = [];
+let cachedProblemMetaObj: { categories: string[]; regions: string[]; tags: string[] } | null = null;
+
+function getInitialProblems(): Problem[] {
+  if (cachedProblemsList && cachedProblemsList.length > 0) return cachedProblemsList;
+  try {
+    const raw = sessionStorage.getItem('startupz_cached_problems');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        cachedProblemsList = parsed;
+        return parsed;
+      }
+    }
+  } catch {}
+  return [];
+}
+
 export const ProblemsPage: React.FC = () => {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const isInitialMount = React.useRef(true);
 
-  const [problems, setProblems] = useState<Problem[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [regions, setRegions] = useState<string[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [problems, setProblems] = useState<Problem[]>(getInitialProblems);
+  const [categories, setCategories] = useState<string[]>(() => cachedProblemMetaObj?.categories || []);
+  const [regions, setRegions] = useState<string[]>(() => cachedProblemMetaObj?.regions || []);
+  const [tags, setTags] = useState<string[]>(() => cachedProblemMetaObj?.tags || []);
+  const [loading, setLoading] = useState<boolean>(() => getInitialProblems().length === 0);
 
   // Filter state synced with URL search params
   const [search, setSearch] = useState<string>(searchParams.get('q') || searchParams.get('search') || '');
@@ -95,12 +115,22 @@ export const ProblemsPage: React.FC = () => {
 
   // Fetch metadata once
   useEffect(() => {
+    if (cachedProblemMetaObj) {
+      setCategories(cachedProblemMetaObj.categories);
+      setRegions(cachedProblemMetaObj.regions);
+      setTags(cachedProblemMetaObj.tags);
+      return;
+    }
     api.getProblemMeta()
       .then((res) => {
         if (res) {
-          if (res.categories) setCategories(res.categories.map((c: any) => c.name || c));
-          if (res.regions) setRegions(res.regions.map((r: any) => r.name || r));
-          if (res.tags) setTags(res.tags.map((t: any) => t.name || t));
+          const cats = res.categories ? res.categories.map((c: any) => c.name || c) : [];
+          const regs = res.regions ? res.regions.map((r: any) => r.name || r) : [];
+          const tgs = res.tags ? res.tags.map((t: any) => t.name || t) : [];
+          setCategories(cats);
+          setRegions(regs);
+          setTags(tgs);
+          cachedProblemMetaObj = { categories: cats, regions: regs, tags: tgs };
         }
       })
       .catch((err) => console.warn('Could not load problem metadata:', err));
@@ -108,7 +138,10 @@ export const ProblemsPage: React.FC = () => {
 
   // Fetch problems based on filter parameters
   const fetchProblems = async () => {
-    setLoading(true);
+    // Only show full loading skeleton if we don't already have problems rendered
+    if (problems.length === 0 && (!cachedProblemsList || cachedProblemsList.length === 0)) {
+      setLoading(true);
+    }
     try {
       const params: any = {};
       if (search.trim()) params.search = search.trim();
@@ -120,6 +153,12 @@ export const ProblemsPage: React.FC = () => {
       const res = await api.getProblems(params);
       const list = Array.isArray(res) ? res : res?.problems || [];
       setProblems(list);
+      if (!search.trim() && !selectedCategory && !selectedRegion && !selectedImpact && !selectedTag && list.length > 0) {
+        cachedProblemsList = list;
+        try {
+          sessionStorage.setItem('startupz_cached_problems', JSON.stringify(list));
+        } catch {}
+      }
     } catch (err) {
       console.error('Failed to load problems:', err);
     } finally {
@@ -128,6 +167,11 @@ export const ProblemsPage: React.FC = () => {
   };
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      fetchProblems();
+      return;
+    }
     const handler = setTimeout(() => {
       fetchProblems();
     }, 200);

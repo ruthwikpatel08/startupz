@@ -22,12 +22,29 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
+let cachedInvestorsList: Investor[] = [];
+function getInitialInvestors(): Investor[] {
+  if (cachedInvestorsList.length > 0) return cachedInvestorsList;
+  try {
+    const raw = sessionStorage.getItem('startupz_cached_investors');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        cachedInvestorsList = parsed;
+        return parsed;
+      }
+    }
+  } catch {}
+  return [];
+}
+
 export const InvestorsPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [investors, setInvestors] = useState<Investor[]>([]);
+  const isInitialMount = React.useRef(true);
+  const [investors, setInvestors] = useState<Investor[]>(getInitialInvestors);
   const [userStartups, setUserStartups] = useState<Startup[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => getInitialInvestors().length === 0);
 
   // Filters
   const [investorType, setInvestorType] = useState('ALL');
@@ -40,7 +57,9 @@ export const InvestorsPage: React.FC = () => {
   const [connectUser, setConnectUser] = useState<any | null>(null);
 
   const fetchInvestors = async () => {
-    setLoading(true);
+    if (investors.length === 0 && cachedInvestorsList.length === 0) {
+      setLoading(true);
+    }
     try {
       const params = new URLSearchParams();
       if (investorType !== 'ALL') params.append('investorType', investorType);
@@ -82,6 +101,12 @@ export const InvestorsPage: React.FC = () => {
       }
 
       setInvestors(cleanList);
+      if (investorType === 'ALL' && stage === 'ALL' && industry === 'ALL' && !search && cleanList.length > 0) {
+        cachedInvestorsList = cleanList;
+        try {
+          sessionStorage.setItem('startupz_cached_investors', JSON.stringify(cleanList));
+        } catch {}
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -98,6 +123,11 @@ export const InvestorsPage: React.FC = () => {
   }, [user?.id]);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      fetchInvestors();
+      return;
+    }
     const timer = setTimeout(() => {
       fetchInvestors();
     }, 250);

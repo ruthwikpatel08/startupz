@@ -24,11 +24,28 @@ import {
   UserCheck,
 } from 'lucide-react';
 
+let cachedStartupsList: Startup[] = [];
+function getInitialStartups(): Startup[] {
+  if (cachedStartupsList.length > 0) return cachedStartupsList;
+  try {
+    const raw = sessionStorage.getItem('startupz_cached_startups');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        cachedStartupsList = parsed;
+        return parsed;
+      }
+    }
+  } catch {}
+  return [];
+}
+
 export const ExploreStartupsPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [startups, setStartups] = useState<Startup[]>([]);
-  const [loading, setLoading] = useState(true);
+  const isInitialMount = React.useRef(true);
+  const [startups, setStartups] = useState<Startup[]>(getInitialStartups);
+  const [loading, setLoading] = useState(() => getInitialStartups().length === 0);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -42,7 +59,9 @@ export const ExploreStartupsPage: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const fetchStartups = async () => {
-    setLoading(true);
+    if (startups.length === 0 && cachedStartupsList.length === 0) {
+      setLoading(true);
+    }
     try {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
@@ -54,6 +73,12 @@ export const ExploreStartupsPage: React.FC = () => {
       const res = await api.getStartups(params.toString());
       const clean = (res.startups || []).filter((s: any) => !isDemoRecord(s));
       setStartups(clean);
+      if (!search && industry === 'ALL' && stage === 'ALL' && fundingStatus === 'ALL' && !location && clean.length > 0) {
+        cachedStartupsList = clean;
+        try {
+          sessionStorage.setItem('startupz_cached_startups', JSON.stringify(clean));
+        } catch {}
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -62,6 +87,11 @@ export const ExploreStartupsPage: React.FC = () => {
   };
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      fetchStartups();
+      return;
+    }
     const timer = setTimeout(() => {
       fetchStartups();
     }, 250);

@@ -8,35 +8,49 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { NewUserCategoryModal } from './components/auth/NewUserCategoryModal';
 
 
-// Pages
+// Eager Core Pages
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/Auth/LoginPage';
-import { RegisterPage } from './pages/Auth/RegisterPage';
-import { ForgotPasswordPage } from './pages/Auth/ForgotPasswordPage';
-import { ResetPasswordPage } from './pages/Auth/ResetPasswordPage';
-import { AuthCallbackPage } from './pages/Auth/AuthCallbackPage';
-import { DashboardPage } from './pages/Dashboard/DashboardPage';
-import { ExploreStartupsPage } from './pages/Startups/ExploreStartupsPage';
-import { StartupDetailPage } from './pages/Startups/StartupDetailPage';
-import { CreateStartupPage } from './pages/Startups/CreateStartupPage';
-import { FindCoFounderPage } from './pages/CoFounders/FindCoFounderPage';
-import { OpportunitiesPage } from './pages/Opportunities/OpportunitiesPage';
-import { InvestorsPage } from './pages/Investors/InvestorsPage';
-import { MentorsPage } from './pages/Mentors/MentorsPage';
-import { StartupFeedPage } from './pages/Feed/StartupFeedPage';
-import { NetworkPage } from './pages/Network/NetworkPage';
-import { MessagesPage } from './pages/Messages/MessagesPage';
-import { ProfilePage } from './pages/Profile/ProfilePage';
-import { SavedItemsPage } from './pages/Saved/SavedItemsPage';
-import { GlobalSearchPage } from './pages/Search/GlobalSearchPage';
-import { AdminDashboardPage } from './pages/Admin/AdminDashboardPage';
-import { FailedStartupsPage } from './pages/FailedStartups/FailedStartupsPage';
-import { VideoMeetingRoomPage } from './pages/Meetings/VideoMeetingRoomPage';
-import { ProblemsPage } from './pages/Problems/ProblemsPage';
-import { ProblemDetailPage } from './pages/Problems/ProblemDetailPage';
-import { ManageProblemsPage } from './pages/Admin/ManageProblemsPage';
-import { ProblemFormPage } from './pages/Admin/ProblemFormPage';
-import { MembershipsPage } from './pages/Memberships/MembershipsPage';
+
+// Helper for clean lazy-loading named exports
+const lazyPage = <T extends Record<string, any>, K extends keyof T>(
+  importer: () => Promise<T>,
+  name: K
+) => React.lazy(() => importer().then((mod) => ({ default: mod[name] })));
+
+// Lazy-Loaded Tools & Pages (Code-split into async chunks for maximum performance)
+const RegisterPage = lazyPage(() => import('./pages/Auth/RegisterPage'), 'RegisterPage');
+const ForgotPasswordPage = lazyPage(() => import('./pages/Auth/ForgotPasswordPage'), 'ForgotPasswordPage');
+const ResetPasswordPage = lazyPage(() => import('./pages/Auth/ResetPasswordPage'), 'ResetPasswordPage');
+const AuthCallbackPage = lazyPage(() => import('./pages/Auth/AuthCallbackPage'), 'AuthCallbackPage');
+const DashboardPage = lazyPage(() => import('./pages/Dashboard/DashboardPage'), 'DashboardPage');
+const ExploreStartupsPage = lazyPage(() => import('./pages/Startups/ExploreStartupsPage'), 'ExploreStartupsPage');
+const StartupDetailPage = lazyPage(() => import('./pages/Startups/StartupDetailPage'), 'StartupDetailPage');
+const CreateStartupPage = lazyPage(() => import('./pages/Startups/CreateStartupPage'), 'CreateStartupPage');
+const FindCoFounderPage = lazyPage(() => import('./pages/CoFounders/FindCoFounderPage'), 'FindCoFounderPage');
+const OpportunitiesPage = lazyPage(() => import('./pages/Opportunities/OpportunitiesPage'), 'OpportunitiesPage');
+const InvestorsPage = lazyPage(() => import('./pages/Investors/InvestorsPage'), 'InvestorsPage');
+const MentorsPage = lazyPage(() => import('./pages/Mentors/MentorsPage'), 'MentorsPage');
+const StartupFeedPage = lazyPage(() => import('./pages/Feed/StartupFeedPage'), 'StartupFeedPage');
+const NetworkPage = lazyPage(() => import('./pages/Network/NetworkPage'), 'NetworkPage');
+const MessagesPage = lazyPage(() => import('./pages/Messages/MessagesPage'), 'MessagesPage');
+const ProfilePage = lazyPage(() => import('./pages/Profile/ProfilePage'), 'ProfilePage');
+const SavedItemsPage = lazyPage(() => import('./pages/Saved/SavedItemsPage'), 'SavedItemsPage');
+const GlobalSearchPage = lazyPage(() => import('./pages/Search/GlobalSearchPage'), 'GlobalSearchPage');
+const AdminDashboardPage = lazyPage(() => import('./pages/Admin/AdminDashboardPage'), 'AdminDashboardPage');
+const FailedStartupsPage = lazyPage(() => import('./pages/FailedStartups/FailedStartupsPage'), 'FailedStartupsPage');
+const VideoMeetingRoomPage = lazyPage(() => import('./pages/Meetings/VideoMeetingRoomPage'), 'VideoMeetingRoomPage');
+const ProblemsPage = lazyPage(() => import('./pages/Problems/ProblemsPage'), 'ProblemsPage');
+const ProblemDetailPage = lazyPage(() => import('./pages/Problems/ProblemDetailPage'), 'ProblemDetailPage');
+const ManageProblemsPage = lazyPage(() => import('./pages/Admin/ManageProblemsPage'), 'ManageProblemsPage');
+const ProblemFormPage = lazyPage(() => import('./pages/Admin/ProblemFormPage'), 'ProblemFormPage');
+const MembershipsPage = lazyPage(() => import('./pages/Memberships/MembershipsPage'), 'MembershipsPage');
+
+const PageLoader: React.FC = () => (
+  <div className="flex items-center justify-center min-h-[50vh] w-full">
+    <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean }> = ({
   children,
@@ -74,125 +88,127 @@ export const App: React.FC = () => {
             <Navbar />
             <NewUserCategoryModal />
             <main className="flex-1 w-full max-w-full overflow-x-hidden">
-              <Routes>
-                {/* Public / Ecosystem Routes */}
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
-                <Route path="/auth/callback" element={<AuthCallbackPage />} />
-                <Route path="/startups" element={<ExploreStartupsPage />} />
-                <Route path="/startups/:id" element={<StartupDetailPage />} />
-                <Route path="/cofounders" element={<FindCoFounderPage />} />
-                <Route path="/opportunities" element={<OpportunitiesPage />} />
-                <Route path="/investors" element={<InvestorsPage />} />
-                <Route path="/mentors" element={<MentorsPage />} />
-                <Route path="/feed" element={<StartupFeedPage />} />
-                <Route path="/failed-startups" element={<FailedStartupsPage />} />
-                <Route path="/problems" element={<ProblemsPage />} />
-                <Route path="/problems/:id" element={<ProblemDetailPage />} />
-                <Route path="/profile/:id" element={<ProfilePage />} />
-                <Route path="/search" element={<GlobalSearchPage />} />
-                <Route path="/memberships" element={<MembershipsPage />} />
+              <React.Suspense fallback={<PageLoader />}>
+                <Routes>
+                  {/* Public / Ecosystem Routes */}
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/reset-password" element={<ResetPasswordPage />} />
+                  <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                  <Route path="/startups" element={<ExploreStartupsPage />} />
+                  <Route path="/startups/:id" element={<StartupDetailPage />} />
+                  <Route path="/cofounders" element={<FindCoFounderPage />} />
+                  <Route path="/opportunities" element={<OpportunitiesPage />} />
+                  <Route path="/investors" element={<InvestorsPage />} />
+                  <Route path="/mentors" element={<MentorsPage />} />
+                  <Route path="/feed" element={<StartupFeedPage />} />
+                  <Route path="/failed-startups" element={<FailedStartupsPage />} />
+                  <Route path="/problems" element={<ProblemsPage />} />
+                  <Route path="/problems/:id" element={<ProblemDetailPage />} />
+                  <Route path="/profile/:id" element={<ProfilePage />} />
+                  <Route path="/search" element={<GlobalSearchPage />} />
+                  <Route path="/memberships" element={<MembershipsPage />} />
 
-                {/* Video Meeting Room */}
-                <Route
-                  path="/meeting/:roomCode"
-                  element={
-                    <ProtectedRoute>
-                      <VideoMeetingRoomPage />
-                    </ProtectedRoute>
-                  }
-                />
+                  {/* Video Meeting Room */}
+                  <Route
+                    path="/meeting/:roomCode"
+                    element={
+                      <ProtectedRoute>
+                        <VideoMeetingRoomPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                {/* Protected Routes */}
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <DashboardPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/startups/create"
-                  element={
-                    <ProtectedRoute>
-                      <CreateStartupPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute>
-                      <ProfilePage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/network"
-                  element={
-                    <ProtectedRoute>
-                      <NetworkPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/messages"
-                  element={
-                    <ProtectedRoute>
-                      <MessagesPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/saved"
-                  element={
-                    <ProtectedRoute>
-                      <SavedItemsPage />
-                    </ProtectedRoute>
-                  }
-                />
+                  {/* Protected Routes */}
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/startups/create"
+                    element={
+                      <ProtectedRoute>
+                        <CreateStartupPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <ProfilePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/network"
+                    element={
+                      <ProtectedRoute>
+                        <NetworkPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/messages"
+                    element={
+                      <ProtectedRoute>
+                        <MessagesPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/saved"
+                    element={
+                      <ProtectedRoute>
+                        <SavedItemsPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                {/* Admin Portal */}
-                <Route
-                  path="/admin"
-                  element={
-                    <ProtectedRoute adminOnly>
-                      <AdminDashboardPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/problems"
-                  element={
-                    <ProtectedRoute adminOnly>
-                      <ManageProblemsPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/problems/create"
-                  element={
-                    <ProtectedRoute adminOnly>
-                      <ProblemFormPage />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/admin/problems/:id/edit"
-                  element={
-                    <ProtectedRoute adminOnly>
-                      <ProblemFormPage />
-                    </ProtectedRoute>
-                  }
-                />
+                  {/* Admin Portal */}
+                  <Route
+                    path="/admin"
+                    element={
+                      <ProtectedRoute adminOnly>
+                        <AdminDashboardPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/problems"
+                    element={
+                      <ProtectedRoute adminOnly>
+                        <ManageProblemsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/problems/create"
+                    element={
+                      <ProtectedRoute adminOnly>
+                        <ProblemFormPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/problems/:id/edit"
+                    element={
+                      <ProtectedRoute adminOnly>
+                        <ProblemFormPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-                {/* Fallback */}
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+                  {/* Fallback */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </React.Suspense>
             </main>
             <Footer />
           </div>

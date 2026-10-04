@@ -85,11 +85,43 @@ export function getUserCategory(user: any): 'founders' | 'cofounders' | 'markete
 
 // Module-level caches to eliminate duplicate and N+1 network requests
 const categoryDataCache = new Map<string, { rawCandidates: any[]; rawInvestors: any[]; expiresAt: number }>();
+let cachedAllCandidates: any[] = [];
+let cachedAllInvestors: any[] = [];
 let cachedSupaProfiles: any[] | null = null;
 let cachedSupaProfilesExpiresAt = 0;
 let cachedSupaInvestors: any[] | null = null;
 let cachedSupaInvestorsExpiresAt = 0;
-const CACHE_TTL_MS = 60000; // 60 seconds
+const CACHE_TTL_MS = 120000; // 2 minutes
+
+function getInitialCandidates(): any[] {
+  if (cachedAllCandidates && cachedAllCandidates.length > 0) return cachedAllCandidates;
+  try {
+    const raw = sessionStorage.getItem('startupz_cached_candidates');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        cachedAllCandidates = parsed;
+        return parsed;
+      }
+    }
+  } catch {}
+  return [];
+}
+
+function getInitialInvestors(): any[] {
+  if (cachedAllInvestors && cachedAllInvestors.length > 0) return cachedAllInvestors;
+  try {
+    const raw = sessionStorage.getItem('startupz_cached_investors');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        cachedAllInvestors = parsed;
+        return parsed;
+      }
+    }
+  } catch {}
+  return [];
+}
 
 export const FindCoFounderPage: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -97,9 +129,12 @@ export const FindCoFounderPage: React.FC = () => {
   const rawCategory = (searchParams.get('category') || 'all').toLowerCase();
   const currentCategory = rawCategory === 'co-founders' ? 'cofounders' : rawCategory;
 
-  const [rawCandidates, setRawCandidates] = useState<any[]>([]);
-  const [rawInvestors, setRawInvestors] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [rawCandidates, setRawCandidates] = useState<any[]>(getInitialCandidates);
+  const [rawInvestors, setRawInvestors] = useState<any[]>(getInitialInvestors);
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (currentCategory === 'investors') return getInitialInvestors().length === 0;
+    return getInitialCandidates().length === 0;
+  });
 
   // Search input state
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
@@ -145,70 +180,77 @@ export const FindCoFounderPage: React.FC = () => {
       }
     }
 
-    setLoading(true);
+    // Only display full-page loading spinner if we have no items to display yet
+    const hasExistingData = currentCategory === 'investors'
+      ? rawInvestors.length > 0 || cachedAllInvestors.length > 0
+      : rawCandidates.length > 0 || cachedAllCandidates.length > 0;
+
+    if (!hasExistingData) {
+      setLoading(true);
+    }
+
     try {
       if (currentCategory === 'investors') {
         const params = new URLSearchParams();
         if (investorType !== 'ALL') params.append('investorType', investorType);
         if (investorStage !== 'ALL') params.append('preferredStages', investorStage);
 
+        // Fetch API investors and Supabase investor profiles concurrently
+        const [apiResResult, supaResResult] = await Promise.allSettled([
+          api.getInvestors(params.toString()),
+          (!force && cachedSupaInvestors && cachedSupaInvestorsExpiresAt > Date.now())
+            ? Promise.resolve({ data: cachedSupaInvestors })
+            : supabase
+                .from('profiles')
+                .select('*')
+                .or('preferred_role.ilike.%investor%,skills.ilike.%investor%,skills.ilike.%investing%,headline.ilike.%investor%')
+        ]);
+
         let loadedInvestors: any[] = [];
-        try {
-          const res = await api.getInvestors(params.toString());
-          if (res.investors && res.investors.length > 0) {
-            loadedInvestors = res.investors;
-          }
-        } catch {
-          // Backend loading fallback
+        if (apiResResult.status === 'fulfilled' && apiResResult.value?.investors) {
+          loadedInvestors = apiResResult.value.investors;
         }
 
-        // Live Supabase profiles for investor accounts (cached with TTL)
         let supaMappedInvestors: any[] = [];
-        if (!force && cachedSupaInvestors && cachedSupaInvestorsExpiresAt > Date.now()) {
-          supaMappedInvestors = cachedSupaInvestors;
-        } else {
-          try {
-            const { data: supaInvestors } = await supabase
-              .from('profiles')
-              .select('*')
-              .or('preferred_role.ilike.%investor%,skills.ilike.%investor%,skills.ilike.%investing%,headline.ilike.%investor%');
-
-            if (supaInvestors && supaInvestors.length > 0) {
-              supaMappedInvestors = supaInvestors.map((p) => ({
-                id: p.id || p.user_id,
-                userId: p.user_id || p.id,
-                organization: p.full_name || 'Angel Investor',
-                investorType: 'Angel / Early Investor',
-                preferredStages: 'Pre-Seed, Seed',
-                industries: p.industries || p.skills || 'Technology, Artificial Intelligence, SaaS',
-                location: p.location || 'Remote',
-                about: p.bio || p.headline || 'Active startup investor in the StartupZ ecosystem.',
-                isVerified: true,
-                minCheckSize: '$25K',
-                maxCheckSize: '$250K',
-                user: {
-                  id: p.user_id || p.id,
-                  email: p.email,
-                  role: 'INVESTOR',
-                  profile: {
-                    fullName: p.full_name,
-                    username: p.username || (p.email ? p.email.split('@')[0] : 'user'),
-                    avatar: p.avatar,
-                    headline: p.headline,
-                    location: p.location,
-                  },
-                },
-              }));
-              cachedSupaInvestors = supaMappedInvestors;
-              cachedSupaInvestorsExpiresAt = Date.now() + CACHE_TTL_MS;
-            }
-          } catch (supaErr) {
-            console.warn('Supabase investor query notice:', supaErr);
-          }
+        if (supaResResult.status === 'fulfilled' && supaResResult.value?.data) {
+          const rawSupa = supaResResult.value.data;
+          supaMappedInvestors = rawSupa.map((p: any) => ({
+            id: p.id || p.user_id,
+            userId: p.user_id || p.id,
+            organization: p.full_name || 'Angel Investor',
+            investorType: 'Angel / Early Investor',
+            preferredStages: 'Pre-Seed, Seed',
+            industries: p.industries || p.skills || 'Technology, Artificial Intelligence, SaaS',
+            location: p.location || 'Remote',
+            about: p.bio || p.headline || 'Active startup investor in the StartupZ ecosystem.',
+            isVerified: true,
+            minCheckSize: '$25K',
+            maxCheckSize: '$250K',
+            user: {
+              id: p.user_id || p.id,
+              email: p.email,
+              role: 'INVESTOR',
+              profile: {
+                fullName: p.full_name,
+                username: p.username || (p.email ? p.email.split('@')[0] : 'user'),
+                avatar: p.avatar,
+                headline: p.headline,
+                location: p.location,
+              },
+            },
+          }));
+          cachedSupaInvestors = supaMappedInvestors;
+          cachedSupaInvestorsExpiresAt = Date.now() + CACHE_TTL_MS;
         }
 
         const rawAllInvestors = [...supaMappedInvestors, ...loadedInvestors];
-        setRawInvestors(rawAllInvestors);
+        if (rawAllInvestors.length > 0) {
+          setRawInvestors(rawAllInvestors);
+          cachedAllInvestors = rawAllInvestors;
+          try {
+            sessionStorage.setItem('startupz_cached_investors', JSON.stringify(rawAllInvestors));
+          } catch {}
+        }
         setRawCandidates([]);
         categoryDataCache.set(cacheKey, {
           rawCandidates: [],
@@ -222,93 +264,88 @@ export const FindCoFounderPage: React.FC = () => {
         if (industry !== 'ALL') params.append('industry', industry);
         if (availability !== 'ALL') params.append('availability', availability);
 
+        // Concurrently query Backend API matches, Supabase profiles table, and extra investors (when category is 'all')
+        const [matchesResult, supaResult, extraInvResult] = await Promise.allSettled([
+          api.getCofounderMatches(params.toString()),
+          (!force && cachedSupaProfiles && cachedSupaProfilesExpiresAt > Date.now())
+            ? Promise.resolve({ data: cachedSupaProfiles })
+            : supabase.from('profiles').select('*'),
+          currentCategory === 'all'
+            ? api.getInvestors('')
+            : Promise.resolve({ investors: [] }),
+        ]);
+
         let loadedMatches: any[] = [];
-        try {
-          const res = await api.getCofounderMatches(params.toString());
-          if (res.matches && res.matches.length > 0) {
-            loadedMatches = res.matches;
-          }
-        } catch {
-          // Backend load fallback
+        if (matchesResult.status === 'fulfilled' && matchesResult.value?.matches) {
+          loadedMatches = matchesResult.value.matches;
         }
 
-        // Live Supabase profiles table (cached with TTL to avoid duplicate full table scans)
         let supaMappedProfiles: any[] = [];
-        if (!force && cachedSupaProfiles && cachedSupaProfilesExpiresAt > Date.now()) {
-          supaMappedProfiles = cachedSupaProfiles;
-        } else {
-          try {
-            const { data: supaProfiles } = await supabase.from('profiles').select('*');
-            if (supaProfiles && supaProfiles.length > 0) {
-              supaMappedProfiles = supaProfiles.map((p) => {
-                const uName = p.username || (p.email ? p.email.split('@')[0] : 'user');
-                return {
-                  id: p.user_id || p.id,
-                  email: p.email,
-                  role: (p.preferred_role || 'FOUNDER').toUpperCase(),
-                  preferred_role: p.preferred_role,
-                  verificationBadge: p.auth_provider === 'google' ? 'Verified via Google' : 'Verified Member',
-                  matchPercentage: null,
-                  matchExplanation: null,
-                  profile: {
-                    id: p.id,
-                    userId: p.user_id || p.id,
-                    fullName: p.full_name,
-                    username: uName,
-                    headline: p.headline || '',
-                    location: p.location || '',
-                    bio: p.bio || '',
-                    avatar: p.avatar,
-                    skills: p.skills || '',
-                    preferredRole: p.preferred_role,
-                    availability: p.availability || 'Full-time',
-                    openTo: p.open_to,
-                  },
-                };
-              });
-              cachedSupaProfiles = supaMappedProfiles;
-              cachedSupaProfilesExpiresAt = Date.now() + CACHE_TTL_MS;
-            }
-          } catch (supaErr) {
-            console.warn('Supabase profiles query notice:', supaErr);
-          }
+        if (supaResult.status === 'fulfilled' && supaResult.value?.data) {
+          const rawSupa = supaResult.value.data;
+          supaMappedProfiles = rawSupa.map((p: any) => {
+            const uName = p.username || (p.email ? p.email.split('@')[0] : 'user');
+            return {
+              id: p.user_id || p.id,
+              email: p.email,
+              role: (p.preferred_role || 'FOUNDER').toUpperCase(),
+              preferred_role: p.preferred_role,
+              verificationBadge: p.auth_provider === 'google' ? 'Verified via Google' : 'Verified Member',
+              matchPercentage: null,
+              matchExplanation: null,
+              profile: {
+                id: p.id,
+                userId: p.user_id || p.id,
+                fullName: p.full_name,
+                username: uName,
+                headline: p.headline || '',
+                location: p.location || '',
+                bio: p.bio || '',
+                avatar: p.avatar,
+                skills: p.skills || '',
+                preferredRole: p.preferred_role,
+                availability: p.availability || 'Full-time',
+                openTo: p.open_to,
+              },
+            };
+          });
+          cachedSupaProfiles = supaMappedProfiles;
+          cachedSupaProfilesExpiresAt = Date.now() + CACHE_TTL_MS;
         }
 
-        // If category is 'all', also load registered investors so All Members includes every member
         let extraAllInvestors: any[] = [];
-        if (currentCategory === 'all') {
-          try {
-            const res = await api.getInvestors('');
-            if (res.investors && res.investors.length > 0) {
-              extraAllInvestors = res.investors.map((inv: any) => ({
-                id: inv.user?.id || inv.userId || inv.id,
-                email: inv.user?.email || '',
-                role: 'INVESTOR',
-                preferred_role: 'INVESTOR',
-                verificationBadge: 'Verified Investor',
-                profile: {
-                  id: inv.id,
-                  userId: inv.userId || inv.id,
-                  fullName: inv.organization || inv.user?.profile?.fullName || 'Angel Investor',
-                  username: inv.user?.profile?.username || (inv.user?.email ? inv.user.email.split('@')[0] : 'investor'),
-                  headline: inv.about || inv.user?.profile?.headline || 'Angel & Venture Investor',
-                  location: inv.location || 'Remote',
-                  bio: inv.about || '',
-                  avatar: inv.user?.profile?.avatar,
-                  skills: inv.industries || '',
-                  preferredRole: 'INVESTOR',
-                  availability: 'Capital & Mentorship',
-                  openTo: 'Investment, Advisory',
-                },
-              }));
-            }
-          } catch {
-            // Backend offline fallback
-          }
+        if (extraInvResult.status === 'fulfilled' && extraInvResult.value?.investors) {
+          extraAllInvestors = (extraInvResult.value.investors || []).map((inv: any) => ({
+            id: inv.user?.id || inv.userId || inv.id,
+            email: inv.user?.email || '',
+            role: 'INVESTOR',
+            preferred_role: 'INVESTOR',
+            verificationBadge: 'Verified Investor',
+            profile: {
+              id: inv.id,
+              userId: inv.userId || inv.id,
+              fullName: inv.organization || inv.user?.profile?.fullName || 'Angel Investor',
+              username: inv.user?.profile?.username || (inv.user?.email ? inv.user.email.split('@')[0] : 'investor'),
+              headline: inv.about || inv.user?.profile?.headline || 'Angel & Venture Investor',
+              location: inv.location || 'Remote',
+              bio: inv.about || '',
+              avatar: inv.user?.profile?.avatar,
+              skills: inv.industries || '',
+              preferredRole: 'INVESTOR',
+              availability: 'Capital & Mentorship',
+              openTo: 'Investment, Advisory',
+            },
+          }));
         }
 
         const rawAllCandidates = [...supaMappedProfiles, ...loadedMatches, ...extraAllInvestors];
-        setRawCandidates(rawAllCandidates);
+        if (rawAllCandidates.length > 0) {
+          setRawCandidates(rawAllCandidates);
+          cachedAllCandidates = rawAllCandidates;
+          try {
+            sessionStorage.setItem('startupz_cached_candidates', JSON.stringify(rawAllCandidates));
+          } catch {}
+        }
         setRawInvestors([]);
         categoryDataCache.set(cacheKey, {
           rawCandidates: rawAllCandidates,
@@ -318,8 +355,6 @@ export const FindCoFounderPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to load category data:', err);
-      setRawCandidates([]);
-      setRawInvestors([]);
     } finally {
       setLoading(false);
     }

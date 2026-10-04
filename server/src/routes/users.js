@@ -123,10 +123,28 @@ router.get('/', optionalAuth, async (req, res) => {
   }
 });
 
+const cofounderCache = new Map();
+const COFOUNDER_CACHE_TTL = 60000;
+
 // GET /api/users/matching/cofounders - Co-Founder & Category Matching Engine
 router.get('/matching/cofounders', optionalAuth, async (req, res) => {
   try {
     const { targetRole, industry, availability, category } = req.query;
+
+    const isDefaultFilter =
+      !req.user &&
+      (!targetRole || targetRole === 'ALL') &&
+      (!industry || industry === 'ALL') &&
+      (!availability || availability === 'ALL');
+
+    const cacheKey = (category || 'all').toLowerCase();
+    if (isDefaultFilter) {
+      const cached = cofounderCache.get(cacheKey);
+      if (cached && Date.now() < cached.expiresAt) {
+        res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
+        return res.json(cached.data);
+      }
+    }
 
     let currentUser = null;
     if (req.user) {
@@ -308,10 +326,17 @@ router.get('/matching/cofounders', optionalAuth, async (req, res) => {
 
     scoredCandidates.sort((a, b) => b.matchPercentage - a.matchPercentage);
 
-    return res.json({
+    const responseData = {
       matches: scoredCandidates,
       total: scoredCandidates.length,
-    });
+    };
+
+    if (isDefaultFilter) {
+      cofounderCache.set(cacheKey, { data: responseData, expiresAt: Date.now() + COFOUNDER_CACHE_TTL });
+    }
+
+    res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
+    return res.json(responseData);
   } catch (error) {
     console.error('Co-founder matching error:', error);
     return res.status(500).json({ error: 'Failed to compute co-founder matches.' });

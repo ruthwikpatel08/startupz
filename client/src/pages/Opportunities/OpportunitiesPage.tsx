@@ -26,11 +26,21 @@ export const OpportunitiesPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentType = (searchParams.get('type') || 'ALL').toLowerCase();
+  const isInitialMount = React.useRef(true);
 
   const [activeTab, setActiveTab] = useState<'EXPLORE' | 'MY_APPLICATIONS'>('EXPLORE');
-  const [opportunities, setOpportunities] = useState<StartupOpportunity[]>([]);
+  const [opportunities, setOpportunities] = useState<StartupOpportunity[]>(() => {
+    try {
+      const raw = sessionStorage.getItem('startupz_cached_opportunities');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  });
   const [myApplications, setMyApplications] = useState<OpportunityApplication[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => opportunities.length === 0);
 
   // Filters
   const [role, setRole] = useState('ALL');
@@ -93,7 +103,9 @@ export const OpportunitiesPage: React.FC = () => {
   };
 
   const fetchOpportunities = async () => {
-    setLoading(true);
+    if (opportunities.length === 0) {
+      setLoading(true);
+    }
     try {
       const params = new URLSearchParams();
       if (currentType && currentType !== 'all') params.append('type', currentType);
@@ -105,9 +117,13 @@ export const OpportunitiesPage: React.FC = () => {
       const res = await api.getOpportunities(params.toString());
       const clean = (res.opportunities || []).filter((o: any) => !isDemoRecord(o));
       setOpportunities(clean);
+      if (currentType === 'all' && role === 'ALL' && workplaceType === 'ALL' && commitment === 'ALL' && !search && clean.length > 0) {
+        try {
+          sessionStorage.setItem('startupz_cached_opportunities', JSON.stringify(clean));
+        } catch {}
+      }
     } catch (err) {
       console.warn('Backend returned warning for opportunities:', err);
-      setOpportunities([]);
     } finally {
       setLoading(false);
     }
@@ -130,6 +146,11 @@ export const OpportunitiesPage: React.FC = () => {
   }, [user?.id]);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      fetchOpportunities();
+      return;
+    }
     const timer = setTimeout(() => {
       fetchOpportunities();
     }, 250);
