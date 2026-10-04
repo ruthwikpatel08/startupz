@@ -66,6 +66,18 @@ export async function deleteSupabaseUserCompletely(userId, userEmail) {
       }
     }
 
+    // 2.5 Delete connections involving user
+    for (const id of allIds) {
+      try {
+        await supabaseAdmin
+          .from('connections')
+          .delete()
+          .or(`sender_id.eq.${id},receiver_id.eq.${id}`);
+      } catch (err) {
+        console.warn('Error deleting connections for', id, err?.message);
+      }
+    }
+
     // 3. Delete from public.users (triggers ON DELETE CASCADE for all dependent tables)
     for (const id of allIds) {
       try {

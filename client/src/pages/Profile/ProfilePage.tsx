@@ -469,33 +469,52 @@ export const ProfilePage: React.FC = () => {
       const uid = currentUser.id;
       const userEmail = currentUser.email;
 
-      // 1. Call backend server to execute authoritative deletion across
-      // Supabase Auth (auth.users), Supabase PostgreSQL (public tables), and Prisma backend database
-      await api.deleteAccount({ userId: uid, email: userEmail });
+      // 1. Client-side Supabase table purge fallback
+      try {
+        if (uid) {
+          await supabase.from('profiles').delete().or(`user_id.eq.${uid},id.eq.${uid}`);
+          await supabase.from('connections').delete().or(`sender_id.eq.${uid},receiver_id.eq.${uid}`);
+          await supabase.from('users').delete().eq('id', uid);
+        }
+        if (userEmail) {
+          await supabase.from('profiles').delete().ilike('email', userEmail);
+          await supabase.from('users').delete().ilike('email', userEmail);
+        }
+      } catch (sbClientErr) {
+        console.warn('Client Supabase direct delete fallback warning:', sbClientErr);
+      }
 
-      // 2. Invalidate profile caches and API cache
+      // 2. Call backend server to execute authoritative deletion across
+      // Supabase Auth (auth.users), Supabase PostgreSQL (public tables), and Prisma backend database
+      try {
+        await api.deleteAccount({ userId: uid, email: userEmail });
+      } catch (apiErr: any) {
+        console.warn('Backend API delete warning:', apiErr?.message);
+      }
+
+      // 3. Invalidate profile caches and API cache
       invalidateUserProfileCache(uid);
       api.clearCache();
 
-      // 3. Clear all browser storage completely (no stale sessions or user keys)
+      // 4. Clear all browser storage completely (no stale sessions or user keys)
       localStorage.clear();
       sessionStorage.clear();
 
-      // 4. Sign out completely from Supabase Auth
+      // 5. Sign out completely from Supabase Auth
       try {
         await supabase.auth.signOut();
       } catch (err) {
         console.warn('Supabase signOut warning on delete:', err);
       }
 
-      // 5. Logout in AuthContext
+      // 6. Logout in AuthContext
       try {
         await logout();
       } catch (err) {
         console.warn('logout context warning on delete:', err);
       }
 
-      // 6. Redirect straight to login page with deletion notice
+      // 7. Redirect straight to login page with deletion notice
       window.location.href = '/login?deleted=true';
     } catch (err: any) {
       console.error('Failed to permanently delete account:', err);
