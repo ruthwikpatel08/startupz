@@ -160,21 +160,50 @@ export const FindCoFounderPage: React.FC = () => {
     if (!currentUser?.id) return;
     const loadConnected = async () => {
       try {
+        const ids = new Set<string>();
+
         const { data } = await supabase
           .from('connections')
           .select('sender_id, receiver_id, status')
           .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
           .eq('status', 'ACCEPTED');
 
-        const ids = new Set<string>();
         (data || []).forEach((c: any) => {
           if (c.sender_id && c.sender_id !== currentUser.id) ids.add(c.sender_id);
           if (c.receiver_id && c.receiver_id !== currentUser.id) ids.add(c.receiver_id);
         });
+
+        try {
+          const apiConns = await api.getConnections().catch(() => ({ connections: [] }));
+          if (apiConns && Array.isArray(apiConns.connections)) {
+            apiConns.connections.forEach((conn: any) => {
+              const otherId = conn.userId || conn.user?.id || (conn.senderId === currentUser.id ? conn.receiverId : conn.senderId);
+              if (otherId && otherId !== currentUser.id) {
+                ids.add(otherId);
+              }
+            });
+          }
+        } catch {}
+
         setConnectedUserIds(ids);
       } catch {}
     };
     loadConnected();
+
+    const handleConnEvt = () => loadConnected();
+    window.addEventListener('connections_updated', handleConnEvt);
+
+    const channel = supabase
+      .channel('find-cofounders-conns')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'connections' }, () => {
+        loadConnected();
+      })
+      .subscribe();
+
+    return () => {
+      window.removeEventListener('connections_updated', handleConnEvt);
+      supabase.removeChannel(channel);
+    };
   }, [currentUser?.id]);
 
   const categories = [
@@ -420,6 +449,8 @@ export const FindCoFounderPage: React.FC = () => {
         (cand.userId && connectedUserIds.has(cand.userId)) ||
         (cand.user_id && connectedUserIds.has(cand.user_id)) ||
         (cand.user?.id && connectedUserIds.has(cand.user.id)) ||
+        (cand.profile?.userId && connectedUserIds.has(cand.profile.userId)) ||
+        (cand.profile?.id && connectedUserIds.has(cand.profile.id)) ||
         cand.connectionStatus === 'CONNECTED' ||
         cand.connectionStatus === 'ACCEPTED'
       ) {
@@ -503,6 +534,11 @@ export const FindCoFounderPage: React.FC = () => {
         if (curId && invId && curId === invId) continue;
         if (invId && connectedUserIds.has(invId)) continue;
         if (inv.userId && connectedUserIds.has(inv.userId)) continue;
+        if (inv.user_id && connectedUserIds.has(inv.user_id)) continue;
+        if (inv.user?.id && connectedUserIds.has(inv.user.id)) continue;
+        if (inv.user?.profile?.userId && connectedUserIds.has(inv.user.profile.userId)) continue;
+        if (inv.user?.profile?.id && connectedUserIds.has(inv.user.profile.id)) continue;
+        if (inv.connectionStatus === 'CONNECTED' || inv.connectionStatus === 'ACCEPTED') continue;
       }
 
       // 2. Strict deduplication - never show the same profile twice

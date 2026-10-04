@@ -135,19 +135,32 @@ export const BusinessPage: React.FC = () => {
 
         // Fetch connection status if user logged in
         if (user?.id) {
+          const map = new Map<string, string>();
           const { data: userConns } = await supabase
             .from('connections')
             .select('sender_id, receiver_id, status')
             .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
 
           if (userConns) {
-            const map = new Map<string, string>();
             userConns.forEach((c) => {
               const otherId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
-              map.set(otherId, c.status);
+              if (otherId) map.set(otherId, c.status);
             });
-            setConnectionStatusMap(map);
           }
+
+          try {
+            const apiConns = await api.getConnections().catch(() => ({ connections: [] }));
+            if (apiConns && Array.isArray(apiConns.connections)) {
+              apiConns.connections.forEach((conn: any) => {
+                const otherId = conn.userId || conn.user?.id || (conn.senderId === user.id ? conn.receiverId : conn.senderId);
+                if (otherId && otherId !== user.id) {
+                  map.set(otherId, 'ACCEPTED');
+                }
+              });
+            }
+          } catch {}
+
+          setConnectionStatusMap(map);
         }
       } catch (err) {
         console.error('Failed to load founders:', err);
@@ -159,6 +172,23 @@ export const BusinessPage: React.FC = () => {
     if (activeTab === 'network') {
       loadFounders();
     }
+
+    const handleConnEvt = () => {
+      if (user?.id && activeTab === 'network') loadFounders();
+    };
+    window.addEventListener('connections_updated', handleConnEvt);
+
+    const channel = supabase
+      .channel('business-founders-conns')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'connections' }, () => {
+        if (user?.id && activeTab === 'network') loadFounders();
+      })
+      .subscribe();
+
+    return () => {
+      window.removeEventListener('connections_updated', handleConnEvt);
+      supabase.removeChannel(channel);
+    };
   }, [activeTab, user?.id]);
 
   const handleConnectClick = (target: any) => {
@@ -424,145 +454,168 @@ export const BusinessPage: React.FC = () => {
                 <div key={n} className="h-44 rounded-xl bg-slate-100 dark:bg-dark-850 animate-pulse border border-slate-200 dark:border-dark-800" />
               ))}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {founders
-                .filter((f) => {
-                  if (user?.id && (f.user_id === user.id || f.id === user.id)) return false;
-                  if (user?.email && f.email && f.email.toLowerCase() === user.email.toLowerCase()) return false;
-                  return true;
-                })
-                .map((f) => {
-                const displayName = f.full_name || 'Founder';
-                const username = f.username || displayName.toLowerCase().replace(/\s+/g, '_');
-                const profileUrl = f.user_id ? `/profile/${f.user_id}` : '/cofounders?category=founders';
-                const connStatus = f.user_id ? connectionStatusMap.get(f.user_id) : undefined;
-                const targetUserObj = {
-                  id: f.user_id || f.id,
-                  email: f.email || '',
-                  profile: {
-                    fullName: displayName,
-                    username: username,
-                    avatar: f.avatar,
-                    headline: f.headline,
-                  },
-                };
+          ) : (() => {
+            const visibleFounders = founders.filter((f) => {
+              if (user?.id && (f.user_id === user.id || f.id === user.id || f.userId === user.id)) return false;
+              if (user?.email && f.email && f.email.toLowerCase() === user.email.toLowerCase()) return false;
+              const fIds = [f.user_id, f.id, f.userId].filter(Boolean);
+              const isConnected = fIds.some(
+                (id) => connectionStatusMap.get(id) === 'ACCEPTED' || connectionStatusMap.get(id) === 'CONNECTED'
+              ) || f.connectionStatus === 'ACCEPTED' || f.connectionStatus === 'CONNECTED';
+              if (isConnected) return false;
+              return true;
+            });
 
-                return (
-                  <div
-                    key={f.id}
-                    className="p-4 sm:p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3.5"
+            if (visibleFounders.length === 0) {
+              return (
+                <div className="text-center py-8 px-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    You are connected with all featured founders. Explore more founders in the Co-Founders Directory!
+                  </p>
+                  <Link
+                    to="/cofounders?category=founders"
+                    className="inline-block mt-3 text-xs font-semibold text-brand-600 hover:text-brand-500"
                   >
-                    <div className="space-y-2.5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <Avatar
-                            src={f.avatar}
-                            name={displayName}
-                            size="lg"
-                          />
-                          <div>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <Link
-                                to={profileUrl}
-                                className="font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                    Browse Founders Directory &rarr;
+                  </Link>
+                </div>
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {visibleFounders.map((f) => {
+                  const displayName = f.full_name || 'Founder';
+                  const username = f.username || displayName.toLowerCase().replace(/\s+/g, '_');
+                  const profileUrl = f.user_id ? `/profile/${f.user_id}` : '/cofounders?category=founders';
+                  const connStatus = f.user_id ? connectionStatusMap.get(f.user_id) : undefined;
+                  const targetUserObj = {
+                    id: f.user_id || f.id,
+                    email: f.email || '',
+                    profile: {
+                      fullName: displayName,
+                      username: username,
+                      avatar: f.avatar,
+                      headline: f.headline,
+                    },
+                  };
+
+                  return (
+                    <div
+                      key={f.id}
+                      className="p-4 sm:p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3.5"
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar
+                              src={f.avatar}
+                              name={displayName}
+                              size="lg"
+                            />
+                            <div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <Link
+                                  to={profileUrl}
+                                  className="font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                                >
+                                  {displayName}
+                                </Link>
+                                <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
+                                  @{username}
+                                </span>
+                                <RoleBadge role="FOUNDER" size="sm" />
+                                <VerificationBadge badge="Verified Founder" isVerified={true} size="sm" />
+                              </div>
+                              <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 mt-0.5">{f.headline}</p>
+                              <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                                <span className="flex items-center gap-1">
+                                  <MapPin size={12} /> {f.location || 'Remote'}
+                                </span>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                  <Clock size={12} /> Full-time Founder
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {f.bio && (
+                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                            {f.bio}
+                          </p>
+                        )}
+
+                        {f.skills && (
+                          <div className="flex flex-wrap gap-1.5 pt-0.5">
+                            {f.skills.split(',').slice(0, 4).map((sk: string, idx: number) => (
+                              <span
+                                key={idx}
+                                className="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                               >
-                                {displayName}
-                              </Link>
-                              <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
-                                @{username}
+                                {sk.trim()}
                               </span>
-                              <RoleBadge role="FOUNDER" size="sm" />
-                              <VerificationBadge badge="Verified Founder" isVerified={true} size="sm" />
-                            </div>
-                            <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 mt-0.5">{f.headline}</p>
-                            <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
-                              <span className="flex items-center gap-1">
-                                <MapPin size={12} /> {f.location || 'Remote'}
-                              </span>
-                              <span>•</span>
-                              <span className="flex items-center gap-1">
-                                <Clock size={12} /> Full-time Founder
-                              </span>
-                            </div>
+                            ))}
                           </div>
-                        </div>
-                      </div>
-
-                      {f.bio && (
-                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                          {f.bio}
-                        </p>
-                      )}
-
-                      {f.skills && (
-                        <div className="flex flex-wrap gap-1.5 pt-0.5">
-                          {f.skills.split(',').slice(0, 4).map((sk: string, idx: number) => (
-                            <span
-                              key={idx}
-                              className="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                            >
-                              {sk.trim()}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
-                      <span className="text-xs text-slate-400 font-medium">
-                        Active Venture Creator
-                      </span>
-
-                      <div className="flex items-center gap-2">
-                        <Link
-                          to={profileUrl}
-                          className="btn-tertiary !text-xs sm:!text-sm !py-1.5 !px-2.5"
-                        >
-                          View Profile
-                        </Link>
-
-                        {/* Pitch Button */}
-                        <button
-                          onClick={() => handlePitchClick(targetUserObj)}
-                          className="btn-secondary !text-xs sm:!text-sm !py-1.5 !px-3 flex items-center gap-1"
-                          title="Propose Co-Founding or Synergy"
-                        >
-                          <Rocket size={13} /> Pitch
-                        </button>
-
-                        {/* Connection Button */}
-                        {connStatus === 'ACCEPTED' ? (
-                          <div className="flex items-center gap-1.5">
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
-                              <Check size={12} /> Connected
-                            </span>
-                            <Link
-                              to={`/messages?user=${f.user_id}`}
-                              className="btn-primary !text-xs sm:!text-sm !py-1.5 !px-2.5 flex items-center gap-1"
-                            >
-                              <MessageSquare size={13} /> Chat
-                            </Link>
-                          </div>
-                        ) : connStatus === 'PENDING' ? (
-                          <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
-                            Pending
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => handleConnectClick(targetUserObj)}
-                            className="btn-primary !text-xs sm:!text-sm !py-1.5 !px-3 flex items-center gap-1"
-                          >
-                            <UserPlus size={13} /> Connect
-                          </button>
                         )}
                       </div>
+
+                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-xs text-slate-400 font-medium">
+                          Active Venture Creator
+                        </span>
+
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to={profileUrl}
+                            className="btn-tertiary !text-xs sm:!text-sm !py-1.5 !px-2.5"
+                          >
+                            View Profile
+                          </Link>
+
+                          {/* Pitch Button */}
+                          <button
+                            onClick={() => handlePitchClick(targetUserObj)}
+                            className="btn-secondary !text-xs sm:!text-sm !py-1.5 !px-3 flex items-center gap-1"
+                            title="Propose Co-Founding or Synergy"
+                          >
+                            <Rocket size={13} /> Pitch
+                          </button>
+
+                          {/* Connection Button */}
+                          {connStatus === 'ACCEPTED' ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
+                                <Check size={12} /> Connected
+                              </span>
+                              <Link
+                                to={`/messages?user=${f.user_id}`}
+                                className="btn-primary !text-xs sm:!text-sm !py-1.5 !px-2.5 flex items-center gap-1"
+                              >
+                                <MessageSquare size={13} /> Chat
+                              </Link>
+                            </div>
+                          ) : connStatus === 'PENDING' ? (
+                            <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
+                              Pending
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleConnectClick(targetUserObj)}
+                              className="btn-primary !text-xs sm:!text-sm !py-1.5 !px-3 flex items-center gap-1"
+                            >
+                              <UserPlus size={13} /> Connect
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {/* Explore Other Specific Network Roles */}
           <div className="pt-4 border-t border-slate-200 dark:border-dark-800">

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, isDemoRecord } from '../../services/api';
+import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Investor, Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
@@ -69,6 +70,34 @@ export const InvestorsPage: React.FC = () => {
 
       const res = await api.getInvestors(params.toString());
       const rawList = res.investors || [];
+
+      let connectedIds = new Set<string>();
+      if (user?.id) {
+        try {
+          const { data: conns } = await supabase
+            .from('connections')
+            .select('sender_id, receiver_id')
+            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+            .eq('status', 'ACCEPTED');
+          (conns || []).forEach((c: any) => {
+            if (c.sender_id && c.sender_id !== user.id) connectedIds.add(c.sender_id);
+            if (c.receiver_id && c.receiver_id !== user.id) connectedIds.add(c.receiver_id);
+          });
+        } catch {}
+
+        try {
+          const apiConns = await api.getConnections().catch(() => ({ connections: [] }));
+          if (apiConns && Array.isArray(apiConns.connections)) {
+            apiConns.connections.forEach((conn: any) => {
+              const otherId = conn.userId || conn.user?.id || (conn.senderId === user.id ? conn.receiverId : conn.senderId);
+              if (otherId && otherId !== user.id) {
+                connectedIds.add(otherId);
+              }
+            });
+          }
+        } catch {}
+      }
+
       const seenEmails = new Set<string>();
       const seenIds = new Set<string>();
       const seenOrgs = new Set<string>();
@@ -81,12 +110,16 @@ export const InvestorsPage: React.FC = () => {
         const invId = (inv.id || inv.userId || inv.user?.id || '').trim();
         const invOrg = (inv.organization || '').toLowerCase().trim();
 
-        // Hide current logged in user from their own directory view
+        // Hide current logged in user and connected users from their own directory view
         if (user) {
           const curEmail = (user.email || '').toLowerCase().trim();
           const curId = (user.id || '').trim();
           if (curEmail && invEmail && curEmail === invEmail) continue;
           if (curId && invId && curId === invId) continue;
+          if (invId && connectedIds.has(invId)) continue;
+          if (inv.userId && connectedIds.has(inv.userId)) continue;
+          if (inv.user?.id && connectedIds.has(inv.user.id)) continue;
+          if (inv.connectionStatus === 'CONNECTED' || inv.connectionStatus === 'ACCEPTED') continue;
         }
 
         if (invEmail && seenEmails.has(invEmail)) continue;

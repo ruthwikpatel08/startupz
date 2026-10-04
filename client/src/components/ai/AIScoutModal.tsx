@@ -335,15 +335,36 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
             if (c.receiver_id && c.receiver_id !== currentUser.id) connectedIds.add(c.receiver_id);
           });
         } catch {}
+
+        try {
+          const apiConns = await api.getConnections().catch(() => ({ connections: [] }));
+          if (apiConns && Array.isArray(apiConns.connections)) {
+            apiConns.connections.forEach((conn: any) => {
+              const otherId = conn.userId || conn.user?.id || (conn.senderId === currentUser.id ? conn.receiverId : conn.senderId);
+              if (otherId && otherId !== currentUser.id) {
+                connectedIds.add(otherId);
+              }
+            });
+          }
+        } catch {}
       }
 
       // Filter out self and already connected people
       const candidatesList = Array.from(allCandidatesMap.values()).filter((cand) => {
         if (currentUser) {
-          if (cand.user_id === currentUser.id || cand.id === currentUser.id) return false;
+          if (cand.user_id === currentUser.id || cand.id === currentUser.id || cand.userId === currentUser.id) return false;
           if (cand.email && currentUser.email && cand.email.toLowerCase() === currentUser.email.toLowerCase()) return false;
         }
-        if (connectedIds.has(cand.user_id) || connectedIds.has(cand.id)) return false;
+        if (
+          (cand.user_id && connectedIds.has(cand.user_id)) ||
+          (cand.id && connectedIds.has(cand.id)) ||
+          (cand.userId && connectedIds.has(cand.userId)) ||
+          (cand.user?.id && connectedIds.has(cand.user.id)) ||
+          cand.connectionStatus === 'CONNECTED' ||
+          cand.connectionStatus === 'ACCEPTED'
+        ) {
+          return false;
+        }
         return true;
       });
 

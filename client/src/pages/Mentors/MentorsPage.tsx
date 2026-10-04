@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, isDemoRecord } from '../../services/api';
+import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Mentor } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
@@ -52,7 +53,44 @@ export const MentorsPage: React.FC = () => {
       if (industry !== 'ALL') params.append('industry', industry);
 
       const res = await api.getMentors(params.toString());
-      const clean = (res.mentors || []).filter((m: any) => !isDemoRecord(m));
+
+      let connectedIds = new Set<string>();
+      if (user?.id) {
+        try {
+          const { data: conns } = await supabase
+            .from('connections')
+            .select('sender_id, receiver_id')
+            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+            .eq('status', 'ACCEPTED');
+          (conns || []).forEach((c: any) => {
+            if (c.sender_id && c.sender_id !== user.id) connectedIds.add(c.sender_id);
+            if (c.receiver_id && c.receiver_id !== user.id) connectedIds.add(c.receiver_id);
+          });
+        } catch {}
+
+        try {
+          const apiConns = await api.getConnections().catch(() => ({ connections: [] }));
+          if (apiConns && Array.isArray(apiConns.connections)) {
+            apiConns.connections.forEach((conn: any) => {
+              const otherId = conn.userId || conn.user?.id || (conn.senderId === user.id ? conn.receiverId : conn.senderId);
+              if (otherId && otherId !== user.id) {
+                connectedIds.add(otherId);
+              }
+            });
+          }
+        } catch {}
+      }
+
+      const clean = (res.mentors || []).filter((m: any) => {
+        if (isDemoRecord(m)) return false;
+        if (user) {
+          if (m.userId === user.id || m.user?.id === user.id || m.id === user.id) return false;
+          if (user.email && m.user?.email && m.user.email.toLowerCase() === user.email.toLowerCase()) return false;
+          if (connectedIds.has(m.userId) || connectedIds.has(m.user?.id) || connectedIds.has(m.id)) return false;
+          if (m.connectionStatus === 'CONNECTED' || m.connectionStatus === 'ACCEPTED') return false;
+        }
+        return true;
+      });
       setMentors(clean);
     } catch (err) {
       console.error('Failed to load mentors:', err);
