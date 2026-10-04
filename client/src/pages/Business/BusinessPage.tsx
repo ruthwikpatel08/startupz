@@ -82,7 +82,8 @@ export const BusinessPage: React.FC = () => {
           .or('preferred_role.ilike.%founder%,headline.ilike.%founder%')
           .limit(8);
 
-        setFounders((supaProfiles || []).slice(0, 6));
+        const unique = Array.from(new Map((supaProfiles || []).map((f) => [f.full_name || f.id, f])).values());
+        setFounders(unique.slice(0, 6));
 
         // Fetch connection status if user logged in
         if (user?.id) {

@@ -256,6 +256,43 @@ export const ProfilePage: React.FC = () => {
     });
   };
 
+  const handleDeleteExperienceDirect = async (index: number) => {
+    if (!window.confirm('Are you sure you want to delete this work experience?')) return;
+    const list = [...parsedExperiences];
+    list.splice(index, 1);
+    const serializedExp = JSON.stringify(list);
+    try {
+      if (currentUser?.id) {
+        await supabase
+          .from('profiles')
+          .update({ startup_experience: serializedExp })
+          .eq('user_id', currentUser.id);
+        invalidateUserProfileCache(currentUser.id);
+      }
+      setProfileUser((prev: any) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          profile: {
+            ...(prev.profile || {}),
+            startupExperience: serializedExp,
+          },
+        };
+      });
+      if (currentUser?.profile) {
+        updateUser({
+          ...currentUser,
+          profile: {
+            ...currentUser.profile,
+            startupExperience: serializedExp,
+          },
+        });
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete experience.');
+    }
+  };
+
   // Auto-open edit modal if requested via URL (?edit=true)
   useEffect(() => {
     if (searchParams.get('edit') === 'true' && isMe) {
@@ -1359,17 +1396,29 @@ export const ProfilePage: React.FC = () => {
               {parsedExperiences.length > 0 ? (
                 <div className="relative pl-5 border-l-2 border-slate-200 dark:border-dark-800 space-y-5">
                   {parsedExperiences.map((exp, idx) => (
-                    <div key={exp.id || idx} className="relative">
+                    <div key={exp.id || idx} className="relative group">
                       <div className="absolute -left-[27px] top-1.5 w-3.5 h-3.5 rounded-full bg-brand-600 border-2 border-white dark:border-dark-900" />
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                            {exp.category || p.preferredRole || 'Founders'}
-                          </h3>
-                          {exp.company && (
-                            <span className="text-xs font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/70 px-2 py-0.5 rounded border border-brand-200/60 dark:border-brand-900/60 font-mono">
-                              {exp.company.toUpperCase()}
-                            </span>
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                              {exp.category || p.preferredRole || 'Founders'}
+                            </h3>
+                            {exp.company && (
+                              <span className="text-xs font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/70 px-2 py-0.5 rounded border border-brand-200/60 dark:border-brand-900/60 font-mono">
+                                {exp.company.toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          {isMe && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteExperienceDirect(idx)}
+                              title="Delete experience"
+                              className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                            >
+                              <Trash2 size={13} />
+                            </button>
                           )}
                         </div>
 

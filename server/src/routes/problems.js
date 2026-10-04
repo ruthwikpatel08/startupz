@@ -560,15 +560,19 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
 
 /**
  * DELETE /api/problems/:id
- * Delete a problem statement (Admin Only)
+ * Delete a problem statement (Creator or Admin)
  */
-router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
+router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
     const existing = await prisma.problem.findUnique({ where: { id } });
     if (!existing) {
       return res.status(404).json({ error: 'Problem statement not found.' });
+    }
+
+    if (existing.creatorId !== req.user.id && !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Unauthorized to delete this problem statement.' });
     }
 
     await prisma.problem.delete({ where: { id } });

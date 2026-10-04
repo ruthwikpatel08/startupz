@@ -77,7 +77,7 @@ export const LandingPage: React.FC = () => {
           });
         }
 
-        // Format raw profiles to extract clean role label
+        // Format raw profiles to extract clean role label from real profiles only
         const mappedFiltered = filtered.map((p) => {
           let roleLabel = 'Other';
           const pref = p.preferred_role || '';
@@ -91,8 +91,9 @@ export const LandingPage: React.FC = () => {
           return { ...p, role_label: roleLabel };
         });
 
+        const unique = Array.from(new Map(mappedFiltered.map((item) => [item.full_name || item.id, item])).values());
         if (isMounted) {
-          setOtherProfiles(mappedFiltered.slice(0, 8));
+          setOtherProfiles(unique.slice(0, 8));
         }
       } catch {
         // Fallback

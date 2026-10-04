@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
+import { supabase } from '../../lib/supabase';
 import { Post, Startup, Problem } from '../../types';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -33,7 +34,6 @@ import {
   Trash2,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
 
 export const StartupFeedPage: React.FC = () => {
   const { user } = useAuth();
@@ -107,51 +107,25 @@ export const StartupFeedPage: React.FC = () => {
         p.postType === 'LAUNCH' ||
         p.postType === 'FUNDING' ||
         p.postType === 'UPDATE' ||
-        (p.title && /achieve|launch|milestone|funding|won|revenue/i.test(p.title)) ||
-        /achieve|launch|milestone|funding|won|revenue|growth/i.test(p.content)
+        p.postType === 'EXPERIENCE' ||
+        (p.title && /achieve|launch|milestone|funding|won|revenue|experience/i.test(p.title)) ||
+        /achieve|launch|milestone|funding|won|revenue|growth|experience/i.test(p.content)
       );
     }
     if (activePillar === 'IDEAS') {
       if (filterType !== 'ALL') return p.postType === filterType;
       return (
-        p.postType === 'IDEA' ||
-        p.postType === 'EXPERIENCE' ||
         p.postType === 'COFOUNDER' ||
         p.postType === 'HIRING' ||
         p.postType === 'ADVICE' ||
         p.postType === 'UPDATE' ||
-        (p.title && /idea|build|concept|mvp|vision|seeking|experience/i.test(p.title)) ||
-        /idea|build|concept|mvp|vision|seeking|collaborat|experience/i.test(p.content)
+        p.postType === 'IDEA' ||
+        (p.title && /idea|build|concept|mvp|vision|seeking/i.test(p.title)) ||
+        /idea|build|concept|mvp|vision|seeking|collaborat/i.test(p.content)
       );
     }
     return true;
   });
-
-  const handleDeletePost = async (postId: string) => {
-    if (!user) return;
-    if (!window.confirm('Are you sure you want to delete this post?')) return;
-    try {
-      try { await api.deletePost(postId); } catch {}
-      try { await supabase.from('posts').delete().eq('id', postId); } catch {}
-      setPosts((prev) => prev.filter((p) => p.id !== postId));
-    } catch (err: any) {
-      console.error('Failed to delete post:', err);
-      alert(err.message || 'Failed to delete post.');
-    }
-  };
-
-  const handleDeleteProblem = async (problemId: string) => {
-    if (!user) return;
-    if (!window.confirm('Are you sure you want to delete this problem statement?')) return;
-    try {
-      try { await api.deleteProblem(problemId); } catch {}
-      try { await supabase.from('problems').delete().eq('id', problemId); } catch {}
-      setProblems((prev) => prev.filter((p) => p.id !== problemId));
-    } catch (err: any) {
-      console.error('Failed to delete problem:', err);
-      alert(err.message || 'Failed to delete problem statement.');
-    }
-  };
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,7 +183,6 @@ export const StartupFeedPage: React.FC = () => {
         };
       }
 
-      // Insert new post at top of feed
       if (createdPost) {
         setPosts((prev) => [createdPost, ...prev]);
       }
@@ -299,16 +272,41 @@ export const StartupFeedPage: React.FC = () => {
     setTimeout(() => setCopiedPostId(null), 2000);
   };
 
+  const handleDeletePost = async (postId: string) => {
+    if (!window.confirm('Are you sure you want to delete this post?')) return;
+    try {
+      try {
+        await api.deletePost(postId);
+      } catch (apiErr) {
+        // Fallback: direct Supabase delete
+        await supabase.from('posts').delete().eq('id', postId);
+      }
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete post.');
+    }
+  };
+
+  const handleDeleteProblem = async (problemId: string) => {
+    if (!window.confirm('Are you sure you want to delete this startup idea?')) return;
+    try {
+      await api.deleteProblem(problemId);
+      setProblems((prev) => prev.filter((p) => p.id !== problemId));
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete idea.');
+    }
+  };
+
   const postTypes = [
     { key: 'ALL', label: 'All Updates' },
     { key: 'IDEA', label: '💡 Ideas' },
-    { key: 'EXPERIENCE', label: '⭐ Experiences' },
+    { key: 'EXPERIENCE', label: '📖 Experiences' },
     { key: 'UPDATE', label: '🚀 Updates' },
     { key: 'LAUNCH', label: '🎉 Launches' },
     { key: 'COFOUNDER', label: '🤝 Co-Founder' },
     { key: 'HIRING', label: '💼 Hiring' },
     { key: 'FUNDING', label: '💰 Funding' },
-    { key: 'ADVICE', label: '💡 Advice' },
+    { key: 'ADVICE', label: '💬 Advice' },
   ];
 
   const getPostTypeBadge = (type: string) => {
@@ -316,7 +314,7 @@ export const StartupFeedPage: React.FC = () => {
       case 'IDEA':
         return 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800';
       case 'EXPERIENCE':
-        return 'bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border-sky-200 dark:border-sky-800';
+        return 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800';
       case 'LAUNCH':
         return 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800';
       case 'COFOUNDER':
@@ -433,7 +431,7 @@ export const StartupFeedPage: React.FC = () => {
               onClick={() => setComposerOpen(!composerOpen)}
               className="flex-1 text-left px-3.5 py-2 rounded-md bg-slate-50 dark:bg-dark-850 hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-500 text-xs font-normal border border-slate-200/80 dark:border-dark-700/80 transition-colors"
             >
-              Share a startup update, ask for advice, or hire co-founders...
+              Share an idea, work experience, startup milestone, or question...
             </button>
           </div>
 
@@ -442,14 +440,14 @@ export const StartupFeedPage: React.FC = () => {
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-xs font-medium text-slate-500 mr-1">Post Type:</span>
                 {[
-                  { id: 'IDEA', label: '🚀 Idea' },
-                  { id: 'EXPERIENCE', label: '⭐ Experience' },
-                  { id: 'UPDATE', label: 'Update' },
-                  { id: 'LAUNCH', label: 'Product Launch' },
-                  { id: 'COFOUNDER', label: 'Seeking Co-Founder' },
-                  { id: 'HIRING', label: 'Hiring Talent' },
-                  { id: 'FUNDING', label: 'Funding Round' },
-                  { id: 'ADVICE', label: 'Ask for Advice' },
+                  { id: 'IDEA', label: '💡 Idea' },
+                  { id: 'EXPERIENCE', label: '📖 Experience' },
+                  { id: 'UPDATE', label: '🚀 Update' },
+                  { id: 'LAUNCH', label: '🎉 Product Launch' },
+                  { id: 'COFOUNDER', label: '🤝 Co-Founder' },
+                  { id: 'HIRING', label: '💼 Hiring Talent' },
+                  { id: 'FUNDING', label: '💰 Funding Round' },
+                  { id: 'ADVICE', label: '💬 Advice' },
                 ].map((t) => (
                   <button
                     key={t.id}
@@ -470,7 +468,7 @@ export const StartupFeedPage: React.FC = () => {
                 type="text"
                 value={postTitle}
                 onChange={(e) => setPostTitle(e.target.value)}
-                placeholder="Post title or milestone headline (optional)"
+                placeholder="Post title, idea headline, or experience topic (optional)"
                 className="input-base w-full px-3 py-2 text-xs"
               />
 
@@ -478,7 +476,7 @@ export const StartupFeedPage: React.FC = () => {
                 required
                 value={postContent}
                 onChange={(e) => setPostContent(e.target.value)}
-                placeholder="Write your update, metrics, co-founder criteria, or question..."
+                placeholder="Write your idea, work experience, metrics, co-founder criteria, or question..."
                 rows={4}
                 className="input-base w-full px-3 py-2 text-xs resize-none"
               />
@@ -591,7 +589,6 @@ export const StartupFeedPage: React.FC = () => {
             const authorName = author?.profile?.fullName || author?.email || 'Founder';
             const authorHeadline = author?.profile?.headline || author?.role;
             const isCommentsOpen = !!expandedComments[post.id];
-            const isAuthor = user && (user.id === post.authorId || user.id === author?.id || (user.email && author?.email && user.email.toLowerCase() === author.email.toLowerCase()) || user.isAdmin);
 
             return (
               <div
@@ -632,8 +629,8 @@ export const StartupFeedPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Post Type Badge & Delete / Report Actions */}
-                  <div className="flex items-center gap-2">
+                  {/* Post Type Badge & Report / Delete Dropdown */}
+                  <div className="flex items-center gap-1.5">
                     <span
                       className={`text-[11px] font-medium px-2 py-0.5 rounded-md border ${getPostTypeBadge(
                         post.postType
@@ -642,12 +639,11 @@ export const StartupFeedPage: React.FC = () => {
                       {post.postType}
                     </span>
 
-                    {/* Delete option for the author */}
-                    {isAuthor && (
+                    {(user?.id === post.authorId || user?.id === author?.id || user?.isAdmin) && (
                       <button
                         onClick={() => handleDeletePost(post.id)}
                         title="Delete Post"
-                        className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+                        className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
                       >
                         <Trash2 size={14} />
                       </button>

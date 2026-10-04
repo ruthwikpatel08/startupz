@@ -214,7 +214,7 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
         // Backend optional
       }
 
-      // Format & merge all real candidates from database and API
+      // Format & merge real candidates only (No fake / starter data)
       const allCandidatesMap = new Map<string, any>();
 
       // Put Supabase profiles
@@ -302,12 +302,12 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
         return true;
       });
 
-      // Intelligent scoring engine with 100% match capability
-      const scoredCandidates = candidatesList
+      // Intelligent scoring engine with strict relevance (No fake matching)
+      const scoredCandidates = (candidatesList
         .map((cand) => {
           const text = `${cand.full_name} ${cand.headline || ''} ${cand.bio || ''} ${cand.skills || ''} ${cand.preferred_role || ''} ${cand.location || ''} ${cand.education || ''}`.toLowerCase();
-
-          let score = 0;
+          
+          let score = 50;
           const matchReasons: string[] = [];
 
           let hasLocMatch = false;
@@ -315,20 +315,20 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
           let hasProfMatch = false;
           let hasColMatch = false;
           let hasSkillMatch = false;
-          let wordMatchCount = 0;
+          let hasQueryWordMatch = false;
 
           // 1. Location match
           if (interpretation.detectedDistrict && text.includes(interpretation.detectedDistrict.toLowerCase())) {
-            score += 40;
+            score += 35;
             hasDistrictMatch = true;
             hasLocMatch = true;
-            matchReasons.push(`District: ${interpretation.detectedDistrict} (${interpretation.detectedState || 'India'})`);
+            matchReasons.push(`District: ${interpretation.detectedDistrict} (${interpretation.detectedState})`);
           } else if (interpretation.detectedState && text.includes(interpretation.detectedState.toLowerCase())) {
-            score += 30;
+            score += 25;
             hasLocMatch = true;
             matchReasons.push(`State: ${interpretation.detectedState}`);
           } else if (interpretation.detectedLocation && text.includes(interpretation.detectedLocation.toLowerCase())) {
-            score += 25;
+            score += 20;
             hasLocMatch = true;
             matchReasons.push(`Location: ${interpretation.detectedLocation}`);
           }
@@ -337,7 +337,7 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
           if (interpretation.detectedProfession) {
             const prof = interpretation.detectedProfession.toLowerCase();
             if (text.includes(prof) || (cand.preferred_role || '').toLowerCase().includes(prof)) {
-              score += 35;
+              score += 30;
               hasProfMatch = true;
               matchReasons.push(`Role match: ${interpretation.detectedProfession}`);
             }
@@ -347,7 +347,7 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
           if (interpretation.detectedCollege) {
             const colShort = interpretation.detectedCollege.toLowerCase().split('(')[0].trim();
             if (text.includes(colShort) || (text.includes('niat') && interpretation.detectedCollege.includes('NIAT'))) {
-              score += 35;
+              score += 30;
               hasColMatch = true;
               matchReasons.push(`Institution: ${interpretation.detectedCollege.split('(')[0].trim()}`);
             }
@@ -355,27 +355,30 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
 
           // 4. Skills match
           interpretation.detectedSkills.forEach((sk) => {
-            if (text.includes(sk.toLowerCase())) {
-              score += 25;
+            if (text.includes(sk)) {
+              score += 15;
               hasSkillMatch = true;
-              matchReasons.push(`Skill: ${sk.toUpperCase()}`);
+              matchReasons.push(`Skill: ${(sk || '').toUpperCase()}`);
             }
           });
 
-          // 5. Basic query word overlap (filtering common stop words)
-          const stopWords = new Set(['and', 'for', 'the', 'with', 'who', 'any', 'from', 'in', 'at', 'to', 'is', 'are', 'find', 'show', 'me', 'want', 'need']);
+          // 5. Basic query word overlap (excluding noise words)
+          const stopWords = new Set(['the', 'and', 'for', 'with', 'from', 'who', 'any', 'looking', 'want', 'need', 'find', 'show', 'all', 'user', 'users', 'people', 'person', 'profile', 'profiles', 'startup', 'startups']);
           const queryWords = adjustedText.toLowerCase().split(/\s+/).filter((w) => w.length > 2 && !stopWords.has(w));
           queryWords.forEach((word) => {
             if (text.includes(word) && !interpretation.detectedSkills.includes(word)) {
               score += 10;
-              wordMatchCount++;
+              hasQueryWordMatch = true;
+              if (!matchReasons.some((r) => r.toLowerCase().includes(word))) {
+                matchReasons.push(`Keyword match: ${word}`);
+              }
             }
           });
 
-          // Check if candidate matched ANY search criteria
-          const isMatched = hasLocMatch || hasProfMatch || hasColMatch || hasSkillMatch || wordMatchCount > 0;
-          if (!isMatched) {
-            return null; // Exclude unrelated candidate completely
+          // STRICT RELEVANCE: If candidate has ZERO relation to what the user searched, DO NOT return them!
+          const isRelated = hasLocMatch || hasProfMatch || hasColMatch || hasSkillMatch || hasQueryWordMatch;
+          if (!isRelated) {
+            return null;
           }
 
           // 100% Match Engine: If candidate fulfills user-requested criteria, grant 100%!
@@ -393,21 +396,21 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
               (criteriaCount >= 2 && matchedCount >= 2) ||
               (hasDistrictMatch && (hasProfMatch || hasColMatch)) ||
               (hasProfMatch && hasLocMatch) ||
-              score >= 55
+              score >= 95
             ) {
               score = 100;
             }
           }
 
-          const finalScore = Math.min(100, Math.max(score, 70));
+          const finalScore = Math.min(100, Math.max(65, score));
 
           return {
             ...cand,
             matchScore: finalScore,
-            matchReasons: matchReasons.length > 0 ? matchReasons : [`Keyword matched: "${rawQ}"`],
+            matchReasons: matchReasons.length > 0 ? matchReasons : ['Matches search keywords'],
           };
         })
-        .filter(Boolean) as any[];
+      ).filter(Boolean) as any[];
 
       // Filter and sort by highest match
       scoredCandidates.sort((a, b) => b.matchScore - a.matchScore);
@@ -589,26 +592,35 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
               <div className="space-y-3 max-h-[52vh] overflow-y-auto pr-1">
                 {results.results?.length === 0 ? (
                   <div className="py-12 text-center space-y-3">
-                    <div className="w-12 h-12 mx-auto rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                    <div className="w-12 h-12 mx-auto rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center">
                       <Users size={22} />
                     </div>
-                    <div className="space-y-1">
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                        No users found
-                      </h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                        There is no person related to "{results.query}". Try searching with different keywords, locations, or skills.
-                      </p>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      No users found
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                      No users found matching your search query. Try broadening your keywords, roles, or locations.
+                    </p>
+                    <div className="pt-2 flex items-center justify-center gap-3">
+                      <button
+                        onClick={() => {
+                          setQuery('');
+                          setResults(null);
+                        }}
+                        className="btn-secondary !text-xs !py-1.5 !px-3"
+                      >
+                        Try Another Search
+                      </button>
+                      <button
+                        onClick={() => {
+                          onClose();
+                          navigate('/cofounders');
+                        }}
+                        className="btn-primary !text-xs !py-1.5 !px-3"
+                      >
+                        Browse Talent Directory →
+                      </button>
                     </div>
-                    <button
-                      onClick={() => {
-                        onClose();
-                        navigate('/cofounders');
-                      }}
-                      className="inline-block mt-2 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
-                    >
-                      Browse full Talent Directory →
-                    </button>
                   </div>
                 ) : (
                   results.results.map((candidate: any) => {

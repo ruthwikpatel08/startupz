@@ -219,8 +219,8 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
             </a>
           )}
 
-          {/* Management Controls for Creator and Admin */}
-          {(user?.isAdmin || (user && (user.id === (problem as any).authorId || user.id === (problem as any).userId || ((problem as any).author?.id && user.id === (problem as any).author.id)))) && (
+          {/* Creator & Admin Management Controls */}
+          {(user?.isAdmin || (user?.id && (user.id === (problem as any).authorId || user.id === (problem as any).userId || user.id === (problem as any).creatorId))) && (
             <div className="flex items-center gap-1 ml-1 border-l border-slate-200 dark:border-dark-800 pl-1.5">
               {user?.isAdmin && (
                 <Link
@@ -231,15 +231,28 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
                   <Edit size={13} />
                 </Link>
               )}
-              {onDelete && (
-                <button
-                  onClick={() => onDelete(problem.id)}
-                  className="p-1 rounded text-slate-400 hover:text-rose-500 transition-colors"
-                  title="Delete Problem Statement"
-                >
-                  <Trash2 size={13} />
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (!window.confirm('Are you sure you want to delete this startup idea / problem statement?')) return;
+                  if (onDelete) {
+                    onDelete(problem.id);
+                  } else {
+                    try {
+                      await api.deleteProblem(problem.id);
+                      window.location.reload();
+                    } catch (err: any) {
+                      alert(err.message || 'Failed to delete problem statement.');
+                    }
+                  }
+                }}
+                className="p-1 rounded text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
+                title="Delete Problem Statement"
+              >
+                <Trash2 size={13} />
+              </button>
             </div>
           )}
         </div>

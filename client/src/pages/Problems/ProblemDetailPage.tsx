@@ -137,16 +137,18 @@ export const ProblemDetailPage: React.FC = () => {
             <span>Back to Problem Statements</span>
           </Link>
 
-          {/* Admin Controls */}
-          {user?.isAdmin && (
+          {/* Creator & Admin Controls */}
+          {(user?.isAdmin || (user?.id && (user.id === (problem as any).authorId || user.id === (problem as any).userId || user.id === (problem as any).creatorId))) && (
             <div className="flex items-center gap-2">
-              <Link
-                to={`/admin/problems/${problem.id}/edit`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/40 hover:bg-brand-100 transition-colors border border-brand-200/60 dark:border-brand-900/40"
-              >
-                <Edit size={13} />
-                <span>Edit (Admin)</span>
-              </Link>
+              {user?.isAdmin && (
+                <Link
+                  to={`/admin/problems/${problem.id}/edit`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/40 hover:bg-brand-100 transition-colors border border-brand-200/60 dark:border-brand-900/40"
+                >
+                  <Edit size={13} />
+                  <span>Edit</span>
+                </Link>
+              )}
               <button
                 onClick={handleDelete}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 transition-colors border border-rose-200/60 dark:border-rose-900/40"
