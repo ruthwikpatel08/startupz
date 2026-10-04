@@ -10,21 +10,34 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { NewUserCategoryModal } from './components/auth/NewUserCategoryModal';
 
 
-// Eager Core Pages
+// Eager Core Pages (Auth & Landing)
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/Auth/LoginPage';
+import { RegisterPage } from './pages/Auth/RegisterPage';
+import { AuthCallbackPage } from './pages/Auth/AuthCallbackPage';
 
-// Helper for clean lazy-loading named exports
+// Helper for clean lazy-loading named exports with deployment chunk fallback
 const lazyPage = <T extends Record<string, any>, K extends keyof T>(
   importer: () => Promise<T>,
   name: K
-) => React.lazy(() => importer().then((mod) => ({ default: mod[name] })));
+) =>
+  React.lazy(() =>
+    importer()
+      .then((mod) => ({ default: mod[name] }))
+      .catch((err) => {
+        console.warn(`Dynamic import failed for ${String(name)}, reloading page...`, err);
+        const storageKey = `startupz_chunk_reload_${String(name)}`;
+        if (!sessionStorage.getItem(storageKey)) {
+          sessionStorage.setItem(storageKey, 'true');
+          window.location.reload();
+        }
+        throw err;
+      })
+  );
 
 // Lazy-Loaded Tools & Pages (Code-split into async chunks for maximum performance)
-const RegisterPage = lazyPage(() => import('./pages/Auth/RegisterPage'), 'RegisterPage');
 const ForgotPasswordPage = lazyPage(() => import('./pages/Auth/ForgotPasswordPage'), 'ForgotPasswordPage');
 const ResetPasswordPage = lazyPage(() => import('./pages/Auth/ResetPasswordPage'), 'ResetPasswordPage');
-const AuthCallbackPage = lazyPage(() => import('./pages/Auth/AuthCallbackPage'), 'AuthCallbackPage');
 const DashboardPage = lazyPage(() => import('./pages/Dashboard/DashboardPage'), 'DashboardPage');
 const BusinessPage = lazyPage(() => import('./pages/Business/BusinessPage'), 'BusinessPage');
 const ProjectsPage = lazyPage(() => import('./pages/Projects/ProjectsPage'), 'ProjectsPage');

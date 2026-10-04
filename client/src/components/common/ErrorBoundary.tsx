@@ -22,6 +22,18 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('StartupZ ErrorBoundary caught error:', error, errorInfo);
+    // Auto-recover from stale deployment chunk errors (e.g. Failed to fetch dynamically imported module)
+    if (
+      error?.message?.includes('dynamically imported module') ||
+      error?.message?.includes('Failed to fetch') ||
+      error?.message?.includes('Importing a module script failed')
+    ) {
+      const storageKey = 'startupz_stale_chunk_reload';
+      if (!sessionStorage.getItem(storageKey)) {
+        sessionStorage.setItem(storageKey, 'true');
+        window.location.reload();
+      }
+    }
   }
 
   private handleReset = () => {
