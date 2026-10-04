@@ -1,6 +1,7 @@
 import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
+import { deleteSupabaseUserCompletely } from '../supabase.js';
 
 const router = express.Router();
 
@@ -543,46 +544,71 @@ router.put('/profile', requireAuth, async (req, res) => {
 router.delete('/me', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
+    const userEmail = (req.body?.email || req.user.email || '').toLowerCase().trim();
 
-    // Delete all user related entities safely
-    await prisma.connection.deleteMany({
-      where: { OR: [{ senderId: userId }, { receiverId: userId }] },
-    });
-    await prisma.startupProposal.deleteMany({
-      where: { OR: [{ senderId: userId }, { receiverId: userId }] },
-    });
-    await prisma.message.deleteMany({
-      where: { OR: [{ senderId: userId }, { receiverId: userId }] },
-    });
-    await prisma.conversation.deleteMany({
-      where: { OR: [{ participant1Id: userId }, { participant2Id: userId }] },
-    });
-    await prisma.notification.deleteMany({
-      where: { OR: [{ userId }, { senderId: userId }] },
-    });
-    await prisma.like.deleteMany({ where: { userId } });
-    await prisma.comment.deleteMany({ where: { userId } });
-    await prisma.savedItem.deleteMany({ where: { userId } });
-    await prisma.startupFollow.deleteMany({ where: { userId } });
-    await prisma.opportunityApplication.deleteMany({ where: { applicantId: userId } });
-    await prisma.investor.deleteMany({ where: { userId } });
-    await prisma.mentor.deleteMany({ where: { userId } });
-    await prisma.mentorshipRequest.deleteMany({
-      where: { OR: [{ founderId: userId }, { mentorId: userId }] },
-    });
-    await prisma.videoMeeting.deleteMany({
-      where: { OR: [{ hostId: userId }, { guestId: userId }] },
-    });
-    await prisma.report.deleteMany({ where: { reporterId: userId } });
-    await prisma.verificationRequest.deleteMany({ where: { userId } });
-    await prisma.raisedSolution.deleteMany({ where: { userId } });
-    await prisma.startupMember.deleteMany({ where: { userId } });
-    await prisma.post.deleteMany({ where: { authorId: userId } });
-    await prisma.startup.deleteMany({ where: { founderId: userId } });
-    await prisma.profile.deleteMany({ where: { userId } });
-    await prisma.user.delete({ where: { id: userId } });
+    console.log(`[Backend Delete] Starting permanent account deletion for User ID: ${userId}, Email: ${userEmail}`);
 
-    return res.json({ message: 'Account permanently deleted.' });
+    // 1. Delete all Supabase Auth identities and Supabase PostgreSQL data (profiles, users, conversations, etc.)
+    await deleteSupabaseUserCompletely(userId, userEmail);
+
+    // 2. Discover all matching user records in Prisma SQLite/DB by ID or Email
+    const matchingPrismaUsers = await prisma.user.findMany({
+      where: {
+        OR: [
+          { id: userId },
+          ...(userEmail ? [{ email: userEmail }] : []),
+        ],
+      },
+    });
+
+    const targetUserIds = Array.from(new Set([userId, ...matchingPrismaUsers.map((u) => u.id)]));
+
+    // 3. Delete all related entities in Prisma
+    for (const pId of targetUserIds) {
+      await prisma.connection.deleteMany({
+        where: { OR: [{ senderId: pId }, { receiverId: pId }] },
+      });
+      await prisma.startupProposal.deleteMany({
+        where: { OR: [{ senderId: pId }, { receiverId: pId }] },
+      });
+      await prisma.message.deleteMany({
+        where: { OR: [{ senderId: pId }, { receiverId: pId }] },
+      });
+      await prisma.conversation.deleteMany({
+        where: { OR: [{ participant1Id: pId }, { participant2Id: pId }] },
+      });
+      await prisma.notification.deleteMany({
+        where: { OR: [{ userId: pId }, { senderId: pId }] },
+      });
+      await prisma.like.deleteMany({ where: { userId: pId } });
+      await prisma.comment.deleteMany({ where: { userId: pId } });
+      await prisma.savedItem.deleteMany({ where: { userId: pId } });
+      await prisma.startupFollow.deleteMany({ where: { userId: pId } });
+      await prisma.opportunityApplication.deleteMany({ where: { applicantId: pId } });
+      await prisma.investor.deleteMany({ where: { userId: pId } });
+      await prisma.mentor.deleteMany({ where: { userId: pId } });
+      await prisma.mentorshipRequest.deleteMany({
+        where: { OR: [{ founderId: pId }, { mentorId: pId }, { mentorUserId: pId }] },
+      });
+      await prisma.videoMeeting.deleteMany({
+        where: { OR: [{ hostId: pId }, { guestId: pId }] },
+      });
+      await prisma.report.deleteMany({ where: { reporterId: pId } });
+      await prisma.verificationRequest.deleteMany({ where: { userId: pId } });
+      await prisma.raisedSolution.deleteMany({ where: { authorId: pId } });
+      await prisma.startupMember.deleteMany({ where: { userId: pId } });
+      await prisma.problem.deleteMany({ where: { createdBy: pId } });
+      await prisma.post.deleteMany({ where: { authorId: pId } });
+      await prisma.startup.deleteMany({ where: { founderId: pId } });
+      await prisma.profile.deleteMany({ where: { userId: pId } });
+      await prisma.user.deleteMany({ where: { id: pId } });
+    }
+
+    if (userEmail) {
+      await prisma.user.deleteMany({ where: { email: userEmail } });
+    }
+
+    return res.json({ success: true, message: 'Account permanently deleted from all services.' });
   } catch (error) {
     console.error('Delete account error:', error);
     return res.status(500).json({ error: 'Failed to permanently delete account.' });

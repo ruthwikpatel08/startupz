@@ -97,21 +97,7 @@ export const LoginPage: React.FC = () => {
     }
 
     try {
-      const loggedIn = await loginWithPasswordOrUsername(cleanIdentifier, password);
-      if (loggedIn?.profile && (loggedIn.profile as any).is_deleted) {
-        // Deleted account re-logging in: Reactivate as brand new user and ask from first!
-        try {
-          await upsertUserProfile(loggedIn.id, {
-            is_deleted: false,
-            is_category_selected: false,
-            startup_experience: '',
-            education: '',
-            bio: '',
-            skills: '',
-          });
-          invalidateUserProfileCache(loggedIn.id);
-        } catch {}
-      }
+      await loginWithPasswordOrUsername(cleanIdentifier, password);
       navigate('/');
     } catch (err: any) {
       console.warn('Sign-in error:', err);

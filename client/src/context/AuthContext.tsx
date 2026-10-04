@@ -62,9 +62,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // 1. Fetch StartupZ profile from Supabase public.profiles (cached & deduplicated in lib/supabase)
         let profileRow = await fetchUserProfile(userId);
 
-        // 2. If profile does not exist yet or was marked deleted,
+        // 2. If profile does not exist yet (e.g. brand new user or returning deleted user),
         // treat user as a brand-new user and prompt from first (is_category_selected: false)
-        if (!profileRow || profileRow.is_deleted === true) {
+        if (!profileRow) {
           const metadata = authUser.user_metadata || {};
           const isGoogle =
             authUser.app_metadata?.provider === 'google' ||
@@ -84,7 +84,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             avatar,
             preferred_role: role,
             is_category_selected: false, // Always ask from first for new and deleted re-entered users
-            is_deleted: false,
             auth_provider: isGoogle ? 'google' : 'email',
             email: authUser.email || '',
             startup_experience: '',
@@ -425,109 +424,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const appUser = await loadUserFromSupabase(data.session);
         if (appUser) return appUser;
       }
+    } catch (err: any) {
+      // Proceed to backend API verification
+    }
 
-      // If email unconfirmed, proceed to grant access
-      if (signInError && (signInError.message.toLowerCase().includes('not confirmed') || signInError.message.toLowerCase().includes('unconfirmed'))) {
-        console.info('Supabase email unconfirmed, granting verified session');
-      } else if (signInError && !signInError.message.toLowerCase().includes('invalid login credentials')) {
-        throw signInError;
+    // 2. Try Backend API login with password hash verification
+    try {
+      const res = await api.login({ email: resolvedEmail, password });
+      if (res && res.user && res.token) {
+        const appUser = res.user;
+        setUser(appUser);
+        setToken(res.token);
+        localStorage.setItem('startupz_user', JSON.stringify(appUser));
+        localStorage.setItem('startupz_token', res.token);
+        return appUser;
       }
     } catch (err: any) {
-      if (!err.message?.toLowerCase().includes('invalid login credentials') && !err.message?.toLowerCase().includes('not confirmed')) {
-        throw err;
-      }
+      // Backend login also rejected credentials
     }
 
-    // 2. Check public.profiles for account (e.g. accounts registered with Google or existing users)
-    let profileRow: any = null;
-    try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .or(`email.ilike.${resolvedEmail},full_name.ilike.${cleanId}`)
-        .limit(1)
-        .maybeSingle();
-      profileRow = data;
-    } catch {
-      // Query fallback
-    }
-
-    const userId =
-      profileRow?.user_id ||
-      profileRow?.id ||
-      'usr_' + Math.abs(resolvedEmail.split('').reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0)).toString(16);
-    const fullName = profileRow?.full_name || cleanId.split('@')[0];
-    const role = profileRow?.preferred_role || 'FOUNDER';
-    const avatar = profileRow?.avatar || null;
-
-    const appUser: User = {
-      id: userId,
-      email: resolvedEmail,
-      role,
-      isVerified: true,
-      verificationBadge: 'Verified Member',
-      isSuspended: false,
-      isAdmin: resolvedEmail.includes('admin') || cleanId.toLowerCase() === 'admin',
-      createdAt: profileRow?.created_at || new Date().toISOString(),
-      profile: {
-        id: userId,
-        userId,
-        fullName,
-        headline: profileRow?.headline || `${role} | Startup Builder`,
-        location: profileRow?.location || 'Remote',
-        avatar,
-        skills: profileRow?.skills || '',
-        availability: profileRow?.availability || 'Full-time',
-        profileCompletion: profileRow?.profile_completion || 60,
-      } as any,
-    };
-
-    setUser(appUser);
-    localStorage.setItem('startupz_user', JSON.stringify(appUser));
-    recordAuthProviderHint(resolvedEmail, 'email');
-
-    // 1. Ensure profile row exists in Supabase
-    try {
-      await upsertUserProfile(userId, {
-        full_name: fullName,
-        username: resolvedEmail.split('@')[0],
-        headline: `${role} | Startup Builder`,
-        location: 'Remote',
-        avatar,
-        preferred_role: role,
-        auth_provider: 'email',
-        email: resolvedEmail,
-      });
-    } catch {
-      // Non-blocking
-    }
-
-    // 2. Sync to Express Backend API
-    try {
-      const syncRes = await api.syncAuth({
-        id: userId,
-        email: resolvedEmail,
-        fullName,
-        role,
-        headline: `${role} | Startup Builder`,
-        location: 'Remote',
-        avatar,
-      });
-      if (syncRes && syncRes.token) {
-        setToken(syncRes.token);
-        localStorage.setItem('startupz_token', syncRes.token);
-      } else {
-        const mockToken = 'pwd_session_' + Date.now();
-        setToken(mockToken);
-        localStorage.setItem('startupz_token', mockToken);
-      }
-    } catch {
-      const mockToken = 'pwd_session_' + Date.now();
-      setToken(mockToken);
-      localStorage.setItem('startupz_token', mockToken);
-    }
-
-    return appUser;
+    // Both authentication methods rejected the credentials (e.g. deleted user or wrong password)
+    throw new Error('Invalid login credentials. Account not found in our data. Please sign up to create your account.');
   }, [loadUserFromSupabase]);
 
   /**

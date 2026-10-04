@@ -467,39 +467,39 @@ export const ProfilePage: React.FC = () => {
     setDeleteError(null);
     try {
       const uid = currentUser.id;
+      const userEmail = currentUser.email;
 
-      // 1. Delete user connections, messages, and notifications
-      try { await supabase.from('connections').delete().or(`sender_id.eq.${uid},receiver_id.eq.${uid}`); } catch {}
-      try { await supabase.from('messages').delete().or(`sender_id.eq.${uid},receiver_id.eq.${uid}`); } catch {}
-      try { await supabase.from('notifications').delete().or(`user_id.eq.${uid},sender_id.eq.${uid}`); } catch {}
-      try { await supabase.from('startup_members').delete().eq('user_id', uid); } catch {}
+      // 1. Call backend server to execute authoritative deletion across
+      // Supabase Auth (auth.users), Supabase PostgreSQL (public tables), and Prisma backend database
+      await api.deleteAccount({ userId: uid, email: userEmail });
 
-      // 2. Mark profile as deleted and reset category selection so re-entering starts completely fresh as new user
-      try {
-        await supabase.from('profiles').update({
-          is_deleted: true,
-          is_category_selected: false,
-          updated_at: new Date().toISOString()
-        }).eq('user_id', uid);
-      } catch {}
+      // 2. Invalidate profile caches and API cache
       invalidateUserProfileCache(uid);
+      api.clearCache();
 
-      // 3. Clear all browser storage so re-logging in starts completely fresh
+      // 3. Clear all browser storage completely (no stale sessions or user keys)
       localStorage.clear();
       sessionStorage.clear();
 
-      // 4. Sign out completely
+      // 4. Sign out completely from Supabase Auth
       try {
         await supabase.auth.signOut();
-      } catch {}
+      } catch (err) {
+        console.warn('Supabase signOut warning on delete:', err);
+      }
+
+      // 5. Logout in AuthContext
       try {
         await logout();
-      } catch {}
+      } catch (err) {
+        console.warn('logout context warning on delete:', err);
+      }
 
-      // 5. Redirect straight to login page (not main dashboard/home)
+      // 6. Redirect straight to login page with deletion notice
       window.location.href = '/login?deleted=true';
     } catch (err: any) {
-      setDeleteError(err?.message || 'Failed to delete account.');
+      console.error('Failed to permanently delete account:', err);
+      setDeleteError(err?.message || 'Failed to permanently delete account. Please try again.');
       setIsDeletingAccount(false);
     }
   };

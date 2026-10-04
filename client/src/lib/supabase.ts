@@ -206,8 +206,6 @@ export async function upsertUserProfile(
     open_to: string;
     profile_completion: number;
     is_category_selected: boolean;
-    is_deleted: boolean;
-    deleted_at: string | null;
     auth_provider: string;
     email: string;
   }>

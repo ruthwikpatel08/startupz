@@ -15,7 +15,19 @@ const API_BASE = getApiBase();
 
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem('startupz_token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const userJson = localStorage.getItem('startupz_user');
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  if (userJson) {
+    try {
+      const u = JSON.parse(userJson);
+      if (u?.id) headers['x-user-id'] = u.id;
+      if (u?.email) headers['x-user-email'] = u.email;
+    } catch {}
+  }
+  return headers;
 }
 
 function buildQuery(params?: any): string {
@@ -188,7 +200,11 @@ export const api = {
   getUser: (id: string) => request<any>(`/users/${id}`),
   getUserById: (id: string) => request<any>(`/users/${id}`),
   updateProfile: (payload: any) => request<any>('/users/profile', { method: 'PUT', body: JSON.stringify(payload) }),
-  deleteAccount: () => request<any>('/users/me', { method: 'DELETE' }),
+  deleteAccount: (payload?: { userId?: string; email?: string }) =>
+    request<any>('/users/me', {
+      method: 'DELETE',
+      body: payload ? JSON.stringify(payload) : undefined,
+    }),
   getCoFounderMatches: (params?: any) => request<any>(`/users/matching/cofounders${buildQuery(params)}`),
   getCofounderMatches: (params?: any) => request<any>(`/users/matching/cofounders${buildQuery(params)}`),
   getRecommendedPeople: () => request<any>('/users/recommendations'),
