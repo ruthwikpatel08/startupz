@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/common/Navbar';
+import { Sidebar } from './components/common/Sidebar';
+import { MobileBottomBar } from './components/common/MobileBottomBar';
 import { Footer } from './components/common/Footer';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { NewUserCategoryModal } from './components/auth/NewUserCategoryModal';
@@ -24,6 +26,8 @@ const ForgotPasswordPage = lazyPage(() => import('./pages/Auth/ForgotPasswordPag
 const ResetPasswordPage = lazyPage(() => import('./pages/Auth/ResetPasswordPage'), 'ResetPasswordPage');
 const AuthCallbackPage = lazyPage(() => import('./pages/Auth/AuthCallbackPage'), 'AuthCallbackPage');
 const DashboardPage = lazyPage(() => import('./pages/Dashboard/DashboardPage'), 'DashboardPage');
+const BusinessPage = lazyPage(() => import('./pages/Business/BusinessPage'), 'BusinessPage');
+const ProjectsPage = lazyPage(() => import('./pages/Projects/ProjectsPage'), 'ProjectsPage');
 const ExploreStartupsPage = lazyPage(() => import('./pages/Startups/ExploreStartupsPage'), 'ExploreStartupsPage');
 const StartupDetailPage = lazyPage(() => import('./pages/Startups/StartupDetailPage'), 'StartupDetailPage');
 const CreateStartupPage = lazyPage(() => import('./pages/Startups/CreateStartupPage'), 'CreateStartupPage');
@@ -87,20 +91,24 @@ export const App: React.FC = () => {
 
             <Navbar />
             <NewUserCategoryModal />
-            <main className="flex-1 w-full max-w-full overflow-x-hidden">
-              <React.Suspense fallback={<PageLoader />}>
-                <Routes>
-                  {/* Public / Ecosystem Routes */}
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
-                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                  <Route path="/reset-password" element={<ResetPasswordPage />} />
-                  <Route path="/auth/callback" element={<AuthCallbackPage />} />
-                  <Route path="/startups" element={<ExploreStartupsPage />} />
-                  <Route path="/startups/:id" element={<StartupDetailPage />} />
-                  <Route path="/cofounders" element={<FindCoFounderPage />} />
-                  <Route path="/opportunities" element={<OpportunitiesPage />} />
+            <div className="flex-1 flex w-full">
+              <Sidebar />
+              <main className="flex-1 min-w-0 pb-16 lg:pb-0 overflow-x-hidden">
+                <React.Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    {/* Public / Ecosystem Routes */}
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
+                    <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                    <Route path="/business" element={<BusinessPage />} />
+                    <Route path="/projects" element={<ProjectsPage />} />
+                    <Route path="/startups" element={<ExploreStartupsPage />} />
+                    <Route path="/startups/:id" element={<StartupDetailPage />} />
+                    <Route path="/cofounders" element={<FindCoFounderPage />} />
+                    <Route path="/opportunities" element={<OpportunitiesPage />} />
                   <Route path="/investors" element={<InvestorsPage />} />
                   <Route path="/mentors" element={<MentorsPage />} />
                   <Route path="/feed" element={<StartupFeedPage />} />
@@ -210,6 +218,8 @@ export const App: React.FC = () => {
                 </Routes>
               </React.Suspense>
             </main>
+            </div>
+            <MobileBottomBar />
             <Footer />
           </div>
           </ErrorBoundary>

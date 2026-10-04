@@ -37,6 +37,7 @@ export const RegisterPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<UserRole>('FOUNDER');
   const [headline, setHeadline] = useState('');
+  const [customRoleDescription, setCustomRoleDescription] = useState('');
   const [location, setLocation] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -56,7 +57,7 @@ export const RegisterPage: React.FC = () => {
     { label: 'Marketer', value: 'MARKETER', desc: 'Growth lead, performance marketer, GTM strategist' },
     { label: 'Investor', value: 'INVESTOR', desc: 'Angel investor, venture capitalist, syndicate lead' },
     { label: 'Mentor', value: 'MENTOR', desc: 'Experienced advisor, founder coach, industry specialist' },
-    { label: 'Other', value: 'OTHER', desc: 'Startup enthusiast, community builder, operator' },
+    { label: 'Other', value: 'OTHER', desc: 'Student, salesman, specialist, operator' },
   ];
 
   // Continue with Google
@@ -66,11 +67,18 @@ export const RegisterPage: React.FC = () => {
     const resetTimer = setTimeout(() => setGoogleLoading(false), 5000);
 
     try {
+      const cleanCustomRole = customRoleDescription.trim();
+      const finalRole = role === 'OTHER' && cleanCustomRole ? `Other: ${cleanCustomRole}` : role;
+      const finalHeadline = role === 'OTHER' && cleanCustomRole
+        ? cleanCustomRole
+        : (headline.trim() || `${role.charAt(0) + role.slice(1).toLowerCase()} | Startup Builder`);
+
       // Save preliminary role & headline so the OAuth callback can populate the profile
       const oauthMeta = {
-        role,
-        headline: headline.trim() || `${role.charAt(0) + role.slice(1).toLowerCase()} | Startup Builder`,
+        role: finalRole,
+        headline: finalHeadline,
         location: location.trim() || 'Remote',
+        customRole: cleanCustomRole || undefined,
       };
       localStorage.setItem('startupz_oauth_meta', JSON.stringify(oauthMeta));
 
@@ -133,7 +141,11 @@ export const RegisterPage: React.FC = () => {
     setLoading(true);
     const normalizedEmail = email.trim().toLowerCase();
     const trimmedName = fullName.trim();
-    const finalHeadline = headline.trim() || `${role.charAt(0) + role.slice(1).toLowerCase()} | Startup Enthusiast`;
+    const cleanCustomRole = customRoleDescription.trim();
+    const finalRole = role === 'OTHER' && cleanCustomRole ? `Other: ${cleanCustomRole}` : role;
+    const finalHeadline = role === 'OTHER' && cleanCustomRole
+      ? cleanCustomRole
+      : (headline.trim() || `${role.charAt(0) + role.slice(1).toLowerCase()} | Startup Enthusiast`);
     const finalLocation = location.trim() || 'Remote';
 
     try {
@@ -143,9 +155,10 @@ export const RegisterPage: React.FC = () => {
         options: {
           data: {
             full_name: trimmedName,
-            role,
+            role: finalRole,
             headline: finalHeadline,
             location: finalLocation,
+            custom_role: cleanCustomRole || undefined,
           },
         },
       });
@@ -164,7 +177,7 @@ export const RegisterPage: React.FC = () => {
           full_name: trimmedName,
           headline: finalHeadline,
           location: finalLocation,
-          preferred_role: role,
+          preferred_role: finalRole,
           auth_provider: 'email',
           email: normalizedEmail,
           avatar: undefined,
@@ -369,6 +382,40 @@ export const RegisterPage: React.FC = () => {
                   </button>
                 ))}
               </div>
+
+              {/* Custom Role Description for 'OTHER' */}
+              {role === 'OTHER' && (
+                <div className="mt-3 p-3 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-900/60 animate-fade-in space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-brand-900 dark:text-brand-200">
+                      Describe your role <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-[10px] font-medium text-brand-600 dark:text-brand-400 bg-brand-100 dark:bg-brand-900/50 px-2 py-0.5 rounded">
+                      Custom Role
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                    What best describes you? e.g. <span className="font-semibold text-slate-800 dark:text-slate-200">Student</span>, <span className="font-semibold text-slate-800 dark:text-slate-200">Salesman</span>, or <span className="font-semibold text-slate-800 dark:text-slate-200">Frontend Designer</span>
+                  </p>
+                  <div className="relative">
+                    <Briefcase size={14} className="absolute left-3 top-2.5 text-brand-600 dark:text-brand-400" />
+                    <input
+                      type="text"
+                      required={role === 'OTHER'}
+                      value={customRoleDescription}
+                      disabled={loading}
+                      onChange={(e) => {
+                        setCustomRoleDescription(e.target.value);
+                        if (!headline || headline.includes('Startup Enthusiast') || headline.includes('Other')) {
+                          setHeadline(e.target.value);
+                        }
+                      }}
+                      placeholder="Enter your role (e.g. Student, Salesman, Frontend Designer)"
+                      className="input-base pl-9 pr-3 py-2 text-xs bg-white dark:bg-dark-900 border-brand-200 dark:border-brand-800 focus:border-brand-500"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">

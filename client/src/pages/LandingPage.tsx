@@ -31,6 +31,122 @@ export const LandingPage: React.FC = () => {
   const [quickLoginOpen, setQuickLoginOpen] = useState(false);
   const [myConnectionCount, setMyConnectionCount] = useState<number>(0);
   const [recentConnections, setRecentConnections] = useState<any[]>([]);
+  const [otherProfiles, setOtherProfiles] = useState<any[]>([]);
+  const [otherProfilesLoading, setOtherProfilesLoading] = useState<boolean>(true);
+
+  // Fetch profiles of members who selected 'other' / custom roles
+  useEffect(() => {
+    let isMounted = true;
+    const fetchOtherMembers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(30);
+
+        let filtered: any[] = [];
+        if (data && data.length > 0) {
+          filtered = data.filter((p: any) => {
+            const role = (p.preferred_role || '').toLowerCase();
+            const headline = (p.headline || '').toLowerCase();
+            return (
+              role.includes('other') ||
+              role.startsWith('other:') ||
+              role.includes('student') ||
+              role.includes('sales') ||
+              headline.includes('student') ||
+              headline.includes('sales') ||
+              headline.includes('designer') ||
+              headline.includes('operator') ||
+              (!role.includes('founder') && !role.includes('investor') && !role.includes('market'))
+            );
+          });
+        }
+
+        // Default ecosystem community talent (students, salesmen, frontend designers, etc.)
+        const starterProfiles = [
+          {
+            id: 'other-talent-1',
+            user_id: 'other-talent-1',
+            full_name: 'Aarav Sharma',
+            username: 'aarav_builder',
+            headline: 'Computer Science Student & Junior AI Builder',
+            preferred_role: 'Other: Student',
+            location: 'Bengaluru, India',
+            bio: 'Final year CS student exploring early-stage AI startups. Looking to join a pre-establishment project team as a junior builder.',
+            skills: 'React, TypeScript, Python, FastApi',
+            role_label: 'Student',
+          },
+          {
+            id: 'other-talent-2',
+            user_id: 'other-talent-2',
+            full_name: 'Marcus Brody',
+            username: 'marcus_sales',
+            headline: 'Enterprise Salesman & B2B GTM Specialist',
+            preferred_role: 'Other: Salesman',
+            location: 'San Francisco, CA / Remote',
+            bio: '10 years experience closing high-ticket SaaS deals. Advising founders on outbound sales and initial customer discovery.',
+            skills: 'B2B Sales, Outbound Prospecting, Closing, Enterprise SaaS',
+            role_label: 'Salesman',
+          },
+          {
+            id: 'other-talent-3',
+            user_id: 'other-talent-3',
+            full_name: 'Elena Rostova',
+            username: 'elena_design',
+            headline: 'Frontend Designer & Design Systems Architect',
+            preferred_role: 'Other: Frontend Designer',
+            location: 'Berlin / Remote',
+            bio: 'Crafting pixel-perfect web interfaces and micro-interactions. Excited to team up with technical founders on ambitious MVP builds.',
+            skills: 'Figma, TailwindCSS, React, Motion Design, UI/UX',
+            role_label: 'Frontend Designer',
+          },
+          {
+            id: 'other-talent-4',
+            user_id: 'other-talent-4',
+            full_name: 'Rohan Mehra',
+            username: 'rohan_student',
+            headline: 'Student Researcher & ML Systems Enthusiast',
+            preferred_role: 'Other: Student',
+            location: 'Hyderabad, India',
+            bio: 'Student building open-source LLM evaluation tools. Looking to join pre-establishment builder projects to gain production experience.',
+            skills: 'PyTorch, Hugging Face, Data Pipelines, Python',
+            role_label: 'Student',
+          },
+        ];
+
+        // Format raw profiles to extract clean role label
+        const mappedFiltered = filtered.map((p) => {
+          let roleLabel = 'Other';
+          const pref = p.preferred_role || '';
+          if (pref.toLowerCase().startsWith('other:')) {
+            roleLabel = pref.substring(6).trim();
+          } else if (p.headline && (p.headline.toLowerCase().includes('student') || p.headline.toLowerCase().includes('sales') || p.headline.toLowerCase().includes('designer'))) {
+            roleLabel = p.headline.split('|')[0].trim();
+          } else if (pref) {
+            roleLabel = pref;
+          }
+          return { ...p, role_label: roleLabel };
+        });
+
+        const combined = [...mappedFiltered, ...starterProfiles];
+        const unique = Array.from(new Map(combined.map((item) => [item.full_name || item.id, item])).values());
+        if (isMounted) {
+          setOtherProfiles(unique.slice(0, 8));
+        }
+      } catch {
+        // Fallback
+      } finally {
+        if (isMounted) setOtherProfilesLoading(false);
+      }
+    };
+
+    fetchOtherMembers();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -311,6 +427,118 @@ export const LandingPage: React.FC = () => {
               )}
             </div>
           )}
+
+          {/* Community Profiles: Members who selected 'Other' (Students, Salesmen, Designers & Specialists) */}
+          <div className="mt-12 max-w-5xl mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 text-xs font-semibold border border-brand-200/60 dark:border-brand-900/60 mb-1.5">
+                  <Sparkles size={12} /> Community Talent Showcase
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                  Members & Independent Specialists
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                  Discover students, salesmen, designers & operators who selected custom roles
+                </p>
+              </div>
+
+              <Link
+                to="/cofounders?category=other"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors shrink-0"
+              >
+                <span>View all custom profiles</span>
+                <ArrowRight size={13} />
+              </Link>
+            </div>
+
+            {otherProfilesLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <div className="w-7 h-7 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {otherProfiles.map((p) => {
+                  const displayName = p.full_name || 'Community Member';
+                  const displayRole = p.role_label || 'Other';
+                  const initial = displayName.charAt(0);
+                  const profileUrl = p.user_id ? `/profile/${p.user_id}` : '/cofounders?category=other';
+
+                  return (
+                    <div
+                      key={p.id}
+                      className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-brand-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between group"
+                    >
+                      <div>
+                        <div className="flex items-start gap-3 mb-3">
+                          {p.avatar ? (
+                            <img
+                              src={p.avatar}
+                              alt={displayName}
+                              className="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-brand-500 to-indigo-600 text-white flex items-center justify-center text-sm font-bold shadow-subtle shrink-0">
+                              {initial}
+                            </div>
+                          )}
+
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                              {displayName}
+                            </h4>
+                            <div className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200/50 dark:border-brand-900/50 truncate max-w-full">
+                              {displayRole}
+                            </div>
+                            {p.location && (
+                              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 truncate">
+                                📍 {p.location}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed mb-3 font-normal">
+                          {p.headline || p.bio || 'Independent builder and ecosystem member open to synergy.'}
+                        </p>
+
+                        {p.skills && (
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {p.skills.split(',').slice(0, 2).map((sk: string, idx: number) => (
+                              <span
+                                key={idx}
+                                className="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                              >
+                                {sk.trim()}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                        <Link
+                          to={profileUrl}
+                          className="flex-1 text-center py-1.5 px-2.5 rounded-md text-[11px] font-semibold text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 transition-colors"
+                        >
+                          View Profile
+                        </Link>
+                        {user && p.user_id && p.user_id !== user.id && (
+                          <Link
+                            to={`/messages?user=${p.user_id}`}
+                            className="p-1.5 rounded-md bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 hover:bg-brand-100 transition-colors"
+                            title="Direct Message"
+                          >
+                            <MessageSquare size={13} />
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {/* Interactive Startup Network Graph Visual */}
           <div className="mt-12 relative max-w-4xl mx-auto p-5 sm:p-6 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle">

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
-import { Post, Startup } from '../../types';
+import { Post, Startup, Problem } from '../../types';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { ReportModal } from '../../components/common/ReportModal';
 import { Avatar } from '../../components/common/Avatar';
+import { ProblemCard } from '../../components/problems/ProblemCard';
 import {
   Share2,
   Heart,
@@ -26,6 +27,9 @@ import {
   MoreVertical,
   Flag,
   UserPlus,
+  Globe,
+  Flame,
+  ArrowRight,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -33,7 +37,10 @@ export const StartupFeedPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const [activePillar, setActivePillar] = useState<'ACHIEVEMENTS' | 'IDEAS' | 'PROBLEMS'>('ACHIEVEMENTS');
   const [posts, setPosts] = useState<Post[]>([]);
+  const [problems, setProblems] = useState<Problem[]>([]);
+  const [problemsLoading, setProblemsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('ALL');
 
@@ -73,6 +80,48 @@ export const StartupFeedPage: React.FC = () => {
   useEffect(() => {
     fetchPosts();
   }, [filterType]);
+
+  useEffect(() => {
+    if (activePillar === 'PROBLEMS' && problems.length === 0) {
+      const fetchProblems = async () => {
+        setProblemsLoading(true);
+        try {
+          const res = await api.getProblems();
+          setProblems(res.problems || []);
+        } catch (err) {
+          console.error('Failed to load problems:', err);
+        } finally {
+          setProblemsLoading(false);
+        }
+      };
+      fetchProblems();
+    }
+  }, [activePillar, problems.length]);
+
+  const filteredPosts = posts.filter((p) => {
+    if (activePillar === 'ACHIEVEMENTS') {
+      if (filterType !== 'ALL') return p.postType === filterType;
+      return (
+        p.postType === 'LAUNCH' ||
+        p.postType === 'FUNDING' ||
+        p.postType === 'UPDATE' ||
+        (p.title && /achieve|launch|milestone|funding|won|revenue/i.test(p.title)) ||
+        /achieve|launch|milestone|funding|won|revenue|growth/i.test(p.content)
+      );
+    }
+    if (activePillar === 'IDEAS') {
+      if (filterType !== 'ALL') return p.postType === filterType;
+      return (
+        p.postType === 'COFOUNDER' ||
+        p.postType === 'HIRING' ||
+        p.postType === 'ADVICE' ||
+        p.postType === 'UPDATE' ||
+        (p.title && /idea|build|concept|mvp|vision|seeking/i.test(p.title)) ||
+        /idea|build|concept|mvp|vision|seeking|collaborat/i.test(p.content)
+      );
+    }
+    return true;
+  });
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,22 +262,107 @@ export const StartupFeedPage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
-      {/* Feed Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-        {postTypes.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setFilterType(tab.key)}
-            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0 ${
-              filterType === tab.key
-                ? 'bg-brand-600 text-white shadow-xs'
-                : 'bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-dark-700'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* 3 Core Pillars Header */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* 1. Achievements */}
+        <button
+          type="button"
+          onClick={() => {
+            setActivePillar('ACHIEVEMENTS');
+            setFilterType('ALL');
+          }}
+          className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+            activePillar === 'ACHIEVEMENTS'
+              ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
+              : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+              <Award size={16} className="text-amber-500" />
+              Achievements
+            </span>
+            {activePillar === 'ACHIEVEMENTS' && (
+              <span className="w-2 h-2 rounded-full bg-brand-600 shrink-0" />
+            )}
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+            see what others achieved
+          </p>
+        </button>
+
+        {/* 2. Ideas */}
+        <button
+          type="button"
+          onClick={() => {
+            setActivePillar('IDEAS');
+            setFilterType('ALL');
+          }}
+          className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+            activePillar === 'IDEAS'
+              ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
+              : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+              <Rocket size={16} className="text-brand-600 dark:text-brand-400" />
+              Ideas
+            </span>
+            {activePillar === 'IDEAS' && (
+              <span className="w-2 h-2 rounded-full bg-brand-600 shrink-0" />
+            )}
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+            work on their ideas to build
+          </p>
+        </button>
+
+        {/* 3. Problem Statements */}
+        <button
+          type="button"
+          onClick={() => {
+            setActivePillar('PROBLEMS');
+          }}
+          className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+            activePillar === 'PROBLEMS'
+              ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
+              : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
+          }`}
+        >
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+              <Globe size={16} className="text-blue-500" />
+              Problem Statements
+            </span>
+            {activePillar === 'PROBLEMS' && (
+              <span className="w-2 h-2 rounded-full bg-brand-600 shrink-0" />
+            )}
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+            work on real world problems
+          </p>
+        </button>
       </div>
+
+      {/* Feed Sub-Filter Tabs (for posts) */}
+      {activePillar !== 'PROBLEMS' && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {postTypes.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setFilterType(tab.key)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0 ${
+                filterType === tab.key
+                  ? 'bg-brand-600 text-white shadow-xs'
+                  : 'bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-dark-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Post Composer Card */}
       {user && (
@@ -331,24 +465,71 @@ export const StartupFeedPage: React.FC = () => {
         </div>
       )}
 
-      {/* Feed Stream */}
-      {loading ? (
+      {/* Feed Stream or Problem Statements View */}
+      {activePillar === 'PROBLEMS' ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-dark-800">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                <Globe size={15} className="text-blue-500" />
+                Real-World Problem Statements
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Explore real challenges from the United Nations, WHO, and the World Bank to build impactful startups.
+              </p>
+            </div>
+            <Link
+              to="/problems"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline shrink-0"
+            >
+              <span>Explore all</span>
+              <ArrowRight size={12} />
+            </Link>
+          </div>
+
+          {problemsLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="h-44 rounded-lg bg-slate-100 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 animate-pulse" />
+              ))}
+            </div>
+          ) : problems.length === 0 ? (
+            <EmptyState
+              icon={Globe}
+              title="No Problem Statements Available"
+              description="World-wide problem statements will appear here as they are published by the ecosystem."
+              actionLabel="Explore Global SDGs"
+              onAction={() => navigate('/problems')}
+            />
+          ) : (
+            <div className="space-y-4">
+              {problems.map((problem) => (
+                <ProblemCard key={problem.id} problem={problem} />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((n) => (
             <div key={n} className="h-44 rounded-lg bg-slate-100 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 animate-pulse" />
           ))}
         </div>
-      ) : posts.length === 0 ? (
+      ) : filteredPosts.length === 0 ? (
         <EmptyState
           icon={Share2}
-          title="No posts in this feed"
-          description="Be the first to publish a startup update, hiring notice, or co-founder search."
-          actionLabel="Publish Update"
+          title={activePillar === 'ACHIEVEMENTS' ? "No achievements published yet" : "No idea posts found"}
+          description={
+            activePillar === 'ACHIEVEMENTS'
+              ? "Be the first to share an achievement, product launch, or funding milestone."
+              : "Share an early idea, concept proposal, or seek co-founders to build together."
+          }
+          actionLabel={activePillar === 'ACHIEVEMENTS' ? "Share Achievement" : "Post an Idea"}
           onAction={() => setComposerOpen(true)}
         />
       ) : (
         <div className="space-y-4">
-          {posts.map((post) => {
+          {filteredPosts.map((post) => {
             const author = post.author;
             const authorName = author?.profile?.fullName || author?.email || 'Founder';
             const authorHeadline = author?.profile?.headline || author?.role;

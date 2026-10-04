@@ -35,6 +35,10 @@ import {
   Crown,
   LogIn,
   Edit3,
+  Home,
+  Flame,
+  Building2,
+  FolderKanban,
 } from 'lucide-react';
 import { AIScoutModal } from '../ai/AIScoutModal';
 import { GlobalSearchModal } from '../search/GlobalSearchModal';
@@ -53,19 +57,6 @@ export const Navbar: React.FC = () => {
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
-
-  // Click-only toggling dropdown states
-  const [coFoundersDropdownOpen, setCoFoundersDropdownOpen] = useState(false);
-  const [opportunitiesDropdownOpen, setOpportunitiesDropdownOpen] = useState(false);
-
-  // Position offsets for fixed viewport dropdown rendering (prevents clipping inside slidebar)
-  const [coFoundersPos, setCoFoundersPos] = useState<{ left: number; top: number }>({ left: 16, top: 58 });
-  const [opportunitiesPos, setOpportunitiesPos] = useState<{ left: number; top: number }>({ left: 16, top: 58 });
-
-  // Mobile accordion state
-  const [mobileCoFoundersOpen, setMobileCoFoundersOpen] = useState(true);
-  const [mobileOpportunitiesOpen, setMobileOpportunitiesOpen] = useState(true);
-
   const [aiScoutOpen, setAiScoutOpen] = useState(false);
   const [googleChooserOpen, setGoogleChooserOpen] = useState(false);
   const [quickLoginOpen, setQuickLoginOpen] = useState(false);
@@ -104,48 +95,12 @@ export const Navbar: React.FC = () => {
     }
   };
 
-  const coFoundersRef = useRef<HTMLDivElement>(null);
-  const coFoundersMenuRef = useRef<HTMLDivElement>(null);
-  const opportunitiesRef = useRef<HTMLDivElement>(null);
-  const opportunitiesMenuRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  const handleToggleCoFounders = (e: React.MouseEvent<HTMLButtonElement | HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 400;
-    const clampedLeft = Math.max(12, Math.min(rect.left, windowWidth - 270));
-    setCoFoundersPos({ left: clampedLeft, top: rect.bottom + 6 });
-    setCoFoundersDropdownOpen((prev) => !prev);
-    setOpportunitiesDropdownOpen(false);
-  };
-
-  const handleToggleOpportunities = (e: React.MouseEvent<HTMLButtonElement | HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 400;
-    const clampedLeft = Math.max(12, Math.min(rect.left, windowWidth - 260));
-    setOpportunitiesPos({ left: clampedLeft, top: rect.bottom + 6 });
-    setOpportunitiesDropdownOpen((prev) => !prev);
-    setCoFoundersDropdownOpen(false);
-  };
-
-  // Close dropdowns on outside click or Escape key
+  // Close profile dropdown on outside click or Escape key
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const target = event.target as Node;
-      if (
-        coFoundersRef.current &&
-        !coFoundersRef.current.contains(target) &&
-        (!coFoundersMenuRef.current || !coFoundersMenuRef.current.contains(target))
-      ) {
-        setCoFoundersDropdownOpen(false);
-      }
-      if (
-        opportunitiesRef.current &&
-        !opportunitiesRef.current.contains(target) &&
-        (!opportunitiesMenuRef.current || !opportunitiesMenuRef.current.contains(target))
-      ) {
-        setOpportunitiesDropdownOpen(false);
-      }
       if (profileRef.current && !profileRef.current.contains(target)) {
         setProfileDropdownOpen(false);
       }
@@ -153,8 +108,6 @@ export const Navbar: React.FC = () => {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setCoFoundersDropdownOpen(false);
-        setOpportunitiesDropdownOpen(false);
         setProfileDropdownOpen(false);
       }
     };
@@ -169,40 +122,13 @@ export const Navbar: React.FC = () => {
     };
   }, []);
 
-  // Close all dropdowns and mobile drawer on route navigation
+  // Close dropdowns and mobile drawer on route navigation
   useEffect(() => {
     setMobileMenuOpen(false);
     setProfileDropdownOpen(false);
-    setCoFoundersDropdownOpen(false);
-    setOpportunitiesDropdownOpen(false);
   }, [location.pathname, location.search]);
 
-  const coFoundersDropdownItems = [
-    { name: 'All Members', categoryKey: 'all', href: '/cofounders?category=all', description: 'Browse all platform members', icon: Users },
-    { name: 'Founders', categoryKey: 'founders', href: '/cofounders?category=founders', description: 'Active founders building startups', icon: Rocket },
-    { name: 'Co-Founders', categoryKey: 'cofounders', href: '/cofounders?category=cofounders', description: 'Builders seeking synergy', icon: Users },
-    { name: 'Marketers', categoryKey: 'marketers', href: '/cofounders?category=marketers', description: 'Growth & demand leads', icon: Megaphone },
-    { name: 'Investors', categoryKey: 'investors', href: '/cofounders?category=investors', description: 'Venture funds & angel backers', icon: TrendingUp },
-    { name: 'Other', categoryKey: 'other', href: '/cofounders?category=other', description: 'Engineers, designers & advisors', icon: BriefcaseBusiness },
-  ];
-
-  const opportunitiesDropdownItems = [
-    { name: 'Internships', typeKey: 'internships', href: '/opportunities?type=internships', description: 'Hands-on startup training roles', icon: GraduationCap },
-    { name: 'Jobs', typeKey: 'jobs', href: '/opportunities?type=jobs', description: 'Full-time & part-time positions', icon: Briefcase },
-  ];
-
-  const otherNavLinks = [
-    { name: 'Graveyard', href: '/failed-startups', icon: Skull },
-    { name: 'Mentors', href: '/mentors', icon: GraduationCap },
-    { name: 'Problem Statements', href: '/problems', icon: Globe },
-  ];
-
-  const isCoFoundersActive = location.pathname.startsWith('/cofounders');
-  const isOpportunitiesActive = location.pathname.startsWith('/opportunities');
   const isActive = (path?: string) => path ? location.pathname === path : false;
-
-  const currentCategoryParam = new URLSearchParams(location.search).get('category')?.toLowerCase();
-  const currentTypeParam = new URLSearchParams(location.search).get('type')?.toLowerCase();
 
   return (
     <>
@@ -236,198 +162,15 @@ export const Navbar: React.FC = () => {
               </kbd>
             </button>
 
-            {/* Desktop Navigation Links */}
-            <nav className="hidden lg:flex items-center gap-1 overflow-x-auto no-scrollbar whitespace-nowrap max-w-xl xl:max-w-2xl py-1 shrink">
-              {/* 1. AI-Scout */}
-              <button
-                onClick={() => setAiScoutOpen(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-dark-800 hover:bg-slate-200/70 dark:hover:bg-dark-850 border border-slate-200 dark:border-slate-700 transition-colors shrink-0 cursor-pointer"
-                title="AI People Finder Bot"
-              >
-                <Sparkles size={13} className="text-brand-600 dark:text-brand-400" />
-                <span>AI - Scout</span>
-              </button>
-
-              {/* 2. Startups */}
-              <Link
-                to="/startups"
-                onMouseEnter={() => prefetchRouteData('startups')}
-                onFocus={() => prefetchRouteData('startups')}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0 ${
-                  isActive('/startups')
-                    ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-800'
-                }`}
-              >
-                <Compass size={14} />
-                <span>Startups</span>
-              </Link>
-
-              {/* 3. Co-Founders Dropdown Trigger */}
-              <div
-                ref={coFoundersRef}
-                className="shrink-0"
-                onMouseEnter={() => prefetchRouteData('cofounders')}
-              >
-                <button
-                  type="button"
-                  onClick={handleToggleCoFounders}
-                  onMouseEnter={() => prefetchRouteData('cofounders')}
-                  onFocus={() => prefetchRouteData('cofounders')}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-                    isCoFoundersActive || coFoundersDropdownOpen
-                      ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-800'
-                  }`}
-                  aria-expanded={coFoundersDropdownOpen}
-                  aria-haspopup="true"
-                >
-                  <Users size={14} />
-                  <span>Co - Founders</span>
-                  <ChevronDown
-                    size={12}
-                    className={`transition-transform duration-150 ${
-                      coFoundersDropdownOpen ? 'transform rotate-180 text-brand-600' : 'text-slate-400'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* 4. Opportunities Dropdown Trigger */}
-              <div
-                ref={opportunitiesRef}
-                className="shrink-0"
-                onMouseEnter={() => prefetchRouteData('opportunities')}
-              >
-                <button
-                  type="button"
-                  onClick={handleToggleOpportunities}
-                  onMouseEnter={() => prefetchRouteData('opportunities')}
-                  onFocus={() => prefetchRouteData('opportunities')}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-                    isOpportunitiesActive || opportunitiesDropdownOpen
-                      ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-800'
-                  }`}
-                  aria-expanded={opportunitiesDropdownOpen}
-                  aria-haspopup="true"
-                >
-                  <Briefcase size={14} />
-                  <span>Opportunities</span>
-                  <ChevronDown
-                    size={12}
-                    className={`transition-transform duration-150 ${
-                      opportunitiesDropdownOpen ? 'transform rotate-180 text-brand-600' : 'text-slate-400'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* 5. Remaining Items: Graveyard, Mentors, Problem Statements */}
-              {otherNavLinks.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.href);
-                const routeTarget = item.name === 'Problem Statements' ? 'problems' : item.href.replace('/', '');
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    onMouseEnter={() => prefetchRouteData(routeTarget)}
-                    onFocus={() => prefetchRouteData(routeTarget)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0 ${
-                      active
-                        ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-800'
-                    }`}
-                  >
-                    <Icon size={14} />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* FIXED VIEWPORT DROPDOWNS */}
-            {coFoundersDropdownOpen && (
-              <div
-                ref={coFoundersMenuRef}
-                onMouseDown={(e) => e.stopPropagation()}
-                className="fixed z-50 animate-fade-in"
-                style={{ left: `${coFoundersPos.left}px`, top: `${coFoundersPos.top}px` }}
-              >
-                <div className="w-64 bg-white dark:bg-dark-900 rounded-lg shadow-modal border border-slate-200 dark:border-slate-800 py-1.5">
-                  <div className="px-3.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
-                    Co-Founder Network
-                  </div>
-                  {coFoundersDropdownItems.map((item) => {
-                    const Icon = item.icon;
-                    const isOptionActive =
-                      isCoFoundersActive &&
-                      (currentCategoryParam === item.categoryKey ||
-                        (!currentCategoryParam && item.categoryKey === 'cofounders'));
-                    return (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        onMouseEnter={() => prefetchRouteData(item.categoryKey)}
-                        onFocus={() => prefetchRouteData(item.categoryKey)}
-                        onClick={() => setCoFoundersDropdownOpen(false)}
-                        className={`flex items-start gap-2.5 px-3 py-1.5 mx-1 rounded-md text-xs transition-colors ${
-                          isOptionActive
-                            ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-semibold'
-                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800'
-                        }`}
-                      >
-                        <Icon size={14} className={`mt-0.5 shrink-0 ${isOptionActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
-                        <div className="flex flex-col">
-                          <span className="font-medium text-xs leading-tight">{item.name}</span>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal leading-normal">{item.description}</span>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {opportunitiesDropdownOpen && (
-              <div
-                ref={opportunitiesMenuRef}
-                onMouseDown={(e) => e.stopPropagation()}
-                className="fixed z-50 animate-fade-in"
-                style={{ left: `${opportunitiesPos.left}px`, top: `${opportunitiesPos.top}px` }}
-              >
-                <div className="w-60 bg-white dark:bg-dark-900 rounded-lg shadow-modal border border-slate-200 dark:border-slate-800 py-1.5">
-                  <div className="px-3.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-slate-800 mb-1">
-                    Startup Opportunities
-                  </div>
-                  {opportunitiesDropdownItems.map((item) => {
-                    const Icon = item.icon;
-                    const isOptionActive =
-                      isOpportunitiesActive &&
-                      currentTypeParam === item.typeKey;
-                    return (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        onClick={() => setOpportunitiesDropdownOpen(false)}
-                        className={`flex items-start gap-2.5 px-3 py-1.5 mx-1 rounded-md text-xs transition-colors ${
-                          isOptionActive
-                            ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-semibold'
-                            : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800'
-                        }`}
-                      >
-                        <Icon size={14} className={`mt-0.5 shrink-0 ${isOptionActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'}`} />
-                        <div className="flex flex-col">
-                          <span className="font-medium text-xs leading-tight">{item.name}</span>
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal leading-normal">{item.description}</span>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            {/* AI-Scout Trigger Button */}
+            <button
+              onClick={() => setAiScoutOpen(true)}
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-dark-800 hover:bg-slate-200/70 dark:hover:bg-dark-850 border border-slate-200 dark:border-slate-700 transition-colors shrink-0 cursor-pointer"
+              title="AI People Finder Bot"
+            >
+              <Sparkles size={13} className="text-brand-600 dark:text-brand-400" />
+              <span>AI - Scout</span>
+            </button>
 
             {/* Right Action Icons & Profile */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -709,91 +452,6 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Horizontal Slidebar */}
-        <div className="flex lg:hidden items-center gap-1.5 overflow-x-auto no-scrollbar whitespace-nowrap px-3 py-1.5 bg-slate-50 dark:bg-dark-950 border-t border-slate-200 dark:border-slate-800 scroll-smooth shrink-0">
-          {/* 1. AI-Scout */}
-          <button
-            onClick={() => setAiScoutOpen(true)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 shrink-0 shadow-subtle cursor-pointer"
-            title="AI People Finder Bot"
-          >
-            <Sparkles size={12} className="text-brand-600 dark:text-brand-400" />
-            <span>AI - Scout</span>
-          </button>
-
-          {/* 2. Startups */}
-          <Link
-            to="/startups"
-            onTouchStart={() => prefetchRouteData('startups')}
-            onMouseEnter={() => prefetchRouteData('startups')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium shrink-0 transition-colors ${
-              isActive('/startups')
-                ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
-            }`}
-          >
-            <Compass size={13} />
-            <span>Startups</span>
-          </Link>
-
-          {/* 3. Co-Founders */}
-          <button
-            type="button"
-            onClick={handleToggleCoFounders}
-            onTouchStart={() => prefetchRouteData('cofounders')}
-            onMouseEnter={() => prefetchRouteData('cofounders')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium shrink-0 cursor-pointer transition-colors ${
-              isCoFoundersActive || coFoundersDropdownOpen
-                ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
-            }`}
-          >
-            <Users size={13} />
-            <span>Co - Founders</span>
-            <ChevronDown size={11} className={coFoundersDropdownOpen ? 'rotate-180 text-brand-600' : 'text-slate-400'} />
-          </button>
-
-          {/* 4. Opportunities */}
-          <button
-            type="button"
-            onClick={handleToggleOpportunities}
-            onTouchStart={() => prefetchRouteData('opportunities')}
-            onMouseEnter={() => prefetchRouteData('opportunities')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium shrink-0 cursor-pointer transition-colors ${
-              isOpportunitiesActive || opportunitiesDropdownOpen
-                ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
-            }`}
-          >
-            <Briefcase size={13} />
-            <span>Opportunities</span>
-            <ChevronDown size={11} className={opportunitiesDropdownOpen ? 'rotate-180 text-brand-600' : 'text-slate-400'} />
-          </button>
-
-          {/* 5. Graveyard, Mentors, Problem Statements */}
-          {otherNavLinks.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
-            const routeTarget = item.name === 'Problem Statements' ? 'problems' : item.href.replace('/', '');
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                onTouchStart={() => prefetchRouteData(routeTarget)}
-                onMouseEnter={() => prefetchRouteData(routeTarget)}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium shrink-0 transition-colors ${
-                  active
-                    ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 font-semibold'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
-                }`}
-              >
-                <Icon size={13} />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
-        </div>
-
         {/* Mobile Drawer Navigation */}
         {mobileMenuOpen && (
           <div className="lg:hidden px-4 pt-3 pb-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-dark-900 space-y-3 max-h-[85vh] overflow-y-auto">
@@ -846,104 +504,85 @@ export const Navbar: React.FC = () => {
               <span>Search platform, skills, founders...</span>
             </button>
 
-            {/* Quick Primary Links */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* Quick Primary Links - 5 Core Tools + AI Scout */}
+            <div className="space-y-2">
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   setAiScoutOpen(true);
                 }}
-                className="flex items-center gap-2 p-2 rounded-md text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-dark-800 hover:bg-slate-200/60"
+                className="w-full flex items-center justify-center gap-2 p-2.5 rounded-lg text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900/50 hover:bg-brand-100"
               >
-                <Sparkles size={14} className="text-brand-600 dark:text-brand-400" />
-                <span>AI - Scout</span>
+                <Sparkles size={15} className="text-brand-600 dark:text-brand-400" />
+                <span>AI - Scout Finder</span>
               </button>
-              <Link
-                to="/startups"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 p-2 rounded-md text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800"
-              >
-                <Compass size={14} className="text-slate-400" />
-                <span>Startups</span>
-              </Link>
-            </div>
 
-            {/* Co-Founders Mobile Section */}
-            <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 bg-slate-50/50 dark:bg-dark-850/50">
-              <button
-                type="button"
-                onClick={() => setMobileCoFoundersOpen(!mobileCoFoundersOpen)}
-                className="flex items-center justify-between w-full text-xs font-semibold text-slate-900 dark:text-white pb-1"
-              >
-                <div className="flex items-center gap-1.5">
-                  <Users size={14} className="text-brand-600" />
-                  <span>Co - Founders</span>
-                </div>
-                <ChevronDown size={13} className={`text-slate-400 transition-transform ${mobileCoFoundersOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {mobileCoFoundersOpen && (
-                <div className="grid grid-cols-2 gap-1 pt-2 border-t border-slate-200 dark:border-slate-800">
-                  {coFoundersDropdownItems.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="px-2 py-1 rounded-md text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 flex items-center gap-1.5"
-                    >
-                      <item.icon size={12} className="text-slate-400" />
-                      <span>{item.name}</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Link
+                  to="/"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-2 p-2.5 rounded-lg text-xs font-medium border transition-colors ${
+                    isActive('/')
+                      ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800'
+                  }`}
+                >
+                  <Home size={15} className="text-brand-600" />
+                  <span>1. Home</span>
+                </Link>
 
-            {/* Opportunities Mobile Section */}
-            <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-2.5 bg-slate-50/50 dark:bg-dark-850/50">
-              <button
-                type="button"
-                onClick={() => setMobileOpportunitiesOpen(!mobileOpportunitiesOpen)}
-                className="flex items-center justify-between w-full text-xs font-semibold text-slate-900 dark:text-white pb-1"
-              >
-                <div className="flex items-center gap-1.5">
-                  <Briefcase size={14} className="text-slate-600 dark:text-slate-400" />
-                  <span>Opportunities</span>
-                </div>
-                <ChevronDown size={13} className={`text-slate-400 transition-transform ${mobileOpportunitiesOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {mobileOpportunitiesOpen && (
-                <div className="grid grid-cols-2 gap-1 pt-2 border-t border-slate-200 dark:border-slate-800">
-                  {opportunitiesDropdownItems.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="px-2 py-1 rounded-md text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 flex items-center gap-1.5"
-                    >
-                      <item.icon size={12} className="text-slate-400" />
-                      <span>{item.name}</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+                <Link
+                  to="/feed"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-2 p-2.5 rounded-lg text-xs font-medium border transition-colors ${
+                    isActive('/feed')
+                      ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800'
+                  }`}
+                >
+                  <Flame size={15} className="text-amber-500" />
+                  <span>2. Feed</span>
+                </Link>
 
-            {/* Other Nav Links */}
-            <div className="grid grid-cols-2 gap-1.5">
-              {otherNavLinks.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-1.5 p-2 rounded-md text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
-                  >
-                    <Icon size={14} className="text-slate-400" />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
+                <Link
+                  to="/business"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-2 p-2.5 rounded-lg text-xs font-medium border transition-colors ${
+                    isActive('/business')
+                      ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800'
+                  }`}
+                >
+                  <Building2 size={15} className="text-blue-500" />
+                  <span>3. Business</span>
+                </Link>
+
+                <Link
+                  to="/projects"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-2 p-2.5 rounded-lg text-xs font-medium border transition-colors ${
+                    isActive('/projects')
+                      ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800'
+                  }`}
+                >
+                  <FolderKanban size={15} className="text-emerald-500" />
+                  <span>4. Projects</span>
+                </Link>
+
+                <Link
+                  to="/opportunities"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`col-span-2 flex items-center justify-center gap-2 p-2.5 rounded-lg text-xs font-medium border transition-colors ${
+                    isActive('/opportunities')
+                      ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300'
+                      : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800'
+                  }`}
+                >
+                  <Briefcase size={15} className="text-purple-500" />
+                  <span>5. Opportunities</span>
+                </Link>
+              </div>
             </div>
 
             {/* Mobile Auth / Profile Section */}

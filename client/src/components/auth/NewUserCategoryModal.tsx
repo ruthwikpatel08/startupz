@@ -95,6 +95,7 @@ export const NewUserCategoryModal: React.FC = () => {
   ];
 
   const [selectedRole, setSelectedRole] = useState('Founders');
+  const [customRoleDescription, setCustomRoleDescription] = useState('');
   const [headline, setHeadline] = useState(
     user.profile?.headline && !user.profile.headline.includes('Startup Builder')
       ? user.profile.headline
@@ -106,7 +107,11 @@ export const NewUserCategoryModal: React.FC = () => {
 
   const handleCategorySelect = (roleId: string, defaultHeadline: string) => {
     setSelectedRole(roleId);
-    setHeadline(defaultHeadline);
+    if (roleId === 'Other' && customRoleDescription.trim()) {
+      setHeadline(customRoleDescription.trim());
+    } else {
+      setHeadline(defaultHeadline);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,12 +122,16 @@ export const NewUserCategoryModal: React.FC = () => {
     setError(null);
 
     try {
-      const cleanHeadline = headline.trim() || `${selectedRole} | Startup Builder`;
+      const cleanCustomRole = customRoleDescription.trim();
+      const finalPreferredRole = selectedRole === 'Other' && cleanCustomRole ? `Other: ${cleanCustomRole}` : selectedRole;
+      const cleanHeadline = selectedRole === 'Other' && cleanCustomRole
+        ? cleanCustomRole
+        : (headline.trim() || `${selectedRole} | Startup Builder`);
       const cleanLocation = location.trim() || 'Remote';
 
       // 1. Update Supabase public.profiles table
       await upsertUserProfile(user.id, {
-        preferred_role: selectedRole,
+        preferred_role: finalPreferredRole,
         headline: cleanHeadline,
         location: cleanLocation,
         is_category_selected: true,
@@ -250,6 +259,34 @@ export const NewUserCategoryModal: React.FC = () => {
                 );
               })}
             </div>
+
+            {/* Custom Role Input when 'Other' is selected */}
+            {selectedRole === 'Other' && (
+              <div className="mt-2.5 p-3 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-900/60 animate-fade-in space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-brand-900 dark:text-brand-200">
+                    Describe your role <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[10px] font-medium text-brand-600 dark:text-brand-400 bg-brand-100 dark:bg-brand-900/50 px-2 py-0.5 rounded">
+                    Custom Role
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                  What best describes you? e.g. <span className="font-semibold text-slate-800 dark:text-slate-200">Student</span>, <span className="font-semibold text-slate-800 dark:text-slate-200">Salesman</span>, or <span className="font-semibold text-slate-800 dark:text-slate-200">Frontend Designer</span>
+                </p>
+                <input
+                  type="text"
+                  required
+                  value={customRoleDescription}
+                  onChange={(e) => {
+                    setCustomRoleDescription(e.target.value);
+                    setHeadline(e.target.value);
+                  }}
+                  placeholder="e.g. Student, Salesman, or Frontend Designer"
+                  className="input-base !py-1.5 !text-xs bg-white dark:bg-slate-900 border-brand-300 dark:border-brand-800"
+                />
+              </div>
+            )}
           </div>
 
           {/* Headline and Location */}
