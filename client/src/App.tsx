@@ -21,19 +21,34 @@ const lazyPage = <T extends Record<string, any>, K extends keyof T>(
   importer: () => Promise<T>,
   name: K
 ) =>
-  React.lazy(() =>
-    importer()
-      .then((mod) => ({ default: mod[name] }))
-      .catch((err) => {
-        console.warn(`Dynamic import failed for ${String(name)}, reloading page...`, err);
+  React.lazy(async () => {
+    try {
+      const mod = await importer();
+      return { default: mod[name] };
+    } catch (err: any) {
+      console.warn(`Dynamic import failed for ${String(name)}:`, err);
+      const msg = (err?.message || String(err)).toLowerCase();
+      const isChunkLoadError =
+        msg.includes('dynamically imported module') ||
+        msg.includes('failed to fetch') ||
+        msg.includes('importing a module script failed') ||
+        msg.includes('loading chunk');
+
+      if (isChunkLoadError) {
         const storageKey = `startupz_chunk_reload_${String(name)}`;
-        if (!sessionStorage.getItem(storageKey)) {
-          sessionStorage.setItem(storageKey, 'true');
+        const now = Date.now();
+        const lastReload = parseInt(sessionStorage.getItem(storageKey) || '0', 10);
+
+        if (now - lastReload > 12000) {
+          sessionStorage.setItem(storageKey, String(now));
           window.location.reload();
+          // Return an unresolved promise to stay in Suspense PageLoader while browser reloads the latest deployment
+          return new Promise<{ default: T[K] }>(() => {});
         }
-        throw err;
-      })
-  );
+      }
+      throw err;
+    }
+  });
 
 // Lazy-Loaded Tools & Pages (Code-split into async chunks for maximum performance)
 const ForgotPasswordPage = lazyPage(() => import('./pages/Auth/ForgotPasswordPage'), 'ForgotPasswordPage');
