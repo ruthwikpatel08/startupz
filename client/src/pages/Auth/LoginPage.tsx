@@ -3,7 +3,6 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase, getAuthErrorMessage, recordAuthProviderHint, resolveEmailOrUsername, upsertUserProfile, invalidateUserProfileCache } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Rocket, Lock, Mail, ArrowRight, Sparkles, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw, UserCheck } from 'lucide-react';
-import { GoogleAccountChooserModal } from '../../components/auth/GoogleAccountChooserModal';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,13 +24,11 @@ export const LoginPage: React.FC = () => {
   const [resendSuccess, setResendSuccess] = useState(false);
   const [resending, setResending] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleChooserOpen, setGoogleChooserOpen] = useState(false);
 
-  // Real Supabase Google OAuth Flow with Account Selector
+  // Real Supabase Google OAuth Flow
   const handleGoogleSignInClick = async () => {
     setGoogleLoading(true);
     setError(null);
-    const resetTimer = setTimeout(() => setGoogleLoading(false), 5000);
 
     try {
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
@@ -46,32 +43,19 @@ export const LoginPage: React.FC = () => {
       });
 
       if (oauthError) {
-        clearTimeout(resetTimer);
         setGoogleLoading(false);
-        setGoogleChooserOpen(true);
+        setError('Google Sign-In is currently unavailable. Please enter your email and password below.');
         return;
       }
 
       if (data?.url) {
-        try {
-          const probe = await fetch(data.url, { redirect: 'manual' });
-          if (probe.status === 400) {
-            clearTimeout(resetTimer);
-            setGoogleLoading(false);
-            setGoogleChooserOpen(true);
-            return;
-          }
-        } catch {
-          // If probe redirects, provider is active
-        }
-
-        clearTimeout(resetTimer);
         window.location.href = data.url;
+      } else {
+        setGoogleLoading(false);
       }
-    } catch {
-      clearTimeout(resetTimer);
+    } catch (err: any) {
       setGoogleLoading(false);
-      setGoogleChooserOpen(true);
+      setError(err?.message || 'Google Sign-In error. Please sign in with your email and password.');
     }
   };
 
@@ -405,12 +389,6 @@ export const LoginPage: React.FC = () => {
         </div>
 
       </div>
-
-      {/* Google Account Selector Modal */}
-      <GoogleAccountChooserModal
-        isOpen={googleChooserOpen}
-        onClose={() => setGoogleChooserOpen(false)}
-      />
     </div>
   );
 };

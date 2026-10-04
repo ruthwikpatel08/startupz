@@ -18,7 +18,6 @@ import {
   MailCheck,
 } from 'lucide-react';
 import { UserRole } from '../../types';
-import { GoogleAccountChooserModal } from '../../components/auth/GoogleAccountChooserModal';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -41,7 +40,6 @@ export const RegisterPage: React.FC = () => {
   const [location, setLocation] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleChooserOpen, setGoogleChooserOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Email confirmation state
@@ -64,7 +62,6 @@ export const RegisterPage: React.FC = () => {
   const handleGoogleSignUp = async () => {
     setGoogleLoading(true);
     setError(null);
-    const resetTimer = setTimeout(() => setGoogleLoading(false), 5000);
 
     try {
       const cleanCustomRole = customRoleDescription.trim();
@@ -94,32 +91,19 @@ export const RegisterPage: React.FC = () => {
       });
 
       if (oauthError) {
-        clearTimeout(resetTimer);
         setGoogleLoading(false);
-        setGoogleChooserOpen(true);
+        setError('Google Sign-In is unavailable. Please fill in your details below to create your account.');
         return;
       }
 
       if (data?.url) {
-        try {
-          const probe = await fetch(data.url, { redirect: 'manual' });
-          if (probe.status === 400) {
-            clearTimeout(resetTimer);
-            setGoogleLoading(false);
-            setGoogleChooserOpen(true);
-            return;
-          }
-        } catch {
-          // Probe completed
-        }
-
-        clearTimeout(resetTimer);
         window.location.href = data.url;
+      } else {
+        setGoogleLoading(false);
       }
-    } catch {
-      clearTimeout(resetTimer);
+    } catch (err: any) {
       setGoogleLoading(false);
-      setGoogleChooserOpen(true);
+      setError(err?.message || 'Google Sign-In error. Please register using the form below.');
     }
   };
 
@@ -568,12 +552,6 @@ export const RegisterPage: React.FC = () => {
         </div>
 
       </div>
-
-      {/* Google Account Selector Modal */}
-      <GoogleAccountChooserModal
-        isOpen={googleChooserOpen}
-        onClose={() => setGoogleChooserOpen(false)}
-      />
     </div>
   );
 };

@@ -54,8 +54,16 @@ export async function deleteSupabaseUserCompletely(userId, userEmail) {
     const allIds = Array.from(deletedAuthIds);
     console.log(`[Account Deletion] Targeted user: ${userId}, email: ${cleanEmail}, matched Supabase Auth IDs:`, allIds);
 
-    // 2. Delete conversations involving user
+    // 2. Delete conversations and messages involving user
     for (const id of allIds) {
+      try {
+        await supabaseAdmin
+          .from('messages')
+          .delete()
+          .or(`sender_id.eq.${id},receiver_id.eq.${id}`);
+      } catch (err) {
+        console.warn('Error deleting messages for', id, err?.message);
+      }
       try {
         await supabaseAdmin
           .from('conversations')
@@ -66,7 +74,7 @@ export async function deleteSupabaseUserCompletely(userId, userEmail) {
       }
     }
 
-    // 2.5 Delete connections involving user
+    // 2.5 Delete connections, notifications, posts, comments, likes, saved items
     for (const id of allIds) {
       try {
         await supabaseAdmin
@@ -76,6 +84,41 @@ export async function deleteSupabaseUserCompletely(userId, userEmail) {
       } catch (err) {
         console.warn('Error deleting connections for', id, err?.message);
       }
+      try {
+        await supabaseAdmin
+          .from('notifications')
+          .delete()
+          .or(`user_id.eq.${id},sender_id.eq.${id}`);
+      } catch (err) {
+        console.warn('Error deleting notifications for', id, err?.message);
+      }
+      try {
+        await supabaseAdmin.from('posts').delete().eq('author_id', id);
+      } catch (err) {}
+      try {
+        await supabaseAdmin.from('comments').delete().eq('author_id', id);
+      } catch (err) {}
+      try {
+        await supabaseAdmin.from('likes').delete().eq('user_id', id);
+      } catch (err) {}
+      try {
+        await supabaseAdmin.from('saved_items').delete().eq('user_id', id);
+      } catch (err) {}
+      try {
+        await supabaseAdmin.from('startups').delete().eq('founder_id', id);
+      } catch (err) {}
+      try {
+        await supabaseAdmin.from('problems').delete().eq('created_by', id);
+      } catch (err) {}
+      try {
+        await supabaseAdmin.from('opportunities').delete().eq('creator_id', id);
+      } catch (err) {}
+      try {
+        await supabaseAdmin.from('mentors').delete().eq('user_id', id);
+      } catch (err) {}
+      try {
+        await supabaseAdmin.from('investors').delete().eq('user_id', id);
+      } catch (err) {}
     }
 
     // 3. Delete from public.users (triggers ON DELETE CASCADE for all dependent tables)

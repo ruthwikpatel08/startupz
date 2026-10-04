@@ -604,6 +604,11 @@ router.delete('/me', requireAuth, async (req, res) => {
       } catch (e) {}
     }
 
+    // Clear matching cache so deleted user instantly disappears from cofounder searches
+    try {
+      cofounderCache.clear();
+    } catch (e) {}
+
     return res.json({ success: true, message: 'Account permanently deleted from all services.' });
   } catch (error) {
     console.error('Delete account error:', error);
