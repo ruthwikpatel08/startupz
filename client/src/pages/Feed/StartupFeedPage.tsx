@@ -46,9 +46,13 @@ export const StartupFeedPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('ALL');
 
+  // Strict classification sets: Ideas and Achievements NEVER mix
+  const IDEA_POST_TYPES = new Set(['IDEA', 'COFOUNDER', 'ADVICE', 'HIRING']);
+  const ACHIEVEMENT_POST_TYPES = new Set(['EXPERIENCE', 'LAUNCH', 'FUNDING', 'MILESTONE', 'ACHIEVEMENT']);
+
   // Post composer state
   const [composerOpen, setComposerOpen] = useState(false);
-  const [postType, setPostType] = useState('UPDATE');
+  const [postType, setPostType] = useState('EXPERIENCE');
   const [postTitle, setPostTitle] = useState('');
   const [postContent, setPostContent] = useState('');
   const [postLinks, setPostLinks] = useState('');
@@ -65,12 +69,20 @@ export const StartupFeedPage: React.FC = () => {
   const [reportTarget, setReportTarget] = useState<{ id: string; title: string } | null>(null);
   const [copiedPostId, setCopiedPostId] = useState<string | null>(null);
 
+  const handlePillarChange = (pillar: 'ACHIEVEMENTS' | 'IDEAS' | 'PROBLEMS') => {
+    setActivePillar(pillar);
+    setFilterType('ALL');
+    if (pillar === 'ACHIEVEMENTS') {
+      setPostType('EXPERIENCE');
+    } else if (pillar === 'IDEAS') {
+      setPostType('IDEA');
+    }
+  };
+
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (filterType !== 'ALL') params.append('type', filterType);
-      const res = await api.getPosts(params.toString());
+      const res = await api.getPosts();
       setPosts(res.posts || []);
     } catch (err) {
       console.error('Failed to load feed posts:', err);
@@ -81,7 +93,7 @@ export const StartupFeedPage: React.FC = () => {
 
   useEffect(() => {
     fetchPosts();
-  }, [filterType]);
+  }, []);
 
   useEffect(() => {
     if (activePillar === 'PROBLEMS' && problems.length === 0) {
@@ -101,29 +113,36 @@ export const StartupFeedPage: React.FC = () => {
   }, [activePillar, problems.length]);
 
   const filteredPosts = posts.filter((p) => {
+    const rawType = (p.postType || 'UPDATE').toUpperCase();
+
     if (activePillar === 'ACHIEVEMENTS') {
-      if (filterType !== 'ALL') return p.postType === filterType;
+      // 1. STRICT: Exclude ALL ideas/cofounder/advice/hiring
+      if (IDEA_POST_TYPES.has(rawType)) {
+        return false;
+      }
+      if (filterType !== 'ALL') {
+        return rawType === filterType;
+      }
       return (
-        p.postType === 'LAUNCH' ||
-        p.postType === 'FUNDING' ||
-        p.postType === 'UPDATE' ||
-        p.postType === 'EXPERIENCE' ||
-        (p.title && /achieve|launch|milestone|funding|won|revenue|experience/i.test(p.title)) ||
-        /achieve|launch|milestone|funding|won|revenue|growth|experience/i.test(p.content)
+        ACHIEVEMENT_POST_TYPES.has(rawType) ||
+        rawType === 'UPDATE'
       );
     }
+
     if (activePillar === 'IDEAS') {
-      if (filterType !== 'ALL') return p.postType === filterType;
+      // 1. STRICT: Exclude ALL achievements/experiences/launches/funding
+      if (ACHIEVEMENT_POST_TYPES.has(rawType)) {
+        return false;
+      }
+      if (filterType !== 'ALL') {
+        return rawType === filterType;
+      }
       return (
-        p.postType === 'COFOUNDER' ||
-        p.postType === 'HIRING' ||
-        p.postType === 'ADVICE' ||
-        p.postType === 'UPDATE' ||
-        p.postType === 'IDEA' ||
-        (p.title && /idea|build|concept|mvp|vision|seeking/i.test(p.title)) ||
-        /idea|build|concept|mvp|vision|seeking|collaborat/i.test(p.content)
+        IDEA_POST_TYPES.has(rawType) ||
+        rawType === 'UPDATE'
       );
     }
+
     return true;
   });
 
@@ -138,13 +157,17 @@ export const StartupFeedPage: React.FC = () => {
       return;
     }
 
+    const finalPostType = activePillar === 'IDEAS'
+      ? (IDEA_POST_TYPES.has(postType) ? postType : 'IDEA')
+      : (ACHIEVEMENT_POST_TYPES.has(postType) || postType === 'UPDATE' ? postType : 'EXPERIENCE');
+
     setSubmittingPost(true);
     setComposerError(null);
     try {
       let createdPost: any = null;
       try {
         const res = await api.createPost({
-          postType,
+          postType: finalPostType,
           title: postTitle.trim() || undefined,
           content: postContent.trim(),
           links: postLinks.trim() || undefined,
@@ -156,7 +179,7 @@ export const StartupFeedPage: React.FC = () => {
           .from('posts')
           .insert({
             user_id: user.id,
-            post_type: postType,
+            post_type: finalPostType,
             title: postTitle.trim() || null,
             content: postContent.trim(),
             links: postLinks.trim() ? [postLinks.trim()] : [],
@@ -168,7 +191,7 @@ export const StartupFeedPage: React.FC = () => {
         createdPost = {
           id: data.id,
           authorId: user.id,
-          postType: data.post_type || postType,
+          postType: data.post_type || finalPostType,
           title: data.title,
           content: data.content,
           links: data.links,
@@ -297,6 +320,36 @@ export const StartupFeedPage: React.FC = () => {
     }
   };
 
+  const achievementFilters = [
+    { id: 'ALL', label: 'All Achievements' },
+    { id: 'EXPERIENCE', label: '📖 Experiences' },
+    { id: 'LAUNCH', label: '🎉 Launches' },
+    { id: 'FUNDING', label: '💰 Funding' },
+    { id: 'UPDATE', label: '🏆 Milestones' },
+  ];
+
+  const ideaFilters = [
+    { id: 'ALL', label: 'All Ideas' },
+    { id: 'IDEA', label: '💡 Ideas' },
+    { id: 'COFOUNDER', label: '🤝 Co-Founders' },
+    { id: 'ADVICE', label: '💬 Advice' },
+    { id: 'HIRING', label: '💼 Hiring' },
+  ];
+
+  const achievementComposerTypes = [
+    { id: 'EXPERIENCE', label: '📖 Experience' },
+    { id: 'LAUNCH', label: '🎉 Product Launch' },
+    { id: 'FUNDING', label: '💰 Funding Round' },
+    { id: 'UPDATE', label: '🏆 Milestone' },
+  ];
+
+  const ideaComposerTypes = [
+    { id: 'IDEA', label: '💡 Idea' },
+    { id: 'COFOUNDER', label: '🤝 Co-Founder' },
+    { id: 'ADVICE', label: '💬 Advice' },
+    { id: 'HIRING', label: '💼 Hiring Talent' },
+  ];
+
   const postTypes = [
     { key: 'ALL', label: 'All Updates' },
     { key: 'IDEA', label: '💡 Ideas' },
@@ -333,16 +386,13 @@ export const StartupFeedPage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
-      {/* 3 Core Pillars Header */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {/* 3 Core Pillars Header (Horizontal scrollable option on mobile, grid on desktop) */}
+      <div className="flex sm:grid sm:grid-cols-3 gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar pb-1 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x">
         {/* 1. Achievements */}
         <button
           type="button"
-          onClick={() => {
-            setActivePillar('ACHIEVEMENTS');
-            setFilterType('ALL');
-          }}
-          className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+          onClick={() => handlePillarChange('ACHIEVEMENTS')}
+          className={`p-3.5 sm:p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between shrink-0 min-w-[200px] xs:min-w-[220px] sm:min-w-0 flex-1 snap-start ${
             activePillar === 'ACHIEVEMENTS'
               ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
@@ -365,11 +415,8 @@ export const StartupFeedPage: React.FC = () => {
         {/* 2. Ideas */}
         <button
           type="button"
-          onClick={() => {
-            setActivePillar('IDEAS');
-            setFilterType('ALL');
-          }}
-          className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+          onClick={() => handlePillarChange('IDEAS')}
+          className={`p-3.5 sm:p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between shrink-0 min-w-[200px] xs:min-w-[220px] sm:min-w-0 flex-1 snap-start ${
             activePillar === 'IDEAS'
               ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
@@ -392,10 +439,8 @@ export const StartupFeedPage: React.FC = () => {
         {/* 3. Problem Statements */}
         <button
           type="button"
-          onClick={() => {
-            setActivePillar('PROBLEMS');
-          }}
-          className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+          onClick={() => handlePillarChange('PROBLEMS')}
+          className={`p-3.5 sm:p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between shrink-0 min-w-[200px] xs:min-w-[220px] sm:min-w-0 flex-1 snap-start ${
             activePillar === 'PROBLEMS'
               ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
@@ -416,7 +461,6 @@ export const StartupFeedPage: React.FC = () => {
         </button>
       </div>
 
-
       {/* Post Composer Card */}
       {user && (
         <div className="card-base p-4 sm:p-5 transition-colors">
@@ -431,44 +475,43 @@ export const StartupFeedPage: React.FC = () => {
               onClick={() => setComposerOpen(!composerOpen)}
               className="flex-1 text-left px-3.5 py-2 rounded-md bg-slate-50 dark:bg-dark-850 hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-500 text-xs font-normal border border-slate-200/80 dark:border-dark-700/80 transition-colors"
             >
-              Share an idea, work experience, startup milestone, or question...
+              {activePillar === 'ACHIEVEMENTS'
+                ? 'Share a work experience, product launch, or milestone achievement...'
+                : 'Share a startup idea, early concept, or seek co-founders...'}
             </button>
           </div>
 
           {composerOpen && (
             <form onSubmit={handleCreatePost} className="mt-4 pt-4 border-t border-slate-100 dark:border-dark-800 space-y-3">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-xs font-medium text-slate-500 mr-1">Post Type:</span>
-                {[
-                  { id: 'IDEA', label: '💡 Idea' },
-                  { id: 'EXPERIENCE', label: '📖 Experience' },
-                  { id: 'UPDATE', label: '🚀 Update' },
-                  { id: 'LAUNCH', label: '🎉 Product Launch' },
-                  { id: 'COFOUNDER', label: '🤝 Co-Founder' },
-                  { id: 'HIRING', label: '💼 Hiring Talent' },
-                  { id: 'FUNDING', label: '💰 Funding Round' },
-                  { id: 'ADVICE', label: '💬 Advice' },
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setPostType(t.id)}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                      postType === t.id
-                        ? 'bg-brand-600 text-white'
-                        : 'bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-800'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
+              <div className="space-y-1.5">
+                <span className="text-xs font-medium text-slate-500">Post Category:</span>
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-1 px-1">
+                  {(activePillar === 'ACHIEVEMENTS' ? achievementComposerTypes : ideaComposerTypes).map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setPostType(t.id)}
+                      className={`px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
+                        postType === t.id
+                          ? 'bg-brand-600 text-white shadow-sm'
+                          : 'bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-800'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <input
                 type="text"
                 value={postTitle}
                 onChange={(e) => setPostTitle(e.target.value)}
-                placeholder="Post title, idea headline, or experience topic (optional)"
+                placeholder={
+                  activePillar === 'ACHIEVEMENTS'
+                    ? 'Achievement or experience headline (optional)'
+                    : 'Startup idea title or concept name (optional)'
+                }
                 className="input-base w-full px-3 py-2 text-xs"
               />
 
@@ -476,7 +519,11 @@ export const StartupFeedPage: React.FC = () => {
                 required
                 value={postContent}
                 onChange={(e) => setPostContent(e.target.value)}
-                placeholder="Write your idea, work experience, metrics, co-founder criteria, or question..."
+                placeholder={
+                  activePillar === 'ACHIEVEMENTS'
+                    ? 'Describe what you achieved, metrics reached, lessons learned, or new product features...'
+                    : 'Describe your startup idea, problem it solves, target users, or co-founder criteria...'
+                }
                 rows={4}
                 className="input-base w-full px-3 py-2 text-xs resize-none"
               />
@@ -502,14 +549,14 @@ export const StartupFeedPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setComposerOpen(false)}
-                  className="btn-secondary px-3 py-1.5 text-xs font-medium"
+                  className="btn-secondary px-3 py-1.5 text-xs font-medium cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingPost}
-                  className="btn-primary px-4 py-1.5 text-xs font-medium disabled:opacity-50 flex items-center gap-1.5"
+                  className="btn-primary px-4 py-1.5 text-xs font-medium disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
                 >
                   <Send size={13} />
                   <span>{submittingPost ? 'Publishing...' : 'Publish'}</span>
@@ -517,6 +564,26 @@ export const StartupFeedPage: React.FC = () => {
               </div>
             </form>
           )}
+        </div>
+      )}
+
+      {/* Sub-Category Filter Chips Bar (Horizontal scrollable option on mobile) */}
+      {activePillar !== 'PROBLEMS' && (
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+          {(activePillar === 'ACHIEVEMENTS' ? achievementFilters : ideaFilters).map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setFilterType(item.id)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                filterType === item.id
+                  ? 'bg-brand-600 text-white shadow-sm'
+                  : 'bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-dark-700'
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
       )}
 

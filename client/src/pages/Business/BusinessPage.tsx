@@ -205,13 +205,13 @@ export const BusinessPage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
-      {/* 3 Core Business Pillars Header (Enhanced readable typography & comfortable spacing) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+      {/* 3 Core Business Pillars Header (Horizontal scrollable option on mobile, grid on desktop) */}
+      <div className="flex sm:grid sm:grid-cols-3 gap-2.5 sm:gap-3.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x">
         {/* 1. Startups Pillar */}
         <button
           type="button"
           onClick={() => handleTabChange('startups')}
-          className={`p-4 sm:p-5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+          className={`p-3.5 sm:p-5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between shrink-0 min-w-[210px] xs:min-w-[230px] sm:min-w-0 flex-1 snap-start ${
             activeTab === 'startups'
               ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
@@ -235,7 +235,7 @@ export const BusinessPage: React.FC = () => {
         <button
           type="button"
           onClick={() => handleTabChange('network')}
-          className={`p-4 sm:p-5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+          className={`p-3.5 sm:p-5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between shrink-0 min-w-[210px] xs:min-w-[230px] sm:min-w-0 flex-1 snap-start ${
             activeTab === 'network'
               ? 'bg-purple-50/90 dark:bg-purple-950/50 border-purple-500 ring-2 ring-purple-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
@@ -259,7 +259,7 @@ export const BusinessPage: React.FC = () => {
         <button
           type="button"
           onClick={() => handleTabChange('graveyard')}
-          className={`p-4 sm:p-5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+          className={`p-3.5 sm:p-5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between shrink-0 min-w-[210px] xs:min-w-[230px] sm:min-w-0 flex-1 snap-start ${
             activeTab === 'graveyard'
               ? 'bg-rose-50/90 dark:bg-rose-950/50 border-rose-500 ring-2 ring-rose-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
@@ -574,14 +574,14 @@ export const BusinessPage: React.FC = () => {
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
               Explore Network Categories
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-5 gap-3 overflow-x-auto no-scrollbar pb-2 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x">
               {networkCategories.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.title}
                     to={item.href}
-                    className="p-3.5 rounded-xl card-base hover:border-brand-400 dark:hover:border-dark-700 transition-all flex flex-col justify-between group cursor-pointer"
+                    className="p-3.5 rounded-xl card-base hover:border-brand-400 dark:hover:border-dark-700 transition-all flex flex-col justify-between group cursor-pointer shrink-0 min-w-[200px] xs:min-w-[220px] sm:min-w-0 flex-1 snap-start"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-2">
