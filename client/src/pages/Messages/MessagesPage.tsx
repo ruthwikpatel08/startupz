@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
-import { Conversation, Message, User } from '../../types';
+import { Conversation, Message } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
 import { Avatar } from '../../components/common/Avatar';
@@ -12,10 +12,10 @@ import {
   Search,
   CheckCheck,
   User as UserIcon,
-  Sparkles,
   Trash2,
   FolderKanban,
-  Users,
+  ChevronLeft,
+  Sparkles,
 } from 'lucide-react';
 import {
   supabase,
@@ -28,6 +28,7 @@ import {
 
 export const MessagesPage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const targetUserId = searchParams.get('user');
   const targetConvId = searchParams.get('conversationId');
@@ -44,9 +45,10 @@ export const MessagesPage: React.FC = () => {
   const [search, setSearch] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
   };
 
   const fetchConversations = async () => {
@@ -109,7 +111,12 @@ export const MessagesPage: React.FC = () => {
 
       // Check project group link: /messages?projectGroupId=xyz
       if (targetProjectGroupId && list.length > 0) {
-        const found = list.find((c: any) => c.id === targetProjectGroupId || c.projectId === targetProjectGroupId || (c.id && c.id.includes(targetProjectGroupId)));
+        const found = list.find(
+          (c: any) =>
+            c.id === targetProjectGroupId ||
+            c.projectId === targetProjectGroupId ||
+            (c.id && c.id.includes(targetProjectGroupId))
+        );
         if (found) {
           setSelectedConversation(found);
           return;
@@ -127,12 +134,13 @@ export const MessagesPage: React.FC = () => {
 
       // 2. If user came via /messages?user=xyz
       if (targetUserId) {
-        const found = list.find(
+        let found = list.find(
           (c: any) =>
             c.participant?.id === targetUserId ||
             c.participant1Id === targetUserId ||
             c.participant2Id === targetUserId
         );
+
         if (found) {
           setSelectedConversation(found);
         } else {
@@ -177,7 +185,8 @@ export const MessagesPage: React.FC = () => {
             console.error('Failed to load target user for conversation:', err);
           }
         }
-      } else if (!selectedConversation && list.length > 0) {
+      } else if (!selectedConversation && list.length > 0 && window.innerWidth >= 768) {
+        // Auto-select on desktop only so mobile users start on inbox view
         setSelectedConversation(list[0]);
       }
     } catch (err) {
@@ -229,25 +238,27 @@ export const MessagesPage: React.FC = () => {
         if ((selectedConversation as any)?.isProjectGroup) {
           const pId = (selectedConversation as any).projectId || selectedConversation.id;
           const raw = localStorage.getItem(`startupz_project_messages_${pId}`);
-          const parsed = raw ? JSON.parse(raw) : [
-            {
-              id: `init-${selectedConversation.id}`,
-              conversationId: selectedConversation.id,
-              senderId: 'system',
-              content: `Welcome to the team chat for "${(selectedConversation as any).projectTitle || 'Project'}"! Team members and collaborators can coordinate and chat here.`,
-              createdAt: selectedConversation.lastMessageAt || new Date().toISOString(),
-              sender: {
-                id: 'system',
-                profile: {
-                  fullName: 'StartupZ System',
-                  avatar: null,
-                  headline: 'Workspace',
+          const parsed = raw
+            ? JSON.parse(raw)
+            : [
+                {
+                  id: `init-${selectedConversation.id}`,
+                  conversationId: selectedConversation.id,
+                  senderId: 'system',
+                  content: `Welcome to the team chat for "${(selectedConversation as any).projectTitle || 'Project'}"! Team members and collaborators can coordinate and chat here.`,
+                  createdAt: selectedConversation.lastMessageAt || new Date().toISOString(),
+                  sender: {
+                    id: 'system',
+                    profile: {
+                      fullName: 'StartupZ System',
+                      avatar: null,
+                      headline: 'Workspace',
+                    },
+                  },
                 },
-              },
-            },
-          ];
+              ];
           setMessages(parsed);
-          setTimeout(scrollToBottom, 100);
+          setTimeout(() => scrollToBottom('auto'), 50);
           return;
         }
 
@@ -259,10 +270,10 @@ export const MessagesPage: React.FC = () => {
         } else {
           // Fallback to backend API
           const res = await api.getMessages(selectedConversation.id).catch(() => []);
-          const list = Array.isArray(res) ? res : (res?.messages || res?.data || []);
+          const list = Array.isArray(res) ? res : res?.messages || res?.data || [];
           setMessages(list);
         }
-        setTimeout(scrollToBottom, 100);
+        setTimeout(() => scrollToBottom('auto'), 50);
       } catch (err) {
         console.error('Failed to load messages:', err);
       } finally {
@@ -347,7 +358,7 @@ export const MessagesPage: React.FC = () => {
   }, [selectedConversation?.id, user?.id]);
 
   useEffect(() => {
-    scrollToBottom();
+    scrollToBottom('smooth');
   }, [messages.length]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -402,7 +413,9 @@ export const MessagesPage: React.FC = () => {
         const rawGroups = localStorage.getItem('startupz_project_groups');
         if (rawGroups) {
           const groups = JSON.parse(rawGroups);
-          const idx = groups.findIndex((g: any) => g.id === selectedConversation.id || g.projectId === pId);
+          const idx = groups.findIndex(
+            (g: any) => g.id === selectedConversation.id || g.projectId === pId
+          );
           if (idx >= 0) {
             groups[idx].lastMessage = `${user.profile?.fullName?.split(' ')[0] || 'Member'}: ${contentToSend}`;
             groups[idx].lastMessageAt = new Date().toISOString();
@@ -416,6 +429,7 @@ export const MessagesPage: React.FC = () => {
       }
       return;
     }
+
     try {
       const res = await sendSupabaseMessage(
         user.id,
@@ -448,7 +462,12 @@ export const MessagesPage: React.FC = () => {
 
   const handleDeleteConversation = async () => {
     if (!selectedConversation || selectedConversation.id === 'draft' || !user?.id || deletingConv) return;
-    if (!window.confirm('Are you sure you want to delete this conversation? All message history will be permanently deleted.')) return;
+    if (
+      !window.confirm(
+        'Are you sure you want to delete this conversation? All message history will be permanently deleted.'
+      )
+    )
+      return;
 
     setDeletingConv(true);
     try {
@@ -456,6 +475,7 @@ export const MessagesPage: React.FC = () => {
       setConversations((prev) => prev.filter((c) => c.id !== selectedConversation.id));
       setSelectedConversation(null);
       setMessages([]);
+      navigate('/messages', { replace: true });
     } catch (err: any) {
       console.error('Failed to delete conversation:', err);
       alert(err.message || 'Unable to delete conversation. Please try again.');
@@ -464,6 +484,10 @@ export const MessagesPage: React.FC = () => {
     }
   };
 
+  const handleBackToList = () => {
+    setSelectedConversation(null);
+    navigate('/messages', { replace: true });
+  };
 
   const safeConversations = Array.isArray(conversations) ? conversations : [];
   const filteredConversations = safeConversations.filter((c) => {
@@ -471,70 +495,134 @@ export const MessagesPage: React.FC = () => {
     return pName.toLowerCase().includes(search.toLowerCase());
   });
 
+  const isDifferentDay = (d1: string, d2?: string) => {
+    if (!d2) return true;
+    return new Date(d1).toDateString() !== new Date(d2).toDateString();
+  };
+
+  const formatDateLabel = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    if (d.toDateString() === now.toDateString()) return 'Today';
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return d.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
+    });
+  };
+
+  const receiverName =
+    (selectedConversation as any)?.isProjectGroup
+      ? `[Project Group] ${(selectedConversation as any).projectTitle || selectedConversation?.participant?.profile?.fullName}`
+      : selectedConversation?.participant?.profile?.fullName ||
+        selectedConversation?.participant?.email ||
+        'Founder';
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-80px)] flex flex-col">
-      <div className="flex-1 card-base shadow-xs overflow-hidden flex flex-col md:flex-row">
+    <div className="w-full max-w-7xl mx-auto px-0 sm:px-4 md:px-6 lg:px-8 py-0 sm:py-3 md:py-5 h-[calc(100dvh-64px)] md:h-[calc(100vh-80px)] flex flex-col">
+      <div className="flex-1 card-base shadow-sm overflow-hidden flex flex-col md:flex-row border-0 sm:border border-slate-200 dark:border-dark-800 rounded-none sm:rounded-xl">
         
-        {/* Left Side: Conversation List */}
-        <div className="w-full md:w-80 lg:w-96 border-r border-slate-200 dark:border-dark-800 flex flex-col h-full bg-slate-50/50 dark:bg-dark-850/40">
-          <div className="p-3.5 border-b border-slate-200 dark:border-dark-800 space-y-2.5">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <MessageSquare size={16} className="text-brand-600 dark:text-brand-400" /> Messages
-            </h2>
+        {/* Left Side: Conversation List / Inbox */}
+        {/* On mobile: Hidden if a conversation is selected. On desktop: Always visible */}
+        <div
+          className={`${
+            selectedConversation ? 'hidden md:flex' : 'flex'
+          } w-full md:w-80 lg:w-96 border-r border-slate-200 dark:border-dark-800 flex-col h-full bg-slate-50/70 dark:bg-dark-900/60 shrink-0`}
+        >
+          {/* Inbox Header */}
+          <div className="p-3.5 border-b border-slate-200 dark:border-dark-800 space-y-2.5 bg-white dark:bg-dark-900">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <MessageSquare size={17} className="text-brand-600 dark:text-brand-400" />
+                <span>Messages</span>
+              </h2>
+              <span className="text-[11px] font-medium text-slate-400 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-dark-800">
+                {filteredConversations.length} {filteredConversations.length === 1 ? 'chat' : 'chats'}
+              </span>
+            </div>
+
             <div className="relative">
               <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search conversations..."
-                className="input-base pl-9 pr-3 py-1.5 text-xs"
+                placeholder="Search direct messages..."
+                className="input-base pl-9 pr-3 py-1.5 text-xs w-full bg-slate-50 dark:bg-dark-850"
               />
             </div>
           </div>
 
+          {/* Conversation Items List */}
           <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-dark-800">
             {loadingConversations ? (
               <div className="p-3.5 space-y-2.5">
                 {[1, 2, 3, 4].map((n) => (
-                  <div key={n} className="h-12 rounded-md bg-slate-200/60 dark:bg-dark-800 animate-pulse" />
+                  <div
+                    key={n}
+                    className="h-14 rounded-lg bg-slate-200/60 dark:bg-dark-800 animate-pulse"
+                  />
                 ))}
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div className="p-6 text-center text-xs text-slate-400">
-                No conversations yet. Connect with founders or teammates to chat.
+              <div className="p-8 text-center flex flex-col items-center justify-center h-full text-slate-400">
+                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-dark-800 flex items-center justify-center text-slate-400 mb-2">
+                  <MessageSquare size={20} />
+                </div>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  No conversations yet
+                </p>
+                <p className="text-[11px] text-slate-400 mt-1 max-w-xs">
+                  Connect with founders or collaborators to start chatting.
+                </p>
               </div>
             ) : (
               filteredConversations.map((conv) => {
                 const isSelected = selectedConversation?.id === conv.id;
                 const p = conv.participant;
                 const name = p?.profile?.fullName || p?.email || 'User';
+                const hasUnread = Boolean(conv.unreadCount && conv.unreadCount > 0);
 
                 return (
                   <button
                     key={conv.id}
                     onClick={() => setSelectedConversation(conv)}
-                    className={`w-full text-left p-3 flex items-start gap-2.5 transition-colors cursor-pointer ${
+                    className={`w-full text-left p-3.5 flex items-center gap-3 transition-colors cursor-pointer border-l-2 ${
                       isSelected
-                        ? 'bg-brand-50/70 dark:bg-brand-950/30 border-l-2 border-brand-600'
-                        : 'hover:bg-slate-100/70 dark:hover:bg-dark-800/40'
+                        ? 'bg-brand-50/80 dark:bg-brand-950/40 border-brand-600 dark:border-brand-500'
+                        : 'border-transparent hover:bg-slate-100/70 dark:hover:bg-dark-800/50'
                     }`}
                   >
                     {(conv as any).isProjectGroup ? (
-                      <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-200/60 dark:border-brand-900/60 shrink-0">
-                        <FolderKanban size={16} />
+                      <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-200/60 dark:border-brand-900/60 shrink-0">
+                        <FolderKanban size={18} />
                       </div>
                     ) : (
-                      <Avatar
-                        src={p?.profile?.avatar}
-                        name={name}
-                        size="md"
-                        className="!w-9 !h-9"
-                      />
+                      <div className="relative shrink-0">
+                        <Avatar
+                          src={p?.profile?.avatar}
+                          name={name}
+                          size="md"
+                          className="!w-10 !h-10 rounded-full"
+                        />
+                        {hasUnread && (
+                          <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-brand-600 rounded-full border-2 border-white dark:border-dark-900" />
+                        )}
+                      </div>
                     )}
+
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-1">
-                        <span className="font-semibold text-xs text-slate-900 dark:text-white truncate">
+                        <span
+                          className={`text-xs truncate ${
+                            hasUnread
+                              ? 'font-bold text-slate-900 dark:text-white'
+                              : 'font-semibold text-slate-800 dark:text-slate-200'
+                          }`}
+                        >
                           {name}
                         </span>
                         <span className="text-[10px] text-slate-400 shrink-0">
@@ -544,8 +632,14 @@ export const MessagesPage: React.FC = () => {
                           })}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                        {conv.lastMessage || 'Say hello...'}
+                      <p
+                        className={`text-[11px] truncate mt-0.5 ${
+                          hasUnread
+                            ? 'font-semibold text-slate-900 dark:text-slate-100'
+                            : 'text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        {conv.lastMessage || 'Start a conversation...'}
                       </p>
                     </div>
                   </button>
@@ -555,40 +649,62 @@ export const MessagesPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Side: Chat Window */}
-        <div className="flex-1 flex flex-col h-full bg-white dark:bg-dark-900">
+        {/* Right Side: Instagram-style Chat Window */}
+        {/* On mobile: Visible when selectedConversation != null. On desktop: Always visible */}
+        <div
+          className={`${
+            !selectedConversation ? 'hidden md:flex' : 'flex'
+          } flex-1 flex-col h-full bg-white dark:bg-dark-900`}
+        >
           {selectedConversation ? (
             <>
-              {/* Chat Header */}
-              <div className="p-3.5 border-b border-slate-200 dark:border-dark-800 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
+              {/* Instagram-style Chat Header on Top */}
+              <div className="px-3.5 py-3 border-b border-slate-200 dark:border-dark-800 flex items-center justify-between bg-white dark:bg-dark-900 shrink-0 sticky top-0 z-10 shadow-2xs">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {/* Mobile Back Button (<) */}
+                  <button
+                    onClick={handleBackToList}
+                    className="md:hidden p-1.5 -ml-1 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 rounded-full cursor-pointer transition-colors"
+                    aria-label="Back to conversations"
+                  >
+                    <ChevronLeft size={22} />
+                  </button>
+
+                  {/* Participant Avatar */}
                   {(selectedConversation as any).isProjectGroup ? (
-                    <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-200/60 dark:border-brand-900/60 shrink-0">
-                      <FolderKanban size={18} />
+                    <div className="w-9 h-9 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-200/60 dark:border-brand-900/60 shrink-0">
+                      <FolderKanban size={17} />
                     </div>
                   ) : (
-                    <Avatar
-                      src={selectedConversation.participant?.profile?.avatar}
-                      name={
-                        selectedConversation.participant?.profile?.fullName ||
-                        selectedConversation.participant?.email
-                      }
-                      size="md"
-                      className="!w-9 !h-9"
-                    />
+                    <Link
+                      to={`/profile/${selectedConversation.participant?.id}`}
+                      className="shrink-0 hover:opacity-85 transition-opacity"
+                    >
+                      <Avatar
+                        src={selectedConversation.participant?.profile?.avatar}
+                        name={receiverName}
+                        size="md"
+                        className="!w-9 !h-9 rounded-full"
+                      />
+                    </Link>
                   )}
-                  <div>
+
+                  {/* Participant Name & Status */}
+                  <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <h3 className="font-semibold text-xs text-slate-900 dark:text-white">
-                        {(selectedConversation as any).isProjectGroup
-                          ? `[Project Group] ${(selectedConversation as any).projectTitle || selectedConversation.participant?.profile?.fullName}`
-                          : selectedConversation.participant?.profile?.fullName ||
-                            selectedConversation.participant?.email ||
-                            'Founder'}
-                      </h3>
+                      <Link
+                        to={
+                          (selectedConversation as any).isProjectGroup
+                            ? '/projects'
+                            : `/profile/${selectedConversation.participant?.id}`
+                        }
+                        className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate hover:underline"
+                      >
+                        {receiverName}
+                      </Link>
                       {(selectedConversation as any).isProjectGroup ? (
                         <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300">
-                          Team Group
+                          Team
                         </span>
                       ) : (
                         <VerificationBadge
@@ -598,91 +714,156 @@ export const MessagesPage: React.FC = () => {
                         />
                       )}
                     </div>
-                    <p className="text-[10px] text-slate-400">
+                    <p className="text-[10px] text-slate-400 truncate">
                       {(selectedConversation as any).isProjectGroup
-                        ? `${(selectedConversation as any).members?.length || 1} team members • Pre-establishment workspace`
+                        ? `${(selectedConversation as any).members?.length || 1} members • Team chat`
                         : selectedConversation.participant?.profile?.headline ||
-                          selectedConversation.participant?.role}
+                          selectedConversation.participant?.role ||
+                          'Active on StartupZ'}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                {/* Header Action Buttons */}
+                <div className="flex items-center gap-2 shrink-0">
                   {selectedConversation.id !== 'draft' && (
                     <button
                       onClick={handleDeleteConversation}
                       disabled={deletingConv}
-                      className="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-dark-800 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 text-xs font-medium"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-900/50 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 text-xs"
                       title="Delete conversation"
                     >
-                      <Trash2 size={13} />
-                      <span className="hidden sm:inline">Delete</span>
+                      <Trash2 size={15} />
+                      <span className="hidden sm:inline font-medium">Delete</span>
                     </button>
                   )}
+
                   {(selectedConversation as any).isProjectGroup ? (
                     <Link
                       to="/projects"
-                      className="btn-secondary py-1 px-2.5 text-xs font-medium"
+                      className="btn-secondary py-1 px-2.5 text-xs font-medium rounded-lg"
                     >
                       View Project
                     </Link>
                   ) : (
                     <Link
                       to={`/profile/${selectedConversation.participant?.id}`}
-                      className="btn-secondary py-1 px-2.5 text-xs font-medium"
+                      className="btn-secondary py-1 px-2.5 text-xs font-medium rounded-lg inline-flex items-center gap-1"
                     >
-                      View Profile
+                      <UserIcon size={12} />
+                      <span className="hidden sm:inline">Profile</span>
                     </Link>
                   )}
                 </div>
               </div>
 
               {/* Messages Bubble Area */}
-              <div className="flex-1 p-4 overflow-y-auto space-y-2.5 bg-slate-50/30 dark:bg-dark-950/20">
+              <div className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-3 bg-slate-50/40 dark:bg-dark-950/30">
                 {loadingMessages ? (
                   <div className="flex justify-center items-center h-full text-xs text-slate-400">
                     Loading messages...
                   </div>
                 ) : messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-2">
-                    <div className="w-10 h-10 rounded-md bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-200/50 dark:border-brand-900/50">
-                      <Sparkles size={20} />
+                  /* Instagram-style Initial Hero Intro */
+                  <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-3 my-auto">
+                    <div className="relative">
+                      <Avatar
+                        src={selectedConversation.participant?.profile?.avatar}
+                        name={receiverName}
+                        size="lg"
+                        className="!w-16 !h-16 shadow-md rounded-full ring-4 ring-slate-100 dark:ring-dark-800"
+                      />
                     </div>
-                    <h4 className="font-semibold text-xs text-slate-900 dark:text-white">
-                      Start of conversation
-                    </h4>
-                    <p className="text-xs text-slate-400 max-w-xs">
+                    <div className="space-y-1 max-w-xs">
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                        {receiverName}
+                      </h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                        {selectedConversation.participant?.profile?.headline ||
+                          'Startup Founder & Collaborator'}
+                      </p>
+                    </div>
+
+                    {selectedConversation.participant?.id && (
+                      <Link
+                        to={`/profile/${selectedConversation.participant.id}`}
+                        className="btn-secondary py-1 px-3 text-xs font-medium rounded-full inline-flex items-center gap-1.5"
+                      >
+                        <UserIcon size={12} />
+                        <span>View Profile</span>
+                      </Link>
+                    )}
+
+                    <div className="pt-2 text-[11px] text-slate-400 max-w-xs">
                       Send a message to introduce yourself, discuss mutual startup synergies, or share ideas.
-                    </p>
+                    </div>
                   </div>
                 ) : (
-                  messages.map((m) => {
+                  messages.map((m, idx) => {
                     const isMe = m.senderId === user?.id;
+                    const prevMsg = idx > 0 ? messages[idx - 1] : undefined;
+                    const showDateBreak = isDifferentDay(m.createdAt, prevMsg?.createdAt);
 
                     return (
-                      <div
-                        key={m.id}
-                        className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}
-                      >
+                      <React.Fragment key={m.id || `msg-${idx}`}>
+                        {/* Centered Date Separator */}
+                        {showDateBreak && (
+                          <div className="flex items-center justify-center my-3">
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200/80 dark:bg-dark-800 text-slate-600 dark:text-slate-300 shadow-2xs">
+                              {formatDateLabel(m.createdAt)}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Message Row */}
                         <div
-                          className={`max-w-xs sm:max-w-md px-3.5 py-2 rounded-lg text-xs leading-relaxed ${
-                            isMe
-                              ? 'bg-brand-600 text-white rounded-br-xs shadow-xs'
-                              : 'bg-white dark:bg-dark-850 text-slate-900 dark:text-white rounded-bl-xs border border-slate-200 dark:border-dark-800'
-                          }`}
+                          className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} w-full`}
                         >
-                          {m.content}
+                          {isMe ? (
+                            /* SENDER BUBBLE (Right Side) */
+                            <div className="flex flex-col items-end max-w-[85%] sm:max-w-md ml-auto">
+                              <div className="bg-brand-600 text-white rounded-2xl rounded-tr-xs px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-xs break-words">
+                                {m.content}
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-end gap-1 mr-1">
+                                <span>
+                                  {new Date(m.createdAt).toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </span>
+                                <CheckCheck size={12} className="text-brand-600 dark:text-brand-400" />
+                              </div>
+                            </div>
+                          ) : (
+                            /* RECEIVER BUBBLE (Left Side) */
+                            <div className="flex items-end justify-start gap-2 max-w-[85%] sm:max-w-md mr-auto">
+                              <Avatar
+                                src={
+                                  (m as any).sender?.profile?.avatar ||
+                                  selectedConversation.participant?.profile?.avatar
+                                }
+                                name={receiverName}
+                                size="sm"
+                                className="!w-7 !h-7 rounded-full mb-4 shrink-0 shadow-2xs"
+                              />
+                              <div className="flex flex-col items-start">
+                                <div className="bg-white dark:bg-dark-850 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-dark-750 rounded-2xl rounded-tl-xs px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-2xs break-words">
+                                  {m.content}
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-1 ml-1">
+                                  <span>
+                                    {new Date(m.createdAt).toLocaleTimeString([], {
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
-                          <span>
-                            {new Date(m.createdAt).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </span>
-                          {isMe && <CheckCheck size={11} className="text-brand-600 dark:text-brand-400" />}
-                        </div>
-                      </div>
+                      </React.Fragment>
                     );
                   })
                 )}
@@ -690,25 +871,30 @@ export const MessagesPage: React.FC = () => {
               </div>
 
               {/* Message Composer Input */}
-              <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-200 dark:border-dark-800 flex items-center gap-2">
+              <form
+                onSubmit={handleSendMessage}
+                className="p-2.5 sm:p-3 border-t border-slate-200 dark:border-dark-800 bg-white dark:bg-dark-900 flex items-center gap-2 shrink-0"
+              >
                 <input
+                  ref={inputRef}
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type a message..."
-                  className="input-base py-2 px-3 text-xs flex-1"
+                  placeholder="Message..."
+                  className="input-base py-2 px-3.5 text-xs sm:text-sm flex-1 rounded-full bg-slate-50 dark:bg-dark-850 border-slate-200 dark:border-dark-750 focus:bg-white dark:focus:bg-dark-900"
                 />
                 <button
                   type="submit"
                   disabled={sending || !newMessage.trim()}
-                  className="btn-primary py-2 px-3 text-xs font-semibold inline-flex items-center justify-center disabled:opacity-40"
+                  className="w-9 h-9 rounded-full bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 active:scale-95 disabled:opacity-40 transition-all cursor-pointer shadow-xs shrink-0"
                   aria-label="Send message"
                 >
-                  <Send size={14} />
+                  <Send size={15} />
                 </button>
               </form>
             </>
           ) : (
+            /* Empty State for Desktop when no conversation is active */
             <div className="flex-1 flex items-center justify-center p-6 text-center">
               <EmptyState
                 icon={MessageSquare}

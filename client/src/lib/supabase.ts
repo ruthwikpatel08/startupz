@@ -942,6 +942,106 @@ export async function getSupabaseMessages(
 }
 
 /**
+ * Ensures a valid conversation row exists in Supabase public.conversations
+ * between userA and userB, and returns its valid UUID id.
+ */
+export async function ensureSupabaseConversationId(
+  userA: string,
+  userB: string,
+  hintConversationId?: string
+): Promise<string> {
+  if (!userA || !userB || userA === userB) {
+    throw new Error('Invalid participants for conversation.');
+  }
+
+  // 1. If a hint is provided and not draft, verify if it actually exists in Supabase
+  if (hintConversationId && hintConversationId !== 'draft') {
+    try {
+      const { data: checkData } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('id', hintConversationId)
+        .maybeSingle();
+
+      if (checkData?.id) {
+        return checkData.id;
+      }
+    } catch {
+      // Continue to search by participant IDs
+    }
+  }
+
+  // 2. Search for existing conversation between userA and userB regardless of order
+  const [p1, p2] = [userA, userB].sort();
+
+  try {
+    const { data: found } = await supabase
+      .from('conversations')
+      .select('id')
+      .or(`and(participant1_id.eq.${p1},participant2_id.eq.${p2}),and(participant1_id.eq.${p2},participant2_id.eq.${p1})`)
+      .maybeSingle();
+
+    if (found?.id) {
+      return found.id;
+    }
+  } catch {}
+
+  // Also query without compound syntax in case of PostgREST filter limitation
+  try {
+    const { data: fallbackList } = await supabase
+      .from('conversations')
+      .select('id, participant1_id, participant2_id')
+      .or(`participant1_id.eq.${userA},participant2_id.eq.${userA}`);
+
+    const existing = (fallbackList || []).find(
+      (c) =>
+        (c.participant1_id === userA && c.participant2_id === userB) ||
+        (c.participant1_id === userB && c.participant2_id === userA)
+    );
+
+    if (existing?.id) {
+      return existing.id;
+    }
+  } catch {}
+
+  // 3. Create a new conversation row in Supabase
+  try {
+    const { data: newConv } = await supabase
+      .from('conversations')
+      .insert({
+        participant1_id: p1,
+        participant2_id: p2,
+        last_message: 'Started conversation',
+        last_message_at: new Date().toISOString(),
+      })
+      .select('id')
+      .maybeSingle();
+
+    if (newConv?.id) {
+      return newConv.id;
+    }
+  } catch {}
+
+  // 4. If insert failed (e.g. race condition or unique constraint), query once more
+  const { data: refetched } = await supabase
+    .from('conversations')
+    .select('id, participant1_id, participant2_id')
+    .or(`participant1_id.eq.${userA},participant2_id.eq.${userA}`);
+
+  const match = (refetched || []).find(
+    (c) =>
+      (c.participant1_id === userA && c.participant2_id === userB) ||
+      (c.participant1_id === userB && c.participant2_id === userA)
+  );
+
+  if (match?.id) {
+    return match.id;
+  }
+
+  throw new Error('Unable to establish conversation in database.');
+}
+
+/**
  * Sends a message in Supabase persistently.
  */
 export async function sendSupabaseMessage(
@@ -954,41 +1054,8 @@ export async function sendSupabaseMessage(
   if (!text) throw new Error('Message content cannot be empty.');
   if (senderId === receiverId) throw new Error('Cannot message yourself.');
 
-  const [p1, p2] = [senderId, receiverId].sort();
-  let convId = existingConversationId;
-
-  if (!convId || convId === 'draft') {
-    // 1. Check if conversation already exists between p1 and p2
-    const { data: existingConvs } = await supabase
-      .from('conversations')
-      .select('id')
-      .eq('participant1_id', p1)
-      .eq('participant2_id', p2)
-      .maybeSingle();
-
-    if (existingConvs?.id) {
-      convId = existingConvs.id;
-    } else {
-      // Create new conversation
-      const { data: newConv, error: convErr } = await supabase
-        .from('conversations')
-        .insert({
-          participant1_id: p1,
-          participant2_id: p2,
-          last_message: text,
-          last_message_at: new Date().toISOString(),
-        })
-        .select('id')
-        .single();
-
-      if (convErr || !newConv) {
-        throw new Error(convErr?.message || 'Failed to create conversation in Supabase.');
-      }
-      convId = newConv.id;
-    }
-  }
-
-  const finalConvId: string = convId!;
+  // Always ensure a valid existing conversation record in Supabase
+  const finalConvId = await ensureSupabaseConversationId(senderId, receiverId, existingConversationId);
 
   // 2. Insert message into Supabase messages table
   const { data: newMsg, error: msgErr } = await supabase
@@ -1004,18 +1071,37 @@ export async function sendSupabaseMessage(
     .single();
 
   if (msgErr || !newMsg) {
+    // If Supabase insert failed, attempt backend API as reliable sync fallback
+    try {
+      const apiRes = await api.sendMessage({ receiverId, content: text });
+      if (apiRes) {
+        const fallbackMsg: Message = {
+          id: (apiRes as any).id || (apiRes as any).data?.id || `msg-${Date.now()}`,
+          conversationId: finalConvId,
+          senderId,
+          receiverId,
+          content: text,
+          isRead: false,
+          createdAt: new Date().toISOString(),
+        };
+        return { message: fallbackMsg, conversationId: finalConvId };
+      }
+    } catch {}
+
     throw new Error(msgErr?.message || 'Unable to send message. Please try again.');
   }
 
   // 3. Update conversation last_message and last_message_at
-  await supabase
-    .from('conversations')
-    .update({
-      last_message: text,
-      last_message_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', finalConvId);
+  try {
+    await supabase
+      .from('conversations')
+      .update({
+        last_message: text,
+        last_message_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', finalConvId);
+  } catch {}
 
   // 4. Send notification
   try {
