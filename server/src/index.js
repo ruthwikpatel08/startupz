@@ -152,7 +152,7 @@ app.use((req, res) => {
 
 async function purgeDemoDatabase() {
   const realEmails = ['ruthwikpatel08@gmail.com', 'legacyplayer04@gmail.com', 'lavanyadav0206@gmail.com'];
-  
+
   // 1. Delete all demo startups, opportunities, and interactions
   await prisma.opportunityApplication.deleteMany({});
   await prisma.startupOpportunity.deleteMany({});

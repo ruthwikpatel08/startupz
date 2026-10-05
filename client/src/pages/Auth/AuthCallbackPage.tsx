@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase, upsertUserProfile, recordAuthProviderHint, fetchUserProfile } from '../../lib/supabase';
 import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import {
   Rocket,
   AlertCircle,
@@ -31,6 +32,7 @@ interface RoleCategoryOption {
 export const AuthCallbackPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { updateUser } = useAuth();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // New Google user setup state
@@ -61,20 +63,6 @@ export const AuthCallbackPage: React.FC = () => {
       defaultHeadline: 'Co-Founder | Technical & Product Partner',
     },
     {
-      id: 'Marketers',
-      label: 'Marketer',
-      icon: Megaphone,
-      desc: 'Growth lead, performance marketer, GTM strategist.',
-      defaultHeadline: 'Growth Marketer | Demand & Traction Lead',
-    },
-    {
-      id: 'Investors',
-      label: 'Investor',
-      icon: TrendingUp,
-      desc: 'Angel investor, syndicate backer, or venture capitalist.',
-      defaultHeadline: 'Angel Investor | Early-Stage Backer',
-    },
-    {
       id: 'Developer',
       label: 'Developer / Engineer',
       icon: Code,
@@ -87,6 +75,20 @@ export const AuthCallbackPage: React.FC = () => {
       icon: Palette,
       desc: 'UI/UX architect, brand designer, product design lead.',
       defaultHeadline: 'Product & UI/UX Designer | Creative Lead',
+    },
+    {
+      id: 'Marketers',
+      label: 'Marketer',
+      icon: Megaphone,
+      desc: 'Growth lead, performance marketer, GTM strategist.',
+      defaultHeadline: 'Growth Marketer | Demand & Traction Lead',
+    },
+    {
+      id: 'Investors',
+      label: 'Investor',
+      icon: TrendingUp,
+      desc: 'Angel investor, syndicate backer, or venture capitalist.',
+      defaultHeadline: 'Angel Investor | Early-Stage Backer',
     },
     {
       id: 'Mentor',
@@ -133,13 +135,62 @@ export const AuthCallbackPage: React.FC = () => {
             recordAuthProviderHint(user.email, 'google');
           }
 
-          // Check if profile exists in public.profiles
+          // Check if profile exists in public.profiles and has completed details
           const existingProfile = await fetchUserProfile(user.id);
 
           // If existing profile has already selected a category, they are an existing user!
-          // NEW USER: auto-provision profile with is_category_selected: true and navigate straight to dashboard
+          if (existingProfile && existingProfile.is_category_selected === true) {
+            if (isSubscribed) {
+              navigate('/', { replace: true });
+            }
+            return;
+          }
+
+          // Otherwise, they are a new user signing up via Google! Prompt them for details:
+          const userFullName =
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            user.email?.split('@')[0] ||
+            'Member';
+
+          const userAvatar =
+            user.user_metadata?.avatar_url ||
+            user.user_metadata?.picture ||
+            '';
+
+          let initialRole = 'Founders';
+          let initialHeadline = 'Founder & Visionary | Startup Builder';
+          let initialLocation = 'Remote';
+          let initialCustomRole = '';
+
+          try {
+            const rawMeta = localStorage.getItem('startupz_oauth_meta');
+            if (rawMeta) {
+              const meta = JSON.parse(rawMeta);
+              if (meta.role) {
+                if (meta.role.startsWith('Other:')) {
+                  initialRole = 'Other';
+                  initialCustomRole = meta.role.replace(/^Other:\s*/, '');
+                } else {
+                  initialRole = meta.role;
+                }
+              }
+              if (meta.headline) initialHeadline = meta.headline;
+              if (meta.location) initialLocation = meta.location;
+              if (meta.customRole) initialCustomRole = meta.customRole;
+            }
+          } catch {}
+
           if (isSubscribed) {
-            navigate('/', { replace: true });
+            setAuthUser(user);
+            setFullName(userFullName);
+            setUsername((user.email?.split('@')[0] || 'user').toLowerCase().replace(/[^a-z0-9_]/g, ''));
+            setAvatar(userAvatar);
+            setSelectedRole(initialRole);
+            setCustomRoleDescription(initialCustomRole);
+            setHeadline(initialHeadline);
+            setLocation(initialLocation);
+            setIsNewUser(true);
           }
           return;
         }
@@ -167,16 +218,40 @@ export const AuthCallbackPage: React.FC = () => {
               const userAvatar =
                 user.user_metadata?.avatar_url ||
                 user.user_metadata?.picture ||
-                null;
+                '';
+
+              let initialRole = 'Founders';
+              let initialHeadline = 'Founder & Visionary | Startup Builder';
+              let initialLocation = 'Remote';
+              let initialCustomRole = '';
+
+              try {
+                const rawMeta = localStorage.getItem('startupz_oauth_meta');
+                if (rawMeta) {
+                  const meta = JSON.parse(rawMeta);
+                  if (meta.role) {
+                    if (meta.role.startsWith('Other:')) {
+                      initialRole = 'Other';
+                      initialCustomRole = meta.role.replace(/^Other:\s*/, '');
+                    } else {
+                      initialRole = meta.role;
+                    }
+                  }
+                  if (meta.headline) initialHeadline = meta.headline;
+                  if (meta.location) initialLocation = meta.location;
+                  if (meta.customRole) initialCustomRole = meta.customRole;
+                }
+              } catch {}
 
               if (isSubscribed) {
                 setAuthUser(user);
                 setFullName(userFullName);
                 setUsername((user.email?.split('@')[0] || 'user').toLowerCase().replace(/[^a-z0-9_]/g, ''));
                 setAvatar(userAvatar);
-                setSelectedRole('Founders');
-                setHeadline('Founder & Visionary | Startup Builder');
-                setLocation('Remote');
+                setSelectedRole(initialRole);
+                setCustomRoleDescription(initialCustomRole);
+                setHeadline(initialHeadline);
+                setLocation(initialLocation);
                 setIsNewUser(true);
               }
             }
@@ -267,7 +342,30 @@ export const AuthCallbackPage: React.FC = () => {
         // Backend offline fallback
       }
 
-      // 4. Navigate to home
+      // 4. Update cached user in localStorage & AuthContext
+      const appUser = {
+        id: authUser.id,
+        email: authUser.email || '',
+        role: selectedRole.toUpperCase(),
+        isVerified: true,
+        verificationBadge: 'Verified via Google',
+        profile: {
+          id: authUser.id,
+          userId: authUser.id,
+          fullName: cleanFullName,
+          username: cleanUsername,
+          headline: cleanHeadline,
+          location: cleanLocation,
+          avatar,
+          preferredRole: finalPreferredRole,
+          isCategorySelected: true,
+          profileCompletion: 75,
+        },
+      };
+      localStorage.setItem('startupz_user', JSON.stringify(appUser));
+      updateUser(appUser as any);
+
+      // 5. Navigate to home
       navigate('/', { replace: true });
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to save your profile category. Please try again.');

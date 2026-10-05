@@ -26,10 +26,11 @@ import {
   MessageSquare,
   Megaphone,
   BriefcaseBusiness,
+  GraduationCap,
   X,
 } from 'lucide-react';
 
-export function getUserCategory(user: any): 'founders' | 'cofounders' | 'marketers' | 'investors' | 'other' {
+export function getUserCategory(user: any): 'founders' | 'cofounders' | 'marketers' | 'investors' | 'mentors' {
   const role = (user.role || user.profile?.preferredRole || user.preferred_role || '').toString().trim().toLowerCase();
   const headline = (user.profile?.headline || user.headline || '').toLowerCase();
 
@@ -70,7 +71,20 @@ export function getUserCategory(user: any): 'founders' | 'cofounders' | 'markete
     return 'investors';
   }
 
-  // 4. Check Marketers
+  // 4. Check Mentors
+  if (
+    role.includes('mentor') ||
+    role.includes('advisor') ||
+    role.includes('advisory') ||
+    headline.includes('mentor') ||
+    headline.includes('advisor') ||
+    headline.includes('advisory') ||
+    user.mentorProfile
+  ) {
+    return 'mentors';
+  }
+
+  // 5. Check Marketers
   if (
     role.includes('market') ||
     role.includes('growth') ||
@@ -80,7 +94,7 @@ export function getUserCategory(user: any): 'founders' | 'cofounders' | 'markete
     return 'marketers';
   }
 
-  return 'other';
+  return 'founders';
 }
 
 // Module-level caches to eliminate duplicate and N+1 network requests
@@ -212,7 +226,7 @@ export const FindCoFounderPage: React.FC = () => {
     { label: 'Co-Founders', value: 'cofounders', icon: Users, hint: 'Builders seeking synergy' },
     { label: 'Marketers', value: 'marketers', icon: Megaphone, hint: 'Growth & demand specialists' },
     { label: 'Investors', value: 'investors', icon: TrendingUp, hint: 'Angel & VC capital backers' },
-    { label: 'Other', value: 'other', icon: BriefcaseBusiness, hint: 'Engineers, designers & advisors' },
+    { label: 'Mentors', value: 'mentors', icon: GraduationCap, hint: 'Advisors & startup coaches' },
   ];
 
   const handleSelectCategory = (cat: string) => {
@@ -317,8 +331,8 @@ export const FindCoFounderPage: React.FC = () => {
         if (industry !== 'ALL') params.append('industry', industry);
         if (availability !== 'ALL') params.append('availability', availability);
 
-        // Concurrently query Backend API matches, Supabase profiles table, and extra investors (when category is 'all')
-        const [matchesResult, supaResult, extraInvResult] = await Promise.allSettled([
+        // Concurrently query Backend API matches, Supabase profiles table, extra investors, and mentors
+        const [matchesResult, supaResult, extraInvResult, extraMentorsResult] = await Promise.allSettled([
           api.getCofounderMatches(params.toString()),
           (!force && cachedSupaProfiles && cachedSupaProfilesExpiresAt > Date.now())
             ? Promise.resolve({ data: cachedSupaProfiles })
@@ -326,6 +340,9 @@ export const FindCoFounderPage: React.FC = () => {
           currentCategory === 'all'
             ? api.getInvestors('')
             : Promise.resolve({ investors: [] }),
+          currentCategory === 'all' || currentCategory === 'mentors'
+            ? api.getMentors('')
+            : Promise.resolve({ mentors: [] }),
         ]);
 
         let loadedMatches: any[] = [];
@@ -391,7 +408,32 @@ export const FindCoFounderPage: React.FC = () => {
           }));
         }
 
-        const rawAllCandidates = [...supaMappedProfiles, ...loadedMatches, ...extraAllInvestors];
+        let extraAllMentors: any[] = [];
+        if (extraMentorsResult.status === 'fulfilled' && extraMentorsResult.value?.mentors) {
+          extraAllMentors = (extraMentorsResult.value.mentors || []).map((m: any) => ({
+            id: m.user?.id || m.userId || m.id,
+            email: m.user?.email || '',
+            role: 'MENTOR',
+            preferred_role: 'MENTOR',
+            verificationBadge: 'Verified Mentor',
+            profile: {
+              id: m.id,
+              userId: m.userId || m.id,
+              fullName: m.user?.profile?.fullName || 'Distinguished Mentor',
+              username: m.user?.profile?.username || (m.user?.email ? m.user.email.split('@')[0] : 'mentor'),
+              headline: m.user?.profile?.headline || `${m.yearsExperience || 5}+ Years Experience | Startup Mentor`,
+              location: m.user?.profile?.location || 'Remote',
+              bio: m.about || '',
+              avatar: m.user?.profile?.avatar,
+              skills: m.mentoringTopics || m.industries || 'Advisory, Strategy',
+              preferredRole: 'MENTOR',
+              availability: m.availableHours || 'Advisory',
+              openTo: 'Mentorship, Advisory',
+            },
+          }));
+        }
+
+        const rawAllCandidates = [...supaMappedProfiles, ...loadedMatches, ...extraAllInvestors, ...extraAllMentors];
         if (rawAllCandidates.length > 0) {
           setRawCandidates(rawAllCandidates);
           cachedAllCandidates = rawAllCandidates;

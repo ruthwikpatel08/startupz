@@ -77,13 +77,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             metadata.picture ||
             null;
 
+          const isCategorySelected = !isGoogle && !!metadata.role;
+
           profileRow = await upsertUserProfile(userId, {
             full_name: fullName,
             headline: metadata.headline || `${role} | Startup Builder`,
             location: metadata.location || 'Remote',
             avatar,
             preferred_role: role,
-            is_category_selected: true, // Set to true so no login popup interrupts new users
+            is_category_selected: isCategorySelected,
             auth_provider: isGoogle ? 'google' : 'email',
             email: authUser.email || '',
             startup_experience: '',
