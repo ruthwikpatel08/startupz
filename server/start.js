@@ -1,4 +1,3 @@
-import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -37,29 +36,7 @@ try {
   console.warn('[StartupZ Startup] Notice: could not write fallback .env file:', e.message);
 }
 
-const execEnv = {
-  ...process.env,
-  DATABASE_URL: process.env.DATABASE_URL,
-  JWT_SECRET: process.env.JWT_SECRET,
-};
-
-// 3. Generate Prisma client
-console.log('[StartupZ Startup] Generating Prisma client...');
-try {
-  execSync('npx prisma generate', { stdio: 'inherit', env: execEnv, cwd: __dirname });
-} catch (err) {
-  console.error('[StartupZ Startup] Error generating Prisma client:', err.message);
-}
-
-// 4. Push database schema
-console.log('[StartupZ Startup] Syncing database schema with Prisma db push...');
-try {
-  execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit', env: execEnv, cwd: __dirname });
-  console.log('[StartupZ Startup] Database schema synchronized.');
-} catch (err) {
-  console.error('[StartupZ Startup] Error pushing database schema:', err.message);
-}
-
-// 5. Start the Express API server
+// 3. Start the Express API server
 console.log('[StartupZ Startup] Starting Express API server...');
 await import('./src/index.js');
+
