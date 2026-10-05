@@ -15,7 +15,6 @@ import {
   Trash2,
   FolderKanban,
   ChevronLeft,
-  Sparkles,
 } from 'lucide-react';
 import {
   supabase,
@@ -24,6 +23,7 @@ import {
   getSupabaseMessages,
   sendSupabaseMessage,
   deleteSupabaseConversation,
+  markMessagesAsRead,
 } from '../../lib/supabase';
 
 export const MessagesPage: React.FC = () => {
@@ -51,6 +51,16 @@ export const MessagesPage: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior });
   };
 
+  const getParticipantKey = (c: any) => {
+    if (c.isProjectGroup) {
+      return `group_${c.projectId || c.id}`;
+    }
+    const otherId =
+      c.participant?.id ||
+      (c.participant1Id === user?.id ? c.participant2Id : c.participant1Id);
+    return otherId ? `user_${otherId}` : `conv_${c.id}`;
+  };
+
   const fetchConversations = async () => {
     try {
       // Fetch from Supabase and backend API in parallel
@@ -58,14 +68,22 @@ export const MessagesPage: React.FC = () => {
         user?.id ? getSupabaseConversations(user.id) : Promise.resolve([]),
         api.getConversations().catch(() => []),
       ]);
-      const apiList = Array.isArray(apiRes) ? apiRes : (apiRes?.conversations || apiRes?.data || []);
+      const apiList = Array.isArray(apiRes) ? apiRes : apiRes?.conversations || apiRes?.data || [];
 
-      // Merge and deduplicate by conversation id
+      // Merge and deduplicate by participant user ID so that each account only appears ONCE
       const convMap = new Map<string, Conversation>();
-      supaList.forEach((c) => convMap.set(c.id, c));
+
+      supaList.forEach((c) => {
+        const key = getParticipantKey(c);
+        if (!convMap.has(key)) {
+          convMap.set(key, c);
+        }
+      });
+
       apiList.forEach((c: any) => {
-        if (!convMap.has(c.id)) {
-          convMap.set(c.id, c);
+        const key = getParticipantKey(c);
+        if (!convMap.has(key)) {
+          convMap.set(key, c);
         }
       });
 
@@ -98,7 +116,8 @@ export const MessagesPage: React.FC = () => {
                 lastMessageAt: g.lastMessageAt || g.createdAt || new Date().toISOString(),
                 members: g.members || [],
               };
-              convMap.set(g.id, groupConv);
+              const key = `group_${g.projectId || g.id}`;
+              convMap.set(key, groupConv);
             });
           }
         }
@@ -146,7 +165,6 @@ export const MessagesPage: React.FC = () => {
         } else {
           // If conversation doesn't exist in list yet, fetch user to start a clean draft conversation
           try {
-            // Check Supabase profiles first (cached & deduplicated)
             const pData = await fetchUserProfile(targetUserId);
 
             let userObj: any = null;
@@ -185,9 +203,6 @@ export const MessagesPage: React.FC = () => {
             console.error('Failed to load target user for conversation:', err);
           }
         }
-      } else if (!selectedConversation && list.length > 0 && window.innerWidth >= 768) {
-        // Auto-select on desktop only so mobile users start on inbox view
-        setSelectedConversation(list[0]);
       }
     } catch (err) {
       console.error('Failed to load conversations:', err);
@@ -263,7 +278,7 @@ export const MessagesPage: React.FC = () => {
         }
 
         // 1. Fetch persistent messages from Supabase
-        const supaMsgs = await getSupabaseMessages(selectedConversation.id, user?.id || '');
+        const supaMsgs = await getSupabaseMessages(selectedConversation.id);
 
         if (supaMsgs.length > 0) {
           setMessages(supaMsgs);
@@ -273,6 +288,15 @@ export const MessagesPage: React.FC = () => {
           const list = Array.isArray(res) ? res : res?.messages || res?.data || [];
           setMessages(list);
         }
+
+        // 2. Mark unread messages in this conversation as read
+        if (user?.id) {
+          await markMessagesAsRead(selectedConversation.id, user.id);
+          setConversations((prev) =>
+            prev.map((c) => (c.id === selectedConversation.id ? { ...c, unreadCount: 0 } : c))
+          );
+        }
+
         setTimeout(() => scrollToBottom('auto'), 50);
       } catch (err) {
         console.error('Failed to load messages:', err);
@@ -317,17 +341,31 @@ export const MessagesPage: React.FC = () => {
               ];
             });
 
-            // Mark as read if received by current user
-            if (newRow.receiver_id === user?.id) {
-              (async () => {
-                try {
-                  await supabase
-                    .from('messages')
-                    .update({ is_read: true })
-                    .eq('id', newRow.id);
-                } catch {}
-              })();
+            // Mark as read immediately if received by current user while actively viewing
+            if (newRow.receiver_id === user?.id && user?.id) {
+              markMessagesAsRead(selectedConversation.id, user.id);
             }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${selectedConversation.id}`,
+        },
+        (payload) => {
+          const updatedRow = payload.new as any;
+          if (updatedRow && updatedRow.id) {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === updatedRow.id
+                  ? { ...m, isRead: updatedRow.is_read, content: updatedRow.content }
+                  : m
+              )
+            );
           }
         }
       )
@@ -336,7 +374,7 @@ export const MessagesPage: React.FC = () => {
     // Fallback polling every 5 seconds for resilience
     const interval = setInterval(async () => {
       try {
-        const msgs = await getSupabaseMessages(selectedConversation.id, user?.id || '');
+        const msgs = await getSupabaseMessages(selectedConversation.id);
         if (msgs.length > 0) {
           setMessages((prev) => {
             if (
@@ -360,6 +398,16 @@ export const MessagesPage: React.FC = () => {
   useEffect(() => {
     scrollToBottom('smooth');
   }, [messages.length]);
+
+  const handleSelectConversation = async (conv: Conversation) => {
+    setSelectedConversation(conv);
+    if (conv.unreadCount && conv.unreadCount > 0 && conv.id !== 'draft' && user?.id) {
+      setConversations((prev) =>
+        prev.map((c) => (c.id === conv.id ? { ...c, unreadCount: 0 } : c))
+      );
+      await markMessagesAsRead(conv.id, user.id);
+    }
+  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -584,12 +632,12 @@ export const MessagesPage: React.FC = () => {
                 const isSelected = selectedConversation?.id === conv.id;
                 const p = conv.participant;
                 const name = p?.profile?.fullName || p?.email || 'User';
-                const hasUnread = Boolean(conv.unreadCount && conv.unreadCount > 0);
+                const hasUnread = Boolean(conv.unreadCount && conv.unreadCount > 0 && !isSelected);
 
                 return (
                   <button
                     key={conv.id}
-                    onClick={() => setSelectedConversation(conv)}
+                    onClick={() => handleSelectConversation(conv)}
                     className={`w-full text-left p-3.5 flex items-center gap-3 transition-colors cursor-pointer border-l-2 ${
                       isSelected
                         ? 'bg-brand-50/80 dark:bg-brand-950/40 border-brand-600 dark:border-brand-500'
@@ -625,17 +673,24 @@ export const MessagesPage: React.FC = () => {
                         >
                           {name}
                         </span>
-                        <span className="text-[10px] text-slate-400 shrink-0">
-                          {new Date(conv.lastMessageAt).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-[10px] text-slate-400">
+                            {new Date(conv.lastMessageAt).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </span>
+                          {hasUnread && (
+                            <span className="bg-brand-600 text-white text-[10px] font-bold rounded-full min-w-4.5 h-4.5 px-1 flex items-center justify-center shadow-2xs">
+                              {conv.unreadCount}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <p
                         className={`text-[11px] truncate mt-0.5 ${
                           hasUnread
-                            ? 'font-semibold text-slate-900 dark:text-slate-100'
+                            ? 'font-bold text-slate-900 dark:text-slate-100'
                             : 'text-slate-500 dark:text-slate-400'
                         }`}
                       >
@@ -832,7 +887,16 @@ export const MessagesPage: React.FC = () => {
                                     minute: '2-digit',
                                   })}
                                 </span>
-                                <CheckCheck size={12} className="text-brand-600 dark:text-brand-400" />
+                                <span title={m.isRead ? 'Read' : 'Delivered'} className="inline-flex">
+                                  <CheckCheck
+                                    size={12}
+                                    className={
+                                      m.isRead
+                                        ? 'text-brand-600 dark:text-brand-400'
+                                        : 'text-slate-400 dark:text-slate-500'
+                                    }
+                                  />
+                                </span>
                               </div>
                             </div>
                           ) : (

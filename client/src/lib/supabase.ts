@@ -820,6 +820,7 @@ export async function removeConnection(
 
 /**
  * Fetches all conversations for the user from Supabase.
+ * Deduplicates by participant ID so each account appears only once.
  */
 export async function getSupabaseConversations(userId: string): Promise<Conversation[]> {
   if (!userId) return [];
@@ -830,18 +831,21 @@ export async function getSupabaseConversations(userId: string): Promise<Conversa
     .or(`participant1_id.eq.${userId},participant2_id.eq.${userId}`)
     .order('last_message_at', { ascending: false });
 
-  if (error || !convRows) {
-    console.warn('Error fetching Supabase conversations:', error);
+  if (error || !convRows || convRows.length === 0) {
     return [];
   }
 
-  // Get other participant IDs
-  const otherIds = Array.from(
-    new Set(
-      convRows.map((c) => (c.participant1_id === userId ? c.participant2_id : c.participant1_id))
-    )
-  );
+  // Deduplicate by other participant ID so that each account only appears ONCE
+  const deduplicatedRows: any[] = [];
+  const seenOtherUsers = new Set<string>();
+  for (const c of convRows) {
+    const otherId = c.participant1_id === userId ? c.participant2_id : c.participant1_id;
+    if (!otherId || seenOtherUsers.has(otherId)) continue;
+    seenOtherUsers.add(otherId);
+    deduplicatedRows.push(c);
+  }
 
+  const otherIds = Array.from(seenOtherUsers);
   if (otherIds.length === 0) return [];
 
   // Fetch profiles for all other participants and unread counts in parallel
@@ -864,7 +868,7 @@ export async function getSupabaseConversations(userId: string): Promise<Conversa
     unreadMap.set(r.conversation_id, (unreadMap.get(r.conversation_id) || 0) + 1);
   });
 
-  return convRows.map((c) => {
+  return deduplicatedRows.map((c) => {
     const otherId = c.participant1_id === userId ? c.participant2_id : c.participant1_id;
     const p = profileMap.get(otherId);
     const otherUser: User = {
@@ -897,13 +901,51 @@ export async function getSupabaseConversations(userId: string): Promise<Conversa
 }
 
 /**
+ * Fetches total count of unread messages for a given user.
+ */
+export async function fetchUnreadMessagesCount(userId: string): Promise<number> {
+  if (!userId) return 0;
+  try {
+    const { count, error } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('receiver_id', userId)
+      .eq('is_read', false);
+
+    if (error) return 0;
+    return count || 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Marks unread messages in a conversation as read.
+ */
+export async function markMessagesAsRead(conversationId: string, currentUserId: string): Promise<void> {
+  if (!conversationId || !currentUserId || conversationId === 'draft') return;
+  try {
+    const { error } = await supabase
+      .from('messages')
+      .update({ is_read: true })
+      .eq('conversation_id', conversationId)
+      .eq('receiver_id', currentUserId)
+      .eq('is_read', false);
+
+    if (!error && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('startupz_messages_updated', { detail: { conversationId } }));
+    }
+  } catch {}
+}
+
+/**
  * Fetches all messages in a conversation from Supabase.
  */
 export async function getSupabaseMessages(
   conversationId: string,
-  currentUserId: string
+  _currentUserId?: string
 ): Promise<Message[]> {
-  if (!conversationId) return [];
+  if (!conversationId || conversationId === 'draft') return [];
 
   const { data, error } = await supabase
     .from('messages')
@@ -914,20 +956,6 @@ export async function getSupabaseMessages(
   if (error || !data) {
     console.warn('Error fetching Supabase messages:', error);
     return [];
-  }
-
-  // Mark unread messages where receiver_id = currentUserId as read
-  if (currentUserId) {
-    (async () => {
-      try {
-        await supabase
-          .from('messages')
-          .update({ is_read: true })
-          .eq('conversation_id', conversationId)
-          .eq('receiver_id', currentUserId)
-          .eq('is_read', false);
-      } catch {}
-    })();
   }
 
   return data.map((m) => ({
@@ -1103,26 +1131,10 @@ export async function sendSupabaseMessage(
       .eq('id', finalConvId);
   } catch {}
 
-  // 4. Send notification
-  try {
-    const { data: senderProf } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('user_id', senderId)
-      .maybeSingle();
-    const senderName = senderProf?.full_name || 'Someone';
-
-    await supabase.from('notifications').insert({
-      user_id: receiverId,
-      sender_id: senderId,
-      type: 'NEW_MESSAGE',
-      title: `New message from ${senderName}`,
-      message: text.slice(0, 80),
-      link: `/messages?conversationId=${finalConvId}&user=${senderId}`,
-      is_read: false,
-      created_at: new Date().toISOString(),
-    });
-  } catch {}
+  // 4. Notify message update listeners in realtime
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('startupz_messages_updated', { detail: { conversationId: finalConvId } }));
+  }
 
   // 5. Mirror to backend in background
   try {

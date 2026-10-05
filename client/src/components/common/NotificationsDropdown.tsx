@@ -163,6 +163,9 @@ export const NotificationsDropdown: React.FC = () => {
         } catch {}
       }
 
+      // Filter out direct messages: direct messages belong exclusively in the Messages icon bar
+      list = list.filter((n) => n.type !== 'NEW_MESSAGE');
+
       unread = list.filter((n) => !n.isRead).length;
 
       // Preserve in-memory _actionStatus for items already in our local list

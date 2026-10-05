@@ -45,7 +45,7 @@ import { GlobalSearchModal } from '../search/GlobalSearchModal';
 import { GoogleAccountChooserModal } from '../auth/GoogleAccountChooserModal';
 import { QuickLoginModal } from '../auth/QuickLoginModal';
 import { NotificationsDropdown } from './NotificationsDropdown';
-import { supabase } from '../../lib/supabase';
+import { supabase, fetchUnreadMessagesCount } from '../../lib/supabase';
 import { prefetchRouteData } from '../../utils/prefetch';
 
 export const Navbar: React.FC = () => {
@@ -60,6 +60,50 @@ export const Navbar: React.FC = () => {
   const [aiScoutOpen, setAiScoutOpen] = useState(false);
   const [googleChooserOpen, setGoogleChooserOpen] = useState(false);
   const [quickLoginOpen, setQuickLoginOpen] = useState(false);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setUnreadMessagesCount(0);
+      return;
+    }
+
+    const loadUnread = async () => {
+      const count = await fetchUnreadMessagesCount(user.id);
+      setUnreadMessagesCount(count);
+    };
+
+    loadUnread();
+
+    const channel = supabase
+      .channel(`navbar_messages_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.id}`,
+        },
+        () => {
+          loadUnread();
+        }
+      )
+      .subscribe();
+
+    const handleMessagesUpdated = () => {
+      loadUnread();
+    };
+
+    window.addEventListener('startupz_messages_updated', handleMessagesUpdated);
+    const interval = setInterval(loadUnread, 15000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener('startupz_messages_updated', handleMessagesUpdated);
+      clearInterval(interval);
+    };
+  }, [user?.id]);
 
   const handleGoogleClick = async () => {
     try {
@@ -208,11 +252,16 @@ export const Navbar: React.FC = () => {
                   <Link
                     to="/messages"
                     aria-label="Messages"
-                    className={`p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors ${
+                    className={`relative p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors ${
                       isActive('/messages') ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60' : ''
                     }`}
                   >
                     <MessageSquare size={16} />
+                    {unreadMessagesCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-brand-600 text-white text-[9px] font-bold rounded-full min-w-4 h-4 px-1 flex items-center justify-center border-2 border-white dark:border-dark-900 shadow-xs">
+                        {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
+                      </span>
+                    )}
                   </Link>
 
                   {/* Network */}
