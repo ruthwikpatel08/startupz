@@ -531,6 +531,16 @@ router.put('/profile', requireAuth, async (req, res) => {
       },
     });
 
+    if (preferredRole) {
+      await prisma.user.update({
+        where: { id: req.user.id },
+        data: { role: String(preferredRole).toUpperCase() },
+      }).catch(() => null);
+    }
+
+    // Purge in-memory matching cache so updated details appear immediately to everyone
+    cofounderCache.clear();
+
     return res.json({
       message: 'Profile updated successfully!',
       profile: savedProfile,

@@ -50,6 +50,7 @@ export const AuthCallbackPage: React.FC = () => {
   const [customRoleDescription, setCustomRoleDescription] = useState('');
   const [headline, setHeadline] = useState('Founder & Visionary | Startup Builder');
   const [location, setLocation] = useState('Remote');
+  const [oneLineBio, setOneLineBio] = useState('');
   const [bio, setBio] = useState('');
   const [openTo, setOpenTo] = useState<string[]>([
     'Co-Founder',
@@ -357,7 +358,8 @@ export const AuthCallbackPage: React.FC = () => {
           ? cleanCustomRole
           : headline.trim() || `${selectedRole} | Startup Builder`;
       const cleanLocation = location.trim() || 'Remote';
-      const cleanBio = bio.trim();
+      const cleanOneLineBio = (oneLineBio || bio || '').trim();
+      const cleanBio = (bio || oneLineBio || '').trim();
       const openToString =
         openTo.length > 0
           ? openTo.join(',')
@@ -368,6 +370,7 @@ export const AuthCallbackPage: React.FC = () => {
         full_name: cleanFullName,
         username: cleanUsername,
         headline: cleanHeadline,
+        one_line_bio: cleanOneLineBio || cleanHeadline,
         location: cleanLocation,
         bio: cleanBio,
         avatar,
@@ -392,6 +395,7 @@ export const AuthCallbackPage: React.FC = () => {
           role: selectedRole,
           headline: cleanHeadline,
           location: cleanLocation,
+          bio: cleanBio,
           avatar,
         });
       } catch {
@@ -411,6 +415,7 @@ export const AuthCallbackPage: React.FC = () => {
           fullName: cleanFullName,
           username: cleanUsername,
           headline: cleanHeadline,
+          oneLineBio: cleanOneLineBio || cleanHeadline,
           location: cleanLocation,
           bio: cleanBio,
           avatar,
@@ -663,19 +668,33 @@ export const AuthCallbackPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  One-Line Bio / Summary <span className="text-slate-400 font-normal">(Optional)</span>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                  <span>Describe Yourself in One Line <span className="text-slate-400 font-normal">(One-Line Tagline)</span></span>
+                  <span className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">Displayed on profile cards</span>
                 </label>
                 <div className="relative">
                   <FileText size={13} className="absolute left-3 top-2.5 text-slate-400" />
                   <input
                     type="text"
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="e.g. Building next-gen developer tools. Passionate about AI & open source."
+                    value={oneLineBio}
+                    onChange={(e) => setOneLineBio(e.target.value)}
+                    placeholder="e.g. AI Founder & Full-Stack Architect building scalable GTM tools"
                     className="input-base w-full pl-8 text-xs sm:text-sm py-2"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  About & Bio <span className="text-slate-400 font-normal">(Optional detailed summary)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell the community about your background, startup vision, and what you're building..."
+                  className="input-base w-full px-3 py-2 text-xs sm:text-sm resize-none"
+                />
               </div>
 
               {/* Open To Collaboration */}

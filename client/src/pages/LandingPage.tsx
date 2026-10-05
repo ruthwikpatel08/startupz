@@ -88,7 +88,11 @@ export const LandingPage: React.FC = () => {
           } else if (pref) {
             roleLabel = pref;
           }
-          return { ...p, role_label: roleLabel };
+          return {
+            ...p,
+            role_label: roleLabel,
+            oneLineBio: p.one_line_bio || p.headline || '',
+          };
         });
 
         const unique = Array.from(new Map(mappedFiltered.map((item) => [item.full_name || item.id, item])).values());

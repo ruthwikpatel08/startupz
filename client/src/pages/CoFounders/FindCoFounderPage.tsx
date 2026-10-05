@@ -105,35 +105,25 @@ let cachedSupaProfiles: any[] | null = null;
 let cachedSupaProfilesExpiresAt = 0;
 let cachedSupaInvestors: any[] | null = null;
 let cachedSupaInvestorsExpiresAt = 0;
-const CACHE_TTL_MS = 120000; // 2 minutes
+const CACHE_TTL_MS = 5000; // 5 seconds fresh cache TTL
+
+export function invalidateFindCoFounderCache(): void {
+  categoryDataCache.clear();
+  cachedAllCandidates = [];
+  cachedAllInvestors = [];
+  cachedSupaProfiles = null;
+  cachedSupaProfilesExpiresAt = 0;
+  cachedSupaInvestors = null;
+  cachedSupaInvestorsExpiresAt = 0;
+}
 
 function getInitialCandidates(): any[] {
   if (cachedAllCandidates && cachedAllCandidates.length > 0) return cachedAllCandidates;
-  try {
-    const raw = sessionStorage.getItem('startupz_cached_candidates');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        cachedAllCandidates = parsed;
-        return parsed;
-      }
-    }
-  } catch {}
   return [];
 }
 
 function getInitialInvestors(): any[] {
   if (cachedAllInvestors && cachedAllInvestors.length > 0) return cachedAllInvestors;
-  try {
-    const raw = sessionStorage.getItem('startupz_cached_investors');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        cachedAllInvestors = parsed;
-        return parsed;
-      }
-    }
-  } catch {}
   return [];
 }
 
@@ -347,9 +337,11 @@ export const FindCoFounderPage: React.FC = () => {
                 fullName: p.full_name,
                 username: uName,
                 headline: p.headline || '',
+                oneLineBio: p.one_line_bio || p.headline || '',
                 location: p.location || '',
                 bio: p.bio || '',
                 avatar: p.avatar,
+                coverImage: p.cover_image || '',
                 skills: p.skills || '',
                 preferredRole: p.preferred_role,
                 availability: p.availability || 'Full-time',
@@ -375,6 +367,7 @@ export const FindCoFounderPage: React.FC = () => {
               fullName: inv.organization || inv.user?.profile?.fullName || 'Angel Investor',
               username: inv.user?.profile?.username || (inv.user?.email ? inv.user.email.split('@')[0] : 'investor'),
               headline: inv.about || inv.user?.profile?.headline || 'Angel & Venture Investor',
+              oneLineBio: inv.user?.profile?.oneLineBio || inv.about || '',
               location: inv.location || 'Remote',
               bio: inv.about || '',
               avatar: inv.user?.profile?.avatar,
@@ -400,6 +393,7 @@ export const FindCoFounderPage: React.FC = () => {
               fullName: m.user?.profile?.fullName || 'Distinguished Mentor',
               username: m.user?.profile?.username || (m.user?.email ? m.user.email.split('@')[0] : 'mentor'),
               headline: m.user?.profile?.headline || `${m.yearsExperience || 5}+ Years Experience | Startup Mentor`,
+              oneLineBio: m.user?.profile?.oneLineBio || m.user?.profile?.headline || '',
               location: m.user?.profile?.location || 'Remote',
               bio: m.about || '',
               avatar: m.user?.profile?.avatar,
@@ -411,13 +405,36 @@ export const FindCoFounderPage: React.FC = () => {
           }));
         }
 
-        const rawAllCandidates = [...supaMappedProfiles, ...loadedMatches, ...extraAllInvestors, ...extraAllMentors];
+        const supaMap = new Map<string, any>();
+        supaMappedProfiles.forEach((sp) => {
+          if (sp.id) supaMap.set(sp.id, sp);
+          if (sp.email) supaMap.set(sp.email.toLowerCase(), sp);
+        });
+
+        // Merge loadedMatches with fresh Supabase profile overrides
+        const mergedMatches = loadedMatches.map((lm: any) => {
+          const matchId = lm.id || lm.profile?.userId;
+          const matchEmail = (lm.email || '').toLowerCase();
+          const sp = supaMap.get(matchId) || supaMap.get(matchEmail);
+          if (sp) {
+            return {
+              ...lm,
+              ...sp,
+              matchPercentage: lm.matchPercentage || sp.matchPercentage,
+              matchExplanation: lm.matchExplanation || sp.matchExplanation,
+              profile: {
+                ...(lm.profile || {}),
+                ...(sp.profile || {}),
+              },
+            };
+          }
+          return lm;
+        });
+
+        const rawAllCandidates = [...supaMappedProfiles, ...mergedMatches, ...extraAllInvestors, ...extraAllMentors];
         if (rawAllCandidates.length > 0) {
           setRawCandidates(rawAllCandidates);
           cachedAllCandidates = rawAllCandidates;
-          try {
-            sessionStorage.setItem('startupz_cached_candidates', JSON.stringify(rawAllCandidates));
-          } catch {}
         }
         setRawInvestors([]);
         categoryDataCache.set(cacheKey, {
@@ -595,7 +612,26 @@ export const FindCoFounderPage: React.FC = () => {
   }, [rawInvestors, investorSearch, searchQuery, investorType, investorStage, currentUser?.id, connectedUserIds]);
 
   useEffect(() => {
-    fetchCategoryData();
+    fetchCategoryData(true);
+
+    const handleProfileEvt = () => {
+      invalidateFindCoFounderCache();
+      fetchCategoryData(true);
+    };
+    window.addEventListener('profile_updated', handleProfileEvt);
+
+    const channel = supabase
+      .channel('find-cofounders-profiles-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        invalidateFindCoFounderCache();
+        fetchCategoryData(true);
+      })
+      .subscribe();
+
+    return () => {
+      window.removeEventListener('profile_updated', handleProfileEvt);
+      supabase.removeChannel(channel);
+    };
   }, [currentCategory, targetRole, industry, availability, investorType, investorStage, currentUser?.id]);
 
   const targetRoles = [

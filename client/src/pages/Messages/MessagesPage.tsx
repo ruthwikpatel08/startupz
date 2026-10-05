@@ -180,6 +180,7 @@ export const MessagesPage: React.FC = () => {
                   fullName: pData.full_name || 'Founder',
                   avatar: pData.avatar || null,
                   headline: pData.headline || '',
+                  oneLineBio: pData.one_line_bio || pData.headline || '',
                 },
               };
             } else {

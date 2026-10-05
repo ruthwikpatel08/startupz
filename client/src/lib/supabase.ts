@@ -121,7 +121,7 @@ export function mapSupabaseToAppUser(
 
 const userProfileCache = new Map<string, { data: any; expiresAt: number }>();
 const inFlightProfileRequests = new Map<string, Promise<any | null>>();
-const PROFILE_CACHE_TTL_MS = 60000; // 60 seconds
+const PROFILE_CACHE_TTL_MS = 5000; // 5 seconds fresh cache TTL
 
 export function invalidateUserProfileCache(userId?: string): void {
   if (userId) {
@@ -135,7 +135,8 @@ export function invalidateUserProfileCache(userId?: string): void {
 
 /**
  * Fetch a profile row from Supabase public.profiles by user UUID.
- * Includes in-memory caching and in-flight request deduplication to prevent redundant network requests.
+ * Includes short in-memory caching and deduplication to prevent redundant network requests,
+ * with explicit forceRefresh support to always bypass cache.
  */
 export async function fetchUserProfile(userId: string, forceRefresh = false): Promise<any | null> {
   if (!userId) return null;
@@ -145,10 +146,11 @@ export async function fetchUserProfile(userId: string, forceRefresh = false): Pr
     if (cached && cached.expiresAt > Date.now()) {
       return cached.data;
     }
-  }
-
-  if (inFlightProfileRequests.has(userId)) {
-    return inFlightProfileRequests.get(userId)!;
+    if (inFlightProfileRequests.has(userId)) {
+      return inFlightProfileRequests.get(userId)!;
+    }
+  } else {
+    invalidateUserProfileCache(userId);
   }
 
   const fetchPromise = (async () => {
@@ -233,9 +235,13 @@ export async function upsertUserProfile(
       }
     }
 
-    // Check if profile exists first for clean upsert
-    const existing = await fetchUserProfile(userId);
+    // Invalidate stale cache first
+    invalidateUserProfileCache(userId);
 
+    // Check if profile exists first for clean upsert
+    const existing = await fetchUserProfile(userId, true);
+
+    let savedData: any = null;
     if (existing) {
       const { data, error } = await supabase
         .from('profiles')
@@ -249,12 +255,10 @@ export async function upsertUserProfile(
 
       if (error) {
         console.warn('Error updating profile in Supabase:', error.message);
-        return existing;
+        savedData = existing;
+      } else {
+        savedData = data;
       }
-      if (data) {
-        userProfileCache.set(userId, { data, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
-      }
-      return data;
     } else {
       const { data, error } = await supabase
         .from('profiles')
@@ -269,11 +273,16 @@ export async function upsertUserProfile(
         console.warn('Error creating profile in Supabase:', error.message);
         return null;
       }
-      if (data) {
-        userProfileCache.set(userId, { data, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
-      }
-      return data;
+      savedData = data;
     }
+
+    if (savedData) {
+      userProfileCache.set(userId, { data: savedData, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
+      try {
+        window.dispatchEvent(new CustomEvent('profile_updated', { detail: { userId, profile: savedData } }));
+      } catch {}
+    }
+    return savedData;
   } catch (err) {
     console.warn('Exception during profile upsert:', err);
     return null;

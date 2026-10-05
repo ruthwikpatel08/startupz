@@ -99,6 +99,7 @@ export const NetworkPage: React.FC = () => {
               fullName: p?.full_name || 'Startup Builder',
               avatar: p?.avatar,
               headline: p?.headline || '',
+              oneLineBio: p?.one_line_bio || p?.headline || '',
               location: p?.location || 'Remote',
               preferredRole: p?.preferred_role,
             },

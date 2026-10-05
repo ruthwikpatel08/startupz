@@ -614,7 +614,7 @@ export const ProfilePage: React.FC = () => {
 
     setLoading(true);
     try {
-      // First check cached Supabase profile
+      // First check fresh Supabase profile
       const sbProfile = await fetchUserProfileFromSupabase(targetId, force).catch(() => null);
 
       if (sbProfile) {
@@ -638,6 +638,7 @@ export const ProfilePage: React.FC = () => {
             location: sbProfile.location || '',
             bio: sbProfile.bio || '',
             avatar: sbProfile.avatar || '',
+            coverImage: sbProfile.cover_image || '',
             skills: sbProfile.skills || '',
             startupInterests: sbProfile.startup_interests || '',
             industries: sbProfile.industries || '',
@@ -782,8 +783,24 @@ export const ProfilePage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchUserProfile();
+    fetchUserProfile(true);
     loadConnectionsAndStatus();
+
+    // Subscribe to realtime profile changes so any updates by other users reflect live
+    const profileChannel = supabase
+      .channel(`profile-updates-${targetId || currentUser?.id || 'all'}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        (payload: any) => {
+          const updatedUserId = payload.new?.user_id || payload.new?.id;
+          if (updatedUserId === targetId || updatedUserId === currentUser?.id) {
+            invalidateUserProfileCache(updatedUserId);
+            fetchUserProfile(true);
+          }
+        }
+      )
+      .subscribe();
 
     // Subscribe to realtime connection changes so both accounts update live
     const channel = supabase
@@ -808,12 +825,20 @@ export const ProfilePage: React.FC = () => {
     const handleConnEvt = () => {
       loadConnectionsAndStatus();
     };
+    const handleProfileEvt = (e: any) => {
+      if (!e.detail?.userId || e.detail?.userId === targetId || e.detail?.userId === currentUser?.id) {
+        fetchUserProfile(true);
+      }
+    };
     window.addEventListener('connections_updated', handleConnEvt);
+    window.addEventListener('profile_updated', handleProfileEvt);
 
     return () => {
+      supabase.removeChannel(profileChannel);
       supabase.removeChannel(channel);
       supabase.removeChannel(broadcastChannel);
       window.removeEventListener('connections_updated', handleConnEvt);
+      window.removeEventListener('profile_updated', handleProfileEvt);
     };
   }, [targetId, currentUser?.id, isMe]);
 

@@ -193,7 +193,7 @@ router.post('/google', async (req, res) => {
 // POST /api/auth/sync - Ensure any logged-in real user is saved in DB and receives a valid token
 router.post('/sync', async (req, res) => {
   try {
-    const { id, email, fullName, role = 'FOUNDER', headline, location, avatar } = req.body;
+    const { id, email, fullName, role = 'FOUNDER', headline, location, bio, avatar } = req.body;
     const cleanEmail = (email || '').trim().toLowerCase();
     if (!cleanEmail) {
       return res.status(400).json({ error: 'Email is required for synchronization.' });
@@ -227,6 +227,7 @@ router.post('/sync', async (req, res) => {
               fullName: cleanName,
               headline: headline || `${upperRole.charAt(0) + upperRole.slice(1).toLowerCase()} | Startup Builder`,
               location: location || 'Remote',
+              bio: bio || null,
               avatar: avatar || null,
               openTo: 'Co-Founder,Startup Team,Investment',
               profileCompletion: 85,
@@ -236,6 +237,13 @@ router.post('/sync', async (req, res) => {
         include: { profile: true },
       });
     } else {
+      if (user.role !== upperRole && upperRole) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { role: upperRole },
+        }).catch(() => null);
+      }
+
       await prisma.profile.upsert({
         where: { userId: user.id },
         create: {
@@ -243,6 +251,7 @@ router.post('/sync', async (req, res) => {
           fullName: cleanName,
           headline: headline || user.profile?.headline || `${upperRole} | Startup Builder`,
           location: location || user.profile?.location || 'Remote',
+          bio: bio || null,
           avatar: avatar || user.profile?.avatar || null,
           openTo: 'Co-Founder,Startup Team,Investment',
           profileCompletion: 85,
@@ -251,6 +260,7 @@ router.post('/sync', async (req, res) => {
           fullName: cleanName || undefined,
           headline: headline || undefined,
           location: location || undefined,
+          bio: bio || undefined,
           avatar: avatar || undefined,
         },
       });

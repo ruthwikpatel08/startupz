@@ -78,11 +78,16 @@ export const BusinessPage: React.FC = () => {
       try {
         const { data: supaProfiles } = await supabase
           .from('profiles')
-          .select('id, user_id, full_name, username, headline, avatar, location, skills, preferred_role, bio')
+          .select('id, user_id, full_name, username, headline, one_line_bio, avatar, location, skills, preferred_role, bio')
           .or('preferred_role.ilike.%founder%,headline.ilike.%founder%')
           .limit(8);
 
-        const unique = Array.from(new Map((supaProfiles || []).map((f) => [f.full_name || f.id, f])).values());
+        const mappedFounders = (supaProfiles || []).map((f: any) => ({
+          ...f,
+          oneLineBio: f.one_line_bio || f.headline || '',
+        }));
+
+        const unique = Array.from(new Map(mappedFounders.map((f: any) => [f.full_name || f.id, f])).values());
         setFounders(unique.slice(0, 6));
 
         // Fetch connection status if user logged in
