@@ -22,16 +22,6 @@ export function prefetchRouteData(route: string): void {
       import('../pages/CoFounders/FindCoFounderPage').catch(() => {});
       // 2. Pre-warm API matching query
       api.getCofounderMatches('category=all').catch(() => {});
-      // 3. Pre-warm Supabase profiles table
-      Promise.resolve(supabase.from('profiles').select('*'))
-        .then(({ data }) => {
-          if (data && data.length > 0) {
-            try {
-              sessionStorage.setItem('startupz_cached_profiles', JSON.stringify(data));
-            } catch {}
-          }
-        })
-        .catch(() => {});
       break;
 
     case 'problems':

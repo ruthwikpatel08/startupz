@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import {
   supabase,
+  fetchUserProfile,
   getSupabaseConversations,
   getSupabaseMessages,
   sendSupabaseMessage,
@@ -137,23 +138,19 @@ export const MessagesPage: React.FC = () => {
         } else {
           // If conversation doesn't exist in list yet, fetch user to start a clean draft conversation
           try {
-            // Check Supabase profiles first
-            const { data: pData } = await supabase
-              .from('profiles')
-              .select('id, user_id, full_name, avatar, headline, email, preferred_role')
-              .eq('user_id', targetUserId)
-              .maybeSingle();
+            // Check Supabase profiles first (cached & deduplicated)
+            const pData = await fetchUserProfile(targetUserId);
 
             let userObj: any = null;
             if (pData) {
               userObj = {
-                id: pData.user_id,
+                id: pData.user_id || pData.id,
                 email: pData.email || '',
                 role: pData.preferred_role || 'FOUNDER',
                 isVerified: true,
                 profile: {
                   id: pData.id,
-                  userId: pData.user_id,
+                  userId: pData.user_id || pData.id,
                   fullName: pData.full_name || 'Founder',
                   avatar: pData.avatar || null,
                   headline: pData.headline || '',

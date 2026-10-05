@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Modal } from '../common/Modal';
 import { api } from '../../services/api';
-import { supabase } from '../../lib/supabase';
+import { supabase, fetchUserConnections } from '../../lib/supabase';
 import { ConnectModal } from '../common/ConnectModal';
 import { StartupConnectionModal } from '../common/StartupConnectionModal';
 import { ScheduleMeetingModal } from '../common/ScheduleMeetingModal';
@@ -258,29 +258,10 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
       // Fetch connected user IDs to exclude already connected people
       let connectedIds = new Set<string>();
       if (currentUser?.id) {
-        try {
-          const { data: conns } = await supabase
-            .from('connections')
-            .select('sender_id, receiver_id')
-            .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-            .eq('status', 'ACCEPTED');
-          (conns || []).forEach((c: any) => {
-            if (c.sender_id && c.sender_id !== currentUser.id) connectedIds.add(c.sender_id);
-            if (c.receiver_id && c.receiver_id !== currentUser.id) connectedIds.add(c.receiver_id);
-          });
-        } catch {}
-
-        try {
-          const apiConns = await api.getConnections().catch(() => ({ connections: [] }));
-          if (apiConns && Array.isArray(apiConns.connections)) {
-            apiConns.connections.forEach((conn: any) => {
-              const otherId = conn.userId || conn.user?.id || (conn.senderId === currentUser.id ? conn.receiverId : conn.senderId);
-              if (otherId && otherId !== currentUser.id) {
-                connectedIds.add(otherId);
-              }
-            });
-          }
-        } catch {}
+        const connData = await fetchUserConnections(currentUser.id).catch(() => null);
+        if (connData?.connectedIds) {
+          connectedIds = connData.connectedIds;
+        }
       }
 
       // Filter out self and already connected people

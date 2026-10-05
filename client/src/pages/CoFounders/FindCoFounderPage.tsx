@@ -7,7 +7,7 @@ import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { StartupConnectionModal } from '../../components/common/StartupConnectionModal';
 import { EmptyState } from '../../components/common/EmptyState';
-import { supabase } from '../../lib/supabase';
+import { supabase, fetchUserConnections } from '../../lib/supabase';
 import { Avatar } from '../../components/common/Avatar';
 import {
   Users,
@@ -174,32 +174,10 @@ export const FindCoFounderPage: React.FC = () => {
     if (!currentUser?.id) return;
     const loadConnected = async () => {
       try {
-        const ids = new Set<string>();
-
-        const { data } = await supabase
-          .from('connections')
-          .select('sender_id, receiver_id, status')
-          .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-          .eq('status', 'ACCEPTED');
-
-        (data || []).forEach((c: any) => {
-          if (c.sender_id && c.sender_id !== currentUser.id) ids.add(c.sender_id);
-          if (c.receiver_id && c.receiver_id !== currentUser.id) ids.add(c.receiver_id);
-        });
-
-        try {
-          const apiConns = await api.getConnections().catch(() => ({ connections: [] }));
-          if (apiConns && Array.isArray(apiConns.connections)) {
-            apiConns.connections.forEach((conn: any) => {
-              const otherId = conn.userId || conn.user?.id || (conn.senderId === currentUser.id ? conn.receiverId : conn.senderId);
-              if (otherId && otherId !== currentUser.id) {
-                ids.add(otherId);
-              }
-            });
-          }
-        } catch {}
-
-        setConnectedUserIds(ids);
+        const connData = await fetchUserConnections(currentUser.id).catch(() => null);
+        if (connData?.connectedIds) {
+          setConnectedUserIds(connData.connectedIds);
+        }
       } catch {}
     };
     loadConnected();

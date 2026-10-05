@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { supabase, fetchUserConnections } from '../../lib/supabase';
 import { Avatar } from './Avatar';
 import {
   Bell,
@@ -141,37 +141,26 @@ export const NotificationsDropdown: React.FC = () => {
         }
       }
 
-      // Check REAL connection status for ALL CONNECTION_REQUEST notifications
+      // Check REAL connection status for ALL CONNECTION_REQUEST notifications using cached fetchUserConnections
       const allConnNotifs = list.filter((n) => n.type === 'CONNECTION_REQUEST' && n.senderId);
       if (allConnNotifs.length > 0 && user?.id) {
-        const allSenderIds = [...new Set(allConnNotifs.map((n) => n.senderId!).filter(Boolean))];
-        if (allSenderIds.length > 0) {
-          try {
-            const { data: connRows } = await supabase
-              .from('connections')
-              .select('sender_id, status')
-              .or(
-                allSenderIds
-                  .map((sid) => `and(sender_id.eq.${sid},receiver_id.eq.${user.id})`)
-                  .join(',')
-              );
-            const connStatusMap = new Map<string, string>();
-            (connRows || []).forEach((c) => connStatusMap.set(c.sender_id, c.status));
+        try {
+          const connData = await fetchUserConnections(user.id);
+          const connStatusMap = connData.statusMap;
 
-            // Apply _actionStatus to every CONNECTION_REQUEST notification
-            list = list.map((n) => {
-              if (n.type === 'CONNECTION_REQUEST') {
-                const realStatus = n.senderId ? connStatusMap.get(n.senderId) : null;
-                if (realStatus === 'ACCEPTED' || (n.isRead && realStatus !== 'PENDING')) {
-                  return { ...n, isRead: true, _actionStatus: 'ACCEPTED' as const };
-                } else if (realStatus === 'REJECTED') {
-                  return { ...n, isRead: true, _actionStatus: 'DECLINED' as const };
-                }
+          // Apply _actionStatus to every CONNECTION_REQUEST notification
+          list = list.map((n) => {
+            if (n.type === 'CONNECTION_REQUEST') {
+              const realStatus = n.senderId ? connStatusMap.get(n.senderId) : null;
+              if (realStatus === 'ACCEPTED' || (n.isRead && realStatus !== 'PENDING')) {
+                return { ...n, isRead: true, _actionStatus: 'ACCEPTED' as const };
+              } else if (realStatus === 'REJECTED') {
+                return { ...n, isRead: true, _actionStatus: 'DECLINED' as const };
               }
-              return n;
-            });
-          } catch {}
-        }
+            }
+            return n;
+          });
+        } catch {}
       }
 
       unread = list.filter((n) => !n.isRead).length;
@@ -195,7 +184,7 @@ export const NotificationsDropdown: React.FC = () => {
     }
   };
 
-  // Initial load and periodic poll every 30 seconds (pauses when browser tab is hidden)
+  // Initial load and periodic poll every 60 seconds (pauses when browser tab is hidden)
   useEffect(() => {
     if (!user?.id) return;
     fetchNotifications();
@@ -203,7 +192,7 @@ export const NotificationsDropdown: React.FC = () => {
     const interval = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
       fetchNotifications();
-    }, 30000);
+    }, 60000);
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {

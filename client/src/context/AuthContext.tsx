@@ -1,7 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Session, User as SupabaseAuthUser } from '@supabase/supabase-js';
 import { User } from '../types';
-import { supabase, mapSupabaseToAppUser, fetchUserProfile, upsertUserProfile, recordAuthProviderHint, resolveEmailOrUsername } from '../lib/supabase';
+import {
+  supabase,
+  mapSupabaseToAppUser,
+  fetchUserProfile,
+  upsertUserProfile,
+  recordAuthProviderHint,
+  resolveEmailOrUsername,
+  invalidateUserProfileCache,
+  invalidateUserConnectionsCache,
+} from '../lib/supabase';
 import { api } from '../services/api';
 
 interface AuthContextType {
@@ -263,6 +272,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('startupz_token');
         localStorage.removeItem('startupz_last_synced');
         api.clearCache();
+        invalidateUserProfileCache();
+        invalidateUserConnectionsCache();
         setLoading(false);
         return;
       }
@@ -308,6 +319,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('startupz_oauth_meta');
       localStorage.removeItem('startupz_last_synced');
       api.clearCache();
+      invalidateUserProfileCache();
+      invalidateUserConnectionsCache();
       setLoading(false);
     }
   }, []);

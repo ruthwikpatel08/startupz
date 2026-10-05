@@ -391,6 +391,28 @@ export interface ConnectionStatusInfo {
   connectionId: string | null;
 }
 
+export interface UserConnectionsData {
+  connections: any[];
+  connectedIds: Set<string>;
+  statusMap: Map<string, string>;
+  connInfoMap: Map<string, ConnectionStatusInfo>;
+  count: number;
+}
+
+const userConnectionsCache = new Map<string, { data: UserConnectionsData; expiresAt: number }>();
+const inFlightConnectionsRequests = new Map<string, Promise<UserConnectionsData>>();
+const CONNECTIONS_CACHE_TTL_MS = 45000; // 45 seconds safe client cache
+
+export function invalidateUserConnectionsCache(userId?: string): void {
+  if (userId) {
+    userConnectionsCache.delete(userId);
+    inFlightConnectionsRequests.delete(userId);
+  } else {
+    userConnectionsCache.clear();
+    inFlightConnectionsRequests.clear();
+  }
+}
+
 export const isUUID = (val?: string | null): boolean =>
   Boolean(val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val));
 
@@ -412,7 +434,108 @@ export async function resolveUserIdToUUID(identifier?: string | null): Promise<s
 }
 
 /**
- * Fetches the connection status between two users from Supabase.
+ * Single source of truth for user connections:
+ * Fetches all connections for a user from Supabase with in-memory caching and in-flight request deduplication.
+ */
+export async function fetchUserConnections(userId: string, forceRefresh = false): Promise<UserConnectionsData> {
+  if (!userId) {
+    return { connections: [], connectedIds: new Set(), statusMap: new Map(), connInfoMap: new Map(), count: 0 };
+  }
+
+  let targetUuid: string | null = userId;
+  if (!isUUID(targetUuid)) {
+    targetUuid = await resolveUserIdToUUID(userId);
+  }
+  const lookupId = targetUuid || userId;
+
+  if (!forceRefresh) {
+    const cached = userConnectionsCache.get(lookupId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.data;
+    }
+  }
+
+  if (inFlightConnectionsRequests.has(lookupId)) {
+    return inFlightConnectionsRequests.get(lookupId)!;
+  }
+
+  const fetchPromise = (async (): Promise<UserConnectionsData> => {
+    try {
+      const { data: conns, error } = await supabase
+        .from('connections')
+        .select('*')
+        .or(`sender_id.eq.${lookupId},receiver_id.eq.${lookupId}`);
+
+      const connectionList = (conns || []) as any[];
+      const connectedIds = new Set<string>();
+      const statusMap = new Map<string, string>();
+      const connInfoMap = new Map<string, ConnectionStatusInfo>();
+      let count = 0;
+
+      for (const c of connectionList) {
+        const otherId = c.sender_id === lookupId ? c.receiver_id : c.sender_id;
+        if (otherId) {
+          statusMap.set(otherId, c.status);
+          connInfoMap.set(otherId, {
+            status: c.status as any,
+            isSender: c.sender_id === lookupId,
+            isReceiver: c.receiver_id === lookupId,
+            connectionId: c.id,
+          });
+          if (c.status === 'ACCEPTED') {
+            count++;
+            connectedIds.add(otherId);
+          }
+        }
+      }
+
+      // Also mirror/check backend connections if empty (initial load fallback)
+      if (connectionList.length === 0) {
+        try {
+          const apiConns = await api.getConnections().catch(() => null);
+          if (apiConns && Array.isArray(apiConns.connections)) {
+            apiConns.connections.forEach((conn: any) => {
+              const otherId = conn.userId || conn.user?.id || (conn.senderId === lookupId ? conn.receiverId : conn.senderId);
+              if (otherId && otherId !== lookupId) {
+                connectedIds.add(otherId);
+                statusMap.set(otherId, 'ACCEPTED');
+                connInfoMap.set(otherId, {
+                  status: 'ACCEPTED',
+                  isSender: conn.senderId === lookupId,
+                  isReceiver: conn.receiverId === lookupId,
+                  connectionId: conn.id || null,
+                });
+              }
+            });
+            count = connectedIds.size;
+          }
+        } catch {}
+      }
+
+      const result: UserConnectionsData = {
+        connections: connectionList,
+        connectedIds,
+        statusMap,
+        connInfoMap,
+        count,
+      };
+
+      userConnectionsCache.set(lookupId, { data: result, expiresAt: Date.now() + CONNECTIONS_CACHE_TTL_MS });
+      return result;
+    } catch (err) {
+      console.warn('Error fetching user connections:', err);
+      return { connections: [], connectedIds: new Set(), statusMap: new Map(), connInfoMap: new Map(), count: 0 };
+    }
+  })().finally(() => {
+    inFlightConnectionsRequests.delete(lookupId);
+  });
+
+  inFlightConnectionsRequests.set(lookupId, fetchPromise);
+  return fetchPromise;
+}
+
+/**
+ * Fetches the connection status between two users from Supabase with caching.
  */
 export async function fetchConnectionStatus(
   currentUserId: string,
@@ -422,41 +545,19 @@ export async function fetchConnectionStatus(
     return { status: null, isSender: false, isReceiver: false, connectionId: null };
   }
 
-  let u1: string | null = currentUserId;
   let u2: string | null = targetUserId;
-  if (!isUUID(u1)) {
-    u1 = await resolveUserIdToUUID(u1);
-  }
   if (!isUUID(u2)) {
     u2 = await resolveUserIdToUUID(u2);
   }
+  const targetId = u2 || targetUserId;
 
-  if (u1 && u2 && isUUID(u1) && isUUID(u2)) {
-    try {
-      const { data, error } = await supabase
-        .from('connections')
-        .select('*')
-        .or(
-          `and(sender_id.eq.${u1},receiver_id.eq.${u2}),and(sender_id.eq.${u2},receiver_id.eq.${u1})`
-        )
-        .maybeSingle();
-
-      if (!error && data) {
-        return {
-          status: data.status as any,
-          isSender: data.sender_id === u1,
-          isReceiver: data.receiver_id === u1,
-          connectionId: data.id,
-        };
-      }
-    } catch (err) {
-      console.warn('Error fetching connection status:', err);
-    }
-  }
+  const connData = await fetchUserConnections(currentUserId);
+  const info = connData.connInfoMap.get(targetId);
+  if (info) return info;
 
   // Fallback to backend API
   try {
-    const backendProfile = await api.getUser(targetUserId);
+    const backendProfile = await api.getUser(targetId);
     if (backendProfile?.connectionStatus) {
       return backendProfile.connectionStatus;
     }
@@ -466,49 +567,12 @@ export async function fetchConnectionStatus(
 }
 
 /**
- * Fetches the exact count of accepted connections for a user from Supabase.
+ * Fetches the exact count of accepted connections for a user from Supabase with caching.
  */
 export async function fetchConnectionCount(userId: string): Promise<number> {
   if (!userId) return 0;
-  let targetUuid: string | null = userId;
-  if (!isUUID(targetUuid)) {
-    targetUuid = await resolveUserIdToUUID(userId);
-  }
-
-  if (targetUuid && isUUID(targetUuid)) {
-    try {
-      // 1. Try RPC function
-      const { data, error } = await supabase.rpc('get_connection_count', {
-        target_user_id: targetUuid,
-      });
-      if (!error && typeof data === 'number') {
-        return data;
-      }
-    } catch {}
-
-    try {
-      // 2. Direct query on connections table
-      const { count, error } = await supabase
-        .from('connections')
-        .select('*', { count: 'exact', head: true })
-        .or(`sender_id.eq.${targetUuid},receiver_id.eq.${targetUuid}`)
-        .eq('status', 'ACCEPTED');
-
-      if (!error && typeof count === 'number') {
-        return count;
-      }
-    } catch {}
-  }
-
-  // 3. Fallback to backend API
-  try {
-    const res = await api.getConnectionCount(userId);
-    if (typeof res?.count === 'number') {
-      return res.count;
-    }
-  } catch {}
-
-  return 0;
+  const connData = await fetchUserConnections(userId);
+  return connData.count;
 }
 
 /**
@@ -609,6 +673,9 @@ export async function sendConnectionRequest(
   try {
     api.sendConnection({ receiverId, note }).catch(() => {});
   } catch {}
+
+  invalidateUserConnectionsCache(senderId);
+  invalidateUserConnectionsCache(receiverId);
 
   return { success: true, connection, message: 'Connection request sent' };
 }
@@ -711,6 +778,9 @@ export async function respondConnectionRequest(
     api.respondConnection(connectionId, action).catch(() => {});
   } catch {}
 
+  invalidateUserConnectionsCache(currentUserId);
+  invalidateUserConnectionsCache(conn.sender_id);
+
   return {
     success: true,
     connection: updated,
@@ -738,6 +808,8 @@ export async function removeConnection(
   try {
     api.removeConnection(connectionId).catch(() => {});
   } catch {}
+
+  invalidateUserConnectionsCache(currentUserId);
 
   return true;
 }

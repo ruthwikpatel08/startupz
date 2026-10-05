@@ -33,11 +33,8 @@ export const AdminDashboardPage: React.FC = () => {
   const [userSearch, setUserSearch] = useState('');
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
 
-  if (!user?.isAdmin) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   const fetchAdminData = async () => {
+    if (!user?.isAdmin) return;
     setLoading(true);
     try {
       const [statsRes, usersRes, startupsRes, reportsRes] = await Promise.all([
@@ -60,7 +57,11 @@ export const AdminDashboardPage: React.FC = () => {
 
   useEffect(() => {
     fetchAdminData();
-  }, []);
+  }, [user?.isAdmin]);
+
+  if (!user?.isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleToggleSuspend = async (userId: string, currentStatus: boolean) => {
     setActionLoading((prev) => ({ ...prev, [userId]: true }));

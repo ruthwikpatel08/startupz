@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api';
-import { supabase } from '../../lib/supabase';
+import { supabase, fetchUserConnections } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Startup } from '../../types';
 import { Avatar } from '../../components/common/Avatar';
@@ -87,32 +87,10 @@ export const BusinessPage: React.FC = () => {
 
         // Fetch connection status if user logged in
         if (user?.id) {
-          const map = new Map<string, string>();
-          const { data: userConns } = await supabase
-            .from('connections')
-            .select('sender_id, receiver_id, status')
-            .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
-
-          if (userConns) {
-            userConns.forEach((c) => {
-              const otherId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
-              if (otherId) map.set(otherId, c.status);
-            });
+          const connData = await fetchUserConnections(user.id).catch(() => null);
+          if (connData?.statusMap) {
+            setConnectionStatusMap(connData.statusMap);
           }
-
-          try {
-            const apiConns = await api.getConnections().catch(() => ({ connections: [] }));
-            if (apiConns && Array.isArray(apiConns.connections)) {
-              apiConns.connections.forEach((conn: any) => {
-                const otherId = conn.userId || conn.user?.id || (conn.senderId === user.id ? conn.receiverId : conn.senderId);
-                if (otherId && otherId !== user.id) {
-                  map.set(otherId, 'ACCEPTED');
-                }
-              });
-            }
-          } catch {}
-
-          setConnectionStatusMap(map);
         }
       } catch (err) {
         console.error('Failed to load founders:', err);

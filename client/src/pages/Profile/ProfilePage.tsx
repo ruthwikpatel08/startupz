@@ -582,11 +582,10 @@ export const ProfilePage: React.FC = () => {
     }));
   };
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = async (force = false) => {
     if (!targetId) return;
-    setLoading(true);
 
-    if (isMe && currentUser?.profile) {
+    if (isMe && currentUser?.profile && !force) {
       setProfileUser(currentUser);
       setFormData({
         avatar: currentUser.profile?.avatar || '',
@@ -609,14 +608,14 @@ export const ProfilePage: React.FC = () => {
         websiteUrl: currentUser.profile?.websiteUrl || '',
         openTo: currentUser.profile?.openTo || 'Co-Founder, Startup Team, Mentorship',
       });
+      setLoading(false);
+      return;
     }
 
+    setLoading(true);
     try {
-      const [backendRes, sbProfile] = await Promise.all([
-        api.getUser(targetId).catch(() => null),
-        fetchUserProfileFromSupabase(targetId).catch(() => null),
-      ]);
-      const backendData = backendRes?.user || backendRes;
+      // First check cached Supabase profile
+      const sbProfile = await fetchUserProfileFromSupabase(targetId, force).catch(() => null);
 
       if (sbProfile) {
         const u: any = {
@@ -628,8 +627,8 @@ export const ProfilePage: React.FC = () => {
           isSuspended: false,
           isAdmin: currentUser?.isAdmin || false,
           createdAt: sbProfile.created_at || new Date().toISOString(),
-          connectionStatus: backendData?.connectionStatus || null,
-          startups: backendData?.startups || [],
+          connectionStatus: null,
+          startups: [],
           profile: {
             id: sbProfile.id,
             userId: sbProfile.user_id || targetId,
@@ -655,8 +654,13 @@ export const ProfilePage: React.FC = () => {
           },
         };
         setProfileUser(u);
-      } else if (backendData) {
-        setProfileUser(backendData);
+      } else {
+        // Fallback to backend API only if Supabase profile was not found
+        const backendRes = await api.getUser(targetId).catch(() => null);
+        const backendData = backendRes?.user || backendRes;
+        if (backendData) {
+          setProfileUser(backendData);
+        }
       }
     } catch (err) {
       console.warn('Profile fetch warning:', err);
@@ -966,7 +970,7 @@ export const ProfilePage: React.FC = () => {
       const mergedUser: User = {
         ...(updatedUser || profileUser || currentUser!),
         profile: {
-          ...(profileUser?.profile || currentUser?.profile!),
+          ...(profileUser?.profile || currentUser?.profile || {}),
           ...(updatedUser?.profile || {}),
           ...formData,
           startupExperience: serializedExp,

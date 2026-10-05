@@ -33,6 +33,8 @@ interface MatchingUser {
   avatar?: string;
 }
 
+const liveSearchCache = new Map<string, { list: MatchingUser[]; expiresAt: number }>();
+
 export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,11 +54,18 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
     }
   }, [isOpen]);
 
-  // Live real-time user lookup by username / name / email
+  // Live real-time user lookup by username / name / email with cache and debouncing
   useEffect(() => {
     const clean = searchQuery.trim().replace(/^@/, '');
-    if (clean.length < 1) {
+    if (clean.length < 2) {
       setMatchedUsers([]);
+      return;
+    }
+
+    const cacheKey = clean.toLowerCase();
+    const cached = liveSearchCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      setMatchedUsers(cached.list);
       return;
     }
 
@@ -77,6 +86,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
             role: p.preferred_role || 'Founder',
             avatar: p.avatar,
           }));
+          liveSearchCache.set(cacheKey, { list, expiresAt: Date.now() + 60000 });
           setMatchedUsers(list);
         } else {
           setMatchedUsers([]);
@@ -86,7 +96,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
       } finally {
         setSearchingUsers(false);
       }
-    }, 150);
+    }, 250);
 
     return () => clearTimeout(timer);
   }, [searchQuery]);

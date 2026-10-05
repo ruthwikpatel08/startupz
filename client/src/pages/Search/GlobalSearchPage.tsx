@@ -158,15 +158,25 @@ export const GlobalSearchPage: React.FC = () => {
     }
   };
 
+  const lastFetchedQueryRef = React.useRef<string>('');
+
   useEffect(() => {
     setQuery(queryParam);
     setActiveTab(typeParam);
-    performSearch(queryParam, typeParam);
+    const clean = queryParam.trim().toLowerCase();
+    if (clean && clean !== lastFetchedQueryRef.current) {
+      lastFetchedQueryRef.current = clean;
+      performSearch(queryParam, typeParam);
+    } else if (!clean) {
+      lastFetchedQueryRef.current = '';
+      setResults({ users: [], startups: [], investors: [], mentors: [], opportunities: [], problems: [], posts: [] });
+    }
   }, [queryParam, typeParam]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
+      lastFetchedQueryRef.current = ''; // force re-fetch on explicit submit
       setSearchParams({ q: query.trim(), type: activeTab });
     }
   };

@@ -30,7 +30,7 @@ import { ConnectModal } from '../components/common/ConnectModal';
 import { StartupConnectionModal } from '../components/common/StartupConnectionModal';
 import { Avatar } from '../components/common/Avatar';
 import { RoleBadge, VerificationBadge } from '../components/common/Badge';
-import { supabase, fetchConnectionCount } from '../lib/supabase';
+import { supabase, fetchUserConnections } from '../lib/supabase';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -112,26 +112,24 @@ export const LandingPage: React.FC = () => {
     if (!user?.id) return;
     const fetchMyConnections = async () => {
       try {
-        const trueCount = await fetchConnectionCount(user.id);
-        setMyConnectionCount(trueCount);
+        const connData = await fetchUserConnections(user.id).catch(() => null);
+        if (!connData) return;
+        setMyConnectionCount(connData.count);
+        setConnectionStatusMap(connData.statusMap);
 
-        const { data: conns } = await supabase
-          .from('connections')
-          .select('id, sender_id, receiver_id, updated_at')
-          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-          .eq('status', 'ACCEPTED')
-          .order('updated_at', { ascending: false })
-          .limit(3);
+        const acceptedConns = connData.connections
+          .filter((c: any) => c.status === 'ACCEPTED')
+          .slice(0, 3);
 
-        if (conns && conns.length > 0) {
-          const otherIds = conns.map((c) => (c.sender_id === user.id ? c.receiver_id : c.sender_id));
+        if (acceptedConns.length > 0) {
+          const otherIds = acceptedConns.map((c: any) => (c.sender_id === user.id ? c.receiver_id : c.sender_id));
           const { data: profiles } = await supabase
             .from('profiles')
             .select('user_id, full_name, avatar, headline')
             .in('user_id', otherIds);
-          const profMap = new Map((profiles || []).map((p) => [p.user_id, p]));
+          const profMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
           setRecentConnections(
-            conns.map((c) => {
+            acceptedConns.map((c: any) => {
               const otherId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
               const p = profMap.get(otherId);
               return { userId: otherId, fullName: p?.full_name || 'Member', avatar: p?.avatar, headline: p?.headline };
@@ -140,35 +138,9 @@ export const LandingPage: React.FC = () => {
         } else {
           setRecentConnections([]);
         }
-
-        // Also fetch all connection statuses for logged-in user
-        const map = new Map<string, string>();
-        const { data: allUserConns } = await supabase
-          .from('connections')
-          .select('sender_id, receiver_id, status')
-          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
-
-        if (allUserConns) {
-          allUserConns.forEach((c) => {
-            const otherId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
-            if (otherId) map.set(otherId, c.status);
-          });
-        }
-
-        try {
-          const apiConns = await api.getConnections().catch(() => ({ connections: [] }));
-          if (apiConns && Array.isArray(apiConns.connections)) {
-            apiConns.connections.forEach((conn: any) => {
-              const otherId = conn.userId || conn.user?.id || (conn.senderId === user.id ? conn.receiverId : conn.senderId);
-              if (otherId && otherId !== user.id) {
-                map.set(otherId, 'ACCEPTED');
-              }
-            });
-          }
-        } catch {}
-
-        setConnectionStatusMap(map);
-      } catch {}
+      } catch (err) {
+        console.warn('LandingPage connections error:', err);
+      }
     };
     fetchMyConnections();
 
