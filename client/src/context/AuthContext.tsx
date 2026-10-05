@@ -86,11 +86,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             metadata.picture ||
             null;
 
-          const isExistingAuthUser =
-            authUser.created_at &&
-            Date.now() - new Date(authUser.created_at).getTime() > 60000;
-
-          const isCategorySelected = isExistingAuthUser || (!isGoogle && !!metadata.role);
+          // For email signup with explicit role in metadata, isCategorySelected is true.
+          // For Google signup, is_category_selected is false by default so new users are prompted to enter their details on AuthCallbackPage!
+          const isCategorySelected = !isGoogle && !!metadata.role;
 
           profileRow = await upsertUserProfile(userId, {
             full_name: fullName,
