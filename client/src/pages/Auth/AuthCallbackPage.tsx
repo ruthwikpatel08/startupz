@@ -109,6 +109,42 @@ export const AuthCallbackPage: React.FC = () => {
   useEffect(() => {
     let isSubscribed = true;
 
+    const isUserExistingAccount = (user: any, profile: any): boolean => {
+      // 1. If profile is already marked completed
+      if (profile?.is_category_selected === true) {
+        return true;
+      }
+
+      // 2. If the user's Supabase Auth record was created in the past (> 60s ago), they are an existing account
+      if (user?.created_at) {
+        const ageMs = Date.now() - new Date(user.created_at).getTime();
+        if (ageMs > 60000) {
+          return true;
+        }
+      }
+
+      // 3. If the profile row in Supabase was created in the past (> 60s ago), they are an existing account
+      if (profile?.created_at) {
+        const pAgeMs = Date.now() - new Date(profile.created_at).getTime();
+        if (pAgeMs > 60000) {
+          return true;
+        }
+      }
+
+      // 4. If the profile already has non-empty customized bio, skills, or custom headline
+      if (profile?.bio || profile?.skills || profile?.startup_interests) {
+        return true;
+      }
+
+      // 5. If the user specifically clicked "Sign In / Log In" rather than "Sign Up / Join Now" AND has a profile row
+      const oauthIntent = localStorage.getItem('startupz_oauth_intent');
+      if (oauthIntent === 'login' && profile) {
+        return true;
+      }
+
+      return false;
+    };
+
     const handleCallback = async () => {
       // 1. Check for error in query params (e.g. user denied consent)
       const errorParam = searchParams.get('error_description') || searchParams.get('error');
@@ -138,15 +174,19 @@ export const AuthCallbackPage: React.FC = () => {
           // Check if profile exists in public.profiles and has completed details
           const existingProfile = await fetchUserProfile(user.id);
 
-          // If existing profile has already selected a category, they are an existing user!
-          if (existingProfile && existingProfile.is_category_selected === true) {
+          // If this is an existing user, navigate immediately to dashboard without prompting
+          if (isUserExistingAccount(user, existingProfile)) {
+            // Ensure is_category_selected is permanently true in database
+            if (existingProfile?.is_category_selected !== true) {
+              upsertUserProfile(user.id, { is_category_selected: true }).catch(() => {});
+            }
             if (isSubscribed) {
               navigate('/', { replace: true });
             }
             return;
           }
 
-          // Otherwise, they are a new user signing up via Google! Prompt them for details:
+          // Otherwise, they are a brand-new user signing up via Google! Prompt them for details once:
           const userFullName =
             user.user_metadata?.full_name ||
             user.user_metadata?.name ||
@@ -204,7 +244,10 @@ export const AuthCallbackPage: React.FC = () => {
             }
 
             const existing = await fetchUserProfile(user.id);
-            if (existing && existing.is_category_selected === true) {
+            if (isUserExistingAccount(user, existing)) {
+              if (existing?.is_category_selected !== true) {
+                upsertUserProfile(user.id, { is_category_selected: true }).catch(() => {});
+              }
               if (isSubscribed) {
                 navigate('/', { replace: true });
               }

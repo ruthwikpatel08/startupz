@@ -29,6 +29,9 @@ export const LoginPage: React.FC = () => {
   const handleGoogleSignInClick = async () => {
     setGoogleLoading(true);
     setError(null);
+    try {
+      localStorage.setItem('startupz_oauth_intent', 'login');
+    } catch {}
 
     try {
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({

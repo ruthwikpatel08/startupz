@@ -153,13 +153,24 @@ export async function fetchUserProfile(userId: string, forceRefresh = false): Pr
 
   const fetchPromise = (async () => {
     try {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (error) {
+      if (!data) {
+        const fallback = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+        if (fallback.data) {
+          data = fallback.data;
+        }
+      }
+
+      if (error && !data) {
         console.warn('Error fetching profile from Supabase:', error.message);
         return null;
       }

@@ -63,6 +63,10 @@ export const Navbar: React.FC = () => {
 
   const handleGoogleClick = async () => {
     try {
+      try {
+        localStorage.setItem('startupz_oauth_intent', 'login');
+      } catch {}
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

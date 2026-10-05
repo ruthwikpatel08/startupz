@@ -77,7 +77,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             metadata.picture ||
             null;
 
-          const isCategorySelected = !isGoogle && !!metadata.role;
+          const isExistingAuthUser =
+            authUser.created_at &&
+            Date.now() - new Date(authUser.created_at).getTime() > 60000;
+
+          const isCategorySelected = isExistingAuthUser || (!isGoogle && !!metadata.role);
 
           profileRow = await upsertUserProfile(userId, {
             full_name: fullName,

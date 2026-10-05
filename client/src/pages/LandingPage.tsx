@@ -47,45 +47,51 @@ export const LandingPage: React.FC = () => {
   const [startupConnectUser, setStartupConnectUser] = useState<any | null>(null);
   const [connectionStatusMap, setConnectionStatusMap] = useState<Map<string, string>>(new Map());
 
-  // Fetch profiles of mentors and ecosystem advisors
+  // Fetch profiles of members who selected 'other' / custom roles
   useEffect(() => {
     let isMounted = true;
-    const fetchMentorsList = async () => {
+    const fetchOtherMembers = async () => {
       try {
-        const [supaRes, apiRes] = await Promise.allSettled([
-          supabase
-            .from('profiles')
-            .select('*')
-            .or('preferred_role.ilike.%mentor%,preferred_role.ilike.%advisor%,headline.ilike.%mentor%,headline.ilike.%advisor%')
-            .order('created_at', { ascending: false })
-            .limit(20),
-          api.getMentors('').catch(() => ({ mentors: [] })),
-        ]);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(30);
 
-        let combined: any[] = [];
-        if (supaRes.status === 'fulfilled' && supaRes.value.data) {
-          combined = supaRes.value.data.map((p: any) => ({
-            ...p,
-            role_label: 'Mentor',
-          }));
+        let filtered: any[] = [];
+        if (data && data.length > 0) {
+          filtered = data.filter((p: any) => {
+            const role = (p.preferred_role || '').toLowerCase();
+            const headline = (p.headline || '').toLowerCase();
+            return (
+              role.includes('other') ||
+              role.startsWith('other:') ||
+              role.includes('student') ||
+              role.includes('sales') ||
+              headline.includes('student') ||
+              headline.includes('sales') ||
+              headline.includes('designer') ||
+              headline.includes('operator') ||
+              (!role.includes('founder') && !role.includes('investor') && !role.includes('market'))
+            );
+          });
         }
 
-        if (apiRes.status === 'fulfilled' && apiRes.value?.mentors) {
-          const apiM = apiRes.value.mentors.map((m: any) => ({
-            id: m.id,
-            user_id: m.userId || m.user?.id || m.id,
-            full_name: m.user?.profile?.fullName || 'Mentor',
-            username: m.user?.profile?.username || (m.user?.email ? m.user.email.split('@')[0] : 'mentor'),
-            avatar: m.user?.profile?.avatar,
-            headline: m.user?.profile?.headline || `${m.yearsExperience || 5}+ Yrs Exp | Advisor`,
-            location: m.user?.profile?.location || 'Remote',
-            skills: m.mentoringTopics || m.industries || 'Advisory',
-            role_label: 'Mentor',
-          }));
-          combined = [...combined, ...apiM];
-        }
+        // Format raw profiles to extract clean role label from real profiles only
+        const mappedFiltered = filtered.map((p) => {
+          let roleLabel = 'Other';
+          const pref = p.preferred_role || '';
+          if (pref.toLowerCase().startsWith('other:')) {
+            roleLabel = pref.substring(6).trim();
+          } else if (p.headline && (p.headline.toLowerCase().includes('student') || p.headline.toLowerCase().includes('sales') || p.headline.toLowerCase().includes('designer'))) {
+            roleLabel = p.headline.split('|')[0].trim();
+          } else if (pref) {
+            roleLabel = pref;
+          }
+          return { ...p, role_label: roleLabel };
+        });
 
-        const unique = Array.from(new Map(combined.map((item) => [item.full_name || item.id, item])).values());
+        const unique = Array.from(new Map(mappedFiltered.map((item) => [item.full_name || item.id, item])).values());
         if (isMounted) {
           setOtherProfiles(unique.slice(0, 8));
         }
@@ -96,7 +102,7 @@ export const LandingPage: React.FC = () => {
       }
     };
 
-    fetchMentorsList();
+    fetchOtherMembers();
     return () => {
       isMounted = false;
     };
@@ -210,6 +216,10 @@ export const LandingPage: React.FC = () => {
 
   const handleGoogleClick = async () => {
     try {
+      try {
+        localStorage.setItem('startupz_oauth_intent', 'signup');
+      } catch {}
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -248,17 +258,17 @@ export const LandingPage: React.FC = () => {
       {/* 1. ECOSYSTEM DIRECTORY & COMMUNITY */}
       <section className="relative pt-6 pb-16 lg:pt-8 lg:pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Community Profiles: Mentors & Advisors */}
+          {/* Community Profiles: Members who selected 'Other' (Students, Salesmen, Designers & Specialists) */}
           <div className="max-w-5xl mx-auto mb-10">
             <div className="mb-6">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-400 text-xs font-semibold border border-amber-200/60 dark:border-amber-900/60 mb-1.5">
-                <GraduationCap size={12} /> Mentorship & Advisory
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 text-xs font-semibold border border-brand-200/60 dark:border-brand-900/60 mb-1.5">
+                <Sparkles size={12} /> Community Talent Showcase
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                Mentors & Strategic Advisors
+                Members & Independent Specialists
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                Connect with vetted founders, executives, and leaders offering startup guidance
+                Discover students, salesmen, designers & operators who selected custom roles
               </p>
             </div>
 
@@ -282,13 +292,13 @@ export const LandingPage: React.FC = () => {
                 return (
                   <div className="text-center py-8 px-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Explore mentors and advisors in our directory!
+                      You are connected with all featured talent. Explore more peers in the directory!
                     </p>
                     <Link
-                      to="/cofounders?category=mentors"
+                      to="/cofounders"
                       className="inline-block mt-3 text-xs font-semibold text-brand-600 hover:text-brand-500"
                     >
-                      Browse Mentors Directory &rarr;
+                      Browse Talent Directory &rarr;
                     </Link>
                   </div>
                 );
@@ -297,10 +307,10 @@ export const LandingPage: React.FC = () => {
               return (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {visibleProfiles.map((p) => {
-                    const displayName = p.full_name || 'Mentor';
-                    const displayRole = p.role_label || 'Mentor';
+                    const displayName = p.full_name || 'Community Member';
+                    const displayRole = p.role_label || 'Other';
                     const username = p.username || displayName.toLowerCase().replace(/\s+/g, '_');
-                    const profileUrl = p.user_id ? `/profile/${p.user_id}` : '/cofounders?category=mentors';
+                    const profileUrl = p.user_id ? `/profile/${p.user_id}` : '/cofounders';
                     const connStatus = p.user_id ? connectionStatusMap.get(p.user_id) : undefined;
                     const targetUserObj = {
                       id: p.user_id || p.id,

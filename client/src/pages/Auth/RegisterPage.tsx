@@ -78,6 +78,7 @@ export const RegisterPage: React.FC = () => {
         customRole: cleanCustomRole || undefined,
       };
       localStorage.setItem('startupz_oauth_meta', JSON.stringify(oauthMeta));
+      localStorage.setItem('startupz_oauth_intent', 'signup');
 
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
