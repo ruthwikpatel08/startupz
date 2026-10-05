@@ -472,7 +472,7 @@ export const AuthCallbackPage: React.FC = () => {
           {/* Welcome Header */}
           <div className="text-center space-y-3">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-900/40">
-              <Sparkles size={12} className="text-brand-600 dark:text-brand-400" /> Welcome to StartupZ
+              <Sparkles size={12} className="text-brand-600 dark:text-brand-400" /> Welcome to HookZ
             </div>
 
             <div className="flex flex-col items-center gap-3 pt-1">
@@ -739,11 +739,11 @@ export const AuthCallbackPage: React.FC = () => {
                 {isSubmitting ? (
                   <>
                     <RefreshCw size={15} className="animate-spin" />
-                    <span>Saving Profile & Entering StartupZ...</span>
+                    <span>Saving Profile & Entering HookZ...</span>
                   </>
                 ) : (
                   <>
-                    <span>Complete Profile & Enter StartupZ</span>
+                    <span>Complete Profile & Enter HookZ</span>
                     <ArrowRight size={15} />
                   </>
                 )}
@@ -763,7 +763,7 @@ export const AuthCallbackPage: React.FC = () => {
           <Rocket size={22} className="animate-pulse" />
         </div>
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-          Connecting to StartupZ...
+          Connecting to HookZ...
         </h2>
         <p className="text-xs text-slate-500 dark:text-slate-400">
           Verifying your Google session and preparing your profile.

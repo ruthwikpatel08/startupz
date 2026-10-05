@@ -138,7 +138,7 @@ router.get('/:roomCode', optionalAuth, async (req, res) => {
       return res.json({
         meeting: {
           roomCode,
-          title: `StartupZ Instant Meeting Room (${roomCode})`,
+          title: `HookZ Instant Meeting Room (${roomCode})`,
           status: 'ACTIVE',
           scheduledAt: new Date(),
           durationMinutes: 45,

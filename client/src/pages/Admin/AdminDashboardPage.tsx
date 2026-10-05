@@ -139,7 +139,7 @@ export const AdminDashboardPage: React.FC = () => {
             <Shield size={13} /> Trust & Safety Council
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            StartupZ Platform Moderation & Administration
+            HookZ Platform Moderation & Administration
           </h1>
           <p className="text-xs sm:text-sm text-slate-400">
             Audit user accounts, grant official badges, review reports, and enforce ecosystem integrity.

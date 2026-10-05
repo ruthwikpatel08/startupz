@@ -44,7 +44,7 @@ export const VideoMeetingRoomPage: React.FC = () => {
 
   // In-call chat messages
   const [chatMessages, setChatMessages] = useState<Array<{ sender: string; text: string; time: string }>>([
-    { sender: 'StartupZ AI Assistant', text: 'Welcome to your private encrypted pitch room! Meeting notes will auto-sync.', time: 'Just now' },
+    { sender: 'HookZ AI Assistant', text: 'Welcome to your private encrypted pitch room! Meeting notes will auto-sync.', time: 'Just now' },
   ]);
   const [messageInput, setMessageInput] = useState('');
 
@@ -304,7 +304,7 @@ export const VideoMeetingRoomPage: React.FC = () => {
                     </span>
                   </div>
                   <div className="space-y-2 text-center py-10">
-                    <h3 className="text-base font-bold text-white">StartupZ Live Screen Share</h3>
+                    <h3 className="text-base font-bold text-white">HookZ Live Screen Share</h3>
                     <p className="text-xs text-slate-400 max-w-sm mx-auto">
                       Showing interactive product mockups, codebase structure, and financial model.
                     </p>

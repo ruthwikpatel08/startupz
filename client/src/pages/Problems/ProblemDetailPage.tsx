@@ -42,7 +42,7 @@ export const ProblemDetailPage: React.FC = () => {
         setProblem(data);
         setIsSaved(!!data.isSaved);
         if (data.title) {
-          document.title = `${data.title} — StartupZ World Challenges`;
+          document.title = `${data.title} — HookZ World Challenges`;
         }
       })
       .catch((err) => {
@@ -53,7 +53,7 @@ export const ProblemDetailPage: React.FC = () => {
       });
 
     return () => {
-      document.title = 'StartupZ — Find the right people. Build the right startup.';
+      document.title = 'HookZ — Find the right people. Build the right startup.';
     };
   }, [id]);
 

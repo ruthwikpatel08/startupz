@@ -187,14 +187,14 @@ export const Navbar: React.FC = () => {
             {/* Brand Logo */}
             <Link
               to={user ? '/dashboard' : '/login'}
-              title="StartupZ"
+              title="HookZ"
               className="flex items-center gap-2 shrink-0 cursor-pointer"
             >
               <div className="w-7 h-7 rounded-md bg-brand-600 flex items-center justify-center text-white shadow-subtle">
                 <Rocket size={15} />
               </div>
               <span className="text-base font-extrabold startupz-logo-title tracking-tight text-slate-900 dark:text-white">
-                Startup<span className="text-brand-600">Z</span>
+                Hook<span className="text-brand-600">Z</span>
               </span>
             </Link>
 
@@ -686,7 +686,7 @@ export const Navbar: React.FC = () => {
                     onClick={() => setMobileMenuOpen(false)}
                     className="flex-1 btn-primary text-center py-1.5"
                   >
-                    Join StartupZ
+                    Join HookZ
                   </Link>
                 </div>
               </div>

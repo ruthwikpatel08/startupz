@@ -24,7 +24,7 @@ export const Footer: React.FC = () => {
                 <Rocket size={15} />
               </div>
               <span className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-                Startup<span className="text-brand-600">Z</span>
+                Hook<span className="text-brand-600">Z</span>
               </span>
             </Link>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm">
@@ -73,14 +73,14 @@ export const Footer: React.FC = () => {
               Idea Protection & Privacy
             </h4>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              StartupZ empowers transparent discovery. To protect proprietary trade secrets or patented algorithms, utilize our Confidential Idea visibility controls.
+              HookZ empowers transparent discovery. To protect proprietary trade secrets or patented algorithms, utilize our Confidential Idea visibility controls.
             </p>
           </div>
         </div>
 
         <div className="pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <div>
-            © {new Date().getFullYear()} StartupZ Technologies Inc. All rights reserved.
+            © {new Date().getFullYear()} HookZ Technologies Inc. All rights reserved.
           </div>
           <div className="flex items-center gap-1.5 text-slate-500">
             <span>Built for the global startup ecosystem</span>

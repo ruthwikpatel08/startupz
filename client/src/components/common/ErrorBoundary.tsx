@@ -85,7 +85,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 {isChunkError
-                  ? 'A new version of StartupZ was deployed. Click below to load the latest update.'
+                  ? 'A new version of HookZ was deployed. Click below to load the latest update.'
                   : 'An unexpected interface error occurred. You can reset cache and return to the homepage below.'}
               </p>
             </div>

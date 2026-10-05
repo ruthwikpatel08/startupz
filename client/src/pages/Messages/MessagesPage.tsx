@@ -101,7 +101,7 @@ export const MessagesPage: React.FC = () => {
                 projectTitle: g.title,
                 participant: {
                   id: g.id,
-                  email: 'team@startupz.build',
+                  email: 'team@hookz.build',
                   role: 'PROJECT_TEAM',
                   isVerified: true,
                   profile: {
@@ -266,7 +266,7 @@ export const MessagesPage: React.FC = () => {
                   sender: {
                     id: 'system',
                     profile: {
-                      fullName: 'StartupZ System',
+                      fullName: 'HookZ System',
                       avatar: null,
                       headline: 'Workspace',
                     },
@@ -775,7 +775,7 @@ export const MessagesPage: React.FC = () => {
                         ? `${(selectedConversation as any).members?.length || 1} members • Team chat`
                         : selectedConversation.participant?.profile?.headline ||
                           selectedConversation.participant?.role ||
-                          'Active on StartupZ'}
+                          'Active on HookZ'}
                     </p>
                   </div>
                 </div>

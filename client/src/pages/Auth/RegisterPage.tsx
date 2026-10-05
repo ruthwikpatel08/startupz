@@ -227,7 +227,7 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            Click the link in the verification email to activate your StartupZ profile and sign in.
+            Click the link in the verification email to activate your HookZ profile and sign in.
           </p>
 
           {resendSuccess && (
@@ -535,7 +535,7 @@ export const RegisterPage: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <span>Create StartupZ Account</span>
+                  <span>Create HookZ Account</span>
                   <ArrowRight size={14} />
                 </>
               )}

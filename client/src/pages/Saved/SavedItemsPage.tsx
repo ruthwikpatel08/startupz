@@ -103,7 +103,7 @@ export const SavedItemsPage: React.FC = () => {
         <EmptyState
           icon={Bookmark}
           title="No saved items found"
-          description="Bookmark startups, people, opportunities, or investors across StartupZ to access them quickly here."
+          description="Bookmark startups, people, opportunities, or investors across HookZ to access them quickly here."
           actionText="Discover Startups"
           actionHref="/startups"
         />
@@ -139,7 +139,7 @@ export const SavedItemsPage: React.FC = () => {
                         {d.name || 'Startup Concept'}
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
-                        {d.oneLineDescription || d.problem || 'Innovative startup on StartupZ'}
+                        {d.oneLineDescription || d.problem || 'Innovative startup on HookZ'}
                       </p>
                       <div className="mt-3 flex items-center gap-2 text-xs font-medium">
                         <span className="text-brand-600 dark:text-brand-400">{d.industry}</span>

@@ -470,7 +470,7 @@ router.post('/', requireAuth, async (req, res) => {
         authorId: req.user.id,
         startupId: startup.id,
         postType: 'LAUNCH',
-        title: `Announcing ${startup.name} on StartupZ! 🚀`,
+        title: `Announcing ${startup.name} on HookZ! 🚀`,
         content: `Excited to unveil ${startup.name} (${startup.stage} Stage): ${startup.oneLineDescription}\n\nProblem: "${startup.problem.slice(0, 140)}..."\n\nLooking for: ${startup.requiredSkills || 'Passionate collaborators'}. Connect or check out our startup profile!`,
       },
     });

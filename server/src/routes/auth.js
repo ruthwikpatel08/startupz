@@ -59,7 +59,7 @@ router.post('/register', async (req, res) => {
       data: {
         userId: user.id,
         type: 'SYSTEM',
-        title: 'Welcome to StartupZ! 🚀',
+        title: 'Welcome to HookZ! 🚀',
         message: 'Complete your profile to unlock high-accuracy co-founder and startup matches.',
         link: '/profile',
       },
@@ -148,7 +148,7 @@ router.post('/google', async (req, res) => {
           profile: {
             create: {
               fullName: displayName,
-              headline: 'Founder & Builder | StartupZ Network',
+              headline: 'Founder & Builder | HookZ Network',
               location: 'Global / Remote',
               avatar: userAvatar,
               openTo: 'Co-Founder,Startup Team,Investment,Mentorship',

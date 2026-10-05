@@ -122,7 +122,7 @@ router.post('/:id/solutions', requireAuth, async (req, res) => {
         authorId: req.user.id,
         postType: 'UPDATE',
         title: `Raised Solution for ${failedStartup.name}'s Unsolved Market Problem! 💡`,
-        content: `I just raised a new solution for the unsolved problem left behind by ${failedStartup.name}: "${title}".\n\n${description}\n\nCheck out the full breakdown and collaborate with me on StartupZ!`,
+        content: `I just raised a new solution for the unsolved problem left behind by ${failedStartup.name}: "${title}".\n\n${description}\n\nCheck out the full breakdown and collaborate with me on HookZ!`,
       },
     });
 

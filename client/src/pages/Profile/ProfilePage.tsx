@@ -1214,7 +1214,7 @@ export const ProfilePage: React.FC = () => {
                   </div>
 
                   <p className="text-sm sm:text-base font-normal text-slate-600 dark:text-slate-300">
-                    {p.headline || (isMe ? 'Add your role or startup vision' : 'Member of StartupZ')}
+                    {p.headline || (isMe ? 'Add your role or startup vision' : 'Member of HookZ')}
                   </p>
 
                   {p.oneLineBio && (
@@ -2258,7 +2258,7 @@ export const ProfilePage: React.FC = () => {
                             type="text"
                             value={exp.company || ''}
                             onChange={(e) => handleUpdateExperienceItem(idx, 'company', e.target.value)}
-                            placeholder="e.g. Google, Microsoft, StartupZ"
+                            placeholder="e.g. Google, Microsoft, HookZ"
                             className="input-base w-full px-2.5 py-1.5 text-xs uppercase"
                           />
                         </div>
@@ -2538,7 +2538,7 @@ export const ProfilePage: React.FC = () => {
               Access Device Photo Gallery
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed px-2">
-              StartupZ requires your permission to access your device gallery/photos to select a{' '}
+              HookZ requires your permission to access your device gallery/photos to select a{' '}
               <span className="font-bold text-[#4F46E5]">
                 {targetImageType === 'avatar' ? 'profile photo' : 'background cover image'}
               </span>

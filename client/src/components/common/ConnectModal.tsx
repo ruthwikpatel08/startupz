@@ -185,7 +185,7 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
           <div className="space-y-1">
             <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Sign In Required to Connect</h4>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
-              Join StartupZ or log in to send connection requests and collaborate with {displayName}.
+              Join HookZ or log in to send connection requests and collaborate with {displayName}.
             </p>
           </div>
           <div className="flex items-center gap-2 pt-2">

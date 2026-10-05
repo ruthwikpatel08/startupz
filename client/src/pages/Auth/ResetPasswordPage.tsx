@@ -59,14 +59,14 @@ export const ResetPasswordPage: React.FC = () => {
               <Rocket size={18} />
             </div>
             <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Startup<span className="text-brand-600 dark:text-brand-400">Z</span>
+              Hook<span className="text-brand-600 dark:text-brand-400">Z</span>
             </span>
           </Link>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
             Set New Password
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Choose a strong password for your StartupZ account.
+            Choose a strong password for your HookZ account.
           </p>
         </div>
 

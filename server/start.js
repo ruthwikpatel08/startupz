@@ -30,13 +30,13 @@ try {
       process.env.GEMINI_API_KEY ? `GEMINI_API_KEY="${process.env.GEMINI_API_KEY}"` : '',
     ].filter(Boolean);
     fs.writeFileSync(envPath, envLines.join('\n') + '\n', 'utf8');
-    console.log('[StartupZ Startup] Created fallback .env file with default DATABASE_URL.');
+    console.log('[HookZ Startup] Created fallback .env file with default DATABASE_URL.');
   }
 } catch (e) {
-  console.warn('[StartupZ Startup] Notice: could not write fallback .env file:', e.message);
+  console.warn('[HookZ Startup] Notice: could not write fallback .env file:', e.message);
 }
 
 // 3. Start the Express API server
-console.log('[StartupZ Startup] Starting Express API server...');
+console.log('[HookZ Startup] Starting Express API server...');
 await import('./src/index.js');
 

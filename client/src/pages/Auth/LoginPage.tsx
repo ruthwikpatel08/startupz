@@ -153,7 +153,7 @@ export const LoginPage: React.FC = () => {
 
           {/* Subtext */}
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-normal max-w-sm mx-auto">
-            StartupZ connects founders, co-founders, developers, designers, mentors, and investors in one structured, professional network.
+            HookZ connects founders, co-founders, developers, designers, mentors, and investors in one structured, professional network.
           </p>
         </div>
 
@@ -257,7 +257,7 @@ export const LoginPage: React.FC = () => {
                   <span>Account Permanently Deleted</span>
                 </div>
                 <p className="text-[11px] leading-relaxed text-emerald-700 dark:text-emerald-300 pl-6">
-                  All your profile data, connections, messages, and listings have been permanently wiped from StartupZ. If you log in again, you will be registered as a brand new user.
+                  All your profile data, connections, messages, and listings have been permanently wiped from HookZ. If you log in again, you will be registered as a brand new user.
                 </p>
               </div>
             )}
@@ -383,7 +383,7 @@ export const LoginPage: React.FC = () => {
 
           <div className="mt-5 pt-4 border-t border-slate-100 dark:border-dark-800 text-center">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Don't have a StartupZ account yet?{' '}
+              Don't have a HookZ account yet?{' '}
               <Link to="/register" className="font-semibold text-brand-600 dark:text-brand-400 hover:underline">
                 Create an account
               </Link>

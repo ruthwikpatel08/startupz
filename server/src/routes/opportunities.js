@@ -201,7 +201,7 @@ router.post('/', requireAuth, async (req, res) => {
         startupId,
         postType: 'HIRING',
         title: `We're looking for a ${role} at ${startup.name}!`,
-        content: `${startup.name} is seeking a passionate ${role} (${commitment}, ${compensation}, ${workplaceType}).\n\nSkills: ${requiredSkills}\n\nApply directly through StartupZ Opportunities!`,
+        content: `${startup.name} is seeking a passionate ${role} (${commitment}, ${compensation}, ${workplaceType}).\n\nSkills: ${requiredSkills}\n\nApply directly through HookZ Opportunities!`,
       },
     });
 

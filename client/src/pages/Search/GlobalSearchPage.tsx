@@ -100,7 +100,7 @@ export const GlobalSearchPage: React.FC = () => {
                 userId: p.user_id,
                 fullName: p.full_name,
                 username: uName,
-                headline: p.headline || `${p.preferred_role || 'Builder'} | StartupZ Network`,
+                headline: p.headline || `${p.preferred_role || 'Builder'} | HookZ Network`,
                 oneLineBio: p.one_line_bio || p.headline || '',
                 location: p.location || 'Remote',
                 avatar: p.avatar,

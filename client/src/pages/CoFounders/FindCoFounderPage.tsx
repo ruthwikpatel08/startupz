@@ -257,7 +257,7 @@ export const FindCoFounderPage: React.FC = () => {
             preferredStages: 'Pre-Seed, Seed',
             industries: p.industries || p.skills || 'Technology, Artificial Intelligence, SaaS',
             location: p.location || 'Remote',
-            about: p.bio || p.headline || 'Active startup investor in the StartupZ ecosystem.',
+            about: p.bio || p.headline || 'Active startup investor in the HookZ ecosystem.',
             isVerified: true,
             minCheckSize: '$25K',
             maxCheckSize: '$250K',
@@ -813,7 +813,7 @@ export const FindCoFounderPage: React.FC = () => {
           <EmptyState
             icon={TrendingUp}
             title="No investors in this category yet"
-            description="Be the first to join as an active investor or angel backer on StartupZ."
+            description="Be the first to join as an active investor or angel backer on HookZ."
             actionLabel="View All Members"
             onAction={() => handleSelectCategory('all')}
           />
@@ -914,7 +914,7 @@ export const FindCoFounderPage: React.FC = () => {
         <EmptyState
           icon={Users}
           title={`No members in "${currentCategory}" category`}
-          description="Be the first to join or invite other founders and builders to StartupZ."
+          description="Be the first to join or invite other founders and builders to HookZ."
           actionLabel="View All Members"
           onAction={() => handleSelectCategory('all')}
         />

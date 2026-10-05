@@ -97,7 +97,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
           </div>
           <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Report Received</h4>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Thank you for helping keep StartupZ safe. Our moderation team will investigate this report promptly.
+            Thank you for helping keep HookZ safe. Our moderation team will investigate this report promptly.
           </p>
         </div>
       ) : (

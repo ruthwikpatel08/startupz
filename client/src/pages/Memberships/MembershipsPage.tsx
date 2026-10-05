@@ -72,7 +72,7 @@ export const MembershipsPage: React.FC = () => {
         'Everything in Standard Tier',
         'Unlimited AI Scout Bot Queries & Talent Sourcing',
         'Direct Investor Matchmaking & Warm Intro Requests',
-        'Featured Spotlight on StartupZ Landing Page',
+        'Featured Spotlight on HookZ Landing Page',
         'Unlimited Job, Internship & Co-Founder Posts',
         '1-on-1 Dedicated Startup Mentor Sessions',
         'Priority Pitch Deck Review & Feedback',
@@ -268,7 +268,7 @@ export const MembershipsPage: React.FC = () => {
               <span>Frequently Asked Questions</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Common questions about StartupZ memberships and features.
+              Common questions about HookZ memberships and features.
             </p>
           </div>
 

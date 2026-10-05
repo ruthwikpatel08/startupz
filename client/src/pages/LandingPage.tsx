@@ -484,7 +484,7 @@ export const LandingPage: React.FC = () => {
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">StartupZ Ecosystem Directory</span>
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">HookZ Ecosystem Directory</span>
               </div>
               <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                 LIVE DIRECTORY
@@ -573,7 +573,7 @@ export const LandingPage: React.FC = () => {
                 <span>Platform Highlights</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                What's New on StartupZ
+                What's New on HookZ
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Directory tools, co-founder discovery algorithms, and pitch ingestion pipelines.
@@ -688,7 +688,7 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. HOW STARTUPZ WORKS */}
+      {/* 2. HOW HOOKZ WORKS */}
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12">
@@ -696,7 +696,7 @@ export const LandingPage: React.FC = () => {
               Lifecycle
             </span>
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-1">
-              How StartupZ Works
+              How HookZ Works
             </h2>
             <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">
               From zero-to-one validation to co-founder matchmaking, team hiring, and capital discovery.
@@ -765,7 +765,7 @@ export const LandingPage: React.FC = () => {
                 Find compatible co-founders with complementary skills
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Co-founder relationships require complementary technical capabilities, aligned availability, and shared domain commitment. StartupZ evaluates:
+                Co-founder relationships require complementary technical capabilities, aligned availability, and shared domain commitment. HookZ evaluates:
               </p>
               <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
                 <li className="flex items-center gap-2">
@@ -882,14 +882,14 @@ export const LandingPage: React.FC = () => {
               Community Testimonials
             </span>
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-1">
-              Startups Built on StartupZ
+              Startups Built on HookZ
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic mb-4">
-                "StartupZ was born out of the direct need for founders, developers, and investors to cut through noise, find genuine co-founders, and build lasting ventures together."
+                "HookZ was born out of the direct need for founders, developers, and investors to cut through noise, find genuine co-founders, and build lasting ventures together."
               </p>
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-white font-semibold text-xs">
@@ -897,14 +897,14 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="text-xs font-semibold text-slate-900 dark:text-white">Ruthwik Patel</h4>
-                  <p className="text-[11px] text-slate-500">Founder @ StartupZ</p>
+                  <p className="text-[11px] text-slate-500">Founder @ HookZ</p>
                 </div>
               </div>
             </div>
 
             <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic mb-4">
-                "Finding a co-founder with aligned vision and complementary technical skills used to take months. On StartupZ, connecting directly with real builders changes everything."
+                "Finding a co-founder with aligned vision and complementary technical skills used to take months. On HookZ, connecting directly with real builders changes everything."
               </p>
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-white font-semibold text-xs">
@@ -919,7 +919,7 @@ export const LandingPage: React.FC = () => {
 
             <div className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic mb-4">
-                "StartupZ's direct proposal and co-founder connection system provides clean, genuine startup signals without the spam. Highly recommended for early builders."
+                "HookZ's direct proposal and co-founder connection system provides clean, genuine startup signals without the spam. Highly recommended for early builders."
               </p>
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white font-semibold text-xs">

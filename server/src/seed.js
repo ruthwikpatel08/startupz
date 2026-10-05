@@ -9,7 +9,7 @@ import { realFailedStartups } from './realData/failedStartups.js';
 import { demoAccounts } from './realData/demoAccounts.js';
 
 export async function main() {
-  console.log('🌱 Starting verified StartupZ real data & ecosystem seed...');
+  console.log('🌱 Starting verified HookZ real data & ecosystem seed...');
 
   // 1. CLEANUP IN SAFE FOREIGN-KEY ORDER
   console.log('🧹 Clearing previous database state for clean, idempotent rebuild...');
@@ -444,7 +444,7 @@ export async function main() {
   console.log(`✅ Seeded ${createdProblems.length} authoritative worldwide problem statements.`);
 
   console.log('========================================================================');
-  console.log('🎉 STARTUPZ REAL-WORLD DATABASE POPULATION COMPLETED SUCCESSFULLY!');
+  console.log('🎉 HOOKZ REAL-WORLD DATABASE POPULATION COMPLETED SUCCESSFULLY!');
   console.log(`- Problems Documented: ${createdProblems.length} (UN, WHO, FAO, World Bank, NITI Aayog citations)`);
   console.log(`- Real Startups: ${startupMap.size} (DeHaat, Ninjacart, Ather, Recykal, SigTuple, Form Energy, etc.)`);
   console.log(`- Real Investors: ${investorList.length} (Peak XV, Omnivore, Blume, Accel, a16z, Lowercarbon, etc.)`);

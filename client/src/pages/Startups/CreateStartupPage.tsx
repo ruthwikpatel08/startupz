@@ -96,7 +96,7 @@ export const CreateStartupPage: React.FC = () => {
             <Rocket className="text-brand-600" size={26} /> Publish Startup Idea or Venture
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Publish your venture on StartupZ to discover co-founders, early teammates, and investor interest.
+            Publish your venture on HookZ to discover co-founders, early teammates, and investor interest.
           </p>
         </div>
         <button
@@ -115,7 +115,7 @@ export const CreateStartupPage: React.FC = () => {
         <div className="space-y-1">
           <p className="font-semibold">Privacy & Idea Protection Advisory:</p>
           <p className="leading-relaxed">
-            StartupZ does not automatically enforce NDAs or legal patents. Focus on sharing your problem, market insight, and execution vision without disclosing sensitive proprietary algorithms or trade secrets. You can set visibility to "Connections Only" or toggle "Confidential Idea".
+            HookZ does not automatically enforce NDAs or legal patents. Focus on sharing your problem, market insight, and execution vision without disclosing sensitive proprietary algorithms or trade secrets. You can set visibility to "Connections Only" or toggle "Confidential Idea".
           </p>
         </div>
       </div>
@@ -366,7 +366,7 @@ export const CreateStartupPage: React.FC = () => {
                   onChange={(e) => setVisibility(e.target.value as any)}
                   className="input-base w-full py-1.5 px-2.5 text-xs"
                 >
-                  <option value="PUBLIC">Public (Visible across StartupZ)</option>
+                  <option value="PUBLIC">Public (Visible across HookZ)</option>
                   <option value="CONNECTIONS_ONLY">Connections Only</option>
                   <option value="PRIVATE">Private (Only You & Team)</option>
                 </select>

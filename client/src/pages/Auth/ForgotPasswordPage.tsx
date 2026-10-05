@@ -43,7 +43,7 @@ export const ForgotPasswordPage: React.FC = () => {
               <Rocket size={18} />
             </div>
             <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Startup<span className="text-brand-600 dark:text-brand-400">Z</span>
+              Hook<span className="text-brand-600 dark:text-brand-400">Z</span>
             </span>
           </Link>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">

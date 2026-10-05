@@ -25,7 +25,7 @@ export const ShareProblemModal: React.FC<ShareProblemModalProps> = ({
   if (!isOpen || !problem) return null;
 
   const shareUrl = `${window.location.origin}/problems/${problem.id}`;
-  const shareText = `Check out this global challenge on StartupZ: "${problem.title}". Let's build a startup to solve it!`;
+  const shareText = `Check out this global challenge on HookZ: "${problem.title}". Let's build a startup to solve it!`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareUrl);

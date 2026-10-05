@@ -328,7 +328,7 @@ export const RocketFlightOverlay: React.FC = () => {
             </div>
 
             <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-              Ignite the StartupZ aerospace propulsion to fly a rocket across your screen anytime.
+              Ignite the HookZ aerospace propulsion to fly a rocket across your screen anytime.
             </p>
 
             <button

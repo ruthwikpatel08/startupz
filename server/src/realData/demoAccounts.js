@@ -12,9 +12,9 @@ export const demoAccounts = [
     verificationBadge: 'Verified Founder',
     profile: {
       fullName: 'Ruthwik Patel',
-      headline: 'Founder & Lead Architect | StartupZ',
+      headline: 'Founder & Lead Architect | HookZ',
       location: 'Bengaluru / Remote',
-      bio: 'Leading StartupZ to connect builders, co-founders, and investors worldwide.',
+      bio: 'Leading HookZ to connect builders, co-founders, and investors worldwide.',
       avatar: 'https://api.dicebear.com/7.x/initials/svg?seed=Ruthwik%20Patel&backgroundColor=4f46e5,06b6d4,10b981',
       education: 'Computer Science & Software Systems',
       skills: 'Full-Stack Architecture, Product Strategy, Startup Scaling, AI Systems',
