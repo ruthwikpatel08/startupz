@@ -44,14 +44,12 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use('/uploads', express.static(path.resolve(__dirname, '../public/uploads')));
 
-// Health Check
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    service: 'StartupZ API Server',
-    tagline: 'Find the right people. Build the right startup.',
-    time: new Date().toISOString(),
-  });
+// Health Check / Keep-Alive (Optimized for cron pings & minimal response size)
+app.all(['/api/health', '/health'], (req, res) => {
+  if (req.method === 'HEAD') {
+    return res.status(200).end();
+  }
+  res.status(200).json({ status: 'ok' });
 });
 
 // Database Health Check & Diagnostic
