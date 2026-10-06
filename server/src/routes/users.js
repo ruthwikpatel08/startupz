@@ -218,9 +218,18 @@ router.get('/matching/cofounders', optionalAuth, async (req, res) => {
           { profile: { preferredRole: { contains: 'Investor' } } },
           { investorProfile: { isNot: null } },
         ];
-      } else if (catLower === 'other') {
+      } else if (catLower === 'students' || catLower === 'student') {
         where.OR = [
-          { role: { in: ['DEVELOPER', 'DESIGNER', 'MENTOR', 'ADMIN', 'OTHER'] } },
+          { role: 'STUDENT' },
+          { profile: { preferredRole: { in: ['Student', 'STUDENT', 'student'] } } },
+          { profile: { headline: { contains: 'Student' } } },
+          { profile: { bio: { contains: 'Student' } } },
+          { profile: { education: { contains: 'Student' } } },
+        ];
+      } else if (catLower === 'other' || catLower === 'others') {
+        where.OR = [
+          { role: { in: ['OTHER', 'OTHERS', 'DEVELOPER', 'DESIGNER', 'MENTOR', 'ADMIN'] } },
+          { profile: { preferredRole: { in: ['Other', 'Others', 'OTHER', 'OTHERS'] } } },
           { profile: { skills: { contains: 'Design' } } },
           { profile: { skills: { contains: 'Engineer' } } },
           { profile: { skills: { contains: 'Tech' } } },
@@ -229,7 +238,7 @@ router.get('/matching/cofounders', optionalAuth, async (req, res) => {
     } else {
       where.OR = [
         { profile: { isNot: null } },
-        { role: { in: ['FOUNDER', 'COFOUNDER', 'DEVELOPER', 'MARKETER', 'DESIGNER', 'INVESTOR', 'MENTOR', 'ADMIN', 'OTHER'] } },
+        { role: { in: ['STUDENT', 'OTHER', 'OTHERS', 'FOUNDER', 'COFOUNDER', 'DEVELOPER', 'MARKETER', 'DESIGNER', 'INVESTOR', 'MENTOR', 'ADMIN'] } },
       ];
     }
 

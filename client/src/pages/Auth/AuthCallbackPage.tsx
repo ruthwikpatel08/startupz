@@ -46,9 +46,9 @@ export const AuthCallbackPage: React.FC = () => {
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
   const [avatar, setAvatar] = useState('');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('FOUNDER');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('STUDENT');
   const [customRoleDescription, setCustomRoleDescription] = useState('');
-  const [headline, setHeadline] = useState('Founder & Visionary | Startup Builder');
+  const [headline, setHeadline] = useState('Student Builder & Campus Innovator');
   const [location, setLocation] = useState('Remote');
   const [oneLineBio, setOneLineBio] = useState('');
   const [bio, setBio] = useState('');
@@ -60,6 +60,20 @@ export const AuthCallbackPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const roleCategories: RoleCategoryOption[] = [
+    {
+      id: 'STUDENT',
+      label: 'Student',
+      icon: GraduationCap,
+      desc: 'College/university student, student researcher & builder.',
+      defaultHeadline: 'Student Builder & Campus Innovator',
+    },
+    {
+      id: 'OTHER',
+      label: 'Others',
+      icon: Briefcase,
+      desc: 'Operator, specialist, professional, ecosystem enthusiast.',
+      defaultHeadline: 'Startup Operator & Ecosystem Member',
+    },
     {
       id: 'FOUNDER',
       label: 'Founder',
@@ -82,13 +96,6 @@ export const AuthCallbackPage: React.FC = () => {
       defaultHeadline: 'Software Engineer | Technical Builder',
     },
     {
-      id: 'DESIGNER',
-      label: 'Designer',
-      icon: Palette,
-      desc: 'UI/UX architect, brand designer, product design lead.',
-      defaultHeadline: 'Product & UI/UX Designer | Creative Lead',
-    },
-    {
       id: 'MARKETER',
       label: 'Marketer',
       icon: Megaphone,
@@ -105,16 +112,9 @@ export const AuthCallbackPage: React.FC = () => {
     {
       id: 'MENTOR',
       label: 'Mentor / Advisor',
-      icon: GraduationCap,
+      icon: Sparkles,
       desc: 'Experienced advisor, startup mentor, executive coach.',
       defaultHeadline: 'Startup Mentor & Strategic Advisor',
-    },
-    {
-      id: 'OTHER',
-      label: 'Other / Operator',
-      icon: Briefcase,
-      desc: 'Student, salesman, specialist, operator.',
-      defaultHeadline: 'Startup Operator & Ecosystem Member',
     },
   ];
 
@@ -501,7 +501,7 @@ export const AuthCallbackPage: React.FC = () => {
           <form onSubmit={handleCompleteSetup} className="space-y-6">
             {/* Step 1: Role Selection Grid */}
             <div className="space-y-2.5">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <label className="block text-sm font-bold sm:font-extrabold uppercase tracking-wider text-slate-900 dark:text-white mb-2">
                 1. I am joining as a <span className="text-rose-500">*</span>
               </label>
 

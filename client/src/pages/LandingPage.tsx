@@ -47,16 +47,16 @@ export const LandingPage: React.FC = () => {
   const [startupConnectUser, setStartupConnectUser] = useState<any | null>(null);
   const [connectionStatusMap, setConnectionStatusMap] = useState<Map<string, string>>(new Map());
 
-  // Fetch profiles of members who selected 'other' / custom roles
+  // Fetch profiles of students and members who selected 'other' / custom roles
   useEffect(() => {
     let isMounted = true;
-    const fetchOtherMembers = async () => {
+    const fetchOtherAndStudentMembers = async () => {
       try {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('profiles')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(30);
+          .limit(40);
 
         let filtered: any[] = [];
         if (data && data.length > 0) {
@@ -64,27 +64,30 @@ export const LandingPage: React.FC = () => {
             const role = (p.preferred_role || '').toLowerCase();
             const headline = (p.headline || '').toLowerCase();
             return (
-              role.includes('other') ||
-              role.startsWith('other:') ||
               role.includes('student') ||
+              role === 'student' ||
+              role.includes('other') ||
+              role === 'other' ||
+              role.startsWith('other:') ||
               role.includes('sales') ||
               headline.includes('student') ||
-              headline.includes('sales') ||
-              headline.includes('designer') ||
               headline.includes('operator') ||
-              (!role.includes('founder') && !role.includes('investor') && !role.includes('market'))
+              headline.includes('specialist') ||
+              (!role.includes('founder') && !role.includes('investor') && !role.includes('mentor'))
             );
           });
         }
 
         // Format raw profiles to extract clean role label from real profiles only
         const mappedFiltered = filtered.map((p) => {
-          let roleLabel = 'Other';
+          let roleLabel = 'Others';
           const pref = p.preferred_role || '';
-          if (pref.toLowerCase().startsWith('other:')) {
+          if (pref.toLowerCase().includes('student') || (p.headline && p.headline.toLowerCase().includes('student'))) {
+            roleLabel = 'Student';
+          } else if (pref.toLowerCase().startsWith('other:')) {
             roleLabel = pref.substring(6).trim();
-          } else if (p.headline && (p.headline.toLowerCase().includes('student') || p.headline.toLowerCase().includes('sales') || p.headline.toLowerCase().includes('designer'))) {
-            roleLabel = p.headline.split('|')[0].trim();
+          } else if (pref.toLowerCase() === 'other' || pref.toLowerCase() === 'others') {
+            roleLabel = 'Others';
           } else if (pref) {
             roleLabel = pref;
           }
@@ -106,7 +109,7 @@ export const LandingPage: React.FC = () => {
       }
     };
 
-    fetchOtherMembers();
+    fetchOtherAndStudentMembers();
     return () => {
       isMounted = false;
     };
@@ -234,17 +237,17 @@ export const LandingPage: React.FC = () => {
       {/* 1. ECOSYSTEM DIRECTORY & COMMUNITY */}
       <section className="relative pt-6 pb-16 lg:pt-8 lg:pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Community Profiles: Members who selected 'Other' (Students, Salesmen, Designers & Specialists) */}
+          {/* Community Profiles: Students, Operators, Specialists & Community Members */}
           <div className="max-w-5xl mx-auto mb-10">
             <div className="mb-6">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 text-xs font-semibold border border-brand-200/60 dark:border-brand-900/60 mb-1.5">
                 <Sparkles size={12} /> Community Talent Showcase
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                Members & Independent Specialists
+                Students, Specialists & Community Members
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                Discover students, salesmen, designers & operators who selected custom roles
+                Discover ambitious students, operators, specialists & emerging innovators across the ecosystem
               </p>
             </div>
 

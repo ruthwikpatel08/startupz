@@ -34,7 +34,7 @@ export const RegisterPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<UserRole>('FOUNDER');
+  const [role, setRole] = useState<UserRole>('STUDENT');
   const [headline, setHeadline] = useState('');
   const [customRoleDescription, setCustomRoleDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -48,14 +48,14 @@ export const RegisterPage: React.FC = () => {
   const [resending, setResending] = useState(false);
 
   const profileTypes: { label: string; value: UserRole; desc: string }[] = [
+    { label: 'Student', value: 'STUDENT', desc: 'College/university student, student researcher & builder' },
+    { label: 'Others', value: 'OTHER', desc: 'Operator, specialist, professional, ecosystem enthusiast' },
     { label: 'Founder', value: 'FOUNDER', desc: 'Building a startup, looking for co-founders & capital' },
     { label: 'Co-Founder', value: 'COFOUNDER', desc: 'Ready to join an early-stage startup full/part-time' },
     { label: 'Developer', value: 'DEVELOPER', desc: 'Software engineer, technical builder, AI engineer' },
-    { label: 'Designer', value: 'DESIGNER', desc: 'UI/UX architect, brand designer, product design lead' },
     { label: 'Marketer', value: 'MARKETER', desc: 'Growth lead, performance marketer, GTM strategist' },
     { label: 'Investor', value: 'INVESTOR', desc: 'Angel investor, venture capitalist, syndicate lead' },
     { label: 'Mentor', value: 'MENTOR', desc: 'Experienced advisor, founder coach, industry specialist' },
-    { label: 'Other', value: 'OTHER', desc: 'Student, salesman, specialist, operator' },
   ];
 
   // Continue with Google
@@ -343,7 +343,7 @@ export const RegisterPage: React.FC = () => {
 
             {/* Profile Ecosystem Role */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              <label className="block text-sm font-bold sm:font-extrabold text-slate-900 dark:text-white tracking-wide mb-2">
                 I am joining as a <span className="text-rose-500">*</span>
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">

@@ -30,11 +30,21 @@ import {
   X,
 } from 'lucide-react';
 
-export function getUserCategory(user: any): 'founders' | 'cofounders' | 'marketers' | 'investors' | 'mentors' {
+export function getUserCategory(user: any): 'students' | 'others' | 'founders' | 'cofounders' | 'marketers' | 'investors' | 'mentors' {
   const role = (user.role || user.profile?.preferredRole || user.preferred_role || '').toString().trim().toLowerCase();
   const headline = (user.profile?.headline || user.headline || '').toLowerCase();
 
-  // 1. Check Co-Founders first (crucial: 'co-founder' contains 'founder' substring)
+  // 1. Check Students first
+  if (
+    role.includes('student') ||
+    role === 'student' ||
+    headline.includes('student') ||
+    (user.profile?.education && user.profile.education.toLowerCase().includes('student'))
+  ) {
+    return 'students';
+  }
+
+  // 2. Check Co-Founders (crucial: 'co-founder' contains 'founder' substring)
   if (
     role.includes('co-founder') ||
     role.includes('cofounder') ||
@@ -50,7 +60,7 @@ export function getUserCategory(user: any): 'founders' | 'cofounders' | 'markete
     return 'cofounders';
   }
 
-  // 2. Check Founders
+  // 3. Check Founders
   if (
     role === 'founder' ||
     role === 'founders' ||
@@ -61,7 +71,7 @@ export function getUserCategory(user: any): 'founders' | 'cofounders' | 'markete
     return 'founders';
   }
 
-  // 3. Check Investors
+  // 4. Check Investors
   if (
     role.includes('investor') ||
     role.includes('investing') ||
@@ -71,7 +81,7 @@ export function getUserCategory(user: any): 'founders' | 'cofounders' | 'markete
     return 'investors';
   }
 
-  // 4. Check Mentors
+  // 5. Check Mentors
   if (
     role.includes('mentor') ||
     role.includes('advisor') ||
@@ -84,7 +94,7 @@ export function getUserCategory(user: any): 'founders' | 'cofounders' | 'markete
     return 'mentors';
   }
 
-  // 5. Check Marketers
+  // 6. Check Marketers
   if (
     role.includes('market') ||
     role.includes('growth') ||
@@ -94,7 +104,16 @@ export function getUserCategory(user: any): 'founders' | 'cofounders' | 'markete
     return 'marketers';
   }
 
-  return 'founders';
+  // 7. Check Others / Operators
+  if (
+    role.includes('other') ||
+    role.includes('operator') ||
+    role.includes('specialist')
+  ) {
+    return 'others';
+  }
+
+  return 'others';
 }
 
 // Module-level caches to eliminate duplicate and N+1 network requests
@@ -190,11 +209,13 @@ export const FindCoFounderPage: React.FC = () => {
 
   const categories = [
     { label: 'All Members', value: 'all', icon: Users, hint: 'All registered platform members' },
+    { label: 'Students', value: 'students', icon: GraduationCap, hint: 'Student builders & innovators' },
+    { label: 'Others', value: 'others', icon: Briefcase, hint: 'Ecosystem operators & specialists' },
     { label: 'Founders', value: 'founders', icon: Rocket, hint: 'Active founders building startups' },
     { label: 'Co-Founders', value: 'cofounders', icon: Users, hint: 'Builders seeking synergy' },
     { label: 'Marketers', value: 'marketers', icon: Megaphone, hint: 'Growth & demand specialists' },
     { label: 'Investors', value: 'investors', icon: TrendingUp, hint: 'Angel & VC capital backers' },
-    { label: 'Mentors', value: 'mentors', icon: GraduationCap, hint: 'Advisors & startup coaches' },
+    { label: 'Mentors', value: 'mentors', icon: Sparkles, hint: 'Advisors & startup coaches' },
   ];
 
   const handleSelectCategory = (cat: string) => {
