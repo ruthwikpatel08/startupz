@@ -58,6 +58,7 @@ model Profile {
   userId            String    @unique
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   fullName          String
+  username          String?   @unique
   headline          String?
   location          String?
   bio               String?
@@ -77,6 +78,7 @@ model Profile {
   openTo            String?
   profileCompletion Int       @default(40)
   roleChangeCount   Int       @default(0)
+  usernameChangedAt DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 }

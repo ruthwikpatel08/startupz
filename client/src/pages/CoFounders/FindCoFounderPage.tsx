@@ -31,87 +31,27 @@ import {
 } from 'lucide-react';
 
 export function getUserCategory(user: any): 'students' | 'others' | 'founders' | 'cofounders' | 'marketers' | 'investors' | 'mentors' {
-  const role = (user.role || user.profile?.preferredRole || user.preferred_role || '').toString().trim().toLowerCase();
+  const role = (user.role || user.profile?.preferredRole || user.preferred_role || '').toString().trim().toUpperCase();
+
+  // 1. Strict explicit role-first matching
+  if (role.includes('STUDENT')) return 'students';
+  if (role.includes('INVESTOR') || role.includes('INVESTING') || user.investorProfile) return 'investors';
+  if (role.includes('MENTOR') || role.includes('ADVISOR') || user.mentorProfile) return 'mentors';
+  if (role.includes('MARKETER') || role.includes('MARKETING') || role.includes('GROWTH')) return 'marketers';
+  if (role.includes('COFOUNDER') || role.includes('CO-FOUNDER')) return 'cofounders';
+  if (role.includes('FOUNDER')) return 'founders';
+  if (role.includes('DEVELOPER') || role.includes('DESIGNER') || role.includes('OTHER') || role.includes('OTHERS')) return 'others';
+
+  // 2. Secondary fallback for unassigned profiles only
   const headline = (user.profile?.headline || user.headline || '').toLowerCase();
+  const education = (user.profile?.education || '').toLowerCase();
 
-  // 1. Check Students first
-  if (
-    role.includes('student') ||
-    role === 'student' ||
-    headline.includes('student') ||
-    (user.profile?.education && user.profile.education.toLowerCase().includes('student'))
-  ) {
-    return 'students';
-  }
-
-  // 2. Check Co-Founders (crucial: 'co-founder' contains 'founder' substring)
-  if (
-    role.includes('co-founder') ||
-    role.includes('cofounder') ||
-    role === 'co-founder' ||
-    role === 'cofounder' ||
-    role === 'co-founders' ||
-    role === 'cofounders' ||
-    headline.startsWith('co-founder') ||
-    headline.startsWith('cofounder') ||
-    headline.includes('co-founder') ||
-    headline.includes('cofounder')
-  ) {
-    return 'cofounders';
-  }
-
-  // 3. Check Founders
-  if (
-    role === 'founder' ||
-    role === 'founders' ||
-    role.startsWith('founder') ||
-    headline.startsWith('founder') ||
-    headline.includes('founder')
-  ) {
-    return 'founders';
-  }
-
-  // 4. Check Investors
-  if (
-    role.includes('investor') ||
-    role.includes('investing') ||
-    headline.includes('investor') ||
-    user.investorProfile
-  ) {
-    return 'investors';
-  }
-
-  // 5. Check Mentors
-  if (
-    role.includes('mentor') ||
-    role.includes('advisor') ||
-    role.includes('advisory') ||
-    headline.includes('mentor') ||
-    headline.includes('advisor') ||
-    headline.includes('advisory') ||
-    user.mentorProfile
-  ) {
-    return 'mentors';
-  }
-
-  // 6. Check Marketers
-  if (
-    role.includes('market') ||
-    role.includes('growth') ||
-    headline.includes('marketer') ||
-    headline.includes('marketing')
-  ) {
-    return 'marketers';
-  }
-
-  // 7. Check Others / Operators
-  if (
-    role.includes('other') ||
-    role.includes('operator') ||
-    role.includes('specialist')
-  ) {
-    return 'others';
-  }
+  if (headline.includes('student') || education.includes('student')) return 'students';
+  if (headline.includes('investor')) return 'investors';
+  if (headline.includes('mentor') || headline.includes('advisor')) return 'mentors';
+  if (headline.includes('marketer') || headline.includes('marketing')) return 'marketers';
+  if (headline.includes('co-founder') || headline.includes('cofounder')) return 'cofounders';
+  if (headline.includes('founder')) return 'founders';
 
   return 'others';
 }

@@ -80,6 +80,7 @@ export function mapSupabaseToAppUser(
     id: profileRow?.id || authUser.id,
     userId: authUser.id,
     fullName,
+    username: profileRow?.username || metadata.username || (authUser.email ? authUser.email.split('@')[0] : ''),
     headline: profileRow?.headline || metadata.headline || `${role} | Startup Builder`,
     oneLineBio: profileRow?.one_line_bio || profileRow?.headline || metadata.one_line_bio || '',
     location: profileRow?.location || metadata.location || 'Remote',
@@ -102,6 +103,8 @@ export function mapSupabaseToAppUser(
     profileCompletion: profileRow?.profile_completion || 60,
     roleChangeCount: profileRow?.role_change_count ?? profileRow?.roleChangeCount ?? metadata.role_change_count ?? 0,
     role_change_count: profileRow?.role_change_count ?? profileRow?.roleChangeCount ?? metadata.role_change_count ?? 0,
+    usernameChangedAt: profileRow?.username_changed_at ?? profileRow?.usernameChangedAt ?? metadata.username_changed_at ?? null,
+    username_changed_at: profileRow?.username_changed_at ?? profileRow?.usernameChangedAt ?? metadata.username_changed_at ?? null,
     isCategorySelected: profileRow?.is_category_selected === true,
     createdAt: profileRow?.created_at || authUser.created_at,
     updatedAt: profileRow?.updated_at || authUser.updated_at,
@@ -112,6 +115,7 @@ export function mapSupabaseToAppUser(
   return {
     id: authUser.id,
     email: authUser.email || '',
+    username: profile.username,
     role,
     roleChangeCount,
     isVerified: !!authUser.email_confirmed_at || isGoogle,
@@ -139,41 +143,60 @@ export function invalidateUserProfileCache(userId?: string): void {
 }
 
 /**
- * Fetch a profile row from Supabase public.profiles by user UUID.
+ * Fetch a profile row from Supabase public.profiles by user UUID or email.
  * Includes short in-memory caching and deduplication to prevent redundant network requests,
  * with explicit forceRefresh support to always bypass cache.
  */
-export async function fetchUserProfile(userId: string, forceRefresh = false): Promise<any | null> {
-  if (!userId) return null;
+export async function fetchUserProfile(userId: string, forceRefresh = false, email?: string): Promise<any | null> {
+  if (!userId && !email) return null;
 
+  const cacheKey = userId || email || '';
   if (!forceRefresh) {
-    const cached = userProfileCache.get(userId);
+    const cached = userProfileCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
       return cached.data;
     }
-    if (inFlightProfileRequests.has(userId)) {
-      return inFlightProfileRequests.get(userId)!;
+    if (inFlightProfileRequests.has(cacheKey)) {
+      return inFlightProfileRequests.get(cacheKey)!;
     }
   } else {
-    invalidateUserProfileCache(userId);
+    invalidateUserProfileCache(cacheKey);
   }
 
   const fetchPromise = (async () => {
     try {
-      let { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+      let data: any = null;
+      let error: any = null;
 
-      if (!data) {
-        const fallback = await supabase
+      if (userId) {
+        const res = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', userId)
+          .eq('user_id', userId)
           .maybeSingle();
-        if (fallback.data) {
-          data = fallback.data;
+        data = res.data;
+        error = res.error;
+
+        if (!data) {
+          const fallback = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+          if (fallback.data) {
+            data = fallback.data;
+          }
+        }
+      }
+
+      if (!data && email) {
+        const emailRes = await supabase
+          .from('profiles')
+          .select('*')
+          .ilike('email', email.trim())
+          .maybeSingle();
+        if (emailRes.data) {
+          data = emailRes.data;
         }
       }
 
@@ -183,7 +206,10 @@ export async function fetchUserProfile(userId: string, forceRefresh = false): Pr
       }
 
       if (data) {
-        userProfileCache.set(userId, { data, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
+        userProfileCache.set(cacheKey, { data, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
+        if (userId && cacheKey !== userId) {
+          userProfileCache.set(userId, { data, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
+        }
       }
       return data;
     } catch (err) {
@@ -191,10 +217,10 @@ export async function fetchUserProfile(userId: string, forceRefresh = false): Pr
       return null;
     }
   })().finally(() => {
-    inFlightProfileRequests.delete(userId);
+    inFlightProfileRequests.delete(cacheKey);
   });
 
-  inFlightProfileRequests.set(userId, fetchPromise);
+  inFlightProfileRequests.set(cacheKey, fetchPromise);
   return fetchPromise;
 }
 
@@ -227,6 +253,8 @@ export async function upsertUserProfile(
     profile_completion: number;
     role_change_count: number;
     roleChangeCount: number;
+    username_changed_at: string | null;
+    usernameChangedAt: string | null;
     is_category_selected: boolean;
     auth_provider: string;
     email: string;

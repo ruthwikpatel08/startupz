@@ -199,6 +199,9 @@ export async function upsertSupabaseProfile(userId, userEmail, profileData) {
     const payload = {};
 
     if (profileData.fullName !== undefined) payload.full_name = profileData.fullName;
+    if (profileData.username !== undefined && profileData.username) {
+      payload.username = String(profileData.username).trim().toLowerCase().replace(/^@/, '');
+    }
     if (profileData.headline !== undefined) payload.headline = profileData.headline;
     if (profileData.oneLineBio !== undefined) payload.one_line_bio = profileData.oneLineBio;
     if (profileData.location !== undefined) payload.location = profileData.location;
@@ -224,6 +227,9 @@ export async function upsertSupabaseProfile(userId, userEmail, profileData) {
     if (profileData.profileCompletion !== undefined) payload.profile_completion = Number(profileData.profileCompletion) || 60;
     if (profileData.roleChangeCount !== undefined || profileData.role_change_count !== undefined) {
       payload.role_change_count = Number(profileData.roleChangeCount ?? profileData.role_change_count) || 0;
+    }
+    if (profileData.usernameChangedAt !== undefined || profileData.username_changed_at !== undefined) {
+      payload.username_changed_at = profileData.usernameChangedAt || profileData.username_changed_at;
     }
     if (cleanEmail) payload.email = cleanEmail;
     payload.updated_at = new Date().toISOString();

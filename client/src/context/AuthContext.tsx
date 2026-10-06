@@ -68,30 +68,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const loadPromise = (async (): Promise<User | null> => {
       try {
-        // 1. Fetch StartupZ profile from Supabase public.profiles (cached & deduplicated in lib/supabase)
-        let profileRow = await fetchUserProfile(userId);
+        // 1. Fetch StartupZ profile from Supabase public.profiles (forced fresh from database)
+        let profileRow = await fetchUserProfile(userId, true, authUser.email || undefined);
 
-        // 2. If profile does not exist yet (e.g. brand new user or returning deleted user),
-        // treat user as a brand-new user and prompt from first (is_category_selected: false)
+        // 2. If profile does not exist yet (e.g. brand new user), create default profile
         if (!profileRow) {
           const metadata = authUser.user_metadata || {};
           const isGoogle =
             authUser.app_metadata?.provider === 'google' ||
             authUser.identities?.some((id) => id.provider === 'google');
 
-          const role = metadata.role || 'FOUNDER';
-          const fullName = metadata.full_name || metadata.name || authUser.email?.split('@')[0] || 'Founder';
+          const role = metadata.role || 'STUDENT';
+          const fullName = metadata.full_name || metadata.name || authUser.email?.split('@')[0] || 'Member';
           const avatar =
             metadata.avatar_url ||
             metadata.picture ||
             null;
 
-          // For email signup with explicit role in metadata, isCategorySelected is true.
-          // For Google signup, is_category_selected is false by default so new users are prompted to enter their details on AuthCallbackPage!
           const isCategorySelected = !isGoogle && !!metadata.role;
 
           profileRow = await upsertUserProfile(userId, {
             full_name: fullName,
+            username: (authUser.email ? authUser.email.split('@')[0] : '').toLowerCase().replace(/[^a-z0-9_]/g, ''),
             headline: metadata.headline || `${role} | Startup Builder`,
             location: metadata.location || 'Remote',
             avatar,
@@ -117,23 +115,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           recordAuthProviderHint(authUser.email, isGoogle ? 'google' : 'email');
         }
 
-        // 5. Update cached state with reference stability check
-        setUser((prevUser) => {
-          if (
-            prevUser &&
-            prevUser.id === appUser.id &&
-            prevUser.email === appUser.email &&
-            prevUser.role === appUser.role &&
-            prevUser.profile?.fullName === appUser.profile?.fullName &&
-            prevUser.profile?.headline === appUser.profile?.headline &&
-            prevUser.profile?.avatar === appUser.profile?.avatar &&
-            prevUser.profile?.isCategorySelected === appUser.profile?.isCategorySelected
-          ) {
-            return prevUser;
-          }
-          return appUser;
-        });
-
+        // 5. Update authenticated user state authoritatively with the latest database record
+        setUser(appUser);
         setSession(currentSession);
         setToken(currentSession.access_token);
         lastHandledTokenRef.current = currentSession.access_token;
@@ -145,6 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: appUser.id,
           email: appUser.email,
           fullName: appUser.profile?.fullName,
+          username: appUser.profile?.username,
           role: appUser.role,
           headline: appUser.profile?.headline,
           location: appUser.profile?.location,

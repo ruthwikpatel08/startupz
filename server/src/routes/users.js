@@ -185,54 +185,68 @@ router.get('/matching/cofounders', optionalAuth, async (req, res) => {
         where.OR = [
           { role: 'FOUNDER' },
           { profile: { preferredRole: { in: ['FOUNDER', 'Founders', 'Founder'] } } },
-          { startups: { some: {} } },
         ];
         where.NOT = [
           ...(where.NOT || []),
-          { role: 'COFOUNDER' },
+          { role: { in: ['COFOUNDER', 'INVESTOR', 'MENTOR', 'STUDENT', 'MARKETER', 'OTHER', 'DEVELOPER'] } },
           { profile: { preferredRole: { contains: 'Co-Founder' } } },
           { profile: { preferredRole: { contains: 'cofounder' } } },
         ];
       } else if (catLower === 'cofounders' || catLower === 'cofounder') {
         where.OR = [
           { role: 'COFOUNDER' },
-          { profile: { preferredRole: { contains: 'Co-Founder' } } },
-          { profile: { preferredRole: { contains: 'cofounder' } } },
-          { profile: { preferredRole: { in: ['COFOUNDER', 'Co-Founders', 'Co-Founder'] } } },
+          { profile: { preferredRole: { in: ['COFOUNDER', 'Co-Founders', 'Co-Founder', 'cofounder'] } } },
         ];
         where.NOT = [
           ...(where.NOT || []),
-          { role: 'FOUNDER' },
-          { profile: { preferredRole: { in: ['FOUNDER', 'Founders', 'Founder'] } } },
+          { role: { in: ['FOUNDER', 'INVESTOR', 'MENTOR', 'STUDENT', 'MARKETER', 'OTHER', 'DEVELOPER'] } },
         ];
       } else if (catLower === 'marketers' || catLower === 'marketer') {
         where.OR = [
           { role: 'MARKETER' },
-          { profile: { skills: { contains: 'Marketing' } } },
-          { profile: { skills: { contains: 'Growth' } } },
-          { profile: { preferredRole: { contains: 'Market' } } },
+          { profile: { preferredRole: { in: ['MARKETER', 'Marketer', 'Marketers'] } } },
+        ];
+        where.NOT = [
+          ...(where.NOT || []),
+          { role: { in: ['FOUNDER', 'COFOUNDER', 'INVESTOR', 'MENTOR', 'STUDENT'] } },
         ];
       } else if (catLower === 'investors' || catLower === 'investor') {
         where.OR = [
           { role: 'INVESTOR' },
-          { profile: { preferredRole: { contains: 'Investor' } } },
+          { profile: { preferredRole: { in: ['INVESTOR', 'Investor', 'Investors'] } } },
           { investorProfile: { isNot: null } },
+        ];
+        where.NOT = [
+          ...(where.NOT || []),
+          { role: { in: ['FOUNDER', 'COFOUNDER', 'MENTOR', 'STUDENT', 'MARKETER', 'OTHER', 'DEVELOPER'] } },
+        ];
+      } else if (catLower === 'mentors' || catLower === 'mentor') {
+        where.OR = [
+          { role: 'MENTOR' },
+          { profile: { preferredRole: { in: ['MENTOR', 'Mentor', 'Mentors', 'Advisor'] } } },
+          { mentorProfile: { isNot: null } },
+        ];
+        where.NOT = [
+          ...(where.NOT || []),
+          { role: { in: ['FOUNDER', 'COFOUNDER', 'INVESTOR', 'STUDENT', 'MARKETER', 'OTHER', 'DEVELOPER'] } },
         ];
       } else if (catLower === 'students' || catLower === 'student') {
         where.OR = [
           { role: 'STUDENT' },
-          { profile: { preferredRole: { in: ['Student', 'STUDENT', 'student'] } } },
-          { profile: { headline: { contains: 'Student' } } },
-          { profile: { bio: { contains: 'Student' } } },
-          { profile: { education: { contains: 'Student' } } },
+          { profile: { preferredRole: { in: ['Student', 'STUDENT', 'student', 'Students'] } } },
+        ];
+        where.NOT = [
+          ...(where.NOT || []),
+          { role: { in: ['FOUNDER', 'COFOUNDER', 'INVESTOR', 'MENTOR', 'MARKETER'] } },
         ];
       } else if (catLower === 'other' || catLower === 'others') {
         where.OR = [
-          { role: { in: ['OTHER', 'OTHERS', 'DEVELOPER', 'DESIGNER', 'MENTOR', 'ADMIN'] } },
-          { profile: { preferredRole: { in: ['Other', 'Others', 'OTHER', 'OTHERS'] } } },
-          { profile: { skills: { contains: 'Design' } } },
-          { profile: { skills: { contains: 'Engineer' } } },
-          { profile: { skills: { contains: 'Tech' } } },
+          { role: { in: ['OTHER', 'OTHERS', 'DEVELOPER', 'DESIGNER', 'ADMIN'] } },
+          { profile: { preferredRole: { in: ['Other', 'Others', 'OTHER', 'OTHERS', 'Developer', 'Designer'] } } },
+        ];
+        where.NOT = [
+          ...(where.NOT || []),
+          { role: { in: ['FOUNDER', 'COFOUNDER', 'INVESTOR', 'MENTOR', 'STUDENT', 'MARKETER'] } },
         ];
       }
     } else {
@@ -538,6 +552,67 @@ router.put('/profile', requireAuth, async (req, res) => {
       where: { id: req.user.id },
     });
 
+    // Handle username update with 30-day restriction and uniqueness validation
+    if (req.body.username !== undefined && req.body.username) {
+      const cleanUsername = String(req.body.username).trim().toLowerCase().replace(/^@/, '');
+      if (!/^[a-z0-9_]{3,30}$/.test(cleanUsername)) {
+        return res.status(400).json({
+          error: 'Username must be between 3 and 30 characters and can only contain letters, numbers, and underscores.',
+        });
+      }
+
+      const existingUsername = (existing?.username || existingUser?.username || '').trim().toLowerCase();
+      if (existingUsername && cleanUsername !== existingUsername) {
+        // Check 30-day restriction
+        const lastChanged = existing?.usernameChangedAt;
+        if (lastChanged) {
+          const diffMs = Date.now() - new Date(lastChanged).getTime();
+          const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+          if (diffMs < thirtyDaysMs) {
+            const daysRemaining = Math.ceil((thirtyDaysMs - diffMs) / (24 * 60 * 60 * 1000));
+            return res.status(400).json({
+              error: `You can only change your username once every 30 days. You can change it again in ${daysRemaining} day(s).`,
+            });
+          }
+        }
+
+        // Check if username is taken in SQLite
+        const takenPrisma = await prisma.profile.findFirst({
+          where: {
+            username: cleanUsername,
+            userId: { not: req.user.id },
+          },
+        });
+        if (takenPrisma) {
+          return res.status(400).json({
+            error: 'This username is already taken. Please choose another username.',
+          });
+        }
+
+        // Check if username is taken in Supabase
+        if (supabaseAdmin) {
+          try {
+            const { data: takenSupa } = await supabaseAdmin
+              .from('profiles')
+              .select('id, user_id')
+              .ilike('username', cleanUsername)
+              .neq('user_id', req.user.id)
+              .maybeSingle();
+            if (takenSupa) {
+              return res.status(400).json({
+                error: 'This username is already taken. Please choose another username.',
+              });
+            }
+          } catch {}
+        }
+
+        updatedProfile.username = cleanUsername;
+        updatedProfile.usernameChangedAt = new Date();
+      } else if (!existingUsername) {
+        updatedProfile.username = cleanUsername;
+      }
+    }
+
     const currentRole = (existing?.preferredRole || existingUser?.role || '').trim().toUpperCase();
     let currentRoleChangeCount = existing?.roleChangeCount || 0;
 
@@ -578,6 +653,8 @@ router.put('/profile', requireAuth, async (req, res) => {
     try {
       await upsertSupabaseProfile(req.user.id, req.user.email, {
         ...req.body,
+        username: updatedProfile.username,
+        usernameChangedAt: updatedProfile.usernameChangedAt,
         roleChangeCount: currentRoleChangeCount,
         profileCompletion: updatedProfile.profileCompletion,
       });

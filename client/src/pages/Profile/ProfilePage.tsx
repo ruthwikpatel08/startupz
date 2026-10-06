@@ -217,11 +217,16 @@ export const ProfilePage: React.FC = () => {
       const exps = parseWorkExperiences(currentP.startupExperience);
       const initialRole = normalizeRoleValue(profileUser?.role || currentP.preferredRole || currentUser?.role || 'STUDENT');
       const changeCount = currentP.roleChangeCount ?? currentP.role_change_count ?? (profileUser as any)?.roleChangeCount ?? (currentUser as any)?.roleChangeCount ?? 0;
+      const initialUsername = (currentP.username || (profileUser?.email || currentUser?.email ? (profileUser?.email || currentUser?.email)!.split('@')[0] : '')).toLowerCase().replace(/^@/, '');
+      const usernameChangedAt = currentP.usernameChangedAt || currentP.username_changed_at || (profileUser as any)?.usernameChangedAt || (profileUser as any)?.username_changed_at || null;
 
       setFormData({
         avatar: currentP.avatar || '',
         coverImage: currentP.coverImage || '',
         fullName: currentP.fullName || '',
+        username: initialUsername,
+        initialUsername: initialUsername,
+        usernameChangedAt: usernameChangedAt,
         headline: currentP.headline || '',
         oneLineBio: currentP.oneLineBio || currentP.headline || '',
         location: currentP.location || '',
@@ -617,43 +622,22 @@ export const ProfilePage: React.FC = () => {
   const fetchUserProfile = async (force = false) => {
     if (!targetId) return;
 
-    if (isMe && currentUser?.profile && !force) {
-      setProfileUser(currentUser);
-      setFormData({
-        avatar: currentUser.profile?.avatar || '',
-        coverImage: currentUser.profile?.coverImage || '',
-        fullName: currentUser.profile?.fullName || '',
-        headline: currentUser.profile?.headline || '',
-        oneLineBio: currentUser.profile?.oneLineBio || currentUser.profile?.headline || '',
-        location: currentUser.profile?.location || '',
-        bio: currentUser.profile?.bio || '',
-        skills: currentUser.profile?.skills || '',
-        startupInterests: currentUser.profile?.startupInterests || '',
-        industries: currentUser.profile?.industries || '',
-        preferredRole: currentUser.profile?.preferredRole || '',
-        availability: currentUser.profile?.availability || 'Full-time',
-        startupExperience: currentUser.profile?.startupExperience || '',
-        achievements: currentUser.profile?.achievements || '',
-        education: currentUser.profile?.education || '',
-        githubUrl: currentUser.profile?.githubUrl || '',
-        linkedinUrl: currentUser.profile?.linkedinUrl || '',
-        websiteUrl: currentUser.profile?.websiteUrl || '',
-        openTo: currentUser.profile?.openTo || 'Co-Founder, Startup Team, Mentorship',
-      });
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     try {
       // First check fresh Supabase profile
-      const sbProfile = await fetchUserProfileFromSupabase(targetId, force).catch(() => null);
+      const sbProfile = await fetchUserProfileFromSupabase(targetId, true, currentUser?.email || undefined).catch(() => null);
 
       if (sbProfile) {
+        const uRole = normalizeRoleValue(sbProfile.preferred_role || currentUser?.role || 'STUDENT');
+        const changeCount = sbProfile.role_change_count ?? sbProfile.roleChangeCount ?? 0;
+        const uName = sbProfile.username || (sbProfile.email ? sbProfile.email.split('@')[0] : 'user');
+
         const u: any = {
           id: sbProfile.user_id || targetId,
           email: sbProfile.email || currentUser?.email || '',
-          role: sbProfile.preferred_role || currentUser?.role || 'FOUNDER',
+          username: uName,
+          role: uRole,
+          roleChangeCount: changeCount,
           isVerified: true,
           verificationBadge: sbProfile.auth_provider === 'google' ? 'Verified via Google' : 'Verified Member',
           isSuspended: false,
@@ -665,6 +649,9 @@ export const ProfilePage: React.FC = () => {
             id: sbProfile.id,
             userId: sbProfile.user_id || targetId,
             fullName: sbProfile.full_name || 'Founder',
+            username: uName,
+            usernameChangedAt: sbProfile.username_changed_at || null,
+            username_changed_at: sbProfile.username_changed_at || null,
             headline: sbProfile.headline || '',
             oneLineBio: sbProfile.one_line_bio || sbProfile.headline || '',
             location: sbProfile.location || '',
@@ -674,7 +661,9 @@ export const ProfilePage: React.FC = () => {
             skills: sbProfile.skills || '',
             startupInterests: sbProfile.startup_interests || '',
             industries: sbProfile.industries || '',
-            preferredRole: sbProfile.preferred_role || '',
+            preferredRole: uRole,
+            roleChangeCount: changeCount,
+            role_change_count: changeCount,
             availability: sbProfile.availability || 'Full-time',
             startupExperience: sbProfile.startup_experience || '',
             achievements: sbProfile.achievements || '',
@@ -687,12 +676,18 @@ export const ProfilePage: React.FC = () => {
           },
         };
         setProfileUser(u);
+        if (isMe && currentUser) {
+          updateUser(u);
+        }
       } else {
         // Fallback to backend API only if Supabase profile was not found
         const backendRes = await api.getUser(targetId).catch(() => null);
         const backendData = backendRes?.user || backendRes;
         if (backendData) {
           setProfileUser(backendData);
+          if (isMe && currentUser) {
+            updateUser(backendData);
+          }
         }
       }
     } catch (err) {
@@ -994,11 +989,41 @@ export const ProfilePage: React.FC = () => {
 
     const newRoleChangeCount = isRoleChanging ? currentChangeCount + 1 : currentChangeCount;
 
+    // Validate username and 30-day restriction
+    const cleanUsername = String(formData.username || '').trim().toLowerCase().replace(/^@/, '');
+    const initialUsername = String(formData.initialUsername || '').trim().toLowerCase().replace(/^@/, '');
+    const isUsernameChanging = cleanUsername && initialUsername && cleanUsername !== initialUsername;
+
+    if (cleanUsername) {
+      if (!/^[a-z0-9_]{3,30}$/.test(cleanUsername)) {
+        setSaveError('Username must be between 3 and 30 characters and can only contain letters, numbers, and underscores.');
+        setSaving(false);
+        return;
+      }
+    }
+
+    if (isUsernameChanging && formData.usernameChangedAt) {
+      const changedTime = new Date(formData.usernameChangedAt).getTime();
+      const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+      const timePassed = Date.now() - changedTime;
+      if (timePassed < thirtyDaysMs) {
+        const daysRemaining = Math.ceil((thirtyDaysMs - timePassed) / (24 * 60 * 60 * 1000));
+        setSaveError(`You can only change your username once every 30 days. You can change it again in ${daysRemaining} day(s).`);
+        setSaving(false);
+        return;
+      }
+    }
+
+    const newUsernameChangedAt = isUsernameChanging ? new Date().toISOString() : formData.usernameChangedAt;
+
     try {
       // 1. Update Supabase public.profiles table
       if (currentUser?.id) {
         await upsertUserProfile(currentUser.id, {
           full_name: formData.fullName,
+          username: cleanUsername,
+          username_changed_at: newUsernameChangedAt,
+          usernameChangedAt: newUsernameChangedAt,
           headline: formData.headline,
           one_line_bio: formData.oneLineBio || formData.headline,
           location: formData.location,
@@ -1029,6 +1054,8 @@ export const ProfilePage: React.FC = () => {
       try {
         const res = await api.updateProfile({
           ...formData,
+          username: cleanUsername,
+          usernameChangedAt: newUsernameChangedAt,
           startupExperience: serializedExp,
           preferredRole: selectedRole,
           role: selectedRole,
@@ -1045,12 +1072,17 @@ export const ProfilePage: React.FC = () => {
 
       const mergedUser: User = {
         ...(updatedUser || profileUser || currentUser!),
+        username: cleanUsername || (profileUser?.username || currentUser?.username),
         role: selectedRole,
         roleChangeCount: newRoleChangeCount,
         profile: {
           ...(profileUser?.profile || currentUser?.profile || {}),
           ...(updatedUser?.profile || {}),
           ...formData,
+          fullName: formData.fullName,
+          username: cleanUsername || (profileUser?.profile?.username || currentUser?.profile?.username),
+          usernameChangedAt: newUsernameChangedAt,
+          username_changed_at: newUsernameChangedAt,
           startupExperience: serializedExp,
           preferredRole: selectedRole,
           roleChangeCount: newRoleChangeCount,
@@ -1062,6 +1094,10 @@ export const ProfilePage: React.FC = () => {
       setFormData((prev: any) => ({
         ...prev,
         ...formData,
+        fullName: formData.fullName,
+        username: cleanUsername,
+        initialUsername: cleanUsername,
+        usernameChangedAt: newUsernameChangedAt,
         startupExperience: serializedExp,
         preferredRole: selectedRole,
         role: selectedRole,
@@ -1074,6 +1110,7 @@ export const ProfilePage: React.FC = () => {
         updateUser(mergedUser);
       }
       setEditOpen(false);
+      window.dispatchEvent(new CustomEvent('profile_updated', { detail: mergedUser }));
     } catch (err: any) {
       setSaveError(err.message || 'Failed to update profile.');
     } finally {
@@ -1274,6 +1311,11 @@ export const ProfilePage: React.FC = () => {
                     <h1 className="text-2xl sm:text-[28px] font-bold text-slate-900 dark:text-white tracking-tight leading-tight">
                       {displayName}
                     </h1>
+                    {(profileUser?.username || p.username) && (
+                      <span className="text-xs sm:text-sm font-semibold text-[#4F46E5] dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 rounded-md border border-indigo-100 dark:border-indigo-900/50">
+                        @{profileUser?.username || p.username}
+                      </span>
+                    )}
                     <VerificationBadge badge={profileUser.verificationBadge} isVerified={profileUser.isVerified} />
                     <RoleBadge role={profileUser.role} />
                   </div>
@@ -2130,6 +2172,7 @@ export const ProfilePage: React.FC = () => {
               );
             })()}
 
+            {/* Full Name and Username Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Full Name</label>
@@ -2142,77 +2185,130 @@ export const ProfilePage: React.FC = () => {
                 />
               </div>
 
+              <div>
+                {(() => {
+                  const initialUsername = String(formData.initialUsername || '').trim().toLowerCase().replace(/^@/, '');
+                  const currentUsername = String(formData.username || '').trim().toLowerCase().replace(/^@/, '');
+                  const changedAt = formData.usernameChangedAt ? new Date(formData.usernameChangedAt).getTime() : null;
+                  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+                  const timePassed = changedAt ? Date.now() - changedAt : Infinity;
+                  const isUsernameLocked = changedAt ? timePassed < thirtyDaysMs : false;
+                  const daysRemaining = isUsernameLocked ? Math.ceil((thirtyDaysMs - timePassed) / (24 * 60 * 60 * 1000)) : 0;
+                  const nextChangeDate = changedAt ? new Date(changedAt + thirtyDaysMs).toLocaleDateString() : '';
+
+                  return (
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">
+                          Username
+                        </label>
+                        {isUsernameLocked ? (
+                          <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                            <Lock size={10} /> Locked ({daysRemaining}d left)
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-400">
+                            1 change / 30 days
+                          </span>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1.5 text-xs text-slate-400 select-none">@</span>
+                        <input
+                          type="text"
+                          value={formData.username || ''}
+                          disabled={isUsernameLocked}
+                          onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                          placeholder="username"
+                          className="input-base w-full pl-7 pr-3 py-1.5 text-xs font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                        />
+                      </div>
+                      {isUsernameLocked && (
+                        <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                          Changed on {new Date(changedAt!).toLocaleDateString()}. Can be changed again on {nextChangeDate}.
+                        </p>
+                      )}
+                      {!isUsernameLocked && currentUsername && initialUsername && currentUsername !== initialUsername && (
+                        <p className="text-[10px] text-indigo-600 dark:text-indigo-400 mt-1">
+                          Changing username will lock it for 30 days after saving.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            <div className="relative">
+              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center justify-between">
+                <span>Location</span>
+                {(() => {
+                  const res = resolveIndianLocation(formData.location);
+                  if (!res) return null;
+                  return (
+                    <span className="text-[10px] text-brand-600 dark:text-brand-400 font-semibold">
+                      {res.district ? `${res.district}, ` : ''}{res.state}
+                    </span>
+                  );
+                })()}
+              </label>
               <div className="relative">
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center justify-between">
-                  <span>Location</span>
-                  {(() => {
-                    const res = resolveIndianLocation(formData.location);
-                    if (!res) return null;
-                    return (
-                      <span className="text-[10px] text-brand-600 dark:text-brand-400 font-semibold">
-                        {res.district ? `${res.district}, ` : ''}{res.state}
-                      </span>
-                    );
-                  })()}
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={formData.location || ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setFormData({ ...formData, location: val });
-                      setLocationSuggestions(searchLocations(val));
-                      setShowLocDropdown(true);
+                <input
+                  type="text"
+                  value={formData.location || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData({ ...formData, location: val });
+                    setLocationSuggestions(searchLocations(val));
+                    setShowLocDropdown(true);
+                  }}
+                  onFocus={() => {
+                    if (formData.location) {
+                      setLocationSuggestions(searchLocations(formData.location));
+                    }
+                    setShowLocDropdown(true);
+                  }}
+                  placeholder="e.g. Warangal, Bengaluru, Delhi, or Remote"
+                  className="input-base w-full px-3 py-1.5 text-xs pr-7"
+                />
+                {formData.location && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, location: '' });
+                      setLocationSuggestions([]);
+                      setShowLocDropdown(false);
                     }}
-                    onFocus={() => {
-                      if (formData.location) {
-                        setLocationSuggestions(searchLocations(formData.location));
-                      }
-                      setShowLocDropdown(true);
-                    }}
-                    placeholder="e.g. Warangal, Bengaluru, Delhi, or Remote"
-                    className="input-base w-full px-3 py-1.5 text-xs pr-7"
-                  />
-                  {formData.location && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormData({ ...formData, location: '' });
-                        setLocationSuggestions([]);
-                        setShowLocDropdown(false);
-                      }}
-                      className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                    >
-                      <X size={12} />
-                    </button>
-                  )}
-                </div>
-                {/* Autocomplete Dropdown */}
-                {showLocDropdown && locationSuggestions.length > 0 && (
-                  <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-lg shadow-xl py-1 text-xs">
-                    {locationSuggestions.map((loc, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => {
-                          const formatted = `${loc.district ? loc.district + ', ' : ''}${loc.state}, India`;
-                          setFormData({ ...formData, location: formatted });
-                          setShowLocDropdown(false);
-                        }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 flex items-center justify-between cursor-pointer"
-                      >
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
-                          {loc.district ? `${loc.district}, ` : ''}{loc.state}
-                        </span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-dark-800 text-slate-500 capitalize">
-                          {loc.type}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                    className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    <X size={12} />
+                  </button>
                 )}
               </div>
+              {/* Autocomplete Dropdown */}
+              {showLocDropdown && locationSuggestions.length > 0 && (
+                <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-lg shadow-xl py-1 text-xs">
+                  {locationSuggestions.map((loc, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        const formatted = `${loc.district ? loc.district + ', ' : ''}${loc.state}, India`;
+                        setFormData({ ...formData, location: formatted });
+                        setShowLocDropdown(false);
+                      }}
+                      className="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {loc.district ? `${loc.district}, ` : ''}{loc.state}
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-dark-800 text-slate-500 capitalize">
+                        {loc.type}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>

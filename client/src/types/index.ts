@@ -54,6 +54,8 @@ export interface Profile {
   profileCompletion?: number;
   roleChangeCount?: number;
   role_change_count?: number;
+  usernameChangedAt?: string | null;
+  username_changed_at?: string | null;
   isCategorySelected?: boolean;
   createdAt?: string;
   updatedAt?: string;
