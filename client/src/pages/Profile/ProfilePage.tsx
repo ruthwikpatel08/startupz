@@ -979,13 +979,14 @@ export const ProfilePage: React.FC = () => {
         invalidateUserProfileCache(currentUser.id);
       }
 
-      // 2. Optionally mirror to backend API if reachable
+      // 2. Authoritatively update backend API (which syncs to PostgreSQL / Prisma & Supabase Admin)
       let updatedUser: User | null = null;
       try {
         const res = await api.updateProfile({
           ...formData,
           startupExperience: serializedExp,
           preferredRole: primaryCat,
+          isCategorySelected: true,
         });
         if (res?.user) updatedUser = res.user;
       } catch (backendErr) {
@@ -1000,9 +1001,16 @@ export const ProfilePage: React.FC = () => {
           ...formData,
           startupExperience: serializedExp,
           preferredRole: primaryCat,
-          isCategorySelected: true, // EXPLICITLY TRUE to prevent category selection modal from re-triggering
+          isCategorySelected: true,
         },
       };
+
+      setFormData((prev: any) => ({
+        ...prev,
+        ...formData,
+        startupExperience: serializedExp,
+        preferredRole: primaryCat,
+      }));
 
       setProfileUser(mergedUser);
       if (isMe && currentUser) {

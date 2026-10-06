@@ -184,3 +184,90 @@ export async function deleteSupabaseUserCompletely(userId, userEmail) {
     return { success: false, error: err?.message };
   }
 }
+
+/**
+ * Upsert or update a user profile in Supabase public.profiles table using service-role privileges.
+ * Ensures the PostgreSQL database stays in exact sync with profile updates.
+ */
+export async function upsertSupabaseProfile(userId, userEmail, profileData) {
+  if (!supabaseAdmin) {
+    return null;
+  }
+
+  try {
+    const cleanEmail = (userEmail || '').trim().toLowerCase();
+    const payload = {};
+
+    if (profileData.fullName !== undefined) payload.full_name = profileData.fullName;
+    if (profileData.headline !== undefined) payload.headline = profileData.headline;
+    if (profileData.oneLineBio !== undefined) payload.one_line_bio = profileData.oneLineBio;
+    if (profileData.location !== undefined) payload.location = profileData.location;
+    if (profileData.bio !== undefined) payload.bio = profileData.bio;
+    if (profileData.avatar !== undefined) payload.avatar = profileData.avatar;
+    if (profileData.coverImage !== undefined) payload.cover_image = profileData.coverImage;
+    if (profileData.education !== undefined) payload.education = profileData.education;
+    if (profileData.portfolioUrl !== undefined) payload.portfolio_url = profileData.portfolioUrl;
+    if (profileData.githubUrl !== undefined) payload.github_url = profileData.githubUrl;
+    if (profileData.linkedinUrl !== undefined) payload.linkedin_url = profileData.linkedinUrl;
+    if (profileData.websiteUrl !== undefined) payload.website_url = profileData.websiteUrl;
+    if (profileData.skills !== undefined) payload.skills = profileData.skills;
+    if (profileData.startupInterests !== undefined) payload.startup_interests = profileData.startupInterests;
+    if (profileData.industries !== undefined) payload.industries = profileData.industries;
+    if (profileData.preferredRole !== undefined) payload.preferred_role = profileData.preferredRole;
+    if (profileData.availability !== undefined) payload.availability = profileData.availability;
+    if (profileData.startupExperience !== undefined) payload.startup_experience = profileData.startupExperience;
+    if (profileData.achievements !== undefined) payload.achievements = profileData.achievements;
+    if (profileData.openTo !== undefined) {
+      payload.open_to = Array.isArray(profileData.openTo) ? profileData.openTo.join(',') : profileData.openTo;
+    }
+    if (profileData.isCategorySelected !== undefined) payload.is_category_selected = Boolean(profileData.isCategorySelected);
+    if (profileData.profileCompletion !== undefined) payload.profile_completion = Number(profileData.profileCompletion) || 60;
+    if (cleanEmail) payload.email = cleanEmail;
+    payload.updated_at = new Date().toISOString();
+
+    // 1. Check if profile exists by user_id or id or email
+    const filter = cleanEmail
+      ? `user_id.eq.${userId},id.eq.${userId},email.ilike.${cleanEmail}`
+      : `user_id.eq.${userId},id.eq.${userId}`;
+
+    const { data: existing } = await supabaseAdmin
+      .from('profiles')
+      .select('id, user_id')
+      .or(filter)
+      .maybeSingle();
+
+    if (existing?.id) {
+      const { data, error } = await supabaseAdmin
+        .from('profiles')
+        .update(payload)
+        .eq('id', existing.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.warn('upsertSupabaseProfile update error:', error.message);
+        return null;
+      }
+      return data;
+    } else {
+      const { data, error } = await supabaseAdmin
+        .from('profiles')
+        .insert({
+          user_id: userId,
+          ...payload,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.warn('upsertSupabaseProfile insert error:', error.message);
+        return null;
+      }
+      return data;
+    }
+  } catch (err) {
+    console.warn('upsertSupabaseProfile exception:', err?.message);
+    return null;
+  }
+}
+

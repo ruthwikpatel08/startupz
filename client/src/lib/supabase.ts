@@ -227,13 +227,19 @@ export async function upsertUserProfile(
 ): Promise<any | null> {
   try {
     // Generate username from email or full_name if not provided
-    if (!profileData.username) {
-      if (profileData.email) {
-        profileData.username = profileData.email.split('@')[0];
-      } else if (profileData.full_name) {
-        profileData.username = profileData.full_name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanPayload: any = { ...profileData };
+    if (!cleanPayload.username) {
+      if (cleanPayload.email) {
+        cleanPayload.username = cleanPayload.email.split('@')[0];
+      } else if (cleanPayload.full_name) {
+        cleanPayload.username = cleanPayload.full_name.toLowerCase().replace(/[^a-z0-9]/g, '');
       }
     }
+
+    // Remove any undefined values
+    Object.keys(cleanPayload).forEach((k) => {
+      if (cleanPayload[k] === undefined) delete cleanPayload[k];
+    });
 
     // Invalidate stale cache first
     invalidateUserProfileCache(userId);
@@ -242,38 +248,49 @@ export async function upsertUserProfile(
     const existing = await fetchUserProfile(userId, true);
 
     let savedData: any = null;
-    if (existing) {
+    if (existing?.id) {
       const { data, error } = await supabase
         .from('profiles')
         .update({
-          ...profileData,
+          ...cleanPayload,
           updated_at: new Date().toISOString(),
         })
-        .eq('user_id', userId)
+        .eq('id', existing.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
-        console.warn('Error updating profile in Supabase:', error.message);
-        savedData = existing;
+        console.warn('Error updating profile directly in Supabase:', error.message);
+        // Do NOT return stale un-edited existing data! Merge with the new edits
+        savedData = {
+          ...existing,
+          ...cleanPayload,
+          updated_at: new Date().toISOString(),
+        };
       } else {
-        savedData = data;
+        savedData = data || { ...existing, ...cleanPayload };
       }
     } else {
       const { data, error } = await supabase
         .from('profiles')
         .insert({
           user_id: userId,
-          ...profileData,
+          ...cleanPayload,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
-        console.warn('Error creating profile in Supabase:', error.message);
-        return null;
+        console.warn('Error creating profile directly in Supabase:', error.message);
+        savedData = {
+          user_id: userId,
+          ...cleanPayload,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      } else {
+        savedData = data || { user_id: userId, ...cleanPayload };
       }
-      savedData = data;
     }
 
     if (savedData) {

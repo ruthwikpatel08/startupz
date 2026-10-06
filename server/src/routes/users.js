@@ -1,7 +1,7 @@
 import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
-import { deleteSupabaseUserCompletely } from '../supabase.js';
+import { deleteSupabaseUserCompletely, upsertSupabaseProfile } from '../supabase.js';
 
 const router = express.Router();
 
@@ -475,9 +475,11 @@ router.put('/profile', requireAuth, async (req, res) => {
     const {
       fullName,
       headline,
+      oneLineBio,
       location,
       bio,
       avatar,
+      coverImage,
       education,
       portfolioUrl,
       githubUrl,
@@ -491,11 +493,12 @@ router.put('/profile', requireAuth, async (req, res) => {
       startupExperience,
       achievements,
       openTo,
+      isCategorySelected,
     } = req.body;
 
     const updatedProfile = {
       fullName: fullName !== undefined ? fullName.trim() : undefined,
-      headline,
+      headline: headline !== undefined ? headline : (oneLineBio !== undefined ? oneLineBio : undefined),
       location,
       bio,
       avatar,
@@ -513,6 +516,11 @@ router.put('/profile', requireAuth, async (req, res) => {
       achievements,
       openTo: Array.isArray(openTo) ? openTo.join(',') : openTo,
     };
+
+    // Remove undefined values
+    Object.keys(updatedProfile).forEach((key) => {
+      if (updatedProfile[key] === undefined) delete updatedProfile[key];
+    });
 
     const existing = await prisma.profile.findUnique({
       where: { userId: req.user.id },
@@ -538,14 +546,35 @@ router.put('/profile', requireAuth, async (req, res) => {
       }).catch(() => null);
     }
 
+    // Authoritatively sync profile updates to Supabase PostgreSQL table (public.profiles) using service-role privileges
+    try {
+      await upsertSupabaseProfile(req.user.id, req.user.email, {
+        ...req.body,
+        profileCompletion: updatedProfile.profileCompletion,
+      });
+    } catch (sbSyncErr) {
+      console.warn('Backend Supabase profile sync warning:', sbSyncErr?.message);
+    }
+
     // Purge in-memory matching cache so updated details appear immediately to everyone
     cofounderCache.clear();
 
+    // Fetch full user record including updated profile and relations
+    const fullUser = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: {
+        profile: true,
+        startups: true,
+      },
+    });
+
     return res.json({
       message: 'Profile updated successfully!',
+      user: fullUser,
       profile: savedProfile,
     });
   } catch (error) {
+    console.error('Failed to update profile:', error);
     return res.status(500).json({ error: 'Failed to update profile.' });
   }
 });
