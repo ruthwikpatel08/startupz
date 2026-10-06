@@ -229,116 +229,204 @@ export async function fetchUserProfile(userId: string, forceRefresh = false, ema
  */
 export async function upsertUserProfile(
   userId: string,
-  profileData: Partial<{
-    full_name: string;
-    username: string;
-    headline: string;
-    one_line_bio: string;
-    location: string;
-    bio: string;
-    avatar: string;
-    cover_image: string;
-    skills: string;
-    startup_interests: string;
-    industries: string;
-    preferred_role: string;
-    availability: string;
-    startup_experience: string;
-    achievements: string;
-    education: string;
-    github_url: string;
-    linkedin_url: string;
-    website_url: string;
-    open_to: string;
-    profile_completion: number;
-    role_change_count: number;
-    roleChangeCount: number;
-    username_changed_at: string | null;
-    usernameChangedAt: string | null;
-    is_category_selected: boolean;
-    auth_provider: string;
-    email: string;
-  }>
-): Promise<any | null> {
-  try {
-    // Generate username from email or full_name if not provided
-    const cleanPayload: any = { ...profileData };
-    if (!cleanPayload.username) {
-      if (cleanPayload.email) {
-        cleanPayload.username = cleanPayload.email.split('@')[0];
-      } else if (cleanPayload.full_name) {
-        cleanPayload.username = cleanPayload.full_name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      }
-    }
+  profileData: Record<string, any>
+): Promise<any> {
+  if (!userId) throw new Error('User ID is required to save profile.');
 
-    // Remove any undefined values
-    Object.keys(cleanPayload).forEach((k) => {
-      if (cleanPayload[k] === undefined) delete cleanPayload[k];
-    });
+  // Extract and map ONLY valid columns that exist in the PostgreSQL public.profiles table
+  const dbPayload: Record<string, any> = {
+    updated_at: new Date().toISOString(),
+  };
 
-    // Invalidate stale cache first
-    invalidateUserProfileCache(userId);
-
-    // Check if profile exists first for clean upsert
-    const existing = await fetchUserProfile(userId, true);
-
-    let savedData: any = null;
-    if (existing?.id) {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({
-          ...cleanPayload,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existing.id)
-        .select()
-        .maybeSingle();
-
-      if (error) {
-        console.warn('Error updating profile directly in Supabase:', error.message);
-        // Do NOT return stale un-edited existing data! Merge with the new edits
-        savedData = {
-          ...existing,
-          ...cleanPayload,
-          updated_at: new Date().toISOString(),
-        };
-      } else {
-        savedData = data || { ...existing, ...cleanPayload };
-      }
-    } else {
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: userId,
-          ...cleanPayload,
-        })
-        .select()
-        .maybeSingle();
-
-      if (error) {
-        console.warn('Error creating profile directly in Supabase:', error.message);
-        savedData = {
-          user_id: userId,
-          ...cleanPayload,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-      } else {
-        savedData = data || { user_id: userId, ...cleanPayload };
-      }
-    }
-
-    if (savedData) {
-      userProfileCache.set(userId, { data: savedData, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
-      try {
-        window.dispatchEvent(new CustomEvent('profile_updated', { detail: { userId, profile: savedData } }));
-      } catch {}
-    }
-    return savedData;
-  } catch (err) {
-    console.warn('Exception during profile upsert:', err);
-    return null;
+  if (profileData.full_name !== undefined || profileData.fullName !== undefined) {
+    dbPayload.full_name = profileData.full_name ?? profileData.fullName;
   }
+  if (profileData.username !== undefined && profileData.username) {
+    dbPayload.username = String(profileData.username).trim().toLowerCase().replace(/^@/, '');
+  }
+  if (profileData.headline !== undefined) {
+    dbPayload.headline = profileData.headline;
+  }
+  if (profileData.one_line_bio !== undefined || profileData.oneLineBio !== undefined) {
+    dbPayload.one_line_bio = profileData.one_line_bio ?? profileData.oneLineBio;
+  }
+  if (profileData.location !== undefined) {
+    dbPayload.location = profileData.location;
+  }
+  if (profileData.bio !== undefined) {
+    dbPayload.bio = profileData.bio;
+  }
+  if (profileData.avatar !== undefined) {
+    dbPayload.avatar = profileData.avatar;
+  }
+  if (profileData.cover_image !== undefined || profileData.coverImage !== undefined) {
+    dbPayload.cover_image = profileData.cover_image ?? profileData.coverImage;
+  }
+  if (profileData.education !== undefined) {
+    dbPayload.education = profileData.education;
+  }
+  if (profileData.portfolio_url !== undefined || profileData.portfolioUrl !== undefined) {
+    dbPayload.portfolio_url = profileData.portfolio_url ?? profileData.portfolioUrl;
+  }
+  if (profileData.github_url !== undefined || profileData.githubUrl !== undefined) {
+    dbPayload.github_url = profileData.github_url ?? profileData.githubUrl;
+  }
+  if (profileData.linkedin_url !== undefined || profileData.linkedinUrl !== undefined) {
+    dbPayload.linkedin_url = profileData.linkedin_url ?? profileData.linkedinUrl;
+  }
+  if (profileData.website_url !== undefined || profileData.websiteUrl !== undefined) {
+    dbPayload.website_url = profileData.website_url ?? profileData.websiteUrl;
+  }
+  if (profileData.skills !== undefined) {
+    dbPayload.skills = profileData.skills;
+  }
+  if (profileData.startup_interests !== undefined || profileData.startupInterests !== undefined) {
+    dbPayload.startup_interests = profileData.startup_interests ?? profileData.startupInterests;
+  }
+  if (profileData.industries !== undefined) {
+    dbPayload.industries = profileData.industries;
+  }
+  if (profileData.preferred_role !== undefined || profileData.preferredRole !== undefined || profileData.role !== undefined) {
+    dbPayload.preferred_role = profileData.preferred_role ?? profileData.preferredRole ?? profileData.role;
+  }
+  if (profileData.availability !== undefined) {
+    dbPayload.availability = profileData.availability;
+  }
+  if (profileData.startup_experience !== undefined || profileData.startupExperience !== undefined) {
+    dbPayload.startup_experience = profileData.startup_experience ?? profileData.startupExperience;
+  }
+  if (profileData.achievements !== undefined) {
+    dbPayload.achievements = profileData.achievements;
+  }
+  if (profileData.open_to !== undefined || profileData.openTo !== undefined) {
+    const val = profileData.open_to ?? profileData.openTo;
+    dbPayload.open_to = Array.isArray(val) ? val.join(',') : val;
+  }
+  if (profileData.profile_completion !== undefined || profileData.profileCompletion !== undefined) {
+    dbPayload.profile_completion = Number(profileData.profile_completion ?? profileData.profileCompletion) || 60;
+  }
+  if (profileData.role_change_count !== undefined || profileData.roleChangeCount !== undefined) {
+    dbPayload.role_change_count = Number(profileData.role_change_count ?? profileData.roleChangeCount) || 0;
+  }
+  if (profileData.username_changed_at !== undefined || profileData.usernameChangedAt !== undefined) {
+    dbPayload.username_changed_at = profileData.username_changed_at || profileData.usernameChangedAt;
+  }
+  if (profileData.is_category_selected !== undefined || profileData.isCategorySelected !== undefined) {
+    dbPayload.is_category_selected = Boolean(profileData.is_category_selected ?? profileData.isCategorySelected);
+  }
+  if (profileData.auth_provider !== undefined || profileData.authProvider !== undefined) {
+    dbPayload.auth_provider = profileData.auth_provider ?? profileData.authProvider;
+  }
+  if (profileData.email !== undefined && profileData.email) {
+    dbPayload.email = String(profileData.email).trim().toLowerCase();
+  }
+
+  // If username not provided, generate default
+  if (!dbPayload.username) {
+    if (dbPayload.email) {
+      dbPayload.username = dbPayload.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
+    } else if (dbPayload.full_name) {
+      dbPayload.username = dbPayload.full_name.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    }
+  }
+
+  // Invalidate stale cache first
+  invalidateUserProfileCache(userId);
+  if (dbPayload.email) invalidateUserProfileCache(dbPayload.email);
+
+  // Check if username is already taken by another user before performing update
+  if (dbPayload.username) {
+    const { data: takenCheck } = await supabase
+      .from('profiles')
+      .select('id, user_id')
+      .ilike('username', dbPayload.username)
+      .neq('user_id', userId)
+      .neq('id', userId)
+      .maybeSingle();
+
+    if (takenCheck) {
+      throw new Error('This username is already taken. Please choose another username.');
+    }
+  }
+
+  // 1. Try updating existing profile row
+  const { data: updatedRow, error: updateError } = await supabase
+    .from('profiles')
+    .update(dbPayload)
+    .or(`user_id.eq.${userId},id.eq.${userId}`)
+    .select()
+    .maybeSingle();
+
+  if (updateError) {
+    console.error('Supabase profile update error:', updateError);
+    if (
+      updateError.code === '23505' ||
+      updateError.message?.toLowerCase().includes('duplicate') ||
+      updateError.message?.toLowerCase().includes('unique') ||
+      updateError.message?.toLowerCase().includes('username')
+    ) {
+      throw new Error('This username is already taken. Please choose another username.');
+    }
+    throw new Error(updateError.message || 'Failed to update profile in database.');
+  }
+
+  let savedData = updatedRow;
+
+  // 2. If profile did not exist, insert it
+  if (!savedData) {
+    const { data: insertedRow, error: insertError } = await supabase
+      .from('profiles')
+      .insert({
+        user_id: userId,
+        ...dbPayload,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Supabase profile insert error:', insertError);
+      if (
+        insertError.code === '23505' ||
+        insertError.message?.toLowerCase().includes('duplicate') ||
+        insertError.message?.toLowerCase().includes('unique') ||
+        insertError.message?.toLowerCase().includes('username')
+      ) {
+        throw new Error('This username is already taken. Please choose another username.');
+      }
+      throw new Error(insertError.message || 'Failed to create profile in database.');
+    }
+    savedData = insertedRow;
+  }
+
+  // 3. Also sync role, role_change_count, username_changed_at to public.users table if changed
+  if (dbPayload.preferred_role || dbPayload.role_change_count !== undefined || dbPayload.username_changed_at !== undefined) {
+    const userUpdate: any = {
+      updated_at: new Date().toISOString(),
+    };
+    if (dbPayload.preferred_role) userUpdate.role = dbPayload.preferred_role;
+    if (dbPayload.role_change_count !== undefined) userUpdate.role_change_count = dbPayload.role_change_count;
+    if (dbPayload.username_changed_at !== undefined) userUpdate.username_changed_at = dbPayload.username_changed_at;
+
+    try {
+      await supabase
+        .from('users')
+        .update(userUpdate)
+        .eq('id', userId);
+    } catch {}
+  }
+
+  // 4. Update in-memory cache with the fresh persistent data
+  if (savedData) {
+    userProfileCache.set(userId, { data: savedData, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
+    if (dbPayload.email) {
+      userProfileCache.set(dbPayload.email, { data: savedData, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
+    }
+    try {
+      window.dispatchEvent(new CustomEvent('profile_updated', { detail: { userId, profile: savedData } }));
+    } catch {}
+  }
+
+  return savedData;
 }
 
 /**

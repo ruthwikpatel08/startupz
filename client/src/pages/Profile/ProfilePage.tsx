@@ -1017,39 +1017,42 @@ export const ProfilePage: React.FC = () => {
     const newUsernameChangedAt = isUsernameChanging ? new Date().toISOString() : formData.usernameChangedAt;
 
     try {
-      // 1. Update Supabase public.profiles table
-      if (currentUser?.id) {
-        await upsertUserProfile(currentUser.id, {
-          full_name: formData.fullName,
-          username: cleanUsername,
-          username_changed_at: newUsernameChangedAt,
-          usernameChangedAt: newUsernameChangedAt,
-          headline: formData.headline,
-          one_line_bio: formData.oneLineBio || formData.headline,
-          location: formData.location,
-          bio: formData.bio,
-          avatar: formData.avatar,
-          cover_image: formData.coverImage,
-          skills: formData.skills,
-          startup_interests: formData.startupInterests,
-          industries: formData.industries,
-          preferred_role: selectedRole,
-          role_change_count: newRoleChangeCount,
-          roleChangeCount: newRoleChangeCount,
-          is_category_selected: true,
-          availability: formData.availability,
-          startup_experience: serializedExp,
-          achievements: formData.achievements,
-          education: formData.education,
-          github_url: formData.githubUrl,
-          linkedin_url: formData.linkedinUrl,
-          website_url: formData.websiteUrl,
-          open_to: formData.openTo,
-        });
-        invalidateUserProfileCache(currentUser.id);
+      if (!currentUser?.id) {
+        throw new Error('You must be logged in to save your profile.');
       }
 
-      // 2. Authoritatively update backend API (which syncs to PostgreSQL / Prisma & Supabase Admin)
+      // 1. Update Supabase public.profiles table
+      const savedProfileRow = await upsertUserProfile(currentUser.id, {
+        full_name: formData.fullName,
+        username: cleanUsername,
+        username_changed_at: newUsernameChangedAt,
+        headline: formData.headline,
+        one_line_bio: formData.oneLineBio || formData.headline,
+        location: formData.location,
+        bio: formData.bio,
+        avatar: formData.avatar,
+        cover_image: formData.coverImage,
+        skills: formData.skills,
+        startup_interests: formData.startupInterests,
+        industries: formData.industries,
+        preferred_role: selectedRole,
+        role_change_count: newRoleChangeCount,
+        is_category_selected: true,
+        availability: formData.availability,
+        startup_experience: serializedExp,
+        achievements: formData.achievements,
+        education: formData.education,
+        github_url: formData.githubUrl,
+        linkedin_url: formData.linkedinUrl,
+        website_url: formData.websiteUrl,
+        open_to: formData.openTo,
+      });
+
+      if (!savedProfileRow) {
+        throw new Error('Database update failed. Please try again.');
+      }
+
+      // 2. Authoritatively update backend API (which syncs to SQLite/Prisma & Supabase Admin)
       let updatedUser: User | null = null;
       try {
         const res = await api.updateProfile({
@@ -1064,29 +1067,45 @@ export const ProfilePage: React.FC = () => {
         });
         if (res?.user) updatedUser = res.user;
       } catch (backendErr: any) {
-        console.warn('Backend profile mirror warning (non-fatal):', backendErr);
+        console.warn('Backend profile mirror warning:', backendErr);
         if (backendErr?.response?.data?.error) {
           throw new Error(backendErr.response.data.error);
         }
       }
 
-      const mergedUser: User = {
-        ...(updatedUser || profileUser || currentUser!),
-        username: cleanUsername || (profileUser?.username || currentUser?.username),
-        role: selectedRole,
-        roleChangeCount: newRoleChangeCount,
+      const authoritativeUser: User = {
+        ...(updatedUser || profileUser || currentUser),
+        username: savedProfileRow.username || cleanUsername || currentUser.username,
+        role: savedProfileRow.preferred_role || selectedRole,
+        roleChangeCount: savedProfileRow.role_change_count ?? newRoleChangeCount,
         profile: {
-          ...(profileUser?.profile || currentUser?.profile || {}),
+          ...(profileUser?.profile || currentUser.profile || {}),
           ...(updatedUser?.profile || {}),
           ...formData,
-          fullName: formData.fullName,
-          username: cleanUsername || (profileUser?.profile?.username || currentUser?.profile?.username),
-          usernameChangedAt: newUsernameChangedAt,
-          username_changed_at: newUsernameChangedAt,
-          startupExperience: serializedExp,
-          preferredRole: selectedRole,
-          roleChangeCount: newRoleChangeCount,
-          role_change_count: newRoleChangeCount,
+          fullName: savedProfileRow.full_name || formData.fullName,
+          username: savedProfileRow.username || cleanUsername,
+          usernameChangedAt: savedProfileRow.username_changed_at || newUsernameChangedAt,
+          username_changed_at: savedProfileRow.username_changed_at || newUsernameChangedAt,
+          headline: savedProfileRow.headline || formData.headline,
+          oneLineBio: savedProfileRow.one_line_bio || formData.oneLineBio,
+          location: savedProfileRow.location || formData.location,
+          bio: savedProfileRow.bio || formData.bio,
+          avatar: savedProfileRow.avatar || formData.avatar,
+          coverImage: savedProfileRow.cover_image || formData.coverImage,
+          skills: savedProfileRow.skills || formData.skills,
+          startupInterests: savedProfileRow.startup_interests || formData.startupInterests,
+          industries: savedProfileRow.industries || formData.industries,
+          preferredRole: savedProfileRow.preferred_role || selectedRole,
+          roleChangeCount: savedProfileRow.role_change_count ?? newRoleChangeCount,
+          role_change_count: savedProfileRow.role_change_count ?? newRoleChangeCount,
+          availability: savedProfileRow.availability || formData.availability,
+          startupExperience: savedProfileRow.startup_experience || serializedExp,
+          achievements: savedProfileRow.achievements || formData.achievements,
+          education: savedProfileRow.education || formData.education,
+          githubUrl: savedProfileRow.github_url || formData.githubUrl,
+          linkedinUrl: savedProfileRow.linkedin_url || formData.linkedinUrl,
+          websiteUrl: savedProfileRow.website_url || formData.websiteUrl,
+          openTo: savedProfileRow.open_to || formData.openTo,
           isCategorySelected: true,
         },
       };
@@ -1094,23 +1113,25 @@ export const ProfilePage: React.FC = () => {
       setFormData((prev: any) => ({
         ...prev,
         ...formData,
-        fullName: formData.fullName,
-        username: cleanUsername,
-        initialUsername: cleanUsername,
-        usernameChangedAt: newUsernameChangedAt,
+        fullName: savedProfileRow.full_name || formData.fullName,
+        username: savedProfileRow.username || cleanUsername,
+        initialUsername: savedProfileRow.username || cleanUsername,
+        usernameChangedAt: savedProfileRow.username_changed_at || newUsernameChangedAt,
         startupExperience: serializedExp,
-        preferredRole: selectedRole,
-        role: selectedRole,
-        initialRole: selectedRole,
-        roleChangeCount: newRoleChangeCount,
+        preferredRole: savedProfileRow.preferred_role || selectedRole,
+        role: savedProfileRow.preferred_role || selectedRole,
+        initialRole: savedProfileRow.preferred_role || selectedRole,
+        roleChangeCount: savedProfileRow.role_change_count ?? newRoleChangeCount,
       }));
 
-      setProfileUser(mergedUser);
+      setProfileUser(authoritativeUser);
       if (isMe && currentUser) {
-        updateUser(mergedUser);
+        updateUser(authoritativeUser);
       }
       setEditOpen(false);
-      window.dispatchEvent(new CustomEvent('profile_updated', { detail: mergedUser }));
+      setPhotoSavedNotice('Profile changes saved successfully!');
+      setTimeout(() => setPhotoSavedNotice(null), 4000);
+      window.dispatchEvent(new CustomEvent('profile_updated', { detail: authoritativeUser }));
     } catch (err: any) {
       setSaveError(err.message || 'Failed to update profile.');
     } finally {
@@ -1202,6 +1223,22 @@ export const ProfilePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-dark-950 py-8 px-3 sm:px-6 lg:px-8 font-sans transition-colors selection:bg-brand-600 selection:text-white w-full max-w-full overflow-x-hidden">
       <div className="max-w-6xl mx-auto space-y-6 w-full overflow-x-hidden">
+
+        {/* Success Notice Banner */}
+        {photoSavedNotice && (
+          <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-semibold flex items-center justify-between gap-2 shadow-xs transition-all">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>{photoSavedNotice}</span>
+            </div>
+            <button
+              onClick={() => setPhotoSavedNotice(null)}
+              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 transition-colors cursor-pointer"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
         {/* 1. TOP HERO / COVER & MAIN PROFILE CARD */}
         <div className="card-base overflow-hidden">
@@ -2629,9 +2666,9 @@ export const ProfilePage: React.FC = () => {
               <button
                 type="submit"
                 disabled={saving}
-                className="btn-primary px-4 py-1.5 text-xs font-medium disabled:opacity-50"
+                className="btn-primary px-4 py-1.5 text-xs font-medium disabled:opacity-50 cursor-pointer"
               >
-                {saving ? 'Saving Changes...' : 'Save Profile'}
+                {saving ? 'Saving Changes...' : 'Save Changes'}
               </button>
             </div>
           </form>

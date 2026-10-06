@@ -245,6 +245,7 @@ export async function upsertSupabaseProfile(userId, userEmail, profileData) {
       .or(filter)
       .maybeSingle();
 
+    let savedRow = null;
     if (existing?.id) {
       const { data, error } = await supabaseAdmin
         .from('profiles')
@@ -257,7 +258,7 @@ export async function upsertSupabaseProfile(userId, userEmail, profileData) {
         console.warn('upsertSupabaseProfile update error:', error.message);
         return null;
       }
-      return data;
+      savedRow = data;
     } else {
       const { data, error } = await supabaseAdmin
         .from('profiles')
@@ -272,8 +273,24 @@ export async function upsertSupabaseProfile(userId, userEmail, profileData) {
         console.warn('upsertSupabaseProfile insert error:', error.message);
         return null;
       }
-      return data;
+      savedRow = data;
     }
+
+    // Sync role, role_change_count, username_changed_at to public.users table in Supabase
+    if (payload.preferred_role || payload.role_change_count !== undefined || payload.username_changed_at !== undefined) {
+      const userPayload = { updated_at: new Date().toISOString() };
+      if (payload.preferred_role) userPayload.role = payload.preferred_role;
+      if (payload.role_change_count !== undefined) userPayload.role_change_count = payload.role_change_count;
+      if (payload.username_changed_at !== undefined) userPayload.username_changed_at = payload.username_changed_at;
+
+      await supabaseAdmin
+        .from('users')
+        .update(userPayload)
+        .or(cleanEmail ? `id.eq.${userId},email.ilike.${cleanEmail}` : `id.eq.${userId}`)
+        .catch(() => null);
+    }
+
+    return savedRow;
   } catch (err) {
     console.warn('upsertSupabaseProfile exception:', err?.message);
     return null;
