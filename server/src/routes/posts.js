@@ -1,6 +1,7 @@
 import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
+import { supabaseAdmin } from '../supabase.js';
 
 const router = express.Router();
 
@@ -127,12 +128,30 @@ router.post('/', requireAuth, async (req, res) => {
       },
     });
 
+    if (supabaseAdmin) {
+      try {
+        await supabaseAdmin.from('posts').insert({
+          id: post.id,
+          author_id: req.user.id,
+          startup_id: startupId || null,
+          post_type: postType,
+          title: title ? title.trim() : null,
+          content: content.trim(),
+          images: images || null,
+          links: links || null,
+        });
+      } catch (sErr) {
+        console.warn('Supabase post mirror notice:', sErr.message);
+      }
+    }
+
     return res.status(201).json({
       message: 'Post published!',
       post: { ...post, isLiked: false, isSaved: false, comments: [] },
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Failed to publish post.' });
+    console.error('Failed to publish post:', error);
+    return res.status(500).json({ error: error.message || 'Failed to publish post.' });
   }
 });
 

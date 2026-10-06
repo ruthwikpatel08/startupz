@@ -13,6 +13,7 @@ export interface User {
   roleChangeCount?: number;
   isCategorySelected?: boolean;
   onboardingCompleted?: boolean;
+  onboarding_completed?: boolean;
   createdAt: string;
   updatedAt?: string;
   profile?: Profile;
@@ -59,6 +60,8 @@ export interface Profile {
   usernameChangedAt?: string | null;
   username_changed_at?: string | null;
   isCategorySelected?: boolean;
+  onboardingCompleted?: boolean;
+  onboarding_completed?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

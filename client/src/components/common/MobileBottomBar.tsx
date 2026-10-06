@@ -26,7 +26,7 @@ export const MobileBottomBar: React.FC = () => {
     return null;
   }
 
-  const isHome = location.pathname === '/' || location.pathname === '/dashboard';
+  const isHome = location.pathname === '/';
   const isFeed = location.pathname.startsWith('/feed');
   const isProjects = location.pathname.startsWith('/projects');
   const isBusiness =

@@ -807,27 +807,27 @@ export const LandingPage: React.FC = () => {
       {/* 5. CALL TO ACTION BANNER */}
       <section className="py-14">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="p-8 sm:p-10 rounded-xl bg-slate-900 text-white border border-slate-850 text-center space-y-4">
+          <div className="p-8 sm:p-10 rounded-2xl bg-brand-50/60 dark:bg-slate-900 text-slate-900 dark:text-white border border-brand-100 dark:border-slate-800 text-center space-y-4">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
               Ready to find collaborators and build your venture?
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
               Join founders, engineers, designers, mentors, and investors building tomorrow's startup ecosystem.
             </p>
 
             {user ? (
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
-                  to="/dashboard"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-md text-xs font-bold text-slate-900 bg-white hover:bg-slate-100 transition-colors shadow-subtle cursor-pointer"
+                  to="/feed"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 transition-colors shadow-sm cursor-pointer"
                 >
                   <LayoutDashboard size={14} />
-                  <span>Go to Your Dashboard</span>
+                  <span>Go to Feed</span>
                   <ArrowRight size={14} />
                 </Link>
                 <Link
                   to={`/profile/${user.id}`}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-md text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-white bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors shadow-sm"
                 >
                   <span>My Startup Profile</span>
                 </Link>

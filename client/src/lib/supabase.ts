@@ -106,6 +106,8 @@ export function mapSupabaseToAppUser(
     usernameChangedAt: profileRow?.username_changed_at ?? profileRow?.usernameChangedAt ?? metadata.username_changed_at ?? null,
     username_changed_at: profileRow?.username_changed_at ?? profileRow?.usernameChangedAt ?? metadata.username_changed_at ?? null,
     isCategorySelected: profileRow?.is_category_selected === true,
+    onboardingCompleted: profileRow?.onboarding_completed !== false && metadata.onboarding_completed !== false,
+    onboarding_completed: profileRow?.onboarding_completed !== false && metadata.onboarding_completed !== false,
     createdAt: profileRow?.created_at || authUser.created_at,
     updatedAt: profileRow?.updated_at || authUser.updated_at,
   };
@@ -122,6 +124,8 @@ export function mapSupabaseToAppUser(
     verificationBadge: isGoogle ? 'Verified via Google' : (authUser.email_confirmed_at ? 'Verified Member' : null),
     isSuspended: false,
     isAdmin: metadata.isAdmin === true || metadata.role === 'ADMIN' || authUser.email === 'ruthwikpatel08@gmail.com' || authUser.email === 'admin@startupz.com',
+    onboardingCompleted: profileRow?.onboarding_completed !== false && metadata.onboarding_completed !== false,
+    onboarding_completed: profileRow?.onboarding_completed !== false && metadata.onboarding_completed !== false,
     createdAt: authUser.created_at,
     updatedAt: authUser.updated_at,
     profile,
@@ -313,6 +317,9 @@ export async function upsertUserProfile(
   }
   if (profileData.is_category_selected !== undefined || profileData.isCategorySelected !== undefined) {
     dbPayload.is_category_selected = Boolean(profileData.is_category_selected ?? profileData.isCategorySelected);
+  }
+  if (profileData.onboarding_completed !== undefined || profileData.onboardingCompleted !== undefined) {
+    dbPayload.onboarding_completed = Boolean(profileData.onboarding_completed ?? profileData.onboardingCompleted);
   }
   if (profileData.auth_provider !== undefined || profileData.authProvider !== undefined) {
     dbPayload.auth_provider = profileData.auth_provider ?? profileData.authProvider;

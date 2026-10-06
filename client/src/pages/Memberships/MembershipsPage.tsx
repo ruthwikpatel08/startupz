@@ -226,7 +226,7 @@ export const MembershipsPage: React.FC = () => {
                 {/* CTA Button */}
                 <div className="pt-4 border-t border-slate-100 dark:border-dark-800">
                   <Link
-                    to={user ? '/dashboard' : '/register'}
+                    to={user ? '/' : '/register'}
                     className={`w-full inline-flex items-center justify-center gap-1.5 py-2 px-4 text-xs font-semibold rounded-md transition-colors ${
                       plan.popular
                         ? 'btn-primary'

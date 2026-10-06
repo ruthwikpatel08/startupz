@@ -41,7 +41,7 @@ export const Sidebar: React.FC = () => {
     return location.pathname.startsWith(path);
   };
 
-  const isHomeActive = location.pathname === '/' || (location.pathname === '/dashboard' && !location.pathname.includes('/projects'));
+  const isHomeActive = location.pathname === '/';
   const isFeedActive = location.pathname.startsWith('/feed');
   const isBusinessActive =
     location.pathname.startsWith('/business') ||

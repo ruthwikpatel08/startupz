@@ -9,29 +9,29 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#EFF4FF',
-          100: '#DBE7FE',
-          200: '#BFD5FE',
-          300: '#93BAFD',
-          400: '#6094FA',
-          500: '#3B75F3',
-          600: '#2457D6', // StartupZ primary brand color
-          700: '#1D4ED8', // StartupZ primary hover
-          800: '#1E40AF',
-          900: '#1E3A8A',
-          950: '#172554',
+          50: '#EEF2FF',
+          100: '#E0E7FF',
+          200: '#C7D2FE',
+          300: '#A5B4FC',
+          400: '#818CF8',
+          500: '#6366F1',
+          600: '#4F46E5', // HookZ primary indigo from Landing Page
+          700: '#4338CA', // HookZ primary hover
+          800: '#3730A3',
+          900: '#312E81',
+          950: '#1E1B4B',
         },
         slate: {
-          50: '#F8F9FB', // Primary app background
-          100: '#F2F4F7',
-          200: '#E4E7EC', // Standard border
-          300: '#D0D5DD',
-          400: '#98A2B3', // Muted text
-          500: '#667085', // Secondary text
-          600: '#475467',
-          700: '#344054',
-          800: '#1D2939',
-          900: '#181A1F', // Primary text
+          50: '#F9FAFB', // Landing page tile background
+          100: '#F3F4F6',
+          200: '#E5E7EB', // Landing page border (#e5e7eb)
+          300: '#D1D5DB', // Landing page input border (#d1d5db)
+          400: '#9CA3AF',
+          500: '#6B7280', // Landing page muted text (#6b7280)
+          600: '#4B5563',
+          700: '#374151', // Landing page secondary text (#374151)
+          800: '#1F2937',
+          900: '#111827', // Landing page primary text (#111827)
           950: '#0B0F17',
         },
         dark: {

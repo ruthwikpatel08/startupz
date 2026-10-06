@@ -48,7 +48,10 @@ export interface BuilderProject {
   id: string;
   title: string;
   ideaSummary: string;
+  tagline?: string;
   problemSolved: string;
+  solutionApproach?: string;
+  detailedDescription?: string;
   stage: 'Ideation' | 'Prototyping' | 'MVP Build' | 'Alpha Testing' | 'Pre-Launch';
   visibility: 'PUBLIC' | 'PRIVATE';
   creator: {
@@ -63,6 +66,11 @@ export interface BuilderProject {
   tags: string[];
   createdAt: string;
 }
+
+export const TITLE_MAX = 60;
+export const TAGLINE_MAX = 100;
+export const PROBLEM_MAX = 500;
+export const SOLUTION_MAX = 500;
 
 const INITIAL_PROJECTS: BuilderProject[] = [];
 
@@ -146,11 +154,14 @@ export const ProjectsPage: React.FC = () => {
 
   // New Project Form State
   const [newTitle, setNewTitle] = useState('');
-  const [newIdeaSummary, setNewIdeaSummary] = useState('');
+  const [newTagline, setNewTagline] = useState('');
   const [newProblem, setNewProblem] = useState('');
+  const [newSolution, setNewSolution] = useState('');
+  const [newDetailedDescription, setNewDetailedDescription] = useState('');
+  const [newTechStack, setNewTechStack] = useState<string[]>(['React', 'TypeScript']);
+  const [techInput, setTechInput] = useState('');
   const [newStage, setNewStage] = useState<'Ideation' | 'Prototyping' | 'MVP Build' | 'Alpha Testing' | 'Pre-Launch'>('Ideation');
   const [newVisibility, setNewVisibility] = useState<'PUBLIC' | 'PRIVATE'>('PUBLIC');
-  const [newTags, setNewTags] = useState('AI, Web3, SaaS');
   const [rolesList, setRolesList] = useState<string[]>([
     'Frontend Developer',
     'Backend Developer',
@@ -158,6 +169,31 @@ export const ProjectsPage: React.FC = () => {
     'Growth & Marketing',
   ]);
   const [customRoleInput, setCustomRoleInput] = useState('');
+  const [formTouched, setFormTouched] = useState(false);
+
+  // Validation rules
+  const isTitleValid = newTitle.trim().length > 0 && newTitle.length <= TITLE_MAX;
+  const isTaglineValid = newTagline.trim().length > 0 && newTagline.length <= TAGLINE_MAX;
+  const isProblemValid = newProblem.trim().length > 0 && newProblem.length <= PROBLEM_MAX;
+  const isSolutionValid = newSolution.trim().length > 0 && newSolution.length <= SOLUTION_MAX;
+  const isTechValid = newTechStack.length >= 1;
+
+  const isFormValid = isTitleValid && isTaglineValid && isProblemValid && isSolutionValid && isTechValid;
+
+  const handleAddTechTag = (e?: React.KeyboardEvent | React.MouseEvent) => {
+    if (e && 'key' in e && e.key !== 'Enter') return;
+    if (e) e.preventDefault();
+    const clean = techInput.trim().replace(/^,+|,+$/g, '');
+    if (!clean) return;
+    if (!newTechStack.includes(clean)) {
+      setNewTechStack([...newTechStack, clean]);
+    }
+    setTechInput('');
+  };
+
+  const handleRemoveTechTag = (tag: string) => {
+    setNewTechStack(newTechStack.filter((t) => t !== tag));
+  };
 
   // Sync initial project groups
   useEffect(() => {
@@ -211,18 +247,22 @@ export const ProjectsPage: React.FC = () => {
 
   const handleCreateProject = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormTouched(true);
     if (!user) {
       navigate('/login');
       return;
     }
-    if (!newTitle.trim() || !newIdeaSummary.trim()) return;
+    if (!isFormValid) return;
 
     const creatorName = user.profile?.fullName || user.email?.split('@')[0] || 'Builder';
     const newProject: BuilderProject = {
       id: `proj-${Date.now()}`,
       title: newTitle.trim(),
-      ideaSummary: newIdeaSummary.trim(),
-      problemSolved: newProblem.trim() || 'Pre-establishment problem discovery.',
+      ideaSummary: newTagline.trim(),
+      tagline: newTagline.trim(),
+      problemSolved: newProblem.trim(),
+      solutionApproach: newSolution.trim(),
+      detailedDescription: newDetailedDescription.trim(),
       stage: newStage,
       visibility: newVisibility,
       creator: {
@@ -250,7 +290,7 @@ export const ProjectsPage: React.FC = () => {
           status: 'OPEN' as const,
         })),
       ],
-      tags: newTags.split(',').map((t) => t.trim()).filter(Boolean),
+      tags: newTechStack,
       createdAt: 'Just now',
     };
 
@@ -263,8 +303,13 @@ export const ProjectsPage: React.FC = () => {
 
     // Reset Form
     setNewTitle('');
-    setNewIdeaSummary('');
+    setNewTagline('');
     setNewProblem('');
+    setNewSolution('');
+    setNewDetailedDescription('');
+    setNewTechStack(['React', 'TypeScript']);
+    setTechInput('');
+    setFormTouched(false);
     setNewStage('Ideation');
     setNewVisibility('PUBLIC');
   };
@@ -838,63 +883,217 @@ export const ProjectsPage: React.FC = () => {
       {/* Create Project Modal */}
       {createModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto font-sans">
-          <div className="max-w-xl w-full bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-xl p-6 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-8">
+          <div className="max-w-xl w-full max-h-[90vh] overflow-y-auto bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-6 sm:p-7 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-8">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-dark-800">
-              <div className="flex items-center gap-2">
-                <span className="p-1.5 rounded-md bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400">
-                  <Rocket size={16} />
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400">
+                  <Rocket size={18} />
                 </span>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  Create Builder Project & Split Roles
-                </h3>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Create Builder Project & Split Roles
+                  </h3>
+                  <p className="text-xs text-slate-500">Post a project workspace and find collaborators</p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setCreateModalOpen(false)}
-                className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleCreateProject} className="space-y-4">
+              {/* 1. Project Name (Max 60 chars) */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Project / Idea Title <span className="text-rose-500">*</span>
+                  Project Name <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
+                  onChange={(e) => setNewTitle(e.target.value.slice(0, TITLE_MAX))}
                   placeholder="e.g. NextGen Micro-SaaS AI Automation"
-                  className="input-base text-xs"
+                  className={`input-base text-xs ${formTouched && !isTitleValid ? 'border-rose-500 ring-1 ring-rose-500/20' : ''}`}
                 />
+                <div className="flex justify-between items-center mt-1 text-[11px]">
+                  {formTouched && !newTitle.trim() ? (
+                    <span className="text-rose-500 font-medium">Project name is required</span>
+                  ) : newTitle.length >= TITLE_MAX ? (
+                    <span className="text-rose-500 font-medium">Reached {TITLE_MAX} character limit</span>
+                  ) : (
+                    <span className="text-slate-400">Max {TITLE_MAX} characters</span>
+                  )}
+                  <span className={`font-mono ml-auto ${newTitle.length >= TITLE_MAX ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                    {newTitle.length}/{TITLE_MAX}
+                  </span>
+                </div>
               </div>
 
+              {/* 2. Short Description / Tagline (Max 100 chars) */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Idea Summary (What are you building?) <span className="text-rose-500">*</span>
+                  Short Description / Tagline <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newTagline}
+                  onChange={(e) => setNewTagline(e.target.value.slice(0, TAGLINE_MAX))}
+                  placeholder="e.g. AI-driven workflow copilot built for student researchers"
+                  className={`input-base text-xs ${formTouched && !isTaglineValid ? 'border-rose-500 ring-1 ring-rose-500/20' : ''}`}
+                />
+                <div className="flex justify-between items-center mt-1 text-[11px]">
+                  {formTouched && !newTagline.trim() ? (
+                    <span className="text-rose-500 font-medium">Short description / tagline is required</span>
+                  ) : newTagline.length >= TAGLINE_MAX ? (
+                    <span className="text-rose-500 font-medium">Reached {TAGLINE_MAX} character limit</span>
+                  ) : (
+                    <span className="text-slate-400">Max {TAGLINE_MAX} characters</span>
+                  )}
+                  <span className={`font-mono ml-auto ${newTagline.length >= TAGLINE_MAX ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                    {newTagline.length}/{TAGLINE_MAX}
+                  </span>
+                </div>
+              </div>
+
+              {/* 3. Problem Statement (Max 500 chars, required) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Problem Statement <span className="text-rose-500">*</span>
                 </label>
                 <textarea
                   required
                   rows={3}
-                  value={newIdeaSummary}
-                  onChange={(e) => setNewIdeaSummary(e.target.value)}
-                  placeholder="Briefly describe the concept, solution, and what the team will build together before establishment."
+                  value={newProblem}
+                  onChange={(e) => setNewProblem(e.target.value.slice(0, PROBLEM_MAX))}
+                  placeholder="What core problem or pain point is your project solving?"
+                  className={`input-base text-xs resize-none ${formTouched && !isProblemValid ? 'border-rose-500 ring-1 ring-rose-500/20' : ''}`}
+                />
+                <div className="flex justify-between items-center mt-1 text-[11px]">
+                  {formTouched && !newProblem.trim() ? (
+                    <span className="text-rose-500 font-medium">Problem statement is required</span>
+                  ) : newProblem.length >= PROBLEM_MAX ? (
+                    <span className="text-rose-500 font-medium">Reached {PROBLEM_MAX} character limit</span>
+                  ) : (
+                    <span className="text-slate-400">Max {PROBLEM_MAX} characters</span>
+                  )}
+                  <span className={`font-mono ml-auto ${newProblem.length >= PROBLEM_MAX ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                    {newProblem.length}/{PROBLEM_MAX}
+                  </span>
+                </div>
+              </div>
+
+              {/* 4. Solution / Approach (Max 500 chars, required) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Solution / Approach <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={newSolution}
+                  onChange={(e) => setNewSolution(e.target.value.slice(0, SOLUTION_MAX))}
+                  placeholder="How does your project uniquely solve this problem and what is your technical approach?"
+                  className={`input-base text-xs resize-none ${formTouched && !isSolutionValid ? 'border-rose-500 ring-1 ring-rose-500/20' : ''}`}
+                />
+                <div className="flex justify-between items-center mt-1 text-[11px]">
+                  {formTouched && !newSolution.trim() ? (
+                    <span className="text-rose-500 font-medium">Solution / approach is required</span>
+                  ) : newSolution.length >= SOLUTION_MAX ? (
+                    <span className="text-rose-500 font-medium">Reached {SOLUTION_MAX} character limit</span>
+                  ) : (
+                    <span className="text-slate-400">Max {SOLUTION_MAX} characters</span>
+                  )}
+                  <span className={`font-mono ml-auto ${newSolution.length >= SOLUTION_MAX ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                    {newSolution.length}/{SOLUTION_MAX}
+                  </span>
+                </div>
+              </div>
+
+              {/* 5. Detailed Description (No character limit) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Detailed Description <span className="text-slate-400 font-normal">(Optional)</span>
+                </label>
+                <textarea
+                  rows={4}
+                  value={newDetailedDescription}
+                  onChange={(e) => setNewDetailedDescription(e.target.value)}
+                  placeholder="Provide any additional architecture details, milestones, hackathon context, or vision..."
                   className="input-base text-xs resize-none"
                 />
+              </div>
+
+              {/* 6. Tech Stack (Tag Input, min 1 required) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Tech Stack <span className="text-rose-500">*</span>
+                </label>
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2">
+                  <div className="flex flex-wrap gap-1.5 min-h-[28px] items-center">
+                    {newTechStack.map((tech) => (
+                      <span
+                        key={tech}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 border border-brand-200 dark:border-brand-800 shadow-2xs"
+                      >
+                        <span>{tech}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTechTag(tech)}
+                          className="hover:text-rose-600 transition-colors cursor-pointer"
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                    {newTechStack.length === 0 && (
+                      <span className="text-xs text-slate-400 italic">No tags added yet. Add at least 1 technology tag.</span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      type="text"
+                      value={techInput}
+                      onChange={(e) => setTechInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleAddTechTag(e);
+                        }
+                      }}
+                      placeholder="Type a technology (e.g. Next.js, Python, Supabase) and hit Enter"
+                      className="input-base text-xs flex-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => handleAddTechTag(e)}
+                      disabled={!techInput.trim()}
+                      className="btn-secondary !text-xs !py-2 px-3 whitespace-nowrap cursor-pointer disabled:opacity-50"
+                    >
+                      + Add Tag
+                    </button>
+                  </div>
+                </div>
+                {formTouched && !isTechValid && (
+                  <p className="text-[11px] text-rose-500 font-medium mt-1">
+                    At least 1 tech stack tag is required
+                  </p>
+                )}
               </div>
 
               {/* Visibility Choice: Publish or Keep in Private */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Project Visibility: Publish Public or Keep in Private? <span className="text-rose-500">*</span>
+                  Project Visibility <span className="text-rose-500">*</span>
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div
                     onClick={() => setNewVisibility('PUBLIC')}
-                    className={`p-3 rounded-lg border text-left cursor-pointer transition-all flex items-start gap-2.5 ${
+                    className={`p-3 rounded-xl border text-left cursor-pointer transition-all flex items-start gap-2.5 ${
                       newVisibility === 'PUBLIC'
                         ? 'border-brand-500 bg-brand-50/60 dark:bg-brand-950/40 ring-1 ring-brand-500'
                         : 'border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850/40'
@@ -913,7 +1112,7 @@ export const ProjectsPage: React.FC = () => {
 
                   <div
                     onClick={() => setNewVisibility('PRIVATE')}
-                    className={`p-3 rounded-lg border text-left cursor-pointer transition-all flex items-start gap-2.5 ${
+                    className={`p-3 rounded-xl border text-left cursor-pointer transition-all flex items-start gap-2.5 ${
                       newVisibility === 'PRIVATE'
                         ? 'border-brand-500 bg-brand-50/60 dark:bg-brand-950/40 ring-1 ring-brand-500'
                         : 'border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850/40'
@@ -932,40 +1131,25 @@ export const ProjectsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Development Stage
-                  </label>
-                  <select
-                    value={newStage}
-                    onChange={(e) => setNewStage(e.target.value as any)}
-                    className="input-base text-xs"
-                  >
-                    <option value="Ideation">Ideation & Concept</option>
-                    <option value="Prototyping">Prototyping / Wireframing</option>
-                    <option value="MVP Build">MVP Build</option>
-                    <option value="Alpha Testing">Alpha / Early Testing</option>
-                    <option value="Pre-Launch">Pre-Launch</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Tags (Comma separated)
-                  </label>
-                  <input
-                    type="text"
-                    value={newTags}
-                    onChange={(e) => setNewTags(e.target.value)}
-                    placeholder="AI, React, CleanTech"
-                    className="input-base text-xs"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Development Stage
+                </label>
+                <select
+                  value={newStage}
+                  onChange={(e) => setNewStage(e.target.value as any)}
+                  className="input-base text-xs"
+                >
+                  <option value="Ideation">Ideation & Concept</option>
+                  <option value="Prototyping">Prototyping / Wireframing</option>
+                  <option value="MVP Build">MVP Build</option>
+                  <option value="Alpha Testing">Alpha / Early Testing</option>
+                  <option value="Pre-Launch">Pre-Launch</option>
+                </select>
               </div>
 
               {/* Roles Splitter Builder */}
-              <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2.5">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2.5">
                 <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
                   Split Roles Needed in Your Team:
                 </label>
@@ -1012,24 +1196,30 @@ export const ProjectsPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleAddCustomRole}
-                    className="btn-secondary !text-xs !py-2 px-3 whitespace-nowrap"
+                    className="btn-secondary !text-xs !py-2 px-3 whitespace-nowrap cursor-pointer"
                   >
                     + Add Role
                   </button>
                 </div>
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-dark-800">
+              {/* Submit / Cancel Actions */}
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-dark-800">
                 <button
                   type="button"
                   onClick={() => setCreateModalOpen(false)}
-                  className="btn-secondary !text-xs !py-2 !px-4"
+                  className="btn-secondary !text-xs !py-2.5 !px-4 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary !text-xs !py-2 !px-5 font-semibold cursor-pointer"
+                  disabled={!isFormValid}
+                  className={`btn-primary !text-xs !py-2.5 !px-5 font-semibold transition-all ${
+                    !isFormValid
+                      ? 'opacity-50 cursor-not-allowed hover:bg-brand-600'
+                      : 'cursor-pointer hover:bg-brand-700'
+                  }`}
                 >
                   Create Project & Split Roles
                 </button>

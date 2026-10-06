@@ -17,7 +17,6 @@ import {
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { StartupConnectionModal } from '../../components/common/StartupConnectionModal';
-import { ScheduleMeetingModal } from '../../components/common/ScheduleMeetingModal';
 import { ReportModal } from '../../components/common/ReportModal';
 import { Modal } from '../../components/common/Modal';
 import { searchLocations, searchColleges, resolveIndianLocation } from '../../data/indiaData';
@@ -450,7 +449,6 @@ export const ProfilePage: React.FC = () => {
   // Modals
   const [connectOpen, setConnectOpen] = useState(false);
   const [startupProposalOpen, setStartupProposalOpen] = useState(false);
-  const [meetingOpen, setMeetingOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [isRemovingPhoto, setIsRemovingPhoto] = useState(false);
 
@@ -1228,8 +1226,18 @@ export const ProfilePage: React.FC = () => {
   const interestsList = p.startupInterests
     ? p.startupInterests.split(',').map((i) => i.trim()).filter(Boolean)
     : [];
-  const industriesList = p.industries ? p.industries.split(',').map((i) => i.trim()).filter(Boolean) : [];
   const parsedExperiences = parseWorkExperiences(p.startupExperience);
+  let parsedHackathons: any[] = [];
+  let parsedProjects: any[] = [];
+  try {
+    if (p.achievements) {
+      const achObj = JSON.parse(p.achievements);
+      if (achObj && typeof achObj === 'object') {
+        if (Array.isArray(achObj.hackathons)) parsedHackathons = achObj.hackathons;
+        if (Array.isArray(achObj.projects)) parsedProjects = achObj.projects;
+      }
+    }
+  } catch {}
 
   // Calculate profile completion percentage
   let completedFields = 0;
@@ -1266,7 +1274,7 @@ export const ProfilePage: React.FC = () => {
         <div className="card-base overflow-hidden">
           
           {/* Cover Section */}
-          <div className="h-44 sm:h-52 relative overflow-hidden bg-[#768aab] dark:bg-slate-800 dark:bg-gradient-to-r dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+          <div className="h-44 sm:h-52 relative overflow-hidden bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700">
             {p.coverImage ? (
               <img
                 src={p.coverImage}
@@ -1275,7 +1283,6 @@ export const ProfilePage: React.FC = () => {
                 decoding="async"
               />
             ) : (
-              /* Subtle Professional Pattern */
               <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
             )}
 
@@ -1283,7 +1290,7 @@ export const ProfilePage: React.FC = () => {
               {!isMe && (
                 <button
                   onClick={() => setReportOpen(true)}
-                  className="p-2 rounded-md bg-black/30 hover:bg-black/50 text-white backdrop-blur-xs transition-colors"
+                  className="p-2 rounded-lg bg-black/30 hover:bg-black/50 text-white backdrop-blur-xs transition-colors cursor-pointer"
                   title="Report user"
                 >
                   <Flag size={15} />
@@ -1295,7 +1302,7 @@ export const ProfilePage: React.FC = () => {
                     <button
                       onClick={() => handleRemovePhoto('cover')}
                       disabled={isRemovingPhoto}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-red-600/85 hover:bg-red-600 text-white backdrop-blur-xs text-xs font-medium transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white backdrop-blur-xs text-xs font-semibold transition-all cursor-pointer shadow-xs disabled:opacity-50"
                       title="Remove background cover image"
                     >
                       <Trash2 size={13} />
@@ -1304,7 +1311,7 @@ export const ProfilePage: React.FC = () => {
                   )}
                   <button
                     onClick={() => handleRequestGalleryPermission('cover')}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-black/40 hover:bg-black/60 text-white backdrop-blur-xs text-xs font-medium transition-colors cursor-pointer shadow-xs"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/40 hover:bg-black/60 text-white backdrop-blur-xs text-xs font-semibold transition-all cursor-pointer shadow-xs"
                     title="Change background cover image from gallery"
                   >
                     <Camera size={14} />
@@ -1312,7 +1319,7 @@ export const ProfilePage: React.FC = () => {
                   </button>
                   <button
                     onClick={handleOpenEdit}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-white text-slate-900 text-xs font-medium transition-colors shadow-xs hover:bg-slate-100 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white text-slate-900 text-xs font-semibold transition-all shadow-xs hover:bg-slate-50 cursor-pointer"
                   >
                     <Edit3 size={14} className="text-brand-600" />
                     <span>Edit Profile</span>
@@ -1323,23 +1330,22 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* Profile Header Row */}
-          <div className="px-4 sm:px-7 pb-6 pt-0 relative">
-            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 -mt-12 sm:-mt-16 mb-6">
+          <div className="px-6 sm:px-8 pb-6 pt-0 relative">
+            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 -mt-14 sm:-mt-16 mb-6">
               
-              {/* Profile Photo (Partially Overlapping) */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 sm:gap-5 w-full md:w-auto">
+              {/* Profile Photo */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 w-full md:w-auto">
                 <div className="relative shrink-0 group">
                   {hasCustomAvatar ? (
                     <img
                       src={avatar!}
                       alt={displayName}
                       decoding="async"
-                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-white dark:border-dark-900 shadow-sm bg-white"
+                      className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white dark:border-dark-900 shadow-md bg-white"
                     />
                   ) : (
-                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white dark:border-dark-900 shadow-sm bg-brand-600 text-white flex flex-col items-center justify-center font-bold">
-                      <Rocket className="w-8 h-8 sm:w-10 sm:h-10 mb-0.5 text-white" />
-                      <span className="text-xs sm:text-sm font-semibold tracking-wider">{initials}</span>
+                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-dark-900 shadow-md bg-brand-600 text-white flex flex-col items-center justify-center font-bold">
+                      <span className="text-2xl sm:text-3xl font-extrabold tracking-wider">{initials}</span>
                     </div>
                   )}
                   {isMe && (
@@ -1348,7 +1354,7 @@ export const ProfilePage: React.FC = () => {
                         <button
                           onClick={() => handleRemovePhoto('avatar')}
                           disabled={isRemovingPhoto}
-                          className="p-1.5 rounded-full bg-red-600 text-white shadow-sm hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50"
+                          className="p-1.5 rounded-full bg-rose-600 text-white shadow-sm hover:bg-rose-700 transition-colors cursor-pointer disabled:opacity-50"
                           title="Remove profile photo"
                         >
                           <Trash2 size={12} />
@@ -1357,7 +1363,7 @@ export const ProfilePage: React.FC = () => {
                       <button
                         onClick={() => handleRequestGalleryPermission('avatar')}
                         className="p-1.5 rounded-full bg-brand-600 text-white shadow-sm hover:bg-brand-700 transition-colors cursor-pointer"
-                        title="Upload/change profile photo from gallery"
+                        title="Change profile photo"
                       >
                         <Camera size={13} />
                       </button>
@@ -1365,13 +1371,13 @@ export const ProfilePage: React.FC = () => {
                   )}
                 </div>
 
-                <div className="space-y-1 mb-1 min-w-0">
+                <div className="space-y-1.5 min-w-0">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <h1 className="text-2xl sm:text-[28px] font-bold text-slate-900 dark:text-white tracking-tight leading-tight">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight">
                       {displayName}
                     </h1>
                     {(profileUser?.username || p.username) && (
-                      <span className="text-xs sm:text-sm font-semibold text-[#4F46E5] dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 rounded-md border border-indigo-100 dark:border-indigo-900/50">
+                      <span className="text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/50 px-2.5 py-0.5 rounded-md border border-brand-100 dark:border-brand-900/50">
                         @{profileUser?.username || p.username}
                       </span>
                     )}
@@ -1380,7 +1386,7 @@ export const ProfilePage: React.FC = () => {
                   </div>
 
                   <p className="text-sm sm:text-base font-normal text-slate-600 dark:text-slate-300">
-                    {p.headline || (isMe ? 'Add your role or startup vision' : 'Member of HookZ')}
+                    {p.headline || (isMe ? 'Add your headline (e.g. CS Sophomore | Full Stack Builder)' : 'Student Builder at HookZ')}
                   </p>
 
                   {p.oneLineBio && (
@@ -1389,33 +1395,22 @@ export const ProfilePage: React.FC = () => {
                     </p>
                   )}
 
-                  <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex-wrap pt-0.5">
-                    {p.location && (
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="flex items-center gap-1">
-                          <MapPin size={13} className="text-brand-600" />
-                          <span>{p.location}</span>
-                        </span>
-                        {(() => {
-                          const resolved = resolveIndianLocation(p.location);
-                          if (!resolved) return null;
-                          return (
-                            <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 font-semibold">
-                              {resolved.district ? `${resolved.district} • ` : ''}{resolved.state}
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    )}
-                    {industriesList.length > 0 && (
-                      <span className="flex items-center gap-1">
-                        <span className="text-slate-300 hidden sm:inline">•</span>
-                        <span>{industriesList[0]}</span>
+                  <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex-wrap pt-0.5">
+                    {p.education && (
+                      <span className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
+                        <GraduationCap size={15} className="text-brand-600" />
+                        <span>{p.education}</span>
                       </span>
                     )}
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60">
+                    {p.location && (
+                      <span className="flex items-center gap-1.5">
+                        <MapPin size={15} className="text-brand-600" />
+                        <span>{p.location}</span>
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-medium bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                      <span>{p.availability || 'Available'}</span>
+                      <span>{p.availability || 'Available for Hackathons'}</span>
                     </span>
                   </div>
                 </div>
@@ -1427,14 +1422,14 @@ export const ProfilePage: React.FC = () => {
                   <>
                     {connInfo.status === 'ACCEPTED' ? (
                       <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
-                        <span className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        <span className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <Check size={14} />
                           <span>Connected</span>
                         </span>
                         <button
                           onClick={handleDisconnect}
                           disabled={connActionLoading}
-                          className="p-2 rounded-md border border-slate-200 dark:border-dark-800 text-slate-400 hover:text-rose-600 hover:border-rose-300 dark:hover:border-rose-900 transition-colors cursor-pointer"
+                          className="p-2 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer"
                           title="Remove connection"
                         >
                           <UserX size={14} />
@@ -1442,7 +1437,7 @@ export const ProfilePage: React.FC = () => {
                       </div>
                     ) : connInfo.status === 'PENDING' ? (
                       connInfo.isSender ? (
-                        <span className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                        <span className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
                           <Clock size={14} />
                           <span>Request Sent</span>
                         </span>
@@ -1469,7 +1464,7 @@ export const ProfilePage: React.FC = () => {
                     ) : (
                       <button
                         onClick={() => setConnectOpen(true)}
-                        className="flex-1 sm:flex-none btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium cursor-pointer"
+                        className="flex-1 sm:flex-none btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold cursor-pointer"
                       >
                         <UserPlus size={15} />
                         <span>Connect</span>
@@ -1486,63 +1481,45 @@ export const ProfilePage: React.FC = () => {
                     <button
                       onClick={() => setStartupProposalOpen(true)}
                       className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium cursor-pointer"
-                      title="Propose Startup Connection"
+                      title="Pitch an idea"
                     >
                       <Rocket size={15} className="text-brand-600" />
-                      <span>Startup Connection</span>
+                      <span>Pitch</span>
                     </button>
                   </>
                 )}
 
                 {isMe && (
-                  <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
-                    <button
-                      onClick={handleOpenEdit}
-                      className="flex-1 sm:flex-none btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-medium cursor-pointer"
-                    >
-                      <Edit3 size={15} />
-                      <span>Edit Profile</span>
-                    </button>
-                    <button
-                      onClick={() => setMeetingOpen(true)}
-                      className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium cursor-pointer"
-                    >
-                      <Video size={15} className="text-brand-600" />
-                      <span>Host Meeting</span>
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleOpenEdit}
+                    className="flex-1 sm:flex-none btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold cursor-pointer"
+                  >
+                    <Edit3 size={15} />
+                    <span>Edit Profile</span>
+                  </button>
                 )}
               </div>
             </div>
 
-            {/* Profile Statistics Row */}
-            <div className="pt-4 border-t border-slate-100 dark:border-dark-800 grid grid-cols-3 gap-2 sm:gap-4 text-center sm:text-left">
+            {/* Profile Statistics Row (ONLY Connections & Verified Skills, REMOVED Startups Created) */}
+            <div className="pt-4 border-t border-slate-100 dark:border-dark-800 grid grid-cols-2 gap-4 text-left">
               <button
                 onClick={handleOpenConnectionsModal}
                 className="group text-left cursor-pointer"
               >
-                <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">
+                <div className="text-2xl font-bold text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">
                   {connectionsCount}
                 </div>
-                <div className="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400 group-hover:text-brand-600 transition-colors">
+                <div className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 group-hover:text-brand-600 transition-colors">
                   Connections
                 </div>
               </button>
 
-              <div className="border-l border-slate-100 dark:border-dark-800 pl-2 sm:pl-6">
-                <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                  {profileUser.startups?.length || 0}
-                </div>
-                <div className="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400">
-                  Startups Founded
-                </div>
-              </div>
-
-              <div className="border-l border-slate-100 dark:border-dark-800 pl-2 sm:pl-6">
-                <div className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+              <div className="border-l border-slate-100 dark:border-dark-800 pl-6">
+                <div className="text-2xl font-bold text-slate-900 dark:text-white">
                   {skillsList.length}
                 </div>
-                <div className="text-xs sm:text-sm font-normal text-slate-500 dark:text-slate-400">
+                <div className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">
                   Verified Skills
                 </div>
               </div>
@@ -1564,37 +1541,36 @@ export const ProfilePage: React.FC = () => {
           </div>
         )}
 
-        {/* 2. TWO-COLUMN LAYOUT (DESKTOP) */}
+        {/* 2. SECTIONS LAID OUT IN CARDS (ABOUT, SKILLS, EXPERIENCE, EDUCATION, HACKATHON HISTORY, PROJECTS, SOCIAL LINKS) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* MAIN COLUMN (LEFT 2/3) */}
           <div className="lg:col-span-2 space-y-6">
 
-            {/* ABOUT SECTION */}
+            {/* 1. ABOUT SECTION */}
             <div className="card-base p-6 sm:p-7 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                   About
                 </h2>
                 {isMe && (
                   <button
                     onClick={handleOpenEdit}
-                    className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
+                    title="Edit About"
                   >
-                    <Edit3 size={13} />
-                    <span>Edit About</span>
+                    <Edit3 size={15} />
                   </button>
                 )}
               </div>
               <p className="text-sm font-normal text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
-                {p.bio || 'No background description shared yet. Add a short summary about your startup journey and vision!'}
+                {p.bio || 'No background description shared yet. Add a short summary about your hackathon journey, interests, and what you are building!'}
               </p>
 
-              {/* Interests Tags */}
               {interestsList.length > 0 && (
-                <div className="pt-4 border-t border-slate-100 dark:border-dark-800 space-y-2">
+                <div className="pt-3 border-t border-slate-100 dark:border-dark-800 space-y-2">
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    Startup Interests
+                    Interests & Focus
                   </h4>
                   <div className="flex flex-wrap gap-1.5">
                     {interestsList.map((interest, idx) => (
@@ -1610,20 +1586,20 @@ export const ProfilePage: React.FC = () => {
               )}
             </div>
 
-            {/* EXPERIENCE SECTION */}
+            {/* 2. EXPERIENCE SECTION */}
             <div className="card-base p-6 sm:p-7 space-y-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
                   <Briefcase size={18} className="text-brand-600" />
                   <span>Experience</span>
                 </h2>
                 {isMe && (
                   <button
                     onClick={handleOpenEdit}
-                    className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
+                    title="Edit Experience"
                   >
-                    <Plus size={13} />
-                    <span>Add Experience</span>
+                    <Edit3 size={15} />
                   </button>
                 )}
               </div>
@@ -1637,7 +1613,7 @@ export const ProfilePage: React.FC = () => {
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                              {exp.category || p.preferredRole || 'Founders'}
+                              {exp.category || p.preferredRole || 'Builder'}
                             </h3>
                             {exp.company && (
                               <span className="text-xs font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/70 px-2 py-0.5 rounded border border-brand-200/60 dark:border-brand-900/60 font-mono">
@@ -1667,13 +1643,13 @@ export const ProfilePage: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-lg">
+                <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-xl">
                   <Briefcase size={24} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-normal">No experience details added yet.</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">No experience details added yet.</p>
                   {isMe && (
                     <button
                       onClick={handleOpenEdit}
-                      className="mt-2 text-xs font-medium text-brand-600 hover:underline cursor-pointer"
+                      className="mt-2 text-xs font-semibold text-brand-600 hover:underline cursor-pointer"
                     >
                       + Add Experience
                     </button>
@@ -1682,75 +1658,46 @@ export const ProfilePage: React.FC = () => {
               )}
             </div>
 
-            {/* EDUCATION SECTION */}
-            <div className="card-base p-6 sm:p-7 space-y-5">
+            {/* 3. EDUCATION SECTION */}
+            <div className="card-base p-6 sm:p-7 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
                   <GraduationCap size={18} className="text-brand-600" />
                   <span>Education</span>
                 </h2>
                 {isMe && (
                   <button
                     onClick={handleOpenEdit}
-                    className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
+                    title="Edit Education"
                   >
-                    <Edit3 size={13} />
-                    <span>Edit Education</span>
+                    <Edit3 size={15} />
                   </button>
                 )}
               </div>
 
               {p.education ? (
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 border border-brand-200/50 flex items-center justify-center font-bold text-sm shrink-0">
-                    <BookOpen size={16} />
+                <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50/70 dark:bg-dark-850 border border-slate-200/80 dark:border-dark-800">
+                  <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 border border-brand-200/50 flex items-center justify-center font-bold text-sm shrink-0">
+                    <BookOpen size={18} />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
                       <span>{p.education}</span>
-                      {(() => {
-                        const low = p.education.toLowerCase();
-                        if (low.includes('niat')) {
-                          return (
-                            <span className="text-[10px] px-2 py-0.5 rounded-md font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50">
-                              Advanced Tech Institute
-                            </span>
-                          );
-                        }
-                        if (low.includes('iit') || low.includes('indian institute of technology')) {
-                          return (
-                            <span className="text-[10px] px-2 py-0.5 rounded-md font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/50">
-                              Premier IIT
-                            </span>
-                          );
-                        }
-                        if (low.includes('nit') || low.includes('national institute of technology')) {
-                          return (
-                            <span className="text-[10px] px-2 py-0.5 rounded-md font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-400 border border-purple-200/50">
-                              NIT
-                            </span>
-                          );
-                        }
-                        if (low.includes('bits') || low.includes('vit') || low.includes('srm') || low.includes('manipal') || low.includes('amity') || low.includes('thapar')) {
-                          return (
-                            <span className="text-[10px] px-2 py-0.5 rounded-md font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200/50">
-                              Premier University
-                            </span>
-                          );
-                        }
-                        return null;
-                      })()}
                     </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      College / University Program
+                    </p>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-lg">
+                <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-xl">
                   <GraduationCap size={24} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-normal">No education details listed.</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">No education details listed.</p>
                   {isMe && (
                     <button
                       onClick={handleOpenEdit}
-                      className="mt-2 text-xs font-medium text-brand-600 hover:underline"
+                      className="mt-2 text-xs font-semibold text-brand-600 hover:underline cursor-pointer"
                     >
                       + Add Education
                     </button>
@@ -1759,42 +1706,189 @@ export const ProfilePage: React.FC = () => {
               )}
             </div>
 
-            {/* STARTUPS / PROJECTS SECTION */}
+            {/* 4. HACKATHON HISTORY SECTION */}
             <div className="card-base p-6 sm:p-7 space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                  <Rocket size={18} className="text-brand-600" />
-                  <span>Startups & Projects</span>
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                    <Award size={18} className="text-brand-600" />
+                    <span>Hackathon History</span>
+                  </h2>
+                  {parsedHackathons.length > 0 && (
+                    <span className="text-xs font-semibold text-brand-600 bg-brand-50 dark:bg-brand-950/50 px-2 py-0.5 rounded-full">
+                      {parsedHackathons.length}
+                    </span>
+                  )}
+                </div>
                 {isMe && (
-                  <Link
-                    to="/startups/create"
-                    className="text-xs font-medium text-brand-600 hover:underline flex items-center gap-1"
+                  <button
+                    onClick={handleOpenEdit}
+                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
+                    title="Edit Hackathon History"
                   >
-                    <Plus size={13} /> Post Startup
-                  </Link>
+                    <Edit3 size={15} />
+                  </button>
                 )}
               </div>
 
-              {profileUser.startups && profileUser.startups.length > 0 ? (
+              {parsedHackathons.length > 0 ? (
+                <div className="space-y-3.5">
+                  {parsedHackathons.map((hack: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="p-4 rounded-xl border border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850 hover:bg-white dark:hover:bg-dark-900 hover:border-slate-300 transition-all space-y-2"
+                    >
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                              {hack.name || 'Hackathon Event'}
+                            </h3>
+                            {hack.award && (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+                                <Award size={12} className="text-amber-500" />
+                                {hack.award}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
+                            {hack.role && <span className="font-semibold text-brand-600">{hack.role}</span>}
+                            {hack.project && <span>• Project: <strong className="text-slate-800 dark:text-slate-200">{hack.project}</strong></span>}
+                            {hack.date && <span>• {hack.date}</span>}
+                          </div>
+                        </div>
+                        {hack.link && (
+                          <a
+                            href={hack.link.startsWith('http') ? hack.link : `https://${hack.link}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline"
+                          >
+                            <span>Project Link</span>
+                            <ExternalLink size={12} />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-xl">
+                  <Award size={24} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                  <p className="text-xs text-slate-500 dark:text-slate-400">No hackathon history listed yet.</p>
+                  {isMe && (
+                    <button
+                      onClick={handleOpenEdit}
+                      className="mt-2 text-xs font-semibold text-brand-600 hover:underline cursor-pointer"
+                    >
+                      + Add Hackathon
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 5. PROJECTS SECTION */}
+            <div className="card-base p-6 sm:p-7 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                    <FolderKanban size={18} className="text-brand-600" />
+                    <span>Projects</span>
+                  </h2>
+                  {(parsedProjects.length > 0 || (profileUser.startups && profileUser.startups.length > 0)) && (
+                    <span className="text-xs font-semibold text-brand-600 bg-brand-50 dark:bg-brand-950/50 px-2 py-0.5 rounded-full">
+                      {parsedProjects.length + (profileUser.startups?.length || 0)}
+                    </span>
+                  )}
+                </div>
+                {isMe && (
+                  <button
+                    onClick={handleOpenEdit}
+                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
+                    title="Edit Projects"
+                  >
+                    <Edit3 size={15} />
+                  </button>
+                )}
+              </div>
+
+              {(parsedProjects.length > 0 || (profileUser.startups && profileUser.startups.length > 0)) ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {profileUser.startups.map((s) => (
+                  {parsedProjects.map((proj: any, idx: number) => (
+                    <div
+                      key={proj.id || idx}
+                      className="p-4 rounded-xl border border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850 hover:bg-white dark:hover:bg-dark-900 hover:border-slate-300 transition-all flex flex-col justify-between space-y-3"
+                    >
+                      <div className="space-y-1.5">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                          {proj.name || 'Project'}
+                        </h3>
+                        {proj.description && (
+                          <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed">
+                            {proj.description}
+                          </p>
+                        )}
+                        {proj.techStack && (
+                          <div className="flex flex-wrap gap-1 pt-1">
+                            {proj.techStack.split(',').map((t: string, tidx: number) => (
+                              <span
+                                key={tidx}
+                                className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-100 dark:border-brand-900/40"
+                              >
+                                {t.trim()}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {(proj.githubUrl || proj.demoUrl) && (
+                        <div className="pt-2 border-t border-slate-200/80 dark:border-dark-700/60 flex items-center gap-3 text-xs">
+                          {proj.githubUrl && (
+                            <a
+                              href={proj.githubUrl.startsWith('http') ? proj.githubUrl : `https://${proj.githubUrl}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600"
+                            >
+                              <span>Code</span>
+                              <ExternalLink size={12} />
+                            </a>
+                          )}
+                          {proj.demoUrl && (
+                            <a
+                              href={proj.demoUrl.startsWith('http') ? proj.demoUrl : `https://${proj.demoUrl}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 font-semibold text-brand-600 hover:underline"
+                            >
+                              <span>Live Demo</span>
+                              <ExternalLink size={12} />
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  {profileUser.startups?.map((s) => (
                     <div
                       key={s.id}
-                      className="p-4 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700 transition-colors flex flex-col justify-between space-y-3 group"
+                      className="p-4 rounded-xl border border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850 hover:bg-white dark:hover:bg-dark-900 hover:border-slate-300 transition-all flex flex-col justify-between space-y-3"
                     >
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200/50">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-100">
                             {s.stage}
                           </span>
-                          <span className="text-xs font-medium text-slate-500">{s.industry}</span>
+                          <span className="text-xs text-slate-500">{s.industry}</span>
                         </div>
-                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                           {s.name}
                         </h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                          {s.oneLineDescription || 'AI & tech platform startup.'}
+                        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed">
+                          {s.oneLineDescription || 'Student venture.'}
                         </p>
                       </div>
 
@@ -1804,7 +1898,7 @@ export const ProfilePage: React.FC = () => {
                           to={`/startups/${s.id}`}
                           className="inline-flex items-center gap-1 font-semibold text-brand-600 hover:underline"
                         >
-                          <span>View Venture</span>
+                          <span>View Project</span>
                           <ChevronRight size={13} />
                         </Link>
                       </div>
@@ -1812,53 +1906,27 @@ export const ProfilePage: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-lg space-y-2">
-                  <FolderKanban size={24} className="mx-auto text-slate-300 dark:text-slate-600" />
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-normal">No startups created yet.</p>
+                <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-xl">
+                  <FolderKanban size={24} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
+                  <p className="text-xs text-slate-500 dark:text-slate-400">No projects added yet.</p>
                   {isMe && (
-                    <Link
-                      to="/startups/create"
-                      className="btn-primary inline-block px-3 py-1.5 text-xs font-medium"
+                    <button
+                      onClick={handleOpenEdit}
+                      className="mt-2 text-xs font-semibold text-brand-600 hover:underline cursor-pointer"
                     >
-                      + Create Startup Listing
-                    </Link>
+                      + Add Project
+                    </button>
                   )}
                 </div>
               )}
             </div>
 
-            {/* ACTIVITY SECTION */}
-            <div className="card-base p-6 sm:p-7 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                  <Share2 size={18} className="text-brand-600" />
-                  <span>Activity & Updates</span>
-                </h2>
-                <Link to="/feed" className="text-xs font-medium text-brand-600 hover:underline">
-                  View Feed →
-                </Link>
-              </div>
-
-              <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-lg space-y-1">
-                <Share2 size={22} className="mx-auto text-slate-300 dark:text-slate-600 mb-1" />
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-normal">No activity or updates published yet.</p>
-                {isMe && (
-                  <Link
-                    to="/feed"
-                    className="inline-block mt-2 text-xs font-medium text-brand-600 hover:underline"
-                  >
-                    + Share an update on Feed
-                  </Link>
-                )}
-              </div>
-            </div>
-
           </div>
 
-          {/* RIGHT SIDEBAR (1/3 WIDTH) */}
+          {/* RIGHT COLUMN (1/3 WIDTH) */}
           <div className="space-y-6">
 
-            {/* PROFILE COMPLETENESS CARD */}
+            {/* PROFILE COMPLETENESS (FOR OWNER) */}
             {isMe && (
               <div className="card-base p-5 space-y-3.5">
                 <div className="flex items-center justify-between">
@@ -1877,31 +1945,44 @@ export const ProfilePage: React.FC = () => {
 
                 <div className="space-y-1.5 text-xs text-slate-500 pt-1">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 size={13} className={p.avatar ? 'text-emerald-600' : 'text-slate-300 dark:text-slate-600'} />
-                    <span>Upload profile photo</span>
+                    <CheckCircle2 size={13} className={p.avatar ? 'text-emerald-600' : 'text-slate-300'} />
+                    <span>Profile photo</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 size={13} className={skillsList.length > 0 ? 'text-emerald-600' : 'text-slate-300 dark:text-slate-600'} />
-                    <span>Add verified skills</span>
+                    <CheckCircle2 size={13} className={skillsList.length > 0 ? 'text-emerald-600' : 'text-slate-300'} />
+                    <span>Skills listed</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 size={13} className={p.startupExperience ? 'text-emerald-600' : 'text-slate-300 dark:text-slate-600'} />
-                    <span>Add startup experience</span>
+                    <CheckCircle2 size={13} className={parsedHackathons.length > 0 || parsedProjects.length > 0 ? 'text-emerald-600' : 'text-slate-300'} />
+                    <span>Hackathons / Projects</span>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* SKILLS & ENDORSEMENTS SECTION */}
-            <div className="card-base p-5 space-y-3.5">
+            {/* 6. SKILLS SECTION */}
+            <div className="card-base p-5 sm:p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Skills & Expertise
-                </h3>
-                <span className="text-xs text-slate-400">{skillsList.length} skills</span>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Skills
+                  </h3>
+                  <span className="text-xs font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">
+                    {skillsList.length}
+                  </span>
+                </div>
+                {isMe && (
+                  <button
+                    onClick={handleOpenEdit}
+                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
+                    title="Edit Skills"
+                  >
+                    <Edit3 size={15} />
+                  </button>
+                )}
               </div>
 
-              {/* Add Skill Input */}
+              {/* Quick Add Skill Input */}
               {isMe && (
                 <div className="flex items-center gap-2">
                   <input
@@ -1921,14 +2002,14 @@ export const ProfilePage: React.FC = () => {
                     type="button"
                     disabled={savingSkill || !newSkillInput.trim()}
                     onClick={() => handleAddSkill(newSkillInput)}
-                    className="btn-primary px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                    className="btn-primary px-3 py-1.5 text-xs font-semibold disabled:opacity-50 cursor-pointer"
                   >
                     Add
                   </button>
                 </div>
               )}
 
-              {/* Skills Pill Tags */}
+              {/* Skills Tags */}
               {skillsList.length === 0 ? (
                 <p className="text-xs text-slate-400 py-1">No skills added yet.</p>
               ) : (
@@ -1936,14 +2017,14 @@ export const ProfilePage: React.FC = () => {
                   {skillsList.map((skill, idx) => (
                     <span
                       key={idx}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-50 dark:bg-dark-850 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 dark:bg-dark-850 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
                     >
                       <span>{skill}</span>
                       {isMe && (
                         <button
                           type="button"
                           onClick={() => handleRemoveSkill(skill)}
-                          className="hover:text-rose-600 transition-colors ml-0.5"
+                          className="hover:text-rose-600 transition-colors ml-0.5 cursor-pointer"
                         >
                           <X size={11} />
                         </button>
@@ -1954,67 +2035,69 @@ export const ProfilePage: React.FC = () => {
               )}
             </div>
 
-            {/* ECOSYSTEM HUB & LINKS CARD */}
-            <div className="card-base p-5 space-y-3.5">
+            {/* 7. SOCIAL LINKS SECTION */}
+            <div className="card-base p-5 sm:p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Profiles & Portfolio
+                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Globe size={16} className="text-brand-600" />
+                  <span>Social Links</span>
                 </h3>
                 {isMe && (
                   <button
                     onClick={handleOpenEdit}
-                    className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1 cursor-pointer"
+                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
+                    title="Edit Social Links"
                   >
-                    <Edit3 size={12} />
-                    <span>Edit Links</span>
+                    <Edit3 size={15} />
                   </button>
                 )}
               </div>
-              <div className="space-y-1.5 text-xs">
+
+              <div className="space-y-2 text-xs">
                 {p.linkedinUrl && (
                   <a
-                    href={p.linkedinUrl}
+                    href={p.linkedinUrl.startsWith('http') ? p.linkedinUrl : `https://${p.linkedinUrl}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between p-2 rounded-md hover:bg-slate-50 dark:hover:bg-dark-850 text-slate-600 dark:text-slate-300 hover:text-brand-600 transition-colors"
+                    className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 dark:border-dark-800 hover:bg-slate-50 dark:hover:bg-dark-850 text-slate-700 dark:text-slate-300 hover:text-brand-600 transition-colors"
                   >
-                    <span className="flex items-center gap-2">
-                      <Globe size={14} />
-                      <span>LinkedIn Profile</span>
+                    <span className="flex items-center gap-2 font-medium">
+                      <Globe size={14} className="text-brand-600" />
+                      <span>LinkedIn</span>
                     </span>
-                    <ExternalLink size={12} />
+                    <ExternalLink size={12} className="text-slate-400" />
                   </a>
                 )}
                 {p.githubUrl && (
                   <a
-                    href={p.githubUrl}
+                    href={p.githubUrl.startsWith('http') ? p.githubUrl : `https://${p.githubUrl}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between p-2 rounded-md hover:bg-slate-50 dark:hover:bg-dark-850 text-slate-600 dark:text-slate-300 hover:text-brand-600 transition-colors"
+                    className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 dark:border-dark-800 hover:bg-slate-50 dark:hover:bg-dark-850 text-slate-700 dark:text-slate-300 hover:text-brand-600 transition-colors"
                   >
-                    <span className="flex items-center gap-2">
-                      <ExternalLink size={14} />
-                      <span>GitHub Profile</span>
+                    <span className="flex items-center gap-2 font-medium">
+                      <ExternalLink size={14} className="text-brand-600" />
+                      <span>GitHub</span>
                     </span>
-                    <ExternalLink size={12} />
+                    <ExternalLink size={12} className="text-slate-400" />
                   </a>
                 )}
                 {p.websiteUrl && (
                   <a
-                    href={p.websiteUrl}
+                    href={p.websiteUrl.startsWith('http') ? p.websiteUrl : `https://${p.websiteUrl}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between p-2.5 rounded-lg hover:bg-[#F8FAFC] dark:hover:bg-slate-800 text-[#64748B] hover:text-[#4F46E5] transition-colors"
+                    className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 dark:border-dark-800 hover:bg-slate-50 dark:hover:bg-dark-850 text-slate-700 dark:text-slate-300 hover:text-brand-600 transition-colors"
                   >
-                    <span className="flex items-center gap-2">
-                      <Globe size={16} />
+                    <span className="flex items-center gap-2 font-medium">
+                      <Globe size={14} className="text-brand-600" />
                       <span>Personal Website</span>
                     </span>
-                    <ExternalLink size={14} />
+                    <ExternalLink size={12} className="text-slate-400" />
                   </a>
                 )}
                 {!p.linkedinUrl && !p.githubUrl && !p.websiteUrl && (
-                  <p className="text-xs text-[#64748B] py-1">No external portfolio links added.</p>
+                  <p className="text-xs text-slate-400 py-1">No external social links added.</p>
                 )}
               </div>
             </div>
@@ -3058,11 +3141,6 @@ export const ProfilePage: React.FC = () => {
         onSuccess={fetchUserProfile}
       />
 
-      <ScheduleMeetingModal
-        isOpen={meetingOpen}
-        onClose={() => setMeetingOpen(false)}
-        targetUser={profileUser}
-      />
 
       <ReportModal
         isOpen={reportOpen}

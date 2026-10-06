@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { upsertUserProfile } from '../../lib/supabase';
@@ -43,6 +43,13 @@ export const OnboardingPage: React.FC = () => {
   const [experience, setExperience] = useState('');
   const [profSkills, setProfSkills] = useState('');
 
+  // If user already completed onboarding, redirect directly to home
+  React.useEffect(() => {
+    if (user && ((user as any).onboarding_completed === true || (user as any).onboardingCompleted === true)) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
+
   const toggleArea = (area: string) => {
     setSelectedAreas(prev =>
       prev.includes(area) ? prev.filter(a => a !== area) : [...prev, area]
@@ -57,6 +64,7 @@ export const OnboardingPage: React.FC = () => {
       let profileUpdate: Record<string, any> = {
         preferred_role: role.toUpperCase(),
         is_category_selected: true,
+        onboarding_completed: true,
       };
 
       if (role === 'Student') {
@@ -78,8 +86,25 @@ export const OnboardingPage: React.FC = () => {
       }
 
       await upsertUserProfile(user.id, profileUpdate);
+
+      // Immediately set onboarding_completed = true in local user state and store
+      const updatedUser: any = {
+        ...user,
+        isCategorySelected: true,
+        onboardingCompleted: true,
+        onboarding_completed: true,
+        profile: {
+          ...(user.profile || {}),
+          ...profileUpdate,
+          isCategorySelected: true,
+          onboarding_completed: true,
+        },
+      };
+      updateUser(updatedUser);
+      localStorage.setItem('startupz_user', JSON.stringify(updatedUser));
+
       await refreshUser();
-      navigate('/dashboard');
+      navigate('/');
     } catch (err: any) {
       setError(err?.message || 'Something went wrong. Please try again.');
       setSaving(false);

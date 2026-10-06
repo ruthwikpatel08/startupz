@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase, upsertUserProfile, recordAuthProviderHint, getAuthErrorMessage } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import {
-  Rocket,
   User,
   Mail,
   Lock,
@@ -48,14 +47,14 @@ export const RegisterPage: React.FC = () => {
   const [resending, setResending] = useState(false);
 
   const profileTypes: { label: string; value: UserRole; desc: string }[] = [
-    { label: 'Student', value: 'STUDENT', desc: 'College/university student, student researcher & builder' },
-    { label: 'Others', value: 'OTHER', desc: 'Operator, specialist, professional, ecosystem enthusiast' },
-    { label: 'Founder', value: 'FOUNDER', desc: 'Building a startup, looking for co-founders & capital' },
-    { label: 'Co-Founder', value: 'COFOUNDER', desc: 'Ready to join an early-stage startup full/part-time' },
-    { label: 'Developer', value: 'DEVELOPER', desc: 'Software engineer, technical builder, AI engineer' },
-    { label: 'Marketer', value: 'MARKETER', desc: 'Growth lead, performance marketer, GTM strategist' },
-    { label: 'Investor', value: 'INVESTOR', desc: 'Angel investor, venture capitalist, syndicate lead' },
-    { label: 'Mentor', value: 'MENTOR', desc: 'Experienced advisor, founder coach, industry specialist' },
+    { label: 'Student', value: 'STUDENT', desc: 'College/university student & builder' },
+    { label: 'Developer', value: 'DEVELOPER', desc: 'Software, AI & full-stack builder' },
+    { label: 'Founder', value: 'FOUNDER', desc: 'Working on a startup project' },
+    { label: 'Co-Founder', value: 'COFOUNDER', desc: 'Looking to join a student team' },
+    { label: 'Marketer', value: 'MARKETER', desc: 'Growth, design & GTM enthusiast' },
+    { label: 'Mentor', value: 'MENTOR', desc: 'Advisor & student coach' },
+    { label: 'Investor', value: 'INVESTOR', desc: 'Angel / student venture scout' },
+    { label: 'Other', value: 'OTHER', desc: 'Specialist or custom role' },
   ];
 
   // Continue with Google
@@ -68,7 +67,7 @@ export const RegisterPage: React.FC = () => {
       const finalRole = role === 'OTHER' && cleanCustomRole ? `Other: ${cleanCustomRole}` : role;
       const finalHeadline = role === 'OTHER' && cleanCustomRole
         ? cleanCustomRole
-        : (headline.trim() || `${role.charAt(0) + role.slice(1).toLowerCase()} | Startup Builder`);
+        : (headline.trim() || `${role.charAt(0) + role.slice(1).toLowerCase()} | HookZ Member`);
 
       // Save preliminary role & headline so the OAuth callback can populate the profile
       const oauthMeta = {
@@ -130,7 +129,7 @@ export const RegisterPage: React.FC = () => {
     const finalRole = role === 'OTHER' && cleanCustomRole ? `Other: ${cleanCustomRole}` : role;
     const finalHeadline = role === 'OTHER' && cleanCustomRole
       ? cleanCustomRole
-      : (headline.trim() || `${role.charAt(0) + role.slice(1).toLowerCase()} | Startup Enthusiast`);
+      : (headline.trim() || `${role.charAt(0) + role.slice(1).toLowerCase()} | HookZ Member`);
     const finalLocation = location.trim() || 'Remote';
 
     try {
@@ -154,10 +153,8 @@ export const RegisterPage: React.FC = () => {
 
       // Check if user session was immediately returned or email confirmation is required
       if (data.session && data.user) {
-        // Email confirmation is disabled on this Supabase project
         recordAuthProviderHint(normalizedEmail, 'email');
 
-        // Create or update StartupZ profile
         await upsertUserProfile(data.user.id, {
           full_name: trimmedName,
           headline: finalHeadline,
@@ -166,13 +163,12 @@ export const RegisterPage: React.FC = () => {
           auth_provider: 'email',
           email: normalizedEmail,
           avatar: undefined,
-          open_to: 'Co-Founder,Startup Team,Investment',
+          open_to: 'Hackathons,Project Teams,Networking',
           profile_completion: 65,
         });
 
         navigate('/');
       } else if (data.user) {
-        // Email confirmation is enabled on this Supabase project
         recordAuthProviderHint(normalizedEmail, 'email');
         setVerificationRequired(true);
       }
@@ -208,31 +204,32 @@ export const RegisterPage: React.FC = () => {
   // Verification Screen if email confirmation is required
   if (verificationRequired) {
     return (
-      <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="card-base max-w-md w-full p-6 sm:p-8 text-center space-y-5 shadow-xs">
-          <div className="w-12 h-12 bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400 rounded-lg flex items-center justify-center mx-auto border border-brand-200/50 dark:border-brand-900/50">
+      <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-70" />
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xl shadow-slate-200/50 max-w-md w-full p-6 sm:p-8 text-center space-y-5">
+          <div className="w-12 h-12 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center mx-auto border border-brand-100">
             <MailCheck size={24} />
           </div>
 
           <div className="space-y-1.5">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
               Check your email
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-500">
               We sent a verification link to:
             </p>
-            <p className="text-xs font-medium text-slate-900 dark:text-white font-mono bg-slate-50 dark:bg-dark-850 py-2 px-3 rounded-md border border-slate-200 dark:border-dark-800">
+            <p className="text-xs font-semibold text-slate-900 font-mono bg-slate-50 py-2 px-3 rounded-lg border border-slate-200">
               {email}
             </p>
           </div>
 
-          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            Click the link in the verification email to activate your HookZ profile and sign in.
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Click the link in the verification email to activate your HookZ account and get started.
           </p>
 
           {resendSuccess && (
-            <div className="p-2.5 text-xs rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 flex items-center gap-2 text-left">
-              <CheckCircle2 size={15} className="shrink-0 text-emerald-500" />
+            <div className="p-3 text-xs rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-2 text-left">
+              <CheckCircle2 size={16} className="shrink-0 text-emerald-500" />
               <span>Verification email resent successfully!</span>
             </div>
           )}
@@ -242,14 +239,14 @@ export const RegisterPage: React.FC = () => {
               type="button"
               disabled={resending}
               onClick={handleResendVerification}
-              className="btn-secondary w-full py-2 px-4 text-xs font-medium disabled:opacity-50"
+              className="w-full py-2.5 px-4 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all disabled:opacity-50"
             >
               {resending ? 'Sending...' : 'Resend verification email'}
             </button>
 
             <Link
               to="/login"
-              className="btn-primary w-full py-2 px-4 text-xs font-semibold block text-center"
+              className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl block text-center transition-all shadow-sm"
             >
               Back to Sign In
             </Link>
@@ -260,40 +257,41 @@ export const RegisterPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-xl w-full space-y-6">
-        
+    <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
+      {/* Subtle landing-page style background pattern */}
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-70" />
+
+      <div className="max-w-xl w-full">
         {/* Header */}
-        <div className="text-center">
-          <Link to="/" className="inline-flex items-center gap-2 mb-3">
-            <div className="w-9 h-9 rounded-md bg-brand-600 flex items-center justify-center text-white shadow-xs">
-              <Rocket size={18} />
+        <div className="text-center mb-6">
+          <Link to="/" className="inline-flex items-center gap-2 mb-4 group">
+            <div className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center shadow-sm shadow-brand-500/20 group-hover:scale-105 transition-transform">
+              <span className="font-extrabold text-lg tracking-tighter">H</span>
             </div>
-            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Startup<span className="text-brand-600 dark:text-brand-400">Z</span>
+            <span className="text-2xl font-black tracking-tight text-slate-900">
+              Hook<span className="text-brand-600">Z</span>
             </span>
           </Link>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Join the Startup Ecosystem
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
-            Find the right people. Build the right startup. Create your professional startup identity.
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            Create your HookZ account
+          </h1>
+          <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+            Find hackathon teammates, showcase projects, and connect with fellow student builders
           </p>
         </div>
 
         {/* Card Form */}
-        <div className="card-base p-6 sm:p-7 shadow-xs">
-          
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xl shadow-slate-200/50 p-6 sm:p-8">
           {/* Continue with Google */}
           <button
             type="button"
             onClick={handleGoogleSignUp}
             disabled={googleLoading || loading}
-            className="btn-secondary w-full inline-flex items-center justify-center gap-2.5 py-2 px-4 text-xs font-semibold disabled:opacity-50"
+            className="w-full inline-flex items-center justify-center gap-3 py-2.5 px-4 text-sm font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-xs disabled:opacity-50"
           >
             {googleLoading ? (
               <>
-                <RefreshCw size={15} className="animate-spin text-brand-600" />
+                <RefreshCw size={16} className="animate-spin text-brand-600" />
                 <span>Redirecting to Google...</span>
               </>
             ) : (
@@ -322,28 +320,28 @@ export const RegisterPage: React.FC = () => {
           </button>
 
           {/* Divider */}
-          <div className="relative my-5">
+          <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200 dark:border-dark-800" />
+              <div className="w-full border-t border-slate-200" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white dark:bg-dark-900 px-3 text-slate-400 font-medium tracking-wide text-[11px]">
-                Or register with email
+              <span className="bg-white px-3 text-slate-400 font-semibold tracking-wider text-[11px]">
+                OR
               </span>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3 text-xs rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60 flex items-start gap-2">
-                <AlertCircle size={15} className="shrink-0 text-rose-500 mt-0.5" />
+              <div className="p-3 text-xs rounded-xl bg-rose-50 text-rose-700 border border-rose-200 flex items-start gap-2">
+                <AlertCircle size={16} className="shrink-0 text-rose-500 mt-0.5" />
                 <span className="font-medium leading-relaxed">{error}</span>
               </div>
             )}
 
             {/* Profile Ecosystem Role */}
             <div>
-              <label className="block text-sm font-bold sm:font-extrabold text-slate-900 dark:text-white tracking-wide mb-2">
+              <label className="block text-xs font-semibold text-slate-700 tracking-wide mb-2">
                 I am joining as a <span className="text-rose-500">*</span>
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -352,16 +350,16 @@ export const RegisterPage: React.FC = () => {
                     key={t.value}
                     type="button"
                     onClick={() => setRole(t.value)}
-                    className={`p-2.5 rounded-md border text-left transition-colors cursor-pointer ${
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                       role === t.value
-                        ? 'border-brand-600 bg-brand-50/60 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 ring-1 ring-brand-500/30'
-                        : 'border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700 bg-white dark:bg-dark-900'
+                        ? 'border-brand-600 bg-brand-50/70 text-brand-700 ring-2 ring-brand-500/20 font-semibold'
+                        : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
                     }`}
                   >
-                    <div className="font-semibold text-xs text-slate-900 dark:text-white">
+                    <div className="text-xs font-semibold">
                       {t.label}
                     </div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                    <div className="text-[10px] text-slate-500 truncate mt-0.5">
                       {t.desc}
                     </div>
                   </button>
@@ -370,20 +368,20 @@ export const RegisterPage: React.FC = () => {
 
               {/* Custom Role Description for 'OTHER' */}
               {role === 'OTHER' && (
-                <div className="mt-3 p-3 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-900/60 animate-fade-in space-y-1.5">
+                <div className="mt-3 p-3.5 rounded-xl bg-brand-50/60 border border-brand-200 space-y-1.5 animate-fadeIn">
                   <div className="flex items-center justify-between">
-                    <label className="block text-xs font-semibold text-brand-900 dark:text-brand-200">
+                    <label className="block text-xs font-semibold text-brand-900">
                       Describe your role <span className="text-rose-500">*</span>
                     </label>
-                    <span className="text-[10px] font-medium text-brand-600 dark:text-brand-400 bg-brand-100 dark:bg-brand-900/50 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-semibold text-brand-600 bg-brand-100 px-2 py-0.5 rounded-md">
                       Custom Role
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                    What best describes you? e.g. <span className="font-semibold text-slate-800 dark:text-slate-200">Student</span>, <span className="font-semibold text-slate-800 dark:text-slate-200">Salesman</span>, or <span className="font-semibold text-slate-800 dark:text-slate-200">Frontend Designer</span>
+                  <p className="text-[11px] text-slate-600">
+                    What best describes you? e.g. <span className="font-semibold text-slate-800">Student Designer</span>, <span className="font-semibold text-slate-800">Researcher</span>, or <span className="font-semibold text-slate-800">Product Manager</span>
                   </p>
                   <div className="relative">
-                    <Briefcase size={14} className="absolute left-3 top-2.5 text-brand-600 dark:text-brand-400" />
+                    <Briefcase size={15} className="absolute left-3.5 top-3 text-brand-600" />
                     <input
                       type="text"
                       required={role === 'OTHER'}
@@ -391,12 +389,12 @@ export const RegisterPage: React.FC = () => {
                       disabled={loading}
                       onChange={(e) => {
                         setCustomRoleDescription(e.target.value);
-                        if (!headline || headline.includes('Startup Enthusiast') || headline.includes('Other')) {
+                        if (!headline || headline.includes('HookZ') || headline.includes('Other')) {
                           setHeadline(e.target.value);
                         }
                       }}
-                      placeholder="Enter your role (e.g. Student, Salesman, Frontend Designer)"
-                      className="input-base pl-9 pr-3 py-2 text-xs bg-white dark:bg-dark-900 border-brand-200 dark:border-brand-800 focus:border-brand-500"
+                      placeholder="Enter your role (e.g. Student Designer, Researcher)"
+                      className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-white border border-brand-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 text-slate-900 placeholder:text-slate-400"
                     />
                   </div>
                 </div>
@@ -405,11 +403,11 @@ export const RegisterPage: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Full Name <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <User size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                  <User size={15} className="absolute left-3.5 top-3 text-slate-400" />
                   <input
                     type="text"
                     required
@@ -417,25 +415,25 @@ export const RegisterPage: React.FC = () => {
                     disabled={loading}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Alex Vance"
-                    className="input-base pl-9 pr-3 py-2 text-xs disabled:opacity-60"
+                    className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-all text-slate-900 placeholder:text-slate-400 disabled:opacity-60"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Email Address <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <Mail size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                  <Mail size={15} className="absolute left-3.5 top-3 text-slate-400" />
                   <input
                     type="email"
                     required
                     value={email}
                     disabled={loading}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@startup.com"
-                    className="input-base pl-9 pr-3 py-2 text-xs disabled:opacity-60"
+                    placeholder="alex@college.edu"
+                    className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-all text-slate-900 placeholder:text-slate-400 disabled:opacity-60"
                   />
                 </div>
               </div>
@@ -443,11 +441,11 @@ export const RegisterPage: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Password <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <Lock size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                  <Lock size={15} className="absolute left-3.5 top-3 text-slate-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
@@ -455,25 +453,25 @@ export const RegisterPage: React.FC = () => {
                     disabled={loading}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Min 6 characters"
-                    className="input-base pl-9 pr-9 py-2 text-xs disabled:opacity-60"
+                    className="w-full pl-10 pr-10 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-all text-slate-900 placeholder:text-slate-400 disabled:opacity-60"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-0.5"
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 p-0.5"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Confirm Password <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
-                  <Lock size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                  <Lock size={15} className="absolute left-3.5 top-3 text-slate-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
@@ -481,7 +479,7 @@ export const RegisterPage: React.FC = () => {
                     disabled={loading}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Repeat password"
-                    className="input-base pl-9 pr-3 py-2 text-xs disabled:opacity-60"
+                    className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-all text-slate-900 placeholder:text-slate-400 disabled:opacity-60"
                   />
                 </div>
               </div>
@@ -489,35 +487,35 @@ export const RegisterPage: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Headline <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <div className="relative">
-                  <Briefcase size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                  <Briefcase size={15} className="absolute left-3.5 top-3 text-slate-400" />
                   <input
                     type="text"
                     value={headline}
                     disabled={loading}
                     onChange={(e) => setHeadline(e.target.value)}
-                    placeholder="e.g. AI Founder | Serial Builder"
-                    className="input-base pl-9 pr-3 py-2 text-xs disabled:opacity-60"
+                    placeholder="e.g. CS Sophomore | Full Stack Dev"
+                    className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-all text-slate-900 placeholder:text-slate-400 disabled:opacity-60"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Location <span className="text-slate-400 font-normal">(Optional)</span>
                 </label>
                 <div className="relative">
-                  <MapPin size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                  <MapPin size={15} className="absolute left-3.5 top-3 text-slate-400" />
                   <input
                     type="text"
                     value={location}
                     disabled={loading}
                     onChange={(e) => setLocation(e.target.value)}
-                    placeholder="e.g. San Francisco / Remote"
-                    className="input-base pl-9 pr-3 py-2 text-xs disabled:opacity-60"
+                    placeholder="e.g. Stanford, CA / Remote"
+                    className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-all text-slate-900 placeholder:text-slate-400 disabled:opacity-60"
                   />
                 </div>
               </div>
@@ -526,32 +524,31 @@ export const RegisterPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full py-2.5 text-xs font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-50 mt-2"
+              className="w-full py-2.5 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm hover:shadow-md transition-all inline-flex items-center justify-center gap-2 disabled:opacity-50 mt-2 cursor-pointer"
             >
               {loading ? (
                 <>
-                  <RefreshCw size={14} className="animate-spin" />
+                  <RefreshCw size={15} className="animate-spin" />
                   <span>Creating Account...</span>
                 </>
               ) : (
                 <>
                   <span>Create HookZ Account</span>
-                  <ArrowRight size={14} />
+                  <ArrowRight size={15} />
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-5 pt-4 border-t border-slate-100 dark:border-dark-800 text-center">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+          <div className="mt-6 pt-5 border-t border-slate-100 text-center">
+            <p className="text-xs text-slate-500">
               Already have an account?{' '}
-              <Link to="/login" className="font-semibold text-brand-600 dark:text-brand-400 hover:underline">
+              <Link to="/login" className="font-semibold text-brand-600 hover:text-brand-700 hover:underline">
                 Sign in here
               </Link>
             </p>
           </div>
         </div>
-
       </div>
     </div>
   );

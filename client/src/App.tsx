@@ -54,7 +54,6 @@ const lazyPage = <T extends Record<string, any>, K extends keyof T>(
 // Lazy-Loaded Tools & Pages (Code-split into async chunks for maximum performance)
 const ForgotPasswordPage = lazyPage(() => import('./pages/Auth/ForgotPasswordPage'), 'ForgotPasswordPage');
 const ResetPasswordPage = lazyPage(() => import('./pages/Auth/ResetPasswordPage'), 'ResetPasswordPage');
-const DashboardPage = lazyPage(() => import('./pages/Dashboard/DashboardPage'), 'DashboardPage');
 const BusinessPage = lazyPage(() => import('./pages/Business/BusinessPage'), 'BusinessPage');
 const ProjectsPage = lazyPage(() => import('./pages/Projects/ProjectsPage'), 'ProjectsPage');
 const ExploreStartupsPage = lazyPage(() => import('./pages/Startups/ExploreStartupsPage'), 'ExploreStartupsPage');
@@ -104,12 +103,12 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean 
     return <Navigate to="/login" replace />;
   }
 
-  if (!user.isCategorySelected && !user.profile?.isCategorySelected) {
+  if (user && ((user as any).onboarding_completed === false || (user as any).onboardingCompleted === false)) {
     return <Navigate to="/onboarding" replace />;
   }
 
   if (adminOnly && !user.isAdmin) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
@@ -137,18 +136,20 @@ const AppContent: React.FC = () => {
     );
   }
 
+  const isPublicLanding = !user && location.pathname === '/';
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8F9FB] dark:bg-[#0B0F17] text-[#181A1F] dark:text-[#F8F9FB] transition-colors selection:bg-brand-600 selection:text-white relative w-full max-w-full overflow-x-hidden">
-      <Navbar />
+    <div className="min-h-screen flex flex-col bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-[#F8F9FB] transition-colors selection:bg-brand-600 selection:text-white relative w-full max-w-full overflow-x-hidden">
+      {!isPublicLanding && <Navbar />}
       <NewUserCategoryModal />
-      <div className="flex-1 flex w-full pt-14">
+      <div className={`flex-1 flex w-full ${isPublicLanding ? '' : 'pt-14'}`}>
         {user && <Sidebar />}
         <main
           className={`flex-1 min-w-0 flex flex-col justify-between overflow-x-hidden pb-16 lg:pb-0 ${
             !user || isAuthOrMeetingPage ? '' : 'lg:pl-60 xl:pl-64'
           }`}
         >
-          <div className="flex-1 min-w-0">
+          <div className={`flex-1 min-w-0 ${!user || isAuthOrMeetingPage ? '' : 'px-4 sm:px-6 lg:px-8 xl:px-10'}`}>
             <React.Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public landing for logged-out users; existing dashboard for logged-in users */}
@@ -189,11 +190,7 @@ const AppContent: React.FC = () => {
                 {/* Protected Routes */}
                 <Route
                   path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <DashboardPage />
-                    </ProtectedRoute>
-                  }
+                  element={<Navigate to="/profile" replace />}
                 />
                 <Route
                   path="/startups/create"

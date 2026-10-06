@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { api } from '../../services/api';
+import { api, clearApiCache } from '../../services/api';
 import { supabase } from '../../lib/supabase';
 import { Post, Startup, Problem } from '../../types';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
@@ -32,6 +32,8 @@ import {
   Flame,
   ArrowRight,
   Trash2,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -79,11 +81,70 @@ export const StartupFeedPage: React.FC = () => {
     }
   };
 
+  const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [errorToast, setErrorToast] = useState<string | null>(null);
+
   const fetchPosts = async () => {
     setLoading(true);
     try {
       const res = await api.getPosts();
-      setPosts(res.posts || []);
+      if (res?.posts && res.posts.length > 0) {
+        setPosts(res.posts);
+      } else {
+        // Fallback: direct Supabase select if backend is empty
+        const { data: supaPosts, error } = await supabase
+          .from('posts')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(30);
+
+        if (!error && supaPosts && supaPosts.length > 0) {
+          const authorIds = [...new Set(supaPosts.map((p) => p.author_id))];
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('*')
+            .in('user_id', authorIds);
+          const profMap = new Map((profiles || []).map((pr) => [pr.user_id, pr]));
+
+          const formatted = supaPosts.map((p) => {
+            const pr = profMap.get(p.author_id);
+            return {
+              id: p.id,
+              authorId: p.author_id,
+              postType: p.post_type,
+              title: p.title,
+              content: p.content,
+              links: p.links,
+              images: p.images,
+              likesCount: p.likes_count || 0,
+              commentsCount: p.comments_count || 0,
+              createdAt: p.created_at,
+              isLiked: false,
+              isSaved: false,
+              author: {
+                id: p.author_id,
+                email: '',
+                role: pr?.preferred_role || 'STUDENT',
+                isVerified: false,
+                isSuspended: false,
+                isAdmin: false,
+                createdAt: p.created_at || new Date().toISOString(),
+                profile: pr
+                  ? {
+                      fullName: pr.full_name,
+                      avatar: pr.avatar,
+                      headline: pr.headline,
+                      location: pr.location,
+                    }
+                  : null,
+              },
+            };
+          });
+          setPosts(formatted as any);
+        } else if (res?.posts) {
+          setPosts(res.posts);
+        }
+      }
     } catch (err) {
       console.error('Failed to load feed posts:', err);
     } finally {
@@ -165,6 +226,8 @@ export const StartupFeedPage: React.FC = () => {
     setComposerError(null);
     try {
       let createdPost: any = null;
+
+      // 1. Primary: Server API
       try {
         const res = await api.createPost({
           postType: finalPostType,
@@ -174,15 +237,19 @@ export const StartupFeedPage: React.FC = () => {
         });
         createdPost = res?.post || res;
       } catch (apiErr) {
-        // Fallback: direct Supabase insert
+        console.warn('Backend API createPost failed, attempting direct Supabase insert:', apiErr);
+      }
+
+      // 2. Direct Supabase insert fallback if backend API failed
+      if (!createdPost || !createdPost.id) {
         const { data, error } = await supabase
           .from('posts')
           .insert({
-            user_id: user.id,
+            author_id: user.id,
             post_type: finalPostType,
             title: postTitle.trim() || null,
             content: postContent.trim(),
-            links: postLinks.trim() ? [postLinks.trim()] : [],
+            links: postLinks.trim() || null,
           })
           .select()
           .single();
@@ -198,23 +265,51 @@ export const StartupFeedPage: React.FC = () => {
           createdAt: data.created_at || new Date().toISOString(),
           likesCount: 0,
           commentsCount: 0,
+          isLiked: false,
+          isSaved: false,
           author: {
             id: user.id,
             email: user.email,
-            profile: user.profile,
+            role: user.role || 'STUDENT',
+            isVerified: user.isVerified,
+            verificationBadge: user.verificationBadge,
+            profile: {
+              fullName: user.profile?.fullName || user.email.split('@')[0],
+              avatar: user.profile?.avatar || null,
+              headline: user.profile?.headline || '',
+              location: user.profile?.location || '',
+            },
           },
+        };
+      }
+
+      // Ensure author object is populated
+      if (createdPost && !createdPost.author) {
+        createdPost.author = {
+          id: user.id,
+          email: user.email,
+          role: user.role || 'STUDENT',
+          profile: user.profile,
         };
       }
 
       if (createdPost) {
         setPosts((prev) => [createdPost, ...prev]);
+        clearApiCache();
       }
+
       setPostTitle('');
       setPostContent('');
       setPostLinks('');
       setComposerOpen(false);
+      setSuccessToast('Post published successfully!');
+      setTimeout(() => setSuccessToast(null), 4000);
     } catch (err: any) {
-      setComposerError(err.message || 'Failed to publish post.');
+      console.error('Create post failed:', err);
+      const msg = err.message || 'Failed to publish post.';
+      setComposerError(msg);
+      setErrorToast(msg);
+      setTimeout(() => setErrorToast(null), 4000);
     } finally {
       setSubmittingPost(false);
     }
@@ -385,7 +480,20 @@ export const StartupFeedPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      
+      {/* Toast notifications */}
+      {successToast && (
+        <div className="fixed top-18 right-6 z-50 p-4 rounded-xl bg-emerald-600 text-white shadow-modal text-xs font-semibold flex items-center gap-2.5 animate-in fade-in slide-in-from-top-3 max-w-md">
+          <CheckCircle2 size={16} />
+          <span>{successToast}</span>
+        </div>
+      )}
+      {errorToast && (
+        <div className="fixed top-18 right-6 z-50 p-4 rounded-xl bg-rose-600 text-white shadow-modal text-xs font-semibold flex items-center gap-2.5 animate-in fade-in slide-in-from-top-3 max-w-md">
+          <AlertCircle size={16} />
+          <span>{errorToast}</span>
+        </div>
+      )}
+
       {/* 3 Core Pillars Header (Fixed on mobile view, no sliding) */}
       <div className="grid grid-cols-3 gap-1.5 sm:gap-3 w-full">
         {/* 1. Achievements */}

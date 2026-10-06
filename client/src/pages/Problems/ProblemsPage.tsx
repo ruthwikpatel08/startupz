@@ -223,24 +223,24 @@ export const ProblemsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
         {/* Hero Section */}
-        <div className="card-base p-6 sm:p-8 bg-slate-900 text-white dark:bg-dark-900 border-slate-800 shadow-xs">
+        <div className="card-base p-6 sm:p-8 bg-white dark:bg-dark-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800 shadow-xs">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="max-w-3xl space-y-3.5">
               
               {/* Badge & Language Toggle */}
               <div className="flex flex-wrap items-center gap-2.5">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-brand-950/60 text-brand-300 border border-brand-800/60">
-                  <Globe size={13} className="text-brand-400" />
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 border border-brand-200 dark:border-brand-800/60">
+                  <Globe size={13} className="text-brand-600 dark:text-brand-400" />
                   <span>{t.heroBadge}</span>
                 </div>
 
                 {/* i18n Selector */}
-                <div className="flex items-center gap-0.5 bg-slate-800 rounded-md p-0.5 text-xs font-medium">
-                  <Languages size={13} className="text-slate-400 ml-1.5" />
+                <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-md p-0.5 text-xs font-medium">
+                  <Languages size={13} className="text-slate-500 dark:text-slate-400 ml-1.5" />
                   <button
                     onClick={() => setCurrentLang('en')}
                     className={`px-2 py-0.5 rounded transition-colors ${
-                      currentLang === 'en' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'
+                      currentLang === 'en' ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
                     }`}
                   >
                     EN

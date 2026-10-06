@@ -60,7 +60,7 @@ export const AdminDashboardPage: React.FC = () => {
   }, [user?.isAdmin]);
 
   if (!user?.isAdmin) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
   const handleToggleSuspend = async (userId: string, currentStatus: boolean) => {
