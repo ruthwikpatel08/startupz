@@ -30,6 +30,20 @@ export const CreateStartupPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const NAME_MAX = 60;
+  const TAGLINE_MAX = 100;
+  const FIELD_MAX = 500;
+
+  const formIsValid =
+    name.trim().length > 0 &&
+    name.length <= NAME_MAX &&
+    oneLineDescription.trim().length > 0 &&
+    oneLineDescription.length <= TAGLINE_MAX &&
+    problem.trim().length > 0 &&
+    problem.length <= FIELD_MAX &&
+    solution.trim().length > 0 &&
+    solution.length <= FIELD_MAX;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -139,10 +153,14 @@ export const CreateStartupPage: React.FC = () => {
                 type="text"
                 required
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => setName(e.target.value.slice(0, NAME_MAX))}
                 placeholder="e.g. FarmConnect"
-                className="input-base w-full px-3 py-2 text-sm"
+                className={`input-base w-full px-3 py-2 text-sm ${name.length > NAME_MAX ? 'border-red-500' : ''}`}
               />
+              <div className="flex justify-between mt-1">
+                {name.length > NAME_MAX && <span className="text-xs text-red-500">Exceeds {NAME_MAX} characters</span>}
+                <span className={`text-xs ml-auto ${name.length > NAME_MAX ? 'text-red-500' : 'text-slate-400'}`}>{name.length}/{NAME_MAX}</span>
+              </div>
             </div>
 
             <div>
@@ -171,10 +189,14 @@ export const CreateStartupPage: React.FC = () => {
               type="text"
               required
               value={oneLineDescription}
-              onChange={(e) => setOneLineDescription(e.target.value)}
+              onChange={(e) => setOneLineDescription(e.target.value.slice(0, TAGLINE_MAX))}
               placeholder="e.g. AI-powered agronomic advisory platform delivering real-time crop disease detection."
-              className="input-base w-full px-3 py-2 text-sm"
+              className={`input-base w-full px-3 py-2 text-sm ${oneLineDescription.length > TAGLINE_MAX ? 'border-red-500' : ''}`}
             />
+            <div className="flex justify-between mt-1">
+              {oneLineDescription.length > TAGLINE_MAX && <span className="text-xs text-red-500">Exceeds {TAGLINE_MAX} characters</span>}
+              <span className={`text-xs ml-auto ${oneLineDescription.length > TAGLINE_MAX ? 'text-red-500' : 'text-slate-400'}`}>{oneLineDescription.length}/{TAGLINE_MAX}</span>
+            </div>
           </div>
 
           {/* Problem & Solution */}
@@ -186,10 +208,14 @@ export const CreateStartupPage: React.FC = () => {
               rows={3}
               required
               value={problem}
-              onChange={(e) => setProblem(e.target.value)}
+              onChange={(e) => setProblem(e.target.value.slice(0, FIELD_MAX))}
               placeholder="What painful friction or loss does the customer experience today?"
-              className="input-base w-full px-3 py-2 text-sm resize-none"
+              className={`input-base w-full px-3 py-2 text-sm resize-none ${problem.length > FIELD_MAX ? 'border-red-500' : ''}`}
             />
+            <div className="flex justify-between mt-1">
+              {problem.trim().length === 0 && <span className="text-xs text-red-500">Required</span>}
+              <span className={`text-xs ml-auto ${problem.length > FIELD_MAX ? 'text-red-500' : 'text-slate-400'}`}>{problem.length}/{FIELD_MAX}</span>
+            </div>
           </div>
 
           <div>
@@ -200,10 +226,14 @@ export const CreateStartupPage: React.FC = () => {
               rows={3}
               required
               value={solution}
-              onChange={(e) => setSolution(e.target.value)}
+              onChange={(e) => setSolution(e.target.value.slice(0, FIELD_MAX))}
               placeholder="How does your product solve this problem 10x better or cheaper?"
-              className="input-base w-full px-3 py-2 text-sm resize-none"
+              className={`input-base w-full px-3 py-2 text-sm resize-none ${solution.length > FIELD_MAX ? 'border-red-500' : ''}`}
             />
+            <div className="flex justify-between mt-1">
+              {solution.trim().length === 0 && <span className="text-xs text-red-500">Required</span>}
+              <span className={`text-xs ml-auto ${solution.length > FIELD_MAX ? 'text-red-500' : 'text-slate-400'}`}>{solution.length}/{FIELD_MAX}</span>
+            </div>
           </div>
 
           {/* Target Customers & Business Model */}
@@ -389,7 +419,7 @@ export const CreateStartupPage: React.FC = () => {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !formIsValid}
             className="w-full btn-primary inline-flex items-center justify-center gap-2 py-2.5 text-sm font-semibold disabled:opacity-50"
           >
             {loading ? (

@@ -215,6 +215,18 @@ export const ProfilePage: React.FC = () => {
     const currentP = profileUser?.profile || currentUser?.profile;
     if (currentP) {
       const exps = parseWorkExperiences(currentP.startupExperience);
+      let parsedHackathons: any[] = [];
+      let parsedProjects: any[] = [];
+      try {
+        if (currentP.achievements) {
+          const achObj = JSON.parse(currentP.achievements);
+          if (achObj && typeof achObj === 'object') {
+            if (Array.isArray(achObj.hackathons)) parsedHackathons = achObj.hackathons;
+            if (Array.isArray(achObj.projects)) parsedProjects = achObj.projects;
+          }
+        }
+      } catch {}
+
       const initialRole = normalizeRoleValue(profileUser?.role || currentP.preferredRole || currentUser?.role || 'STUDENT');
       const changeCount = currentP.roleChangeCount ?? currentP.role_change_count ?? (profileUser as any)?.roleChangeCount ?? (currentUser as any)?.roleChangeCount ?? 0;
       const initialUsername = (currentP.username || (profileUser?.email || currentUser?.email ? (profileUser?.email || currentUser?.email)!.split('@')[0] : '')).toLowerCase().replace(/^@/, '');
@@ -248,6 +260,8 @@ export const ProfilePage: React.FC = () => {
             description: currentP.startupExperience && !currentP.startupExperience.startsWith('[') ? currentP.startupExperience : '',
           },
         ],
+        hackathons: parsedHackathons,
+        projects: parsedProjects,
         achievements: currentP.achievements || '',
         education: currentP.education || '',
         githubUrl: currentP.githubUrl || '',
@@ -1016,6 +1030,14 @@ export const ProfilePage: React.FC = () => {
 
     const newUsernameChangedAt = isUsernameChanging ? new Date().toISOString() : formData.usernameChangedAt;
 
+    const serializedAchievements = (formData.hackathons?.length > 0 || formData.projects?.length > 0)
+      ? JSON.stringify({
+          hackathons: formData.hackathons || [],
+          projects: formData.projects || [],
+          raw: typeof formData.achievements === 'string' && !formData.achievements.startsWith('{') ? formData.achievements : '',
+        })
+      : (formData.achievements || '');
+
     try {
       if (!currentUser?.id) {
         throw new Error('You must be logged in to save your profile.');
@@ -1040,7 +1062,7 @@ export const ProfilePage: React.FC = () => {
         is_category_selected: true,
         availability: formData.availability,
         startup_experience: serializedExp,
-        achievements: formData.achievements,
+        achievements: serializedAchievements,
         education: formData.education,
         github_url: formData.githubUrl,
         linkedin_url: formData.linkedinUrl,
@@ -2021,17 +2043,19 @@ export const ProfilePage: React.FC = () => {
       {isMe && (
         <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Edit Profile Details" maxWidth="2xl">
           <form onSubmit={handleSaveProfile} className="space-y-4 font-sans">
-            {/* Photos & Branding */}
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[#E2E8F0] dark:border-slate-700 space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#4F46E5] flex items-center gap-1.5">
-                  <Sparkles size={14} /> Profile & Background Photos
+            {/* --- SECTION 1: BASIC INFO --- */}
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+                  <Edit3 size={14} /> Basic Information & Branding
                 </h4>
-                <span className="text-[11px] text-slate-500 font-medium">Add from device gallery</span>
+                <span className="text-[11px] text-slate-500 font-medium">Public details</span>
               </div>
+
+              {/* Photos & Branding */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Avatar Uploader */}
-                <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2.5">
+                <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2">
                   <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
                     Profile Photo (Avatar)
                   </label>
@@ -2083,7 +2107,7 @@ export const ProfilePage: React.FC = () => {
                 </div>
 
                 {/* Cover Uploader */}
-                <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2.5">
+                <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2">
                   <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
                     Background Cover Image
                   </label>
@@ -2124,50 +2148,45 @@ export const ProfilePage: React.FC = () => {
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Account Role & Category Section (Max 3 edits allowed) */}
-            {(() => {
-              const currentCount = Number(formData.roleChangeCount) || 0;
-              const chancesRemaining = Math.max(0, 3 - currentCount);
-              const selectedRole = normalizeRoleValue(formData.preferredRole || formData.role || 'STUDENT');
-              const initialRole = normalizeRoleValue(formData.initialRole || selectedRole);
-              const isChanging = selectedRole !== initialRole;
-              const isLocked = chancesRemaining <= 0;
+              {/* Account Role Section (Max 3 edits allowed) */}
+              {(() => {
+                const currentCount = Number(formData.roleChangeCount) || 0;
+                const chancesRemaining = Math.max(0, 3 - currentCount);
+                const selectedRole = normalizeRoleValue(formData.preferredRole || formData.role || 'STUDENT');
+                const initialRole = normalizeRoleValue(formData.initialRole || selectedRole);
+                const isChanging = selectedRole !== initialRole;
+                const isLocked = chancesRemaining <= 0;
 
-              const currentRoleObj = PROFILE_ROLE_OPTIONS.find((r) => r.id === selectedRole);
-              const initialRoleObj = PROFILE_ROLE_OPTIONS.find((r) => r.id === initialRole);
+                const currentRoleObj = PROFILE_ROLE_OPTIONS.find((r) => r.id === selectedRole);
+                const initialRoleObj = PROFILE_ROLE_OPTIONS.find((r) => r.id === initialRole);
 
-              return (
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[#E2E8F0] dark:border-slate-700 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-[#4F46E5] flex items-center gap-1.5">
-                        <Users size={14} />
-                        <span>Account Role (I am joining as a)</span>
-                      </h4>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                        Your primary role on the platform. Limited to 3 edits total.
-                      </p>
+                return (
+                  <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                          <Users size={14} className="text-brand-600" />
+                          <span>Account Role (I am joining as a)</span>
+                        </label>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Your primary role on HookZ. Limited to 3 edits total.
+                        </p>
+                      </div>
+
+                      {isLocked ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-800 shrink-0">
+                          <Lock size={11} className="text-amber-600 dark:text-amber-400" />
+                          <span>Role Locked (3/3 used)</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
+                          <Sparkles size={11} className="text-indigo-600 dark:text-indigo-400" />
+                          <span>{chancesRemaining}/3 role {chancesRemaining === 1 ? 'change' : 'changes'} left</span>
+                        </span>
+                      )}
                     </div>
 
-                    {isLocked ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-800 shrink-0">
-                        <Lock size={12} className="text-amber-600 dark:text-amber-400" />
-                        <span>Role Locked (3 of 3 used)</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-[#4F46E5] dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
-                        <Sparkles size={12} className="text-indigo-600 dark:text-indigo-400" />
-                        <span>{chancesRemaining} / 3 role {chancesRemaining === 1 ? 'change' : 'changes'} left</span>
-                      </span>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">
-                      Select Role
-                    </label>
                     <select
                       value={selectedRole}
                       disabled={isLocked}
@@ -2178,7 +2197,7 @@ export const ProfilePage: React.FC = () => {
                           role: e.target.value,
                         }));
                       }}
-                      className="input-base w-full px-3 py-2 text-xs font-semibold bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                      className="input-base w-full px-3 py-1.5 text-xs font-semibold bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                     >
                       {PROFILE_ROLE_OPTIONS.map((opt) => (
                         <option key={opt.id} value={opt.id}>
@@ -2186,224 +2205,429 @@ export const ProfilePage: React.FC = () => {
                         </option>
                       ))}
                     </select>
+
+                    {isLocked && (
+                      <div className="p-2 rounded bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-1.5">
+                        <Lock size={13} className="shrink-0 mt-0.5 text-amber-600" />
+                        <span>Role permanently locked to <strong>{currentRoleObj?.label || selectedRole}</strong>.</span>
+                      </div>
+                    )}
+
+                    {!isLocked && isChanging && (
+                      <div className="p-2 rounded bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900 text-xs text-indigo-900 dark:text-indigo-200 flex items-start gap-1.5">
+                        <Sparkles size={13} className="shrink-0 mt-0.5 text-indigo-600" />
+                        <span>Switching role from <strong>{initialRoleObj?.label || initialRole}</strong> to <strong>{currentRoleObj?.label || selectedRole}</strong> will use 1 chance.</span>
+                      </div>
+                    )}
                   </div>
+                );
+              })()}
 
-                  {isLocked && (
-                    <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
-                      <Lock size={14} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-                      <span>
-                        You have used all 3 role change chances. Your role is permanently set to <strong>{currentRoleObj?.label || selectedRole}</strong>.
-                      </span>
-                    </div>
-                  )}
-
-                  {!isLocked && isChanging && (
-                    <div className="p-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900 text-xs text-indigo-900 dark:text-indigo-200 flex items-start gap-2">
-                      <Sparkles size={14} className="shrink-0 mt-0.5 text-[#4F46E5]" />
-                      <span>
-                        Switching role from <strong>{initialRoleObj?.label || initialRole}</strong> to <strong>{currentRoleObj?.label || selectedRole}</strong> will use 1 chance ({chancesRemaining - 1} left after saving).
-                      </span>
-                    </div>
-                  )}
+              {/* Full Name & Username */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    className="input-base w-full px-3 py-1.5 text-xs"
+                  />
                 </div>
-              );
-            })()}
 
-            {/* Full Name and Username Fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="input-base w-full px-3 py-1.5 text-xs"
-                />
-              </div>
+                <div>
+                  {(() => {
+                    const initialUsername = String(formData.initialUsername || '').trim().toLowerCase().replace(/^@/, '');
+                    const currentUsername = String(formData.username || '').trim().toLowerCase().replace(/^@/, '');
+                    const changedAt = formData.usernameChangedAt ? new Date(formData.usernameChangedAt).getTime() : null;
+                    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+                    const timePassed = changedAt ? Date.now() - changedAt : Infinity;
+                    const isUsernameLocked = changedAt ? timePassed < thirtyDaysMs : false;
+                    const daysRemaining = isUsernameLocked ? Math.ceil((thirtyDaysMs - timePassed) / (24 * 60 * 60 * 1000)) : 0;
 
-              <div>
-                {(() => {
-                  const initialUsername = String(formData.initialUsername || '').trim().toLowerCase().replace(/^@/, '');
-                  const currentUsername = String(formData.username || '').trim().toLowerCase().replace(/^@/, '');
-                  const changedAt = formData.usernameChangedAt ? new Date(formData.usernameChangedAt).getTime() : null;
-                  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
-                  const timePassed = changedAt ? Date.now() - changedAt : Infinity;
-                  const isUsernameLocked = changedAt ? timePassed < thirtyDaysMs : false;
-                  const daysRemaining = isUsernameLocked ? Math.ceil((thirtyDaysMs - timePassed) / (24 * 60 * 60 * 1000)) : 0;
-                  const nextChangeDate = changedAt ? new Date(changedAt + thirtyDaysMs).toLocaleDateString() : '';
-
-                  return (
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">
-                          Username
-                        </label>
-                        {isUsernameLocked ? (
-                          <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                            <Lock size={10} /> Locked ({daysRemaining}d left)
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-slate-400">
-                            1 change / 30 days
-                          </span>
+                    return (
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Username
+                          </label>
+                          {isUsernameLocked ? (
+                            <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                              <Lock size={10} /> Locked ({daysRemaining}d)
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-400">1 change / 30 days</span>
+                          )}
+                        </div>
+                        <div className="relative">
+                          <span className="absolute left-2.5 top-1.5 text-xs text-slate-400 select-none">@</span>
+                          <input
+                            type="text"
+                            value={formData.username || ''}
+                            disabled={isUsernameLocked}
+                            onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                            placeholder="username"
+                            className="input-base w-full pl-7 pr-3 py-1.5 text-xs font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                          />
+                        </div>
+                        {isUsernameLocked && (
+                          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                            Locked for {daysRemaining} more days.
+                          </p>
                         )}
                       </div>
-                      <div className="relative">
-                        <span className="absolute left-2.5 top-1.5 text-xs text-slate-400 select-none">@</span>
-                        <input
-                          type="text"
-                          value={formData.username || ''}
-                          disabled={isUsernameLocked}
-                          onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
-                          placeholder="username"
-                          className="input-base w-full pl-7 pr-3 py-1.5 text-xs font-medium disabled:opacity-60 disabled:cursor-not-allowed"
-                        />
-                      </div>
-                      {isUsernameLocked && (
-                        <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
-                          Changed on {new Date(changedAt!).toLocaleDateString()}. Can be changed again on {nextChangeDate}.
-                        </p>
-                      )}
-                      {!isUsernameLocked && currentUsername && initialUsername && currentUsername !== initialUsername && (
-                        <p className="text-[10px] text-indigo-600 dark:text-indigo-400 mt-1">
-                          Changing username will lock it for 30 days after saving.
-                        </p>
-                      )}
-                    </div>
-                  );
-                })()}
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="relative">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                  <span>Location</span>
+                  {(() => {
+                    const res = resolveIndianLocation(formData.location);
+                    if (!res) return null;
+                    return (
+                      <span className="text-[10px] text-brand-600 dark:text-brand-400 font-semibold">
+                        {res.district ? `${res.district}, ` : ''}{res.state}
+                      </span>
+                    );
+                  })()}
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={formData.location || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData({ ...formData, location: val });
+                      setLocationSuggestions(searchLocations(val));
+                      setShowLocDropdown(true);
+                    }}
+                    onFocus={() => {
+                      if (formData.location) {
+                        setLocationSuggestions(searchLocations(formData.location));
+                      }
+                      setShowLocDropdown(true);
+                    }}
+                    placeholder="e.g. Bengaluru, Hyderabad, Delhi, or Remote"
+                    className="input-base w-full px-3 py-1.5 text-xs pr-7"
+                  />
+                  {formData.location && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({ ...formData, location: '' });
+                        setLocationSuggestions([]);
+                        setShowLocDropdown(false);
+                      }}
+                      className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+                {showLocDropdown && locationSuggestions.length > 0 && (
+                  <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-lg shadow-xl py-1 text-xs">
+                    {locationSuggestions.map((loc, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          const formatted = `${loc.district ? loc.district + ', ' : ''}${loc.state}, India`;
+                          setFormData({ ...formData, location: formatted });
+                          setShowLocDropdown(false);
+                        }}
+                        className="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 flex items-center justify-between cursor-pointer"
+                      >
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {loc.district ? `${loc.district}, ` : ''}{loc.state}
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-dark-800 text-slate-500 capitalize">
+                          {loc.type}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Headline & One-liner */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Headline</label>
+                  <input
+                    type="text"
+                    value={formData.headline || ''}
+                    onChange={(e) => setFormData({ ...formData, headline: e.target.value })}
+                    placeholder="e.g. CS Sophomore | Full-Stack Builder & Hackathon Enthusiast"
+                    className="input-base w-full px-3 py-1.5 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                    <span>One-Line Bio</span>
+                    <span className="text-[10px] text-brand-600 font-medium">Shown on preview cards</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.oneLineBio || ''}
+                    onChange={(e) => setFormData({ ...formData, oneLineBio: e.target.value })}
+                    placeholder="e.g. Building AI tools & looking for hackathon teammates"
+                    className="input-base w-full px-3 py-1.5 text-xs"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="relative">
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center justify-between">
-                <span>Location</span>
-                {(() => {
-                  const res = resolveIndianLocation(formData.location);
-                  if (!res) return null;
-                  return (
-                    <span className="text-[10px] text-brand-600 dark:text-brand-400 font-semibold">
-                      {res.district ? `${res.district}, ` : ''}{res.state}
-                    </span>
-                  );
-                })()}
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={formData.location || ''}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setFormData({ ...formData, location: val });
-                    setLocationSuggestions(searchLocations(val));
-                    setShowLocDropdown(true);
-                  }}
-                  onFocus={() => {
-                    if (formData.location) {
-                      setLocationSuggestions(searchLocations(formData.location));
-                    }
-                    setShowLocDropdown(true);
-                  }}
-                  placeholder="e.g. Warangal, Bengaluru, Delhi, or Remote"
-                  className="input-base w-full px-3 py-1.5 text-xs pr-7"
-                />
-                {formData.location && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData({ ...formData, location: '' });
-                      setLocationSuggestions([]);
-                      setShowLocDropdown(false);
-                    }}
-                    className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                  >
-                    <X size={12} />
-                  </button>
-                )}
+            {/* --- SECTION 2: ABOUT & BIO (Up to 2000 chars) --- */}
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+                  <Edit3 size={14} /> About & Bio
+                </h4>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  {String(formData.bio || '').length} / 2000 chars
+                </span>
               </div>
-              {/* Autocomplete Dropdown */}
-              {showLocDropdown && locationSuggestions.length > 0 && (
-                <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-lg shadow-xl py-1 text-xs">
-                  {locationSuggestions.map((loc, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        const formatted = `${loc.district ? loc.district + ', ' : ''}${loc.state}, India`;
-                        setFormData({ ...formData, location: formatted });
-                        setShowLocDropdown(false);
-                      }}
-                      className="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 flex items-center justify-between cursor-pointer"
+              <div>
+                <textarea
+                  rows={4}
+                  maxLength={2000}
+                  value={formData.bio || ''}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  placeholder="Tell your story — what drives you, what technologies you love, hackathons you're interested in, and what projects you're building..."
+                  className="input-base w-full p-2.5 text-xs leading-relaxed resize-y min-h-[90px]"
+                />
+              </div>
+            </div>
+
+            {/* --- SECTION 3: SKILLS (Tag-based multi-select) --- */}
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+                  <Sparkles size={14} /> Skills & Expertise
+                </h4>
+                <span className="text-[11px] text-slate-500 font-medium">Tag-based multi-select</span>
+              </div>
+
+              {/* Selected Skill Badges */}
+              {(() => {
+                const currentSkills = (formData.skills || '')
+                  .split(',')
+                  .map((s: string) => s.trim())
+                  .filter(Boolean);
+
+                const popularSuggestions = [
+                  'React', 'TypeScript', 'Node.js', 'Python', 'Next.js', 'UI/UX Design',
+                  'Machine Learning', 'TailwindCSS', 'PostgreSQL', 'Docker', 'Figma',
+                  'Flutter', 'DevOps', 'Mobile Dev', 'C++', 'Java', 'Full-Stack'
+                ].filter(s => !currentSkills.some((c: string) => c.toLowerCase() === s.toLowerCase()));
+
+                const handleAddSkill = (skillName: string) => {
+                  const trimmed = skillName.trim();
+                  if (!trimmed) return;
+                  if (currentSkills.some((c: string) => c.toLowerCase() === trimmed.toLowerCase())) return;
+                  const updated = [...currentSkills, trimmed].join(', ');
+                  setFormData({ ...formData, skills: updated });
+                };
+
+                const handleRemoveSkill = (skillToRemove: string) => {
+                  const updated = currentSkills.filter((s: string) => s.toLowerCase() !== skillToRemove.toLowerCase()).join(', ');
+                  setFormData({ ...formData, skills: updated });
+                };
+
+                return (
+                  <div className="space-y-2.5">
+                    <div className="flex flex-wrap gap-1.5 min-h-[32px] p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                      {currentSkills.length === 0 ? (
+                        <span className="text-xs text-slate-400 italic">No skills added yet. Select or type below.</span>
+                      ) : (
+                        currentSkills.map((sk: string, idx: number) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 border border-brand-200 dark:border-brand-800"
+                          >
+                            <span>{sk}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSkill(sk)}
+                              className="hover:text-red-500 cursor-pointer ml-0.5"
+                            >
+                              <X size={11} />
+                            </button>
+                          </span>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Type a skill & press Add..."
+                        id="skill-custom-input"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const val = (e.target as HTMLInputElement).value;
+                            if (val) {
+                              handleAddSkill(val);
+                              (e.target as HTMLInputElement).value = '';
+                            }
+                          }
+                        }}
+                        className="input-base flex-1 px-3 py-1.5 text-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const input = document.getElementById('skill-custom-input') as HTMLInputElement;
+                          if (input && input.value) {
+                            handleAddSkill(input.value);
+                            input.value = '';
+                          }
+                        }}
+                        className="btn-secondary px-3 py-1.5 text-xs font-semibold cursor-pointer"
+                      >
+                        + Add
+                      </button>
+                    </div>
+
+                    {/* Popular Quick Suggestions */}
+                    {popularSuggestions.length > 0 && (
+                      <div className="pt-1">
+                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
+                          Quick Suggestions:
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {popularSuggestions.slice(0, 10).map((sugg) => (
+                            <button
+                              key={sugg}
+                              type="button"
+                              onClick={() => handleAddSkill(sugg)}
+                              className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 hover:bg-brand-50 hover:text-brand-600 dark:bg-slate-800 dark:hover:bg-brand-950 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+                            >
+                              + {sugg}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* --- SECTION 4: WORK EXPERIENCE --- */}
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+                  <Briefcase size={14} /> Experience & Roles
+                </h4>
+                <button
+                  type="button"
+                  onClick={handleAddExperienceItem}
+                  className="px-2.5 py-1 text-xs font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/60 dark:text-brand-300 rounded border border-brand-200 dark:border-brand-800 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus size={12} /> Add Experience
+                </button>
+              </div>
+
+              {(!formData.experiences || formData.experiences.length === 0) ? (
+                <div className="p-4 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 text-center">
+                  <p className="text-xs text-slate-500">No experiences added yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {formData.experiences.map((exp: any, idx: number) => (
+                    <div
+                      key={exp.id || idx}
+                      className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2 relative"
                     >
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {loc.district ? `${loc.district}, ` : ''}{loc.state}
-                      </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-dark-800 text-slate-500 capitalize">
-                        {loc.type}
-                      </span>
-                    </button>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          Entry #{idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveExperienceItem(idx)}
+                          className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                          title="Remove"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            Role / Title
+                          </label>
+                          <input
+                            type="text"
+                            value={exp.role || exp.company || ''}
+                            onChange={(e) => handleUpdateExperienceItem(idx, 'company', e.target.value)}
+                            placeholder="e.g. Lead Frontend Engineer"
+                            className="input-base w-full px-2.5 py-1.5 text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            Organization / Category
+                          </label>
+                          <select
+                            value={exp.category || 'Developer'}
+                            onChange={(e) => handleUpdateExperienceItem(idx, 'category', e.target.value)}
+                            className="input-base w-full px-2.5 py-1.5 text-xs"
+                          >
+                            <option value="Student">Student Project</option>
+                            <option value="Developer">Developer / Technical</option>
+                            <option value="Designer">Designer / UI-UX</option>
+                            <option value="Founders">Founder / Co-Founder</option>
+                            <option value="Marketers">Marketer / Growth</option>
+                            <option value="Investors">Investor</option>
+                            <option value="Mentor">Mentor / Advisor</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          Description of Work & Impact
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={exp.description || ''}
+                          onChange={(e) => handleUpdateExperienceItem(idx, 'description', e.target.value)}
+                          placeholder="What did you build, scale, or contribute?"
+                          className="input-base w-full px-2.5 py-1.5 text-xs"
+                        />
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Professional Headline</label>
-              <input
-                type="text"
-                value={formData.headline}
-                onChange={(e) => setFormData({ ...formData, headline: e.target.value })}
-                placeholder="e.g. Founder & CEO at AgriTech Solutions"
-                className="input-base w-full px-3 py-1.5 text-xs"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center justify-between">
-                <span>Describe Yourself in One Line</span>
-                <span className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">Displayed on profile preview cards</span>
-              </label>
-              <input
-                type="text"
-                value={formData.oneLineBio || ''}
-                onChange={(e) => setFormData({ ...formData, oneLineBio: e.target.value })}
-                placeholder="e.g. AI Founder & Full-Stack Architect building scalable GTM tools"
-                className="input-base w-full px-3 py-1.5 text-xs"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">About & Bio</label>
-              <textarea
-                rows={3}
-                value={formData.bio}
-                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                placeholder="Passionate about solving real-world problems through technology..."
-                className="input-base w-full px-3 py-1.5 text-xs resize-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Startup Experience</label>
-                <textarea
-                  rows={2}
-                  value={formData.startupExperience}
-                  onChange={(e) => setFormData({ ...formData, startupExperience: e.target.value })}
-                  placeholder="Details about prior ventures or executive experience..."
-                  className="input-base w-full px-3 py-1.5 text-xs resize-none"
-                />
+            {/* --- SECTION 5: EDUCATION --- */}
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+                  <GraduationCap size={14} /> Education & College
+                </h4>
+                <span className="text-[11px] text-slate-500 font-medium">Degree & institution</span>
               </div>
 
               <div className="relative">
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 flex items-center justify-between">
-                  <span>Education / College</span>
-                  <span className="text-[10px] text-slate-400 font-medium">IITs, NITs, NIAT, Universities</span>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  College / University (Indian Autocomplete)
                 </label>
                 <div className="relative">
-                  <textarea
-                    rows={2}
+                  <input
+                    type="text"
                     value={formData.education || ''}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -2417,11 +2641,10 @@ export const ProfilePage: React.FC = () => {
                       }
                       setShowCollegeDropdown(true);
                     }}
-                    placeholder="Institution name, degree (e.g. NIAT, IIT Madras, NIT Trichy, VIT, BITS Pilani)..."
-                    className="input-base w-full px-3 py-1.5 text-xs resize-none"
+                    placeholder="Institution name, degree (e.g. NIAT, IIT Madras, NIT Trichy, BITS Pilani)..."
+                    className="input-base w-full px-3 py-1.5 text-xs"
                   />
                 </div>
-                {/* College Autocomplete Dropdown */}
                 {showCollegeDropdown && collegeSuggestions.length > 0 && (
                   <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-lg shadow-xl py-1 text-xs">
                     {collegeSuggestions.map((col, idx) => {
@@ -2456,173 +2679,317 @@ export const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Work Experience Section */}
-            <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <Briefcase size={14} className="text-brand-600 dark:text-brand-400" />
-                    <span>Work Experience & Company Roles</span>
-                  </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Add your work history. Select primary category, your company name, and describe your work.
-                  </p>
-                </div>
+            {/* --- SECTION 6: HACKATHON HISTORY --- */}
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+                  <Award size={14} /> Hackathon History & Awards
+                </h4>
                 <button
                   type="button"
-                  onClick={handleAddExperienceItem}
-                  className="px-2.5 py-1 text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-900/60 rounded border border-brand-200 dark:border-brand-900 transition-colors flex items-center gap-1 cursor-pointer"
+                  onClick={() => {
+                    const list = [...(formData.hackathons || [])];
+                    list.push({ id: `hack-${Date.now()}`, name: '', date: '', result: '', link: '' });
+                    setFormData({ ...formData, hackathons: list });
+                  }}
+                  className="px-2.5 py-1 text-xs font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/60 dark:text-brand-300 rounded border border-brand-200 dark:border-brand-800 transition-colors flex items-center gap-1 cursor-pointer"
                 >
-                  <Plus size={12} />
-                  <span>Add Experience</span>
+                  <Plus size={12} /> Add Hackathon
                 </button>
               </div>
 
-              {(!formData.experiences || formData.experiences.length === 0) ? (
-                <div className="p-4 rounded-lg border border-dashed border-slate-200 dark:border-slate-800 text-center">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">No work experiences added yet.</p>
-                  <button
-                    type="button"
-                    onClick={handleAddExperienceItem}
-                    className="mt-1.5 text-xs font-semibold text-brand-600 hover:underline cursor-pointer"
-                  >
-                    + Add your first experience
-                  </button>
+              {(!formData.hackathons || formData.hackathons.length === 0) ? (
+                <div className="p-4 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 text-center">
+                  <p className="text-xs text-slate-500">No hackathons added yet. Add past hackathons or wins.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {formData.experiences.map((exp: any, idx: number) => (
+                  {formData.hackathons.map((hack: any, idx: number) => (
                     <div
-                      key={exp.id || idx}
-                      className="p-3 rounded-lg bg-slate-50/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 space-y-2 relative"
+                      key={hack.id || idx}
+                      className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2 relative"
                     >
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                          Experience #{idx + 1}
+                          Hackathon #{idx + 1}
                         </span>
                         <button
                           type="button"
-                          onClick={() => handleRemoveExperienceItem(idx)}
-                          className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-                          title="Remove experience"
+                          onClick={() => {
+                            const list = [...(formData.hackathons || [])];
+                            list.splice(idx, 1);
+                            setFormData({ ...formData, hackathons: list });
+                          }}
+                          className="p-1 rounded text-slate-400 hover:text-red-500 cursor-pointer"
                         >
                           <Trash2 size={13} />
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
                           <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                            Primary Category
-                          </label>
-                          <select
-                            value={exp.category || 'Founders'}
-                            onChange={(e) => handleUpdateExperienceItem(idx, 'category', e.target.value)}
-                            className="input-base w-full px-2.5 py-1.5 text-xs"
-                          >
-                            <option value="Founders">Founders</option>
-                            <option value="Co-Founders">Co-Founders</option>
-                            <option value="Marketers">Marketers</option>
-                            <option value="Investors">Investors</option>
-                            <option value="Developer">Developer / Technical</option>
-                            <option value="Designer">Designer / UI-UX</option>
-                            <option value="Mentor">Mentor / Advisor</option>
-                            <option value="Other">Other / Operator</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                            Company Name
+                            Hackathon Name
                           </label>
                           <input
                             type="text"
-                            value={exp.company || ''}
-                            onChange={(e) => handleUpdateExperienceItem(idx, 'company', e.target.value)}
-                            placeholder="e.g. Google, Microsoft, HookZ"
-                            className="input-base w-full px-2.5 py-1.5 text-xs uppercase"
+                            value={hack.name || ''}
+                            onChange={(e) => {
+                              const list = [...(formData.hackathons || [])];
+                              list[idx] = { ...list[idx], name: e.target.value };
+                              setFormData({ ...formData, hackathons: list });
+                            }}
+                            placeholder="e.g. Smart India Hackathon, ETHIndia"
+                            className="input-base w-full px-2.5 py-1.5 text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            Result / Award
+                          </label>
+                          <input
+                            type="text"
+                            value={hack.result || ''}
+                            onChange={(e) => {
+                              const list = [...(formData.hackathons || [])];
+                              list[idx] = { ...list[idx], result: e.target.value };
+                              setFormData({ ...formData, hackathons: list });
+                            }}
+                            placeholder="e.g. 1st Place Winner, Top 10 Finalist"
+                            className="input-base w-full px-2.5 py-1.5 text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            Date / Year
+                          </label>
+                          <input
+                            type="text"
+                            value={hack.date || ''}
+                            onChange={(e) => {
+                              const list = [...(formData.hackathons || [])];
+                              list[idx] = { ...list[idx], date: e.target.value };
+                              setFormData({ ...formData, hackathons: list });
+                            }}
+                            placeholder="e.g. Nov 2024"
+                            className="input-base w-full px-2.5 py-1.5 text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            Project / Devpost Link
+                          </label>
+                          <input
+                            type="url"
+                            value={hack.link || ''}
+                            onChange={(e) => {
+                              const list = [...(formData.hackathons || [])];
+                              list[idx] = { ...list[idx], link: e.target.value };
+                              setFormData({ ...formData, hackathons: list });
+                            }}
+                            placeholder="https://devpost.com/software/..."
+                            className="input-base w-full px-2.5 py-1.5 text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* --- SECTION 7: PROJECTS --- */}
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+                  <FolderKanban size={14} /> Projects & Showcase
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const list = [...(formData.projects || [])];
+                    list.push({ id: `proj-${Date.now()}`, name: '', description: '', techStack: '', githubUrl: '', demoUrl: '' });
+                    setFormData({ ...formData, projects: list });
+                  }}
+                  className="px-2.5 py-1 text-xs font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/60 dark:text-brand-300 rounded border border-brand-200 dark:border-brand-800 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus size={12} /> Add Project
+                </button>
+              </div>
+
+              {(!formData.projects || formData.projects.length === 0) ? (
+                <div className="p-4 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 text-center">
+                  <p className="text-xs text-slate-500">No projects added yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {formData.projects.map((proj: any, idx: number) => (
+                    <div
+                      key={proj.id || idx}
+                      className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2 relative"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          Project #{idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const list = [...(formData.projects || [])];
+                            list.splice(idx, 1);
+                            setFormData({ ...formData, projects: list });
+                          }}
+                          className="p-1 rounded text-slate-400 hover:text-red-500 cursor-pointer"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            Project Name
+                          </label>
+                          <input
+                            type="text"
+                            value={proj.name || ''}
+                            onChange={(e) => {
+                              const list = [...(formData.projects || [])];
+                              list[idx] = { ...list[idx], name: e.target.value };
+                              setFormData({ ...formData, projects: list });
+                            }}
+                            placeholder="e.g. AI Code Reviewer"
+                            className="input-base w-full px-2.5 py-1.5 text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            Tech Stack
+                          </label>
+                          <input
+                            type="text"
+                            value={proj.techStack || ''}
+                            onChange={(e) => {
+                              const list = [...(formData.projects || [])];
+                              list[idx] = { ...list[idx], techStack: e.target.value };
+                              setFormData({ ...formData, projects: list });
+                            }}
+                            placeholder="e.g. React, Node.js, OpenAI, Supabase"
+                            className="input-base w-full px-2.5 py-1.5 text-xs"
                           />
                         </div>
                       </div>
 
                       <div>
                         <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                          Describe Work & Impact at Company
+                          Description
                         </label>
                         <textarea
                           rows={2}
-                          value={exp.description || ''}
-                          onChange={(e) => handleUpdateExperienceItem(idx, 'description', e.target.value)}
-                          placeholder="Describe your role, what you built, achievements, technologies used..."
+                          value={proj.description || ''}
+                          onChange={(e) => {
+                            const list = [...(formData.projects || [])];
+                            list[idx] = { ...list[idx], description: e.target.value };
+                            setFormData({ ...formData, projects: list });
+                          }}
+                          placeholder="Explain what the project does and its core features..."
                           className="input-base w-full px-2.5 py-1.5 text-xs"
                         />
                       </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            GitHub Repo URL
+                          </label>
+                          <input
+                            type="url"
+                            value={proj.githubUrl || ''}
+                            onChange={(e) => {
+                              const list = [...(formData.projects || [])];
+                              list[idx] = { ...list[idx], githubUrl: e.target.value };
+                              setFormData({ ...formData, projects: list });
+                            }}
+                            placeholder="https://github.com/..."
+                            className="input-base w-full px-2.5 py-1.5 text-xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            Live Demo URL
+                          </label>
+                          <input
+                            type="url"
+                            value={proj.demoUrl || ''}
+                            onChange={(e) => {
+                              const list = [...(formData.projects || [])];
+                              list[idx] = { ...list[idx], demoUrl: e.target.value };
+                              setFormData({ ...formData, projects: list });
+                            }}
+                            placeholder="https://myproject.vercel.app"
+                            className="input-base w-full px-2.5 py-1.5 text-xs"
+                          />
+                        </div>
+                      </div>
                     </div>
                   ))}
-
-                  <button
-                    type="button"
-                    onClick={handleAddExperienceItem}
-                    className="w-full py-1.5 rounded-md border border-dashed border-brand-300 dark:border-brand-800 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:bg-brand-50/50 dark:hover:bg-brand-950/20 transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                  >
-                    <Plus size={13} />
-                    <span>Add Another Experience</span>
-                  </button>
                 </div>
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Skills (comma-separated)</label>
-                <input
-                  type="text"
-                  value={formData.skills}
-                  onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
-                  placeholder="React, Python, Product Development, AI"
-                  className="input-base w-full px-3 py-1.5 text-xs"
-                />
+            {/* --- SECTION 8: SOCIAL LINKS --- */}
+            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+                  <Globe size={14} /> Social & Portfolio Links
+                </h4>
+                <span className="text-[11px] text-slate-500 font-medium">Connect external profiles</span>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Startup Interests (comma-separated)</label>
-                <input
-                  type="text"
-                  value={formData.startupInterests}
-                  onChange={(e) => setFormData({ ...formData, startupInterests: e.target.value })}
-                  placeholder="Entrepreneurship, Technology, Agriculture, AI"
-                  className="input-base w-full px-3 py-1.5 text-xs"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">LinkedIn URL</label>
-                <input
-                  type="url"
-                  value={formData.linkedinUrl}
-                  onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
-                  className="input-base w-full px-3 py-1.5 text-xs"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">GitHub URL</label>
-                <input
-                  type="url"
-                  value={formData.githubUrl}
-                  onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
-                  className="input-base w-full px-3 py-1.5 text-xs"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Website URL</label>
-                <input
-                  type="url"
-                  value={formData.websiteUrl}
-                  onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
-                  className="input-base w-full px-3 py-1.5 text-xs"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">GitHub URL</label>
+                  <input
+                    type="url"
+                    value={formData.githubUrl || ''}
+                    onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
+                    placeholder="https://github.com/username"
+                    className="input-base w-full px-3 py-1.5 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">LinkedIn URL</label>
+                  <input
+                    type="url"
+                    value={formData.linkedinUrl || ''}
+                    onChange={(e) => setFormData({ ...formData, linkedinUrl: e.target.value })}
+                    placeholder="https://linkedin.com/in/username"
+                    className="input-base w-full px-3 py-1.5 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Twitter / X URL</label>
+                  <input
+                    type="url"
+                    value={formData.startupInterests || ''}
+                    onChange={(e) => setFormData({ ...formData, startupInterests: e.target.value })}
+                    placeholder="https://x.com/username"
+                    className="input-base w-full px-3 py-1.5 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Portfolio / Website URL</label>
+                  <input
+                    type="url"
+                    value={formData.websiteUrl || ''}
+                    onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
+                    placeholder="https://yourportfolio.dev"
+                    className="input-base w-full px-3 py-1.5 text-xs"
+                  />
+                </div>
               </div>
             </div>
 
@@ -2640,7 +3007,7 @@ export const ProfilePage: React.FC = () => {
                   <span>Danger Zone: Permanent Account Deletion</span>
                 </h5>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Permanently erase your startup profile, ideas, messages, and connections.
+                  Permanently erase your student profile, ideas, messages, and connections.
                 </p>
               </div>
               <button
@@ -2655,7 +3022,7 @@ export const ProfilePage: React.FC = () => {
               </button>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-dark-800">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-dark-800 sticky bottom-0 bg-white dark:bg-slate-900 py-2">
               <button
                 type="button"
                 onClick={() => setEditOpen(false)}
@@ -2666,7 +3033,7 @@ export const ProfilePage: React.FC = () => {
               <button
                 type="submit"
                 disabled={saving}
-                className="btn-primary px-4 py-1.5 text-xs font-medium disabled:opacity-50 cursor-pointer"
+                className="btn-primary px-5 py-1.5 text-xs font-medium disabled:opacity-50 cursor-pointer shadow-sm"
               >
                 {saving ? 'Saving Changes...' : 'Save Changes'}
               </button>

@@ -205,7 +205,14 @@ router.post('/', requireAuth, async (req, res) => {
         },
       });
 
-      // Send/Re-send notification to receiver
+      // Send/Re-send notification to receiver — delete existing one first to prevent duplicates
+      await prisma.notification.deleteMany({
+        where: {
+          userId: receiverId,
+          senderId: req.user.id,
+          type: 'CONNECTION_REQUEST',
+        },
+      });
       await prisma.notification.create({
         data: {
           userId: receiverId,

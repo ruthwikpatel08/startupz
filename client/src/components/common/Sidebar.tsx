@@ -86,20 +86,7 @@ export const Sidebar: React.FC = () => {
           <span>Feed</span>
         </Link>
 
-        {/* 3) Business — direct enter, no arrow accordion */}
-        <Link
-          to="/business"
-          className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-            isBusinessActive
-              ? 'bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 font-bold shadow-2xs'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800'
-          }`}
-        >
-          <Briefcase size={18} className={isBusinessActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'} />
-          <span>Business</span>
-        </Link>
-
-        {/* 4) Projects */}
+        {/* 3) Projects */}
         <Link
           to="/projects"
           className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
@@ -113,6 +100,19 @@ export const Sidebar: React.FC = () => {
           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300">
             Builder
           </span>
+        </Link>
+
+        {/* 4) Business */}
+        <Link
+          to="/business"
+          className={`flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+            isBusinessActive
+              ? 'bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 font-bold shadow-2xs'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800'
+          }`}
+        >
+          <Briefcase size={18} className={isBusinessActive ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400'} />
+          <span>Business</span>
         </Link>
 
         {/* 5) Opportunities */}

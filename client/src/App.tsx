@@ -12,6 +12,7 @@ import { NewUserCategoryModal } from './components/auth/NewUserCategoryModal';
 
 // Eager Core Pages (Auth & Landing)
 import { LandingPage } from './pages/LandingPage';
+import { PublicLandingPage } from './pages/PublicLandingPage';
 import { LoginPage } from './pages/Auth/LoginPage';
 import { RegisterPage } from './pages/Auth/RegisterPage';
 import { AuthCallbackPage } from './pages/Auth/AuthCallbackPage';
@@ -77,6 +78,7 @@ const ProblemDetailPage = lazyPage(() => import('./pages/Problems/ProblemDetailP
 const ManageProblemsPage = lazyPage(() => import('./pages/Admin/ManageProblemsPage'), 'ManageProblemsPage');
 const ProblemFormPage = lazyPage(() => import('./pages/Admin/ProblemFormPage'), 'ProblemFormPage');
 const MembershipsPage = lazyPage(() => import('./pages/Memberships/MembershipsPage'), 'MembershipsPage');
+const OnboardingPage = lazyPage(() => import('./pages/Onboarding/OnboardingPage'), 'OnboardingPage');
 
 const PageLoader: React.FC = () => (
   <div className="flex items-center justify-center min-h-[50vh] w-full">
@@ -102,6 +104,10 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean 
     return <Navigate to="/login" replace />;
   }
 
+  if (!user.isCategorySelected && !user.profile?.isCategorySelected) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
   if (adminOnly && !user.isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -114,6 +120,8 @@ const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
 
   const isAuthOrMeetingPage =
+    location.pathname === '/' ||
+    location.pathname === '/onboarding' ||
     location.pathname.startsWith('/login') ||
     location.pathname.startsWith('/register') ||
     location.pathname.startsWith('/forgot-password') ||
@@ -143,8 +151,10 @@ const AppContent: React.FC = () => {
           <div className="flex-1 min-w-0">
             <React.Suspense fallback={<PageLoader />}>
               <Routes>
-                {/* When logged out, direct / to /login so main interface only shows when logged in */}
-                <Route path="/" element={user ? <LandingPage /> : <Navigate to="/login" replace />} />
+                {/* Public landing for logged-out users; existing dashboard for logged-in users */}
+                <Route path="/" element={user ? <LandingPage /> : <PublicLandingPage />} />
+                {/* Onboarding for first-time users */}
+                <Route path="/onboarding" element={<OnboardingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/forgot-password" element={<ForgotPasswordPage />} />

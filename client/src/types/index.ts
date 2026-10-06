@@ -11,6 +11,8 @@ export interface User {
   isSuspended: boolean;
   isAdmin: boolean;
   roleChangeCount?: number;
+  isCategorySelected?: boolean;
+  onboardingCompleted?: boolean;
   createdAt: string;
   updatedAt?: string;
   profile?: Profile;
