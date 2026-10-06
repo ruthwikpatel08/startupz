@@ -100,15 +100,20 @@ export function mapSupabaseToAppUser(
     achievements: profileRow?.achievements || '',
     openTo: profileRow?.open_to || 'Co-Founder,Startup Team,Investment',
     profileCompletion: profileRow?.profile_completion || 60,
+    roleChangeCount: profileRow?.role_change_count ?? profileRow?.roleChangeCount ?? metadata.role_change_count ?? 0,
+    role_change_count: profileRow?.role_change_count ?? profileRow?.roleChangeCount ?? metadata.role_change_count ?? 0,
     isCategorySelected: profileRow?.is_category_selected === true,
     createdAt: profileRow?.created_at || authUser.created_at,
     updatedAt: profileRow?.updated_at || authUser.updated_at,
   };
 
+  const roleChangeCount = profile.roleChangeCount ?? 0;
+
   return {
     id: authUser.id,
     email: authUser.email || '',
     role,
+    roleChangeCount,
     isVerified: !!authUser.email_confirmed_at || isGoogle,
     verificationBadge: isGoogle ? 'Verified via Google' : (authUser.email_confirmed_at ? 'Verified Member' : null),
     isSuspended: false,
@@ -220,6 +225,8 @@ export async function upsertUserProfile(
     website_url: string;
     open_to: string;
     profile_completion: number;
+    role_change_count: number;
+    roleChangeCount: number;
     is_category_selected: boolean;
     auth_provider: string;
     email: string;

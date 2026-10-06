@@ -58,7 +58,33 @@ import {
   AlertTriangle,
   AlertOctagon,
   UserX,
+  Lock,
 } from 'lucide-react';
+
+export const PROFILE_ROLE_OPTIONS = [
+  { id: 'STUDENT', label: 'Student', desc: 'Learning, building projects, seeking internships & startup opportunities' },
+  { id: 'OTHER', label: 'Others', desc: 'Designers, operators, domain specialists & community members' },
+  { id: 'FOUNDER', label: 'Founder', desc: 'Starting a new venture and seeking passionate teammates or resources' },
+  { id: 'COFOUNDER', label: 'Co-Founder', desc: 'Looking to join an early-stage startup as a core partner' },
+  { id: 'DEVELOPER', label: 'Developer', desc: 'Technical & software engineering talent building robust products' },
+  { id: 'MARKETER', label: 'Marketer', desc: 'Growth marketing, customer acquisition and brand scaling expert' },
+  { id: 'INVESTOR', label: 'Investor', desc: 'Angel investor or venture capitalist exploring high-potential startups' },
+  { id: 'MENTOR', label: 'Mentor', desc: 'Experienced advisor, founder or executive guiding emerging teams' },
+];
+
+export function normalizeRoleValue(role?: string | null): string {
+  if (!role) return 'STUDENT';
+  const clean = role.trim().toUpperCase();
+  if (clean.includes('STUDENT')) return 'STUDENT';
+  if (clean.includes('OTHER')) return 'OTHER';
+  if (clean.includes('COFOUNDER') || clean.includes('CO-FOUNDER')) return 'COFOUNDER';
+  if (clean.includes('FOUNDER')) return 'FOUNDER';
+  if (clean.includes('DEV') || clean.includes('ENG')) return 'DEVELOPER';
+  if (clean.includes('MARKET')) return 'MARKETER';
+  if (clean.includes('INVEST')) return 'INVESTOR';
+  if (clean.includes('MENTOR') || clean.includes('ADVISOR')) return 'MENTOR';
+  return clean;
+}
 
 export interface WorkExperienceItem {
   id?: string;
@@ -189,6 +215,9 @@ export const ProfilePage: React.FC = () => {
     const currentP = profileUser?.profile || currentUser?.profile;
     if (currentP) {
       const exps = parseWorkExperiences(currentP.startupExperience);
+      const initialRole = normalizeRoleValue(profileUser?.role || currentP.preferredRole || currentUser?.role || 'STUDENT');
+      const changeCount = currentP.roleChangeCount ?? currentP.role_change_count ?? (profileUser as any)?.roleChangeCount ?? (currentUser as any)?.roleChangeCount ?? 0;
+
       setFormData({
         avatar: currentP.avatar || '',
         coverImage: currentP.coverImage || '',
@@ -200,13 +229,16 @@ export const ProfilePage: React.FC = () => {
         skills: currentP.skills || '',
         startupInterests: currentP.startupInterests || '',
         industries: currentP.industries || '',
-        preferredRole: currentP.preferredRole || 'Founders',
+        role: initialRole,
+        preferredRole: initialRole,
+        initialRole: initialRole,
+        roleChangeCount: changeCount,
         availability: currentP.availability || 'Full-time',
         startupExperience: currentP.startupExperience || '',
         experiences: exps.length > 0 ? exps : [
           {
             id: `exp-${Date.now()}`,
-            category: currentP.preferredRole || 'Founders',
+            category: initialRole,
             company: '',
             description: currentP.startupExperience && !currentP.startupExperience.startsWith('[') ? currentP.startupExperience : '',
           },
@@ -949,7 +981,18 @@ export const ProfilePage: React.FC = () => {
 
     const exps = formData.experiences || [];
     const serializedExp = JSON.stringify(exps);
-    const primaryCat = exps[0]?.category || formData.preferredRole || 'Founders';
+    const selectedRole = normalizeRoleValue(formData.preferredRole || formData.role || 'STUDENT');
+    const initialRole = normalizeRoleValue(formData.initialRole || selectedRole);
+    const currentChangeCount = Number(formData.roleChangeCount) || 0;
+    const isRoleChanging = selectedRole !== initialRole;
+
+    if (isRoleChanging && currentChangeCount >= 3) {
+      setSaveError('You have reached the maximum limit of 3 role changes. Your role is permanently locked.');
+      setSaving(false);
+      return;
+    }
+
+    const newRoleChangeCount = isRoleChanging ? currentChangeCount + 1 : currentChangeCount;
 
     try {
       // 1. Update Supabase public.profiles table
@@ -965,7 +1008,9 @@ export const ProfilePage: React.FC = () => {
           skills: formData.skills,
           startup_interests: formData.startupInterests,
           industries: formData.industries,
-          preferred_role: primaryCat,
+          preferred_role: selectedRole,
+          role_change_count: newRoleChangeCount,
+          roleChangeCount: newRoleChangeCount,
           is_category_selected: true,
           availability: formData.availability,
           startup_experience: serializedExp,
@@ -985,22 +1030,31 @@ export const ProfilePage: React.FC = () => {
         const res = await api.updateProfile({
           ...formData,
           startupExperience: serializedExp,
-          preferredRole: primaryCat,
+          preferredRole: selectedRole,
+          role: selectedRole,
+          roleChangeCount: newRoleChangeCount,
           isCategorySelected: true,
         });
         if (res?.user) updatedUser = res.user;
-      } catch (backendErr) {
+      } catch (backendErr: any) {
         console.warn('Backend profile mirror warning (non-fatal):', backendErr);
+        if (backendErr?.response?.data?.error) {
+          throw new Error(backendErr.response.data.error);
+        }
       }
 
       const mergedUser: User = {
         ...(updatedUser || profileUser || currentUser!),
+        role: selectedRole,
+        roleChangeCount: newRoleChangeCount,
         profile: {
           ...(profileUser?.profile || currentUser?.profile || {}),
           ...(updatedUser?.profile || {}),
           ...formData,
           startupExperience: serializedExp,
-          preferredRole: primaryCat,
+          preferredRole: selectedRole,
+          roleChangeCount: newRoleChangeCount,
+          role_change_count: newRoleChangeCount,
           isCategorySelected: true,
         },
       };
@@ -1009,7 +1063,10 @@ export const ProfilePage: React.FC = () => {
         ...prev,
         ...formData,
         startupExperience: serializedExp,
-        preferredRole: primaryCat,
+        preferredRole: selectedRole,
+        role: selectedRole,
+        initialRole: selectedRole,
+        roleChangeCount: newRoleChangeCount,
       }));
 
       setProfileUser(mergedUser);
@@ -1989,6 +2046,89 @@ export const ProfilePage: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Account Role & Category Section (Max 3 edits allowed) */}
+            {(() => {
+              const currentCount = Number(formData.roleChangeCount) || 0;
+              const chancesRemaining = Math.max(0, 3 - currentCount);
+              const selectedRole = normalizeRoleValue(formData.preferredRole || formData.role || 'STUDENT');
+              const initialRole = normalizeRoleValue(formData.initialRole || selectedRole);
+              const isChanging = selectedRole !== initialRole;
+              const isLocked = chancesRemaining <= 0;
+
+              const currentRoleObj = PROFILE_ROLE_OPTIONS.find((r) => r.id === selectedRole);
+              const initialRoleObj = PROFILE_ROLE_OPTIONS.find((r) => r.id === initialRole);
+
+              return (
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-[#E2E8F0] dark:border-slate-700 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-[#4F46E5] flex items-center gap-1.5">
+                        <Users size={14} />
+                        <span>Account Role (I am joining as a)</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Your primary role on the platform. Limited to 3 edits total.
+                      </p>
+                    </div>
+
+                    {isLocked ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-800 shrink-0">
+                        <Lock size={12} className="text-amber-600 dark:text-amber-400" />
+                        <span>Role Locked (3 of 3 used)</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-[#4F46E5] dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
+                        <Sparkles size={12} className="text-indigo-600 dark:text-indigo-400" />
+                        <span>{chancesRemaining} / 3 role {chancesRemaining === 1 ? 'change' : 'changes'} left</span>
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1.5">
+                      Select Role
+                    </label>
+                    <select
+                      value={selectedRole}
+                      disabled={isLocked}
+                      onChange={(e) => {
+                        setFormData((prev: any) => ({
+                          ...prev,
+                          preferredRole: e.target.value,
+                          role: e.target.value,
+                        }));
+                      }}
+                      className="input-base w-full px-3 py-2 text-xs font-semibold bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {PROFILE_ROLE_OPTIONS.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {opt.label} — {opt.desc}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {isLocked && (
+                    <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                      <Lock size={14} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                      <span>
+                        You have used all 3 role change chances. Your role is permanently set to <strong>{currentRoleObj?.label || selectedRole}</strong>.
+                      </span>
+                    </div>
+                  )}
+
+                  {!isLocked && isChanging && (
+                    <div className="p-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900 text-xs text-indigo-900 dark:text-indigo-200 flex items-start gap-2">
+                      <Sparkles size={14} className="shrink-0 mt-0.5 text-[#4F46E5]" />
+                      <span>
+                        Switching role from <strong>{initialRoleObj?.label || initialRole}</strong> to <strong>{currentRoleObj?.label || selectedRole}</strong> will use 1 chance ({chancesRemaining - 1} left after saving).
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>

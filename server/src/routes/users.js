@@ -534,6 +534,25 @@ router.put('/profile', requireAuth, async (req, res) => {
     const existing = await prisma.profile.findUnique({
       where: { userId: req.user.id },
     });
+    const existingUser = await prisma.user.findUnique({
+      where: { id: req.user.id },
+    });
+
+    const currentRole = (existing?.preferredRole || existingUser?.role || '').trim().toUpperCase();
+    let currentRoleChangeCount = existing?.roleChangeCount || 0;
+
+    if (preferredRole) {
+      const newRole = String(preferredRole).trim().toUpperCase();
+      if (currentRole && newRole && currentRole !== newRole) {
+        if (currentRoleChangeCount >= 3) {
+          return res.status(400).json({
+            error: 'You have reached the maximum limit of 3 role changes. Your role is permanently locked.',
+          });
+        }
+        currentRoleChangeCount += 1;
+        updatedProfile.roleChangeCount = currentRoleChangeCount;
+      }
+    }
 
     const merged = { ...existing, ...updatedProfile };
     updatedProfile.profileCompletion = computeProfileCompletion(merged);
@@ -559,6 +578,7 @@ router.put('/profile', requireAuth, async (req, res) => {
     try {
       await upsertSupabaseProfile(req.user.id, req.user.email, {
         ...req.body,
+        roleChangeCount: currentRoleChangeCount,
         profileCompletion: updatedProfile.profileCompletion,
       });
     } catch (sbSyncErr) {

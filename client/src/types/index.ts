@@ -10,6 +10,7 @@ export interface User {
   verificationBadge?: string | null;
   isSuspended: boolean;
   isAdmin: boolean;
+  roleChangeCount?: number;
   createdAt: string;
   updatedAt?: string;
   profile?: Profile;
@@ -51,6 +52,8 @@ export interface Profile {
   achievements?: string | null;
   openTo?: string | null;
   profileCompletion?: number;
+  roleChangeCount?: number;
+  role_change_count?: number;
   isCategorySelected?: boolean;
   createdAt?: string;
   updatedAt?: string;

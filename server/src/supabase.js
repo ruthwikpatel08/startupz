@@ -222,6 +222,9 @@ export async function upsertSupabaseProfile(userId, userEmail, profileData) {
     }
     if (profileData.isCategorySelected !== undefined) payload.is_category_selected = Boolean(profileData.isCategorySelected);
     if (profileData.profileCompletion !== undefined) payload.profile_completion = Number(profileData.profileCompletion) || 60;
+    if (profileData.roleChangeCount !== undefined || profileData.role_change_count !== undefined) {
+      payload.role_change_count = Number(profileData.roleChangeCount ?? profileData.role_change_count) || 0;
+    }
     if (cleanEmail) payload.email = cleanEmail;
     payload.updated_at = new Date().toISOString();
 
