@@ -234,16 +234,27 @@ export async function upsertSupabaseProfile(userId, userEmail, profileData) {
     if (cleanEmail) payload.email = cleanEmail;
     payload.updated_at = new Date().toISOString();
 
-    // 1. Check if profile exists by user_id or id or email
-    const filter = cleanEmail
-      ? `user_id.eq.${userId},id.eq.${userId},email.ilike.${cleanEmail}`
-      : `user_id.eq.${userId},id.eq.${userId}`;
+    const isUuid = (str) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str.trim());
 
-    const { data: existing } = await supabaseAdmin
-      .from('profiles')
-      .select('id, user_id')
-      .or(filter)
-      .maybeSingle();
+    // 1. Check if profile exists by user_id/id (if valid UUID) or by email
+    let existing = null;
+    if (userId && isUuid(userId)) {
+      const { data } = await supabaseAdmin
+        .from('profiles')
+        .select('id, user_id, email')
+        .or(`user_id.eq.${userId},id.eq.${userId}`)
+        .maybeSingle();
+      existing = data;
+    }
+
+    if (!existing && cleanEmail) {
+      const { data } = await supabaseAdmin
+        .from('profiles')
+        .select('id, user_id, email')
+        .ilike('email', cleanEmail)
+        .maybeSingle();
+      existing = data;
+    }
 
     let savedRow = null;
     if (existing?.id) {
@@ -260,12 +271,13 @@ export async function upsertSupabaseProfile(userId, userEmail, profileData) {
       }
       savedRow = data;
     } else {
+      const insertPayload = { ...payload };
+      if (userId && isUuid(userId)) {
+        insertPayload.user_id = userId;
+      }
       const { data, error } = await supabaseAdmin
         .from('profiles')
-        .insert({
-          user_id: userId,
-          ...payload,
-        })
+        .insert(insertPayload)
         .select()
         .single();
 
@@ -283,11 +295,20 @@ export async function upsertSupabaseProfile(userId, userEmail, profileData) {
       if (payload.role_change_count !== undefined) userPayload.role_change_count = payload.role_change_count;
       if (payload.username_changed_at !== undefined) userPayload.username_changed_at = payload.username_changed_at;
 
-      await supabaseAdmin
-        .from('users')
-        .update(userPayload)
-        .or(cleanEmail ? `id.eq.${userId},email.ilike.${cleanEmail}` : `id.eq.${userId}`)
-        .catch(() => null);
+      const targetUserId = existing?.user_id || (userId && isUuid(userId) ? userId : null);
+      if (targetUserId) {
+        await supabaseAdmin
+          .from('users')
+          .update(userPayload)
+          .eq('id', targetUserId)
+          .catch(() => null);
+      } else if (cleanEmail) {
+        await supabaseAdmin
+          .from('users')
+          .update(userPayload)
+          .ilike('email', cleanEmail)
+          .catch(() => null);
+      }
     }
 
     return savedRow;

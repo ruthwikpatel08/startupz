@@ -392,6 +392,7 @@ export const AuthCallbackPage: React.FC = () => {
           id: authUser.id,
           email: authUser.email,
           fullName: cleanFullName,
+          username: cleanUsername,
           role: selectedRole,
           headline: cleanHeadline,
           location: cleanLocation,

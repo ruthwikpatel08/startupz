@@ -314,10 +314,11 @@ export const ProfilePage: React.FC = () => {
     const serializedExp = JSON.stringify(list);
     try {
       if (currentUser?.id) {
-        await supabase
-          .from('profiles')
-          .update({ startup_experience: serializedExp })
-          .eq('user_id', currentUser.id);
+        await upsertUserProfile(currentUser.id, {
+          startup_experience: serializedExp,
+          email: currentUser.email,
+        }).catch(() => null);
+        await api.updateProfile({ startupExperience: serializedExp }).catch(() => null);
         invalidateUserProfileCache(currentUser.id);
       }
       setProfileUser((prev: any) => {
@@ -403,6 +404,7 @@ export const ProfilePage: React.FC = () => {
       // 1. Update Supabase profiles table immediately
       await upsertUserProfile(currentUser.id, {
         [fieldKey]: previewPhotoUrl,
+        email: currentUser.email,
       });
 
       // 2. Mirror to backend if possible
@@ -468,6 +470,7 @@ export const ProfilePage: React.FC = () => {
       // 1. Update Supabase profile
       await upsertUserProfile(currentUser.id, {
         [fieldKey]: null,
+        email: currentUser.email,
       });
 
       // 2. Mirror to backend if avatar
@@ -591,10 +594,18 @@ export const ProfilePage: React.FC = () => {
     const updatedSkills = [...currentSkills, trimmed].join(', ');
     setSavingSkill(true);
     try {
+      if (currentUser?.id) {
+        await upsertUserProfile(currentUser.id, {
+          skills: updatedSkills,
+          email: currentUser.email,
+        }).catch(() => null);
+      }
       const res = await api.updateProfile({ skills: updatedSkills });
-      setProfileUser(res.user);
-      if (isMe && currentUser) {
-        updateUser(res.user);
+      if (res?.user) {
+        setProfileUser(res.user);
+        if (isMe && currentUser) {
+          updateUser(res.user);
+        }
       }
       setNewSkillInput('');
     } catch (err) {
@@ -612,10 +623,18 @@ export const ProfilePage: React.FC = () => {
     const updatedSkills = currentSkills.filter((s) => s !== skillToRemove).join(', ');
     setSavingSkill(true);
     try {
+      if (currentUser?.id) {
+        await upsertUserProfile(currentUser.id, {
+          skills: updatedSkills,
+          email: currentUser.email,
+        }).catch(() => null);
+      }
       const res = await api.updateProfile({ skills: updatedSkills });
-      setProfileUser(res.user);
-      if (isMe && currentUser) {
-        updateUser(res.user);
+      if (res?.user) {
+        setProfileUser(res.user);
+        if (isMe && currentUser) {
+          updateUser(res.user);
+        }
       }
     } catch (err) {
       console.error('Failed to remove skill:', err);
@@ -1042,37 +1061,39 @@ export const ProfilePage: React.FC = () => {
       }
 
       // 1. Update Supabase public.profiles table
-      const savedProfileRow = await upsertUserProfile(currentUser.id, {
-        full_name: formData.fullName,
-        username: cleanUsername,
-        username_changed_at: newUsernameChangedAt,
-        headline: formData.headline,
-        one_line_bio: formData.oneLineBio || formData.headline,
-        location: formData.location,
-        bio: formData.bio,
-        avatar: formData.avatar,
-        cover_image: formData.coverImage,
-        skills: formData.skills,
-        startup_interests: formData.startupInterests,
-        industries: formData.industries,
-        preferred_role: selectedRole,
-        role_change_count: newRoleChangeCount,
-        is_category_selected: true,
-        availability: formData.availability,
-        startup_experience: serializedExp,
-        achievements: serializedAchievements,
-        education: formData.education,
-        github_url: formData.githubUrl,
-        linkedin_url: formData.linkedinUrl,
-        website_url: formData.websiteUrl,
-        open_to: formData.openTo,
-      });
-
-      if (!savedProfileRow) {
-        throw new Error('Database update failed. Please try again.');
+      let savedProfileRow: any = null;
+      try {
+        savedProfileRow = await upsertUserProfile(currentUser.id, {
+          full_name: formData.fullName,
+          username: cleanUsername,
+          username_changed_at: newUsernameChangedAt,
+          headline: formData.headline,
+          one_line_bio: formData.oneLineBio || formData.headline,
+          location: formData.location,
+          bio: formData.bio,
+          avatar: formData.avatar,
+          cover_image: formData.coverImage,
+          skills: formData.skills,
+          startup_interests: formData.startupInterests,
+          industries: formData.industries,
+          preferred_role: selectedRole,
+          role_change_count: newRoleChangeCount,
+          is_category_selected: true,
+          availability: formData.availability,
+          startup_experience: serializedExp,
+          achievements: serializedAchievements,
+          education: formData.education,
+          github_url: formData.githubUrl,
+          linkedin_url: formData.linkedinUrl,
+          website_url: formData.websiteUrl,
+          open_to: formData.openTo,
+          email: currentUser.email,
+        });
+      } catch (sbErr: any) {
+        console.warn('Direct Supabase profile update error:', sbErr);
       }
 
-      // 2. Authoritatively update backend API (which syncs to SQLite/Prisma & Supabase Admin)
+      // 2. Authoritatively update backend API (which syncs to SQLite/Prisma & Supabase Admin with service-role privileges)
       let updatedUser: User | null = null;
       try {
         const res = await api.updateProfile({
@@ -1084,48 +1105,53 @@ export const ProfilePage: React.FC = () => {
           role: selectedRole,
           roleChangeCount: newRoleChangeCount,
           isCategorySelected: true,
+          email: currentUser.email,
         });
         if (res?.user) updatedUser = res.user;
       } catch (backendErr: any) {
         console.warn('Backend profile mirror warning:', backendErr);
-        if (backendErr?.response?.data?.error) {
+        if (!savedProfileRow && backendErr?.response?.data?.error) {
           throw new Error(backendErr.response.data.error);
         }
       }
 
+      if (!savedProfileRow && !updatedUser) {
+        throw new Error('Failed to update profile. Please try again.');
+      }
+
       const authoritativeUser: User = {
         ...(updatedUser || profileUser || currentUser),
-        username: savedProfileRow.username || cleanUsername || currentUser.username,
-        role: savedProfileRow.preferred_role || selectedRole,
-        roleChangeCount: savedProfileRow.role_change_count ?? newRoleChangeCount,
+        username: savedProfileRow?.username || cleanUsername || currentUser.username,
+        role: savedProfileRow?.preferred_role || selectedRole,
+        roleChangeCount: savedProfileRow?.role_change_count ?? newRoleChangeCount,
         profile: {
           ...(profileUser?.profile || currentUser.profile || {}),
           ...(updatedUser?.profile || {}),
           ...formData,
-          fullName: savedProfileRow.full_name || formData.fullName,
-          username: savedProfileRow.username || cleanUsername,
-          usernameChangedAt: savedProfileRow.username_changed_at || newUsernameChangedAt,
-          username_changed_at: savedProfileRow.username_changed_at || newUsernameChangedAt,
-          headline: savedProfileRow.headline || formData.headline,
-          oneLineBio: savedProfileRow.one_line_bio || formData.oneLineBio,
-          location: savedProfileRow.location || formData.location,
-          bio: savedProfileRow.bio || formData.bio,
-          avatar: savedProfileRow.avatar || formData.avatar,
-          coverImage: savedProfileRow.cover_image || formData.coverImage,
-          skills: savedProfileRow.skills || formData.skills,
-          startupInterests: savedProfileRow.startup_interests || formData.startupInterests,
-          industries: savedProfileRow.industries || formData.industries,
-          preferredRole: savedProfileRow.preferred_role || selectedRole,
-          roleChangeCount: savedProfileRow.role_change_count ?? newRoleChangeCount,
-          role_change_count: savedProfileRow.role_change_count ?? newRoleChangeCount,
-          availability: savedProfileRow.availability || formData.availability,
-          startupExperience: savedProfileRow.startup_experience || serializedExp,
-          achievements: savedProfileRow.achievements || formData.achievements,
-          education: savedProfileRow.education || formData.education,
-          githubUrl: savedProfileRow.github_url || formData.githubUrl,
-          linkedinUrl: savedProfileRow.linkedin_url || formData.linkedinUrl,
-          websiteUrl: savedProfileRow.website_url || formData.websiteUrl,
-          openTo: savedProfileRow.open_to || formData.openTo,
+          fullName: savedProfileRow?.full_name || formData.fullName,
+          username: savedProfileRow?.username || cleanUsername,
+          usernameChangedAt: savedProfileRow?.username_changed_at || newUsernameChangedAt,
+          username_changed_at: savedProfileRow?.username_changed_at || newUsernameChangedAt,
+          headline: savedProfileRow?.headline || formData.headline,
+          oneLineBio: savedProfileRow?.one_line_bio || formData.oneLineBio,
+          location: savedProfileRow?.location || formData.location,
+          bio: savedProfileRow?.bio || formData.bio,
+          avatar: savedProfileRow?.avatar || formData.avatar,
+          coverImage: savedProfileRow?.cover_image || formData.coverImage,
+          skills: savedProfileRow?.skills || formData.skills,
+          startupInterests: savedProfileRow?.startup_interests || formData.startupInterests,
+          industries: savedProfileRow?.industries || formData.industries,
+          preferredRole: savedProfileRow?.preferred_role || selectedRole,
+          roleChangeCount: savedProfileRow?.role_change_count ?? newRoleChangeCount,
+          role_change_count: savedProfileRow?.role_change_count ?? newRoleChangeCount,
+          availability: savedProfileRow?.availability || formData.availability,
+          startupExperience: savedProfileRow?.startup_experience || serializedExp,
+          achievements: savedProfileRow?.achievements || formData.achievements,
+          education: savedProfileRow?.education || formData.education,
+          githubUrl: savedProfileRow?.github_url || formData.githubUrl,
+          linkedinUrl: savedProfileRow?.linkedin_url || formData.linkedinUrl,
+          websiteUrl: savedProfileRow?.website_url || formData.websiteUrl,
+          openTo: savedProfileRow?.open_to || formData.openTo,
           isCategorySelected: true,
         },
       };
@@ -1133,15 +1159,15 @@ export const ProfilePage: React.FC = () => {
       setFormData((prev: any) => ({
         ...prev,
         ...formData,
-        fullName: savedProfileRow.full_name || formData.fullName,
-        username: savedProfileRow.username || cleanUsername,
-        initialUsername: savedProfileRow.username || cleanUsername,
-        usernameChangedAt: savedProfileRow.username_changed_at || newUsernameChangedAt,
+        fullName: savedProfileRow?.full_name || formData.fullName,
+        username: savedProfileRow?.username || cleanUsername,
+        initialUsername: savedProfileRow?.username || cleanUsername,
+        usernameChangedAt: savedProfileRow?.username_changed_at || newUsernameChangedAt,
         startupExperience: serializedExp,
-        preferredRole: savedProfileRow.preferred_role || selectedRole,
-        role: savedProfileRow.preferred_role || selectedRole,
-        initialRole: savedProfileRow.preferred_role || selectedRole,
-        roleChangeCount: savedProfileRow.role_change_count ?? newRoleChangeCount,
+        preferredRole: savedProfileRow?.preferred_role || selectedRole,
+        role: savedProfileRow?.preferred_role || selectedRole,
+        initialRole: savedProfileRow?.preferred_role || selectedRole,
+        roleChangeCount: savedProfileRow?.role_change_count ?? newRoleChangeCount,
       }));
 
       setProfileUser(authoritativeUser);

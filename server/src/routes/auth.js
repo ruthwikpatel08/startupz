@@ -193,7 +193,7 @@ router.post('/google', async (req, res) => {
 // POST /api/auth/sync - Ensure any logged-in real user is saved in DB and receives a valid token
 router.post('/sync', async (req, res) => {
   try {
-    const { id, email, fullName, role = 'FOUNDER', headline, location, bio, avatar } = req.body;
+    const { id, email, fullName, role = 'FOUNDER', headline, location, bio, avatar, skills, username } = req.body;
     const cleanEmail = (email || '').trim().toLowerCase();
     if (!cleanEmail) {
       return res.status(400).json({ error: 'Email is required for synchronization.' });
@@ -225,9 +225,11 @@ router.post('/sync', async (req, res) => {
           profile: {
             create: {
               fullName: cleanName,
+              username: username || cleanEmail.split('@')[0],
               headline: headline || `${upperRole.charAt(0) + upperRole.slice(1).toLowerCase()} | Startup Builder`,
               location: location || 'Remote',
               bio: bio || null,
+              skills: skills || null,
               avatar: avatar || null,
               openTo: 'Co-Founder,Startup Team,Investment',
               profileCompletion: 85,
@@ -249,18 +251,22 @@ router.post('/sync', async (req, res) => {
         create: {
           userId: user.id,
           fullName: cleanName,
+          username: username || user.profile?.username || cleanEmail.split('@')[0],
           headline: headline || user.profile?.headline || `${upperRole} | Startup Builder`,
           location: location || user.profile?.location || 'Remote',
           bio: bio || null,
+          skills: skills || null,
           avatar: avatar || user.profile?.avatar || null,
           openTo: 'Co-Founder,Startup Team,Investment',
           profileCompletion: 85,
         },
         update: {
           fullName: cleanName || undefined,
+          username: username || undefined,
           headline: headline || undefined,
           location: location || undefined,
           bio: bio || undefined,
+          skills: skills || undefined,
           avatar: avatar || undefined,
         },
       });

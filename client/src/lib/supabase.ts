@@ -19,6 +19,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 const AUTH_PROVIDERS_KEY = 'startupz_auth_provider_hints';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const isUuid = (str?: string | null): boolean => typeof str === 'string' && UUID_REGEX.test(str.trim());
+
 /**
  * Safely store an auth provider hint (e.g. 'google' or 'email') for an email.
  * This ensures that when a Google OAuth user later enters their email + password,
@@ -170,43 +173,41 @@ export async function fetchUserProfile(userId: string, forceRefresh = false, ema
   const fetchPromise = (async () => {
     try {
       let data: any = null;
-      let error: any = null;
 
-      if (userId) {
+      // 1. If valid UUID, look up by user_id or id
+      if (userId && isUuid(userId)) {
         const res = await supabase
           .from('profiles')
           .select('*')
-          .eq('user_id', userId)
+          .or(`user_id.eq.${userId},id.eq.${userId}`)
           .maybeSingle();
         data = res.data;
-        error = res.error;
-
-        if (!data) {
-          const fallback = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .maybeSingle();
-          if (fallback.data) {
-            data = fallback.data;
-          }
-        }
       }
 
-      if (!data && email) {
+      // 2. If not found by UUID or not a UUID, check by email
+      const targetEmail = (email || (!isUuid(userId) && userId.includes('@') ? userId : '')).trim().toLowerCase();
+      if (!data && targetEmail) {
         const emailRes = await supabase
           .from('profiles')
           .select('*')
-          .ilike('email', email.trim())
+          .ilike('email', targetEmail)
           .maybeSingle();
         if (emailRes.data) {
           data = emailRes.data;
         }
       }
 
-      if (error && !data) {
-        console.warn('Error fetching profile from Supabase:', error.message);
-        return null;
+      // 3. If still not found and userId is a username (e.g. handle)
+      if (!data && userId && !isUuid(userId) && !userId.includes('@')) {
+        const uName = userId.trim().toLowerCase().replace(/^@/, '');
+        const uRes = await supabase
+          .from('profiles')
+          .select('*')
+          .ilike('username', uName)
+          .maybeSingle();
+        if (uRes.data) {
+          data = uRes.data;
+        }
       }
 
       if (data) {
@@ -343,69 +344,102 @@ export async function upsertUserProfile(
 
   // Check if username is already taken by another user before performing update
   if (dbPayload.username) {
-    const { data: takenCheck } = await supabase
+    let takenQuery = supabase
       .from('profiles')
-      .select('id, user_id')
+      .select('id, user_id, email')
+      .ilike('username', dbPayload.username);
+
+    if (isUuid(userId)) {
+      takenQuery = takenQuery.neq('user_id', userId).neq('id', userId);
+    }
+    const { data: takenCheck } = await takenQuery.maybeSingle();
+    if (takenCheck) {
+      const isSameEmail = dbPayload.email && takenCheck.email?.toLowerCase() === dbPayload.email.toLowerCase();
+      if (!isSameEmail) {
+        throw new Error('This username is already taken. Please choose another username.');
+      }
+    }
+  }
+
+  // 1. Locate existing profile safely by UUID, email, or username
+  let existing: any = null;
+  if (userId && isUuid(userId)) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .or(`user_id.eq.${userId},id.eq.${userId}`)
+      .maybeSingle();
+    existing = data;
+  }
+  if (!existing && dbPayload.email) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .ilike('email', dbPayload.email)
+      .maybeSingle();
+    existing = data;
+  }
+  if (!existing && dbPayload.username) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
       .ilike('username', dbPayload.username)
-      .neq('user_id', userId)
-      .neq('id', userId)
+      .maybeSingle();
+    existing = data;
+  }
+
+  let savedData: any = null;
+  if (existing?.id) {
+    const { data: updatedRow, error: updateError } = await supabase
+      .from('profiles')
+      .update(dbPayload)
+      .eq('id', existing.id)
+      .select()
       .maybeSingle();
 
-    if (takenCheck) {
-      throw new Error('This username is already taken. Please choose another username.');
+    if (updateError) {
+      console.error('Supabase profile update error:', updateError);
+      throw new Error(updateError.message || 'Failed to update profile in database.');
     }
-  }
-
-  // 1. Try updating existing profile row
-  const { data: updatedRow, error: updateError } = await supabase
-    .from('profiles')
-    .update(dbPayload)
-    .or(`user_id.eq.${userId},id.eq.${userId}`)
-    .select()
-    .maybeSingle();
-
-  if (updateError) {
-    console.error('Supabase profile update error:', updateError);
-    if (
-      updateError.code === '23505' ||
-      updateError.message?.toLowerCase().includes('duplicate') ||
-      updateError.message?.toLowerCase().includes('unique') ||
-      updateError.message?.toLowerCase().includes('username')
-    ) {
-      throw new Error('This username is already taken. Please choose another username.');
+    savedData = updatedRow;
+  } else {
+    // 2. If profile did not exist, insert it
+    const insertPayload: any = { ...dbPayload };
+    if (userId && isUuid(userId)) {
+      insertPayload.user_id = userId;
     }
-    throw new Error(updateError.message || 'Failed to update profile in database.');
-  }
-
-  let savedData = updatedRow;
-
-  // 2. If profile did not exist, insert it
-  if (!savedData) {
     const { data: insertedRow, error: insertError } = await supabase
       .from('profiles')
-      .insert({
-        user_id: userId,
-        ...dbPayload,
-      })
+      .insert(insertPayload)
       .select()
       .single();
 
     if (insertError) {
       console.error('Supabase profile insert error:', insertError);
-      if (
-        insertError.code === '23505' ||
-        insertError.message?.toLowerCase().includes('duplicate') ||
-        insertError.message?.toLowerCase().includes('unique') ||
-        insertError.message?.toLowerCase().includes('username')
-      ) {
-        throw new Error('This username is already taken. Please choose another username.');
-      }
       throw new Error(insertError.message || 'Failed to create profile in database.');
     }
     savedData = insertedRow;
   }
 
-  // 3. Also sync role, role_change_count, username_changed_at to public.users table if changed
+  // 3. Keep Supabase Auth session metadata in sync with profile edits
+  if (dbPayload.full_name || dbPayload.avatar !== undefined) {
+    try {
+      const authMetaUpdate: any = {};
+      if (dbPayload.full_name) {
+        authMetaUpdate.full_name = dbPayload.full_name;
+        authMetaUpdate.name = dbPayload.full_name;
+      }
+      if (dbPayload.avatar !== undefined) {
+        authMetaUpdate.avatar_url = dbPayload.avatar;
+        authMetaUpdate.picture = dbPayload.avatar;
+      }
+      await supabase.auth.updateUser({ data: authMetaUpdate });
+    } catch {
+      // Non-blocking metadata sync
+    }
+  }
+
+  // 4. Also sync role, role_change_count, username_changed_at to public.users table if changed
   if (dbPayload.preferred_role || dbPayload.role_change_count !== undefined || dbPayload.username_changed_at !== undefined) {
     const userUpdate: any = {
       updated_at: new Date().toISOString(),
@@ -414,15 +448,25 @@ export async function upsertUserProfile(
     if (dbPayload.role_change_count !== undefined) userUpdate.role_change_count = dbPayload.role_change_count;
     if (dbPayload.username_changed_at !== undefined) userUpdate.username_changed_at = dbPayload.username_changed_at;
 
-    try {
-      await supabase
-        .from('users')
-        .update(userUpdate)
-        .eq('id', userId);
-    } catch {}
+    const targetUserId = existing?.user_id || (userId && isUuid(userId) ? userId : null);
+    if (targetUserId) {
+      try {
+        await supabase
+          .from('users')
+          .update(userUpdate)
+          .eq('id', targetUserId);
+      } catch {}
+    } else if (dbPayload.email) {
+      try {
+        await supabase
+          .from('users')
+          .update(userUpdate)
+          .ilike('email', dbPayload.email);
+      } catch {}
+    }
   }
 
-  // 4. Update in-memory cache with the fresh persistent data
+  // 5. Update in-memory cache with the fresh persistent data
   if (savedData) {
     userProfileCache.set(userId, { data: savedData, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
     if (dbPayload.email) {

@@ -71,7 +71,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // 1. Fetch StartupZ profile from Supabase public.profiles (forced fresh from database)
         let profileRow = await fetchUserProfile(userId, true, authUser.email || undefined);
 
-        // 2. If profile does not exist yet (e.g. brand new user), create default profile
+        // Double check by email if not found by userId
+        if (!profileRow && authUser.email) {
+          profileRow = await fetchUserProfile('', true, authUser.email);
+        }
+
+        // 2. If profile does not exist yet (e.g. brand new user), create default initial profile
         if (!profileRow) {
           const metadata = authUser.user_metadata || {};
           const isGoogle =
@@ -97,10 +102,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             is_category_selected: isCategorySelected,
             auth_provider: isGoogle ? 'google' : 'email',
             email: authUser.email || '',
-            startup_experience: '',
-            education: '',
-            bio: '',
-            skills: '',
           });
         }
 
@@ -132,6 +133,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: appUser.role,
           headline: appUser.profile?.headline,
           location: appUser.profile?.location,
+          bio: appUser.profile?.bio,
+          skills: appUser.profile?.skills,
           avatar: appUser.profile?.avatar,
         });
 
@@ -433,7 +436,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await api.login({ email: resolvedEmail, password });
       if (res && res.user && res.token) {
-        const appUser = res.user;
+        let appUser = res.user;
+        try {
+          const freshSb = await fetchUserProfile('', true, resolvedEmail);
+          if (freshSb) {
+            appUser = {
+              ...appUser,
+              username: freshSb.username || appUser.username,
+              role: freshSb.preferred_role || appUser.role,
+              profile: {
+                ...(appUser.profile || {}),
+                fullName: freshSb.full_name || appUser.profile?.fullName,
+                username: freshSb.username || appUser.profile?.username,
+                headline: freshSb.headline || appUser.profile?.headline,
+                oneLineBio: freshSb.one_line_bio || appUser.profile?.oneLineBio,
+                location: freshSb.location || appUser.profile?.location,
+                bio: freshSb.bio || appUser.profile?.bio,
+                avatar: freshSb.avatar || appUser.profile?.avatar,
+                skills: freshSb.skills || appUser.profile?.skills,
+                education: freshSb.education || appUser.profile?.education,
+                startupExperience: freshSb.startup_experience || appUser.profile?.startupExperience,
+                achievements: freshSb.achievements || appUser.profile?.achievements,
+                openTo: freshSb.open_to || appUser.profile?.openTo,
+              },
+            };
+          }
+        } catch {}
         setUser(appUser);
         setToken(res.token);
         localStorage.setItem('startupz_user', JSON.stringify(appUser));

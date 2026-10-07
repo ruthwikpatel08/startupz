@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { api } from '../../services/api';
 import { upsertUserProfile } from '../../lib/supabase';
 
 const STUDENT_AREAS = [
@@ -85,7 +86,8 @@ export const OnboardingPage: React.FC = () => {
         profileUpdate.startup_experience = experience;
       }
 
-      await upsertUserProfile(user.id, profileUpdate);
+      await upsertUserProfile(user.id, { ...profileUpdate, email: user.email });
+      api.updateProfile({ ...profileUpdate, email: user.email }).catch(() => null);
 
       // Immediately set onboarding_completed = true in local user state and store
       const updatedUser: any = {

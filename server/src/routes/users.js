@@ -651,8 +651,11 @@ router.put('/profile', requireAuth, async (req, res) => {
 
     // Authoritatively sync profile updates to Supabase PostgreSQL table (public.profiles) using service-role privileges
     try {
-      await upsertSupabaseProfile(req.user.id, req.user.email, {
+      const targetUserId = req.body?.id || req.user.id;
+      const targetEmail = (req.body?.email || req.user.email || '').trim().toLowerCase();
+      await upsertSupabaseProfile(targetUserId, targetEmail, {
         ...req.body,
+        ...updatedProfile,
         username: updatedProfile.username,
         usernameChangedAt: updatedProfile.usernameChangedAt,
         roleChangeCount: currentRoleChangeCount,
