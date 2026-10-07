@@ -318,6 +318,16 @@ export const api = {
     request<any>('/messages', { method: 'POST', body: JSON.stringify(payload) }),
   deleteConversation: (conversationId: string) =>
     request<any>(`/messages/${conversationId}`, { method: 'DELETE' }),
+  unsendMessage: (messageId: string) =>
+    request<any>(`/messages/message/${messageId}`, { method: 'DELETE' }),
+  editMessage: (messageId: string, content: string) =>
+    request<any>(`/messages/message/${messageId}`, { method: 'PUT', body: JSON.stringify({ content }) }),
+  blockUser: (userId: string) =>
+    request<any>(`/users/${userId}/block`, { method: 'POST' }),
+  unblockUser: (userId: string) =>
+    request<any>(`/users/${userId}/unblock`, { method: 'POST' }),
+  getBlockedUsers: () =>
+    request<{ blockedUserIds: string[] }>('/users/blocked/list'),
 
 
   // SAVED

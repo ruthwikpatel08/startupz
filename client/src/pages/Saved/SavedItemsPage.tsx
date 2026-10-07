@@ -110,7 +110,7 @@ export const SavedItemsPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {savedItems.map((item) => {
-            const d = item.details || {};
+            const d = item.details || item.data || {};
 
             return (
               <div
@@ -215,13 +215,18 @@ export const SavedItemsPage: React.FC = () => {
                   )}
 
                   {item.itemType === 'POST' && (
-                    <div>
-                      <h4 className="font-semibold text-xs text-slate-900 dark:text-white">
-                        {d.title || `${d.postType} Post`}
+                    <div className="space-y-1">
+                      <h4 className="font-semibold text-sm text-slate-900 dark:text-white line-clamp-1">
+                        {d.title || `${d.postType || d.post_type || 'Update'} Post`}
                       </h4>
-                      <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 mt-1 leading-relaxed">
-                        {d.content}
+                      <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-3 leading-relaxed">
+                        {d.content || 'Shared a post on the startup feed.'}
                       </p>
+                      {d.author?.profile?.fullName && (
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 pt-0.5">
+                          By {d.author.profile.fullName}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>

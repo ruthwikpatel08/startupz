@@ -6,6 +6,7 @@ import { Conversation, Message } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
 import { Avatar } from '../../components/common/Avatar';
+import { Modal } from '../../components/common/Modal';
 import {
   MessageSquare,
   Send,
@@ -15,6 +16,12 @@ import {
   Trash2,
   FolderKanban,
   ChevronLeft,
+  Pencil,
+  Undo2,
+  ShieldAlert,
+  UserX,
+  Check,
+  X,
 } from 'lucide-react';
 import {
   supabase,
@@ -23,6 +30,9 @@ import {
   getSupabaseMessages,
   sendSupabaseMessage,
   deleteSupabaseConversation,
+  getDeletedConversationIds,
+  unsendSupabaseMessage,
+  editSupabaseMessage,
   markMessagesAsRead,
 } from '../../lib/supabase';
 
@@ -43,6 +53,16 @@ export const MessagesPage: React.FC = () => {
   const [sending, setSending] = useState(false);
   const [deletingConv, setDeletingConv] = useState(false);
   const [search, setSearch] = useState('');
+
+  // Block User State
+  const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
+  const [blockModalOpen, setBlockModalOpen] = useState(false);
+  const [blockActionLoading, setBlockActionLoading] = useState(false);
+
+  // Message Edit State (Instagram style)
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
+  const [editingSaving, setEditingSaving] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -72,8 +92,10 @@ export const MessagesPage: React.FC = () => {
 
       // Merge and deduplicate by participant user ID so that each account only appears ONCE
       const convMap = new Map<string, Conversation>();
+      const deletedIds = getDeletedConversationIds(user?.id);
 
       supaList.forEach((c) => {
+        if (deletedIds.has(c.id)) return;
         const key = getParticipantKey(c);
         if (!convMap.has(key)) {
           convMap.set(key, c);
@@ -81,6 +103,7 @@ export const MessagesPage: React.FC = () => {
       });
 
       apiList.forEach((c: any) => {
+        if (deletedIds.has(c.id)) return;
         const key = getParticipantKey(c);
         if (!convMap.has(key)) {
           convMap.set(key, c);
@@ -240,6 +263,34 @@ export const MessagesPage: React.FC = () => {
     };
   }, [user?.id]);
 
+  // Load blocked users
+  useEffect(() => {
+    if (!user?.id) return;
+    const loadBlocked = async () => {
+      try {
+        const local = localStorage.getItem(`hookz_blocked_users_${user.id}`);
+        if (local) {
+          setBlockedUserIds(JSON.parse(local));
+        }
+        const res = await api.getBlockedUsers().catch(() => null);
+        if (res?.blockedUserIds) {
+          setBlockedUserIds(res.blockedUserIds);
+          localStorage.setItem(`hookz_blocked_users_${user.id}`, JSON.stringify(res.blockedUserIds));
+        }
+      } catch {}
+    };
+    loadBlocked();
+  }, [user?.id]);
+
+  // Listen to custom updates (e.g. chat deletion, unsend, edit across components)
+  useEffect(() => {
+    const handleUpdate = () => {
+      fetchConversations();
+    };
+    window.addEventListener('startupz_messages_updated', handleUpdate);
+    return () => window.removeEventListener('startupz_messages_updated', handleUpdate);
+  }, [user?.id]);
+
   // Fetch messages when selectedConversation changes
   useEffect(() => {
     if (!selectedConversation || selectedConversation.id === 'draft') {
@@ -367,6 +418,21 @@ export const MessagesPage: React.FC = () => {
                   : m
               )
             );
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${selectedConversation.id}`,
+        },
+        (payload) => {
+          const oldRow = payload.old as any;
+          if (oldRow && oldRow.id) {
+            setMessages((prev) => prev.filter((m) => m.id !== oldRow.id));
           }
         }
       )
@@ -509,11 +575,93 @@ export const MessagesPage: React.FC = () => {
     }
   };
 
+  const otherParticipantId =
+    (selectedConversation as any)?.isProjectGroup
+      ? null
+      : selectedConversation?.participant?.id ||
+        (selectedConversation?.participant1Id === user?.id
+          ? selectedConversation?.participant2Id
+          : selectedConversation?.participant1Id);
+
+  const isParticipantBlocked = Boolean(otherParticipantId && blockedUserIds.includes(otherParticipantId));
+
+  const handleToggleBlock = async () => {
+    if (!otherParticipantId || blockActionLoading) return;
+    setBlockActionLoading(true);
+    try {
+      if (isParticipantBlocked) {
+        await api.unblockUser(otherParticipantId);
+        const next = blockedUserIds.filter((id) => id !== otherParticipantId);
+        setBlockedUserIds(next);
+        if (user?.id) localStorage.setItem(`hookz_blocked_users_${user.id}`, JSON.stringify(next));
+      } else {
+        await api.blockUser(otherParticipantId);
+        const next = [...blockedUserIds, otherParticipantId];
+        setBlockedUserIds(next);
+        if (user?.id) localStorage.setItem(`hookz_blocked_users_${user.id}`, JSON.stringify(next));
+      }
+      setBlockModalOpen(false);
+    } catch (err: any) {
+      console.error('Toggle block error:', err);
+      alert(err.message || 'Failed to update user block state.');
+    } finally {
+      setBlockActionLoading(false);
+    }
+  };
+
+  const handleStartEdit = (msg: Message) => {
+    setEditingMessageId(msg.id);
+    setEditingContent(msg.content);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditingContent('');
+  };
+
+  const handleSaveEdit = async (msgId: string) => {
+    if (!editingContent.trim() || !user?.id || editingSaving) return;
+    setEditingSaving(true);
+    try {
+      await editSupabaseMessage(msgId, editingContent.trim(), user.id);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === msgId ? { ...m, content: editingContent.trim(), isEdited: true } : m
+        )
+      );
+      setEditingMessageId(null);
+      setEditingContent('');
+    } catch (err: any) {
+      console.error('Failed to edit message:', err);
+      alert(err.message || 'Failed to edit message.');
+    } finally {
+      setEditingSaving(false);
+    }
+  };
+
+  const handleUnsend = async (msgId: string) => {
+    if (!user?.id) return;
+    if (
+      !window.confirm(
+        'Unsend this message? This will remove the message for everyone in this chat.'
+      )
+    ) {
+      return;
+    }
+    try {
+      await unsendSupabaseMessage(msgId, user.id);
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    } catch (err: any) {
+      console.error('Failed to unsend message:', err);
+      alert(err.message || 'Failed to unsend message.');
+    }
+  };
+
   const handleDeleteConversation = async () => {
     if (!selectedConversation || selectedConversation.id === 'draft' || !user?.id || deletingConv) return;
     if (
       !window.confirm(
-        'Are you sure you want to delete this conversation? All message history will be permanently deleted.'
+        'Delete this conversation from your account? This chat will be removed permanently for you, while remaining visible for the other person until they delete it.'
       )
     )
       return;
@@ -782,12 +930,30 @@ export const MessagesPage: React.FC = () => {
 
                 {/* Header Action Buttons */}
                 <div className="flex items-center gap-2 shrink-0">
+                  {!(selectedConversation as any).isProjectGroup && selectedConversation.id !== 'draft' && otherParticipantId && (
+                    <button
+                      type="button"
+                      onClick={() => setBlockModalOpen(true)}
+                      className={`p-1.5 rounded-lg border transition-colors cursor-pointer inline-flex items-center gap-1.5 text-xs ${
+                        isParticipantBlocked
+                          ? 'text-rose-600 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/50'
+                          : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-transparent hover:border-rose-200 dark:hover:border-rose-900/50'
+                      }`}
+                      title={isParticipantBlocked ? 'Unblock user' : 'Block user'}
+                    >
+                      <UserX size={15} />
+                      <span className="hidden sm:inline font-medium">
+                        {isParticipantBlocked ? 'Unblock' : 'Block'}
+                      </span>
+                    </button>
+                  )}
+
                   {selectedConversation.id !== 'draft' && (
                     <button
                       onClick={handleDeleteConversation}
                       disabled={deletingConv}
                       className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-900/50 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 text-xs"
-                      title="Delete conversation"
+                      title="Delete conversation permanently for you"
                     >
                       <Trash2 size={15} />
                       <span className="hidden sm:inline font-medium">Delete</span>
@@ -812,6 +978,23 @@ export const MessagesPage: React.FC = () => {
                   )}
                 </div>
               </div>
+
+              {/* Blocked User Warning Banner */}
+              {isParticipantBlocked && (
+                <div className="bg-rose-50 dark:bg-rose-950/50 border-b border-rose-200 dark:border-rose-900/50 px-3.5 py-2 flex items-center justify-between text-xs text-rose-700 dark:text-rose-300">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert size={15} className="shrink-0 text-rose-600" />
+                    <span>You have blocked this user. Unblock them to send or receive messages.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setBlockModalOpen(true)}
+                    className="font-bold underline cursor-pointer hover:text-rose-800 shrink-0 ml-2"
+                  >
+                    Unblock
+                  </button>
+                </div>
+              )}
 
               {/* Messages Bubble Area */}
               <div className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-3 bg-slate-50/40 dark:bg-dark-950/30">
@@ -877,28 +1060,83 @@ export const MessagesPage: React.FC = () => {
                         >
                           {isMe ? (
                             /* SENDER BUBBLE (Right Side) */
-                            <div className="flex flex-col items-end max-w-[85%] sm:max-w-md ml-auto">
-                              <div className="bg-brand-600 text-white rounded-2xl rounded-tr-xs px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-xs break-words">
-                                {m.content}
-                              </div>
-                              <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-end gap-1 mr-1">
-                                <span>
-                                  {new Date(m.createdAt).toLocaleTimeString([], {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
-                                </span>
-                                <span title={m.isRead ? 'Read' : 'Delivered'} className="inline-flex">
-                                  <CheckCheck
-                                    size={12}
-                                    className={
-                                      m.isRead
-                                        ? 'text-brand-600 dark:text-brand-400'
-                                        : 'text-slate-400 dark:text-slate-500'
-                                    }
+                            <div className="flex flex-col items-end max-w-[85%] sm:max-w-md ml-auto group relative">
+                              {editingMessageId === m.id ? (
+                                <div className="w-full bg-white dark:bg-dark-850 p-2.5 sm:p-3 rounded-2xl border border-brand-500 shadow-md space-y-2">
+                                  <textarea
+                                    value={editingContent}
+                                    onChange={(e) => setEditingContent(e.target.value)}
+                                    rows={2}
+                                    className="input-base text-xs sm:text-sm w-full p-2 bg-slate-50 dark:bg-dark-900 resize-none"
                                   />
-                                </span>
-                              </div>
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={handleCancelEdit}
+                                      className="px-2 py-1 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={editingSaving || !editingContent.trim()}
+                                      onClick={() => handleSaveEdit(m.id)}
+                                      className="px-2.5 py-1 text-xs bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg disabled:opacity-50 cursor-pointer inline-flex items-center gap-1"
+                                    >
+                                      {editingSaving ? 'Saving...' : 'Save'}
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="bg-brand-600 text-white rounded-2xl rounded-tr-xs px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-xs break-words relative">
+                                    {m.content}
+                                    {m.isEdited && (
+                                      <span className="text-[10px] text-brand-200 ml-1.5 italic">
+                                        (edited)
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-end gap-2 mr-1">
+                                    {/* Instagram-style Actions on Sender message */}
+                                    <div className="flex items-center gap-1.5 opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity mr-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleStartEdit(m)}
+                                        className="text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 p-0.5 rounded cursor-pointer"
+                                        title="Edit message"
+                                      >
+                                        <Pencil size={11} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUnsend(m.id)}
+                                        className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-0.5 rounded cursor-pointer"
+                                        title="Unsend message"
+                                      >
+                                        <Undo2 size={11} />
+                                      </button>
+                                    </div>
+
+                                    <span>
+                                      {new Date(m.createdAt).toLocaleTimeString([], {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
+                                    </span>
+                                    <span title={m.isRead ? 'Read' : 'Delivered'} className="inline-flex">
+                                      <CheckCheck
+                                        size={12}
+                                        className={
+                                          m.isRead
+                                            ? 'text-brand-600 dark:text-brand-400'
+                                            : 'text-slate-400 dark:text-slate-500'
+                                        }
+                                      />
+                                    </span>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           ) : (
                             /* RECEIVER BUBBLE (Left Side) */
@@ -915,6 +1153,11 @@ export const MessagesPage: React.FC = () => {
                               <div className="flex flex-col items-start">
                                 <div className="bg-white dark:bg-dark-850 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-dark-750 rounded-2xl rounded-tl-xs px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-2xs break-words">
                                   {m.content}
+                                  {m.isEdited && (
+                                    <span className="text-[10px] text-slate-400 ml-1.5 italic">
+                                      (edited)
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="text-[10px] text-slate-400 mt-1 ml-1">
                                   <span>
@@ -936,27 +1179,40 @@ export const MessagesPage: React.FC = () => {
               </div>
 
               {/* Message Composer Input */}
-              <form
-                onSubmit={handleSendMessage}
-                className="p-2.5 sm:p-3 border-t border-slate-200 dark:border-dark-800 bg-white dark:bg-dark-900 flex items-center gap-2 shrink-0"
-              >
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Message..."
-                  className="input-base py-2 px-3.5 text-xs sm:text-sm flex-1 rounded-full bg-slate-50 dark:bg-dark-850 border-slate-200 dark:border-dark-750 focus:bg-white dark:focus:bg-dark-900"
-                />
-                <button
-                  type="submit"
-                  disabled={sending || !newMessage.trim()}
-                  className="w-9 h-9 rounded-full bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 active:scale-95 disabled:opacity-40 transition-all cursor-pointer shadow-xs shrink-0"
-                  aria-label="Send message"
+              {isParticipantBlocked ? (
+                <div className="p-3 border-t border-slate-200 dark:border-dark-800 bg-slate-50 dark:bg-dark-900 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0">
+                  <span>You cannot message this user because they are blocked.</span>
+                  <button
+                    type="button"
+                    onClick={() => setBlockModalOpen(true)}
+                    className="btn-secondary py-1 px-3 text-xs font-semibold cursor-pointer"
+                  >
+                    Unblock to Chat
+                  </button>
+                </div>
+              ) : (
+                <form
+                  onSubmit={handleSendMessage}
+                  className="p-2.5 sm:p-3 border-t border-slate-200 dark:border-dark-800 bg-white dark:bg-dark-900 flex items-center gap-2 shrink-0"
                 >
-                  <Send size={15} />
-                </button>
-              </form>
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Message..."
+                    className="input-base py-2 px-3.5 text-xs sm:text-sm flex-1 rounded-full bg-slate-50 dark:bg-dark-850 border-slate-200 dark:border-dark-750 focus:bg-white dark:focus:bg-dark-900"
+                  />
+                  <button
+                    type="submit"
+                    disabled={sending || !newMessage.trim()}
+                    className="w-9 h-9 rounded-full bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 active:scale-95 disabled:opacity-40 transition-all cursor-pointer shadow-xs shrink-0"
+                    aria-label="Send message"
+                  >
+                    <Send size={15} />
+                  </button>
+                </form>
+              )}
             </>
           ) : (
             /* Empty State for Desktop when no conversation is active */
@@ -970,6 +1226,53 @@ export const MessagesPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Block User Confirmation Modal */}
+      <Modal
+        isOpen={blockModalOpen}
+        onClose={() => setBlockModalOpen(false)}
+        title={isParticipantBlocked ? "Unblock User" : "Block User"}
+      >
+        <div className="space-y-4 py-2 font-sans">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center shrink-0">
+              <UserX size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                {isParticipantBlocked
+                  ? `Unblock ${receiverName}?`
+                  : `Block ${receiverName}?`}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                {isParticipantBlocked
+                  ? "They will be able to message you, view your profile, and connect with you again."
+                  : "They will not be able to send you messages or view your activity. You can unblock them at any time."}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-dark-800">
+            <button
+              type="button"
+              onClick={() => setBlockModalOpen(false)}
+              className="btn-secondary py-2 px-4 text-xs font-medium cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={blockActionLoading}
+              onClick={handleToggleBlock}
+              className={`py-2 px-4 text-xs font-semibold rounded-lg text-white transition-colors cursor-pointer disabled:opacity-50 ${
+                isParticipantBlocked ? 'bg-brand-600 hover:bg-brand-700' : 'bg-rose-600 hover:bg-rose-700'
+              }`}
+            >
+              {blockActionLoading ? 'Processing...' : isParticipantBlocked ? 'Confirm Unblock' : 'Confirm Block'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

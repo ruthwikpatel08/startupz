@@ -226,11 +226,11 @@ export const Navbar: React.FC = () => {
 
             {/* 3. RIGHT EDGE: All action icons grouped tightly together */}
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 justify-end">
-              {/* Mobile Search Button (hidden on login/signup auth pages) */}
+              {/* Mobile Search Button (Opens dedicated /search page like Instagram) */}
               {!isAuthPage && (
                 <button
                   type="button"
-                  onClick={() => setSearchModalOpen(true)}
+                  onClick={() => navigate('/search')}
                   aria-label="Search platform"
                   className="md:hidden p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
                   title="Search usernames & platform"
@@ -270,11 +270,11 @@ export const Navbar: React.FC = () => {
                     )}
                   </Link>
 
-                  {/* Connections / Network Icon */}
+                  {/* Connections / Network Icon (hidden on mobile, moved into profile menu) */}
                   <Link
                     to="/network"
                     aria-label="Network Connections"
-                    className={`p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors ${
+                    className={`hidden sm:inline-flex p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors ${
                       isActive('/network') ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60' : ''
                     }`}
                   >
@@ -321,9 +321,8 @@ export const Navbar: React.FC = () => {
                     </Link>
                   )}
 
-                  {/* User Avatar & Dropdown (Desktop & Mobile) */}
+                  {/* User Avatar & Dropdown (Round on both Mobile & Desktop) */}
                   <div ref={profileRef} className="relative">
-                    {/* Mobile Profile Trigger Button */}
                     <button
                       type="button"
                       onClick={() => {
@@ -331,29 +330,7 @@ export const Navbar: React.FC = () => {
                         setMobileMenuOpen(false);
                       }}
                       aria-label="My Profile Menu"
-                      className={`sm:hidden flex items-center gap-1 px-2 py-1 rounded-md border text-xs font-medium transition-colors shrink-0 cursor-pointer ${
-                        profileDropdownOpen || location.pathname.startsWith('/profile')
-                          ? 'bg-brand-50 dark:bg-brand-950/80 border-brand-300 dark:border-brand-800 text-brand-700 dark:text-brand-300'
-                          : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-slate-300'
-                      }`}
-                    >
-                      <Avatar
-                        src={user.profile?.avatar}
-                        name={user.profile?.fullName || user.email}
-                        size="xs"
-                        className="!w-4 !h-4"
-                      />
-                      <span className="text-[11px] truncate max-w-[70px]">
-                        {user.profile?.fullName?.split(' ')[0] || 'Profile'}
-                      </span>
-                      <ChevronDown size={11} className={`text-slate-400 transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {/* Desktop Avatar Trigger Button */}
-                    <button
-                      type="button"
-                      onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                      className="hidden sm:flex items-center gap-2 p-0.5 rounded-full border border-slate-200 dark:border-slate-700 hover:border-brand-600 transition-colors focus:outline-none cursor-pointer"
+                      className="flex items-center justify-center p-0.5 rounded-full border border-slate-200 dark:border-slate-700 hover:border-brand-600 transition-colors focus:outline-none cursor-pointer shrink-0"
                     >
                       <Avatar
                         src={user.profile?.avatar}
@@ -391,6 +368,14 @@ export const Navbar: React.FC = () => {
                               <Sparkles size={14} className="text-brand-600 dark:text-brand-400" />
                               <span>AI - Scout (Finder)</span>
                             </button>
+                            <Link
+                              to="/network"
+                              onClick={() => setProfileDropdownOpen(false)}
+                              className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors"
+                            >
+                              <Users size={14} className="text-brand-600 dark:text-brand-400" />
+                              <span>My Network</span>
+                            </Link>
                             <Link
                               to={`/profile/${user.id}`}
                               onClick={() => setProfileDropdownOpen(false)}
@@ -541,9 +526,9 @@ export const Navbar: React.FC = () => {
             <button
               onClick={() => {
                 setMobileMenuOpen(false);
-                setSearchModalOpen(true);
+                navigate('/search');
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs bg-slate-50 dark:bg-dark-850 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs bg-slate-50 dark:bg-dark-850 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800 cursor-pointer"
             >
               <Search size={14} className="text-slate-400" />
               <span>Search platform, skills, founders...</span>

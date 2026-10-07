@@ -1,6 +1,7 @@
 import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { supabaseAdmin } from '../supabase.js';
 
 const router = express.Router();
 
@@ -64,13 +65,48 @@ router.get('/', requireAuth, async (req, res) => {
     const postMap = new Map(posts.map((p) => [p.id, p]));
     const problemMap = new Map(problems.map((p) => [p.id, p]));
 
+    // Query Supabase for any posts not present in local SQLite Prisma
+    const missingPostIds = postIds.filter((pid) => !postMap.has(pid));
+    if (missingPostIds.length > 0 && supabaseAdmin) {
+      try {
+        const { data: supaPosts } = await supabaseAdmin
+          .from('posts')
+          .select('*')
+          .in('id', missingPostIds);
+        if (Array.isArray(supaPosts)) {
+          supaPosts.forEach((sp) => {
+            postMap.set(sp.id, {
+              id: sp.id,
+              title: sp.title || 'Community Update',
+              content: sp.content || '',
+              postType: sp.post_type || 'UPDATE',
+              createdAt: sp.created_at,
+              author: {
+                id: sp.author_id,
+                profile: { fullName: 'Member', avatar: null },
+              },
+            });
+          });
+        }
+      } catch (e) {
+        console.warn('Supabase saved posts query notice:', e.message);
+      }
+    }
+
     const populatedItems = savedItems.map((item) => {
       let data = null;
       if (item.itemType === 'STARTUP') data = startupMap.get(item.itemId);
       if (item.itemType === 'USER') data = userMap.get(item.itemId);
       if (item.itemType === 'INVESTOR') data = investorMap.get(item.itemId);
       if (item.itemType === 'OPPORTUNITY') data = oppMap.get(item.itemId);
-      if (item.itemType === 'POST') data = postMap.get(item.itemId);
+      if (item.itemType === 'POST') {
+        data = postMap.get(item.itemId) || {
+          id: item.itemId,
+          title: 'Saved Post',
+          content: 'Post update in HookZ feed',
+          postType: 'UPDATE',
+        };
+      }
       if (item.itemType === 'PROBLEM') {
         const prob = problemMap.get(item.itemId);
         if (prob) {
@@ -83,14 +119,23 @@ router.get('/', requireAuth, async (req, res) => {
         }
       }
 
+      // If data is still missing, provide an item stub rather than silently discarding
+      if (!data) {
+        data = {
+          id: item.itemId,
+          title: `Saved ${item.itemType.toLowerCase()}`,
+        };
+      }
+
       return {
         id: item.id,
         itemType: item.itemType,
         itemId: item.itemId,
         savedAt: item.createdAt,
         data,
+        details: data,
       };
-    }).filter((item) => item.data !== null);
+    });
 
     return res.json({ savedItems: populatedItems });
   } catch (error) {

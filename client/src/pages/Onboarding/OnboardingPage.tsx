@@ -18,7 +18,7 @@ export const OnboardingPage: React.FC = () => {
   const { user, updateUser, refreshUser } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [role, setRole] = useState<RoleType>('');
+  const [role, setRole] = useState<RoleType>('Student');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 

@@ -199,8 +199,8 @@ export const AuthCallbackPage: React.FC = () => {
             user.user_metadata?.picture ||
             '';
 
-          let initialRole: UserRole = 'FOUNDER';
-          let initialHeadline = 'Founder & Visionary | Startup Builder';
+          let initialRole: UserRole = 'STUDENT';
+          let initialHeadline = 'Student Builder & Campus Innovator';
           let initialLocation = 'Remote';
           let initialCustomRole = '';
 
@@ -263,8 +263,8 @@ export const AuthCallbackPage: React.FC = () => {
                 user.user_metadata?.picture ||
                 '';
 
-              let initialRole: UserRole = 'FOUNDER';
-              let initialHeadline = 'Founder & Visionary | Startup Builder';
+              let initialRole: UserRole = 'STUDENT';
+              let initialHeadline = 'Student Builder & Campus Innovator';
               let initialLocation = 'Remote';
               let initialCustomRole = '';
 

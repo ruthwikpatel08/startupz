@@ -290,6 +290,7 @@ export interface Message {
   receiver?: User;
   content: string;
   isRead: boolean;
+  isEdited?: boolean;
   createdAt: string;
 }
 

@@ -190,6 +190,16 @@ export const ProfilePage: React.FC = () => {
   const [connActionLoading, setConnActionLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // User Posts & Updates
+  const [userPosts, setUserPosts] = useState<any[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+
+  // User Safety & Block Feature
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockingLoading, setBlockingLoading] = useState(false);
+  const [blockModalOpen, setBlockModalOpen] = useState(false);
+
   // Connections list modal
   const [connectionsModalOpen, setConnectionsModalOpen] = useState(false);
   const [connectionsList, setConnectionsList] = useState<any[]>([]);
@@ -650,6 +660,111 @@ export const ProfilePage: React.FC = () => {
     }));
   };
 
+  const fetchUserPosts = async (authorId: string) => {
+    if (!authorId) return;
+    setLoadingPosts(true);
+    try {
+      // 1. Fetch from backend API
+      const res: any = await api.getPosts({ authorId }).catch(() => null);
+      let postsList: any[] = Array.isArray(res?.posts) ? res.posts : [];
+
+      // 2. Fetch/merge from Supabase posts table
+      try {
+        const { data: supaPosts } = await supabase
+          .from('posts')
+          .select('*')
+          .eq('author_id', authorId)
+          .order('created_at', { ascending: false });
+
+        if (Array.isArray(supaPosts) && supaPosts.length > 0) {
+          const existingIds = new Set(postsList.map((p: any) => p.id));
+          supaPosts.forEach((sp: any) => {
+            if (!existingIds.has(sp.id)) {
+              postsList.push({
+                id: sp.id,
+                authorId: sp.author_id,
+                postType: sp.post_type || 'UPDATE',
+                title: sp.title,
+                content: sp.content,
+                links: sp.links,
+                likesCount: sp.likes_count || 0,
+                commentsCount: sp.comments_count || 0,
+                createdAt: sp.created_at,
+              });
+            }
+          });
+        }
+      } catch (sbErr) {
+        console.warn('Supabase profile posts fetch notice:', sbErr);
+      }
+
+      postsList.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setUserPosts(postsList);
+    } catch (err) {
+      console.error('Failed to load profile posts:', err);
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    if (!window.confirm('Are you sure you want to permanently delete this post? This cannot be undone.')) {
+      return;
+    }
+    setDeletingPostId(postId);
+    try {
+      await api.deletePost(postId).catch(() => null);
+      try {
+        await supabase.from('posts').delete().eq('id', postId);
+      } catch {}
+      setUserPosts((prev) => prev.filter((p) => p.id !== postId));
+    } catch (err) {
+      console.error('Failed to delete post:', err);
+      alert('Failed to delete post. Please try again.');
+    } finally {
+      setDeletingPostId(null);
+    }
+  };
+
+  // Block / Unblock logic
+  useEffect(() => {
+    if (!currentUser?.id || !profileUser?.id || isMe) return;
+    try {
+      const key = `hookz_blocked_${currentUser.id}`;
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const list = JSON.parse(stored);
+        setIsBlocked(list.includes(profileUser.id));
+      }
+    } catch {}
+  }, [currentUser?.id, profileUser?.id, isMe]);
+
+  const handleToggleBlock = async () => {
+    if (!currentUser?.id || !profileUser?.id) return;
+    setBlockingLoading(true);
+    try {
+      const key = `hookz_blocked_${currentUser.id}`;
+      let list: string[] = [];
+      try {
+        list = JSON.parse(localStorage.getItem(key) || '[]');
+      } catch {}
+
+      if (isBlocked) {
+        list = list.filter((uid: string) => uid !== profileUser.id);
+        setIsBlocked(false);
+      } else {
+        if (!list.includes(profileUser.id)) list.push(profileUser.id);
+        setIsBlocked(true);
+      }
+      localStorage.setItem(key, JSON.stringify(list));
+      setBlockModalOpen(false);
+    } catch (err) {
+      console.error('Toggle block error:', err);
+    } finally {
+      setBlockingLoading(false);
+    }
+  };
+
   const fetchUserProfile = async (force = false) => {
     if (!targetId) return;
 
@@ -710,6 +825,7 @@ export const ProfilePage: React.FC = () => {
         if (isMe && currentUser) {
           updateUser(u);
         }
+        fetchUserPosts(u.id);
       } else {
         // Fallback to backend API only if Supabase profile was not found
         const backendRes = await api.getUser(targetId).catch(() => null);
@@ -719,6 +835,7 @@ export const ProfilePage: React.FC = () => {
           if (isMe && currentUser) {
             updateUser(backendData);
           }
+          fetchUserPosts(backendData.id || targetId);
         }
       }
     } catch (err) {
@@ -1472,72 +1589,92 @@ export const ProfilePage: React.FC = () => {
               <div className="flex items-center gap-2 w-full md:w-auto flex-wrap sm:flex-nowrap pt-2 md:pt-0">
                 {!isMe && (
                   <>
-                    {connInfo.status === 'ACCEPTED' ? (
-                      <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
-                        <span className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <Check size={14} />
-                          <span>Connected</span>
-                        </span>
-                        <button
-                          onClick={handleDisconnect}
-                          disabled={connActionLoading}
-                          className="p-2 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer"
-                          title="Remove connection"
-                        >
-                          <UserX size={14} />
-                        </button>
-                      </div>
-                    ) : connInfo.status === 'PENDING' ? (
-                      connInfo.isSender ? (
-                        <span className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
-                          <Clock size={14} />
-                          <span>Request Sent</span>
-                        </span>
-                      ) : (
-                        <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
-                          <button
-                            onClick={handleAcceptConnection}
-                            disabled={connActionLoading}
-                            className="btn-primary inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold cursor-pointer disabled:opacity-50"
-                          >
-                            <Check size={14} />
-                            <span>Accept</span>
-                          </button>
-                          <button
-                            onClick={handleRejectConnection}
-                            disabled={connActionLoading}
-                            className="btn-secondary inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium cursor-pointer disabled:opacity-50"
-                          >
-                            <X size={14} />
-                            <span>Reject</span>
-                          </button>
-                        </div>
-                      )
-                    ) : (
+                    {isBlocked ? (
                       <button
-                        onClick={() => setConnectOpen(true)}
-                        className="flex-1 sm:flex-none btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold cursor-pointer"
+                        onClick={handleToggleBlock}
+                        disabled={blockingLoading}
+                        className="flex-1 sm:flex-none btn-danger inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold cursor-pointer"
                       >
-                        <UserPlus size={15} />
-                        <span>Connect</span>
+                        <UserX size={14} />
+                        <span>Unblock User</span>
                       </button>
-                    )}
+                    ) : (
+                      <>
+                        {connInfo.status === 'ACCEPTED' ? (
+                          <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
+                            <span className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <Check size={14} />
+                              <span>Connected</span>
+                            </span>
+                            <button
+                              onClick={handleDisconnect}
+                              disabled={connActionLoading}
+                              className="p-2 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer"
+                              title="Remove connection"
+                            >
+                              <UserX size={14} />
+                            </button>
+                          </div>
+                        ) : connInfo.status === 'PENDING' ? (
+                          connInfo.isSender ? (
+                            <span className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
+                              <Clock size={14} />
+                              <span>Request Sent</span>
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
+                              <button
+                                onClick={handleAcceptConnection}
+                                disabled={connActionLoading}
+                                className="btn-primary inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold cursor-pointer disabled:opacity-50"
+                              >
+                                <Check size={14} />
+                                <span>Accept</span>
+                              </button>
+                              <button
+                                onClick={handleRejectConnection}
+                                disabled={connActionLoading}
+                                className="btn-secondary inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium cursor-pointer disabled:opacity-50"
+                              >
+                                <X size={14} />
+                                <span>Reject</span>
+                              </button>
+                            </div>
+                          )
+                        ) : (
+                          <button
+                            onClick={() => setConnectOpen(true)}
+                            className="flex-1 sm:flex-none btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold cursor-pointer"
+                          >
+                            <UserPlus size={15} />
+                            <span>Connect</span>
+                          </button>
+                        )}
 
-                    <button
-                      onClick={() => navigate(`/messages?user=${profileUser.id}`)}
-                      className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium cursor-pointer"
-                    >
-                      <MessageSquare size={15} />
-                      <span>Chat</span>
-                    </button>
-                    <button
-                      onClick={() => setStartupProposalOpen(true)}
-                      className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium cursor-pointer"
-                      title="Pitch an idea"
-                    >
-                      <Rocket size={15} className="text-brand-600" />
-                      <span>Pitch</span>
-                    </button>
+                        <button
+                          onClick={() => navigate(`/messages?user=${profileUser.id}`)}
+                          className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium cursor-pointer"
+                        >
+                          <MessageSquare size={15} />
+                          <span>Chat</span>
+                        </button>
+                        <button
+                          onClick={() => setStartupProposalOpen(true)}
+                          className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium cursor-pointer"
+                          title="Pitch an idea"
+                        >
+                          <Rocket size={15} className="text-brand-600" />
+                          <span>Pitch</span>
+                        </button>
+                        <button
+                          onClick={() => setBlockModalOpen(true)}
+                          className="flex-1 sm:flex-none p-2 rounded-xl border border-slate-200 dark:border-dark-800 text-slate-400 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer"
+                          title="Block this user"
+                        >
+                          <UserX size={15} />
+                        </button>
+                      </>
+                    )}
                   </>
                 )}
 
@@ -1593,7 +1730,23 @@ export const ProfilePage: React.FC = () => {
           </div>
         )}
 
-        {/* 2. SECTIONS LAID OUT IN CARDS (ABOUT, SKILLS, EXPERIENCE, EDUCATION, HACKATHON HISTORY, PROJECTS, SOCIAL LINKS) */}
+        {/* User Blocked Alert Banner */}
+        {isBlocked && (
+          <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300 text-xs font-semibold flex items-center justify-between shadow-sm">
+            <span className="flex items-center gap-2">
+              <UserX size={16} className="text-rose-600 shrink-0" />
+              <span>You have blocked this user. They cannot send you messages or pitch requests.</span>
+            </span>
+            <button
+              onClick={handleToggleBlock}
+              className="text-xs font-bold text-rose-700 dark:text-rose-400 underline hover:no-underline cursor-pointer ml-3 shrink-0"
+            >
+              Unblock
+            </button>
+          </div>
+        )}
+
+        {/* 2. SECTIONS LAID OUT IN CARDS (ABOUT, POSTS, SKILLS, EXPERIENCE, EDUCATION, HACKATHON HISTORY, PROJECTS, SOCIAL LINKS) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* MAIN COLUMN (LEFT 2/3) */}
@@ -1634,6 +1787,132 @@ export const ProfilePage: React.FC = () => {
                       </span>
                     ))}
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* POSTS & COMMUNITY UPDATES SECTION (Permanent until manually deleted) */}
+            <div className="card-base p-6 sm:p-7 space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Share2 size={18} className="text-brand-600" />
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                    Posts & Updates
+                  </h2>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400">
+                    {userPosts.length}
+                  </span>
+                </div>
+                {isMe && (
+                  <Link
+                    to="/feed"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-xs transition-colors"
+                  >
+                    <Plus size={13} />
+                    <span>Create Post</span>
+                  </Link>
+                )}
+              </div>
+
+              {loadingPosts ? (
+                <div className="space-y-3">
+                  {[1, 2].map((n) => (
+                    <div key={n} className="h-20 bg-slate-50 dark:bg-dark-850 rounded-xl animate-pulse" />
+                  ))}
+                </div>
+              ) : userPosts.length > 0 ? (
+                <div className="space-y-4">
+                  {userPosts.map((post) => (
+                    <div
+                      key={post.id}
+                      className="p-4 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2 relative group"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-900/60">
+                            {post.postType || 'UPDATE'}
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            {new Date(post.createdAt).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </span>
+                        </div>
+
+                        {(isMe || currentUser?.isAdmin) && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePost(post.id)}
+                            disabled={deletingPostId === post.id}
+                            title="Delete this post permanently"
+                            className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1 text-xs"
+                          >
+                            <Trash2 size={13} />
+                            <span className="text-[11px]">Delete</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {post.title && (
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                          {post.title}
+                        </h3>
+                      )}
+
+                      <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
+                        {post.content}
+                      </p>
+
+                      {post.links && (
+                        <a
+                          href={post.links.startsWith('http') ? post.links : `https://${post.links}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline"
+                        >
+                          <ExternalLink size={12} />
+                          <span className="truncate max-w-xs">{post.links}</span>
+                        </a>
+                      )}
+
+                      <div className="pt-2 border-t border-slate-200/60 dark:border-dark-800 flex items-center gap-4 text-xs text-slate-400">
+                        <span className="flex items-center gap-1">
+                          <ThumbsUp size={12} />
+                          <span>{post.likesCount || 0} likes</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MessageSquare size={12} />
+                          <span>{post.commentsCount || 0} comments</span>
+                        </span>
+                        <Link
+                          to="/feed"
+                          className="text-brand-600 hover:underline ml-auto font-medium"
+                        >
+                          View in Feed →
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-7 border border-dashed border-slate-200 dark:border-dark-800 rounded-xl space-y-2">
+                  <Share2 size={24} className="mx-auto text-slate-300 dark:text-slate-600" />
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {isMe
+                      ? "You haven't posted any updates yet. Share your milestones, learnings, or ask for feedback on the Feed!"
+                      : "No posts or updates published by this builder yet."}
+                  </p>
+                  {isMe && (
+                    <Link
+                      to="/feed"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
+                    >
+                      <Plus size={13} />
+                      <span>Post on Feed</span>
+                    </Link>
+                  )}
                 </div>
               )}
             </div>
@@ -3561,6 +3840,53 @@ export const ProfilePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Block User Confirmation Modal */}
+      <Modal
+        isOpen={blockModalOpen}
+        onClose={() => setBlockModalOpen(false)}
+        title={isBlocked ? "Unblock User" : "Block User"}
+      >
+        <div className="space-y-4 py-2 font-sans">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center shrink-0">
+              <UserX size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                {isBlocked
+                  ? `Unblock ${(profileUser?.profile as any)?.fullName || 'this user'}?`
+                  : `Block ${(profileUser?.profile as any)?.fullName || 'this user'}?`}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                {isBlocked
+                  ? "They will be able to view your profile, send messages, and connect with you again."
+                  : "They will not be able to message you, pitch ideas, or see your activity. You can unblock them at any time."}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-dark-800">
+            <button
+              type="button"
+              onClick={() => setBlockModalOpen(false)}
+              className="btn-secondary py-2 px-4 text-xs font-medium cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={blockingLoading}
+              onClick={handleToggleBlock}
+              className={`py-2 px-4 text-xs font-semibold rounded-lg text-white transition-colors cursor-pointer disabled:opacity-50 ${
+                isBlocked ? 'bg-brand-600 hover:bg-brand-700' : 'bg-rose-600 hover:bg-rose-700'
+              }`}
+            >
+              {blockingLoading ? 'Processing...' : isBlocked ? 'Confirm Unblock' : 'Confirm Block'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

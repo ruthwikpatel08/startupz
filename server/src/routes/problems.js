@@ -267,6 +267,11 @@ router.get('/', optionalAuth, async (req, res) => {
       cachedProblemsDefaultExpiresAt = Date.now() + 60000;
     }
 
+    // Weekly automatic check in background (Gemini API powered)
+    if (!lastWeeklyProblemRefreshAt || Date.now() - lastWeeklyProblemRefreshAt >= ONE_WEEK_MS) {
+      checkAndRefreshWeeklyProblems().catch(() => {});
+    }
+
     res.setHeader('Cache-Control', 'public, max-age=30, stale-while-revalidate=60');
     res.json(responsePayload);
   } catch (error) {
@@ -376,6 +381,75 @@ async function resolveEntities(categoryInputs, regionInputs, tagInputs) {
   }
 
   return { categoryIds, regionIds, tagIds };
+}
+
+const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+let lastWeeklyProblemRefreshAt = 0;
+let isRefreshingWeeklyProblems = false;
+
+/**
+ * Weekly refresh of problem statements powered by Google Gemini API.
+ * If new problems cannot be generated or there are none, retains existing problems safely.
+ */
+export async function checkAndRefreshWeeklyProblems(force = false) {
+  const now = Date.now();
+  if (isRefreshingWeeklyProblems) return { success: true, busy: true };
+  if (!force && lastWeeklyProblemRefreshAt && (now - lastWeeklyProblemRefreshAt < ONE_WEEK_MS)) {
+    return { success: true, refreshed: false, message: 'Weekly cycle has not elapsed yet.' };
+  }
+
+  isRefreshingWeeklyProblems = true;
+  try {
+    const existingCount = await prisma.problem.count();
+
+    // Discover new venture problem statements from Google Gemini AI
+    const newAIGenerated = await discoverProblemsFromAI(
+      'global challenges, emerging tech, agriculture, clean energy, commerce'
+    );
+
+    if (Array.isArray(newAIGenerated) && newAIGenerated.length > 0) {
+      let createdCount = 0;
+      for (const p of newAIGenerated) {
+        if (!p.title || !p.description) continue;
+        const exists = await prisma.problem.findFirst({
+          where: { title: p.title.trim() },
+        });
+        if (!exists) {
+          const { categoryIds, regionIds, tagIds } = await resolveEntities(
+            p.categories || [],
+            p.regions || [],
+            p.tags || []
+          );
+          await prisma.problem.create({
+            data: {
+              title: p.title.trim(),
+              description: p.description.trim(),
+              sourceUrl: p.sourceUrl || null,
+              impactLevel: typeof p.impactLevel === 'number' ? p.impactLevel : 8,
+              categories: { create: categoryIds.map((categoryId) => ({ categoryId })) },
+              regions: { create: regionIds.map((regionId) => ({ regionId })) },
+              tags: { create: tagIds.map((tagId) => ({ tagId })) },
+            },
+          });
+          createdCount++;
+        }
+      }
+      invalidateProblemsCache();
+      lastWeeklyProblemRefreshAt = now;
+      console.log(`[WeeklyProblems] Refreshed successfully. Created ${createdCount} new problem statements.`);
+      return { success: true, refreshed: true, createdCount };
+    } else {
+      // If there are no new problems, make sure we use existing problems only
+      lastWeeklyProblemRefreshAt = now;
+      console.log(`[WeeklyProblems] No new problems returned. Retaining ${existingCount} existing problems.`);
+      return { success: true, refreshed: false, retainedCount: existingCount };
+    }
+  } catch (err) {
+    console.warn('[WeeklyProblems] Refresh check encountered error, retaining existing problems:', err.message);
+    return { success: true, refreshed: false, error: err.message };
+  } finally {
+    isRefreshingWeeklyProblems = false;
+  }
 }
 
 /**
@@ -663,6 +737,19 @@ router.post('/discover-ai', optionalAuth, async (req, res) => {
   } catch (error) {
     console.error('Discover AI problems error:', error);
     res.status(500).json({ error: 'Failed to discover problems using AI.' });
+  }
+});
+
+/**
+ * POST /api/problems/refresh-weekly
+ * Trigger weekly refresh check manually
+ */
+router.post('/refresh-weekly', optionalAuth, async (req, res) => {
+  try {
+    const result = await checkAndRefreshWeeklyProblems(true);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Weekly refresh failed.' });
   }
 });
 

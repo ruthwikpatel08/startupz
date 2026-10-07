@@ -1018,12 +1018,57 @@ export async function removeConnection(
 // MESSAGING & CONVERSATIONS SYSTEM
 // ============================================================================
 
+const DELETED_CHATS_PREFIX = 'hookz_deleted_chats_';
+
+/**
+ * Returns set of conversation IDs deleted by a given user
+ */
+export function getDeletedConversationIds(userId?: string): Set<string> {
+  if (!userId) return new Set();
+  try {
+    const raw = localStorage.getItem(`${DELETED_CHATS_PREFIX}${userId}`);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+/**
+ * Records a conversation as permanently deleted for a specific user
+ */
+export function recordDeletedConversation(userId: string, conversationId: string): void {
+  if (!userId || !conversationId) return;
+  try {
+    const set = getDeletedConversationIds(userId);
+    set.add(conversationId);
+    localStorage.setItem(`${DELETED_CHATS_PREFIX}${userId}`, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
+/**
+ * Restores a conversation when new messages are exchanged
+ */
+export function unhideConversation(userId: string, conversationId: string): void {
+  if (!userId || !conversationId) return;
+  try {
+    const set = getDeletedConversationIds(userId);
+    if (set.has(conversationId)) {
+      set.delete(conversationId);
+      localStorage.setItem(`${DELETED_CHATS_PREFIX}${userId}`, JSON.stringify(Array.from(set)));
+    }
+  } catch {}
+}
+
 /**
  * Fetches all conversations for the user from Supabase.
  * Deduplicates by participant ID so each account appears only once.
  */
 export async function getSupabaseConversations(userId: string): Promise<Conversation[]> {
   if (!userId) return [];
+
+  const deletedIds = getDeletedConversationIds(userId);
 
   const { data: convRows, error } = await supabase
     .from('conversations')
@@ -1039,6 +1084,9 @@ export async function getSupabaseConversations(userId: string): Promise<Conversa
   const deduplicatedRows: any[] = [];
   const seenOtherUsers = new Set<string>();
   for (const c of convRows) {
+    // If deleted by this user, do not show in user's chat list
+    if (deletedIds.has(c.id)) continue;
+
     const otherId = c.participant1_id === userId ? c.participant2_id : c.participant1_id;
     if (!otherId || seenOtherUsers.has(otherId)) continue;
     seenOtherUsers.add(otherId);
@@ -1336,7 +1384,11 @@ export async function sendSupabaseMessage(
     window.dispatchEvent(new CustomEvent('startupz_messages_updated', { detail: { conversationId: finalConvId } }));
   }
 
-  // 5. Mirror to backend in background
+  // 5. Unhide conversation if previously hidden
+  unhideConversation(senderId, finalConvId);
+  unhideConversation(receiverId, finalConvId);
+
+  // 6. Mirror to backend in background
   try {
     api.sendMessage({ receiverId, content: text }).catch(() => {});
   } catch {}
@@ -1355,7 +1407,9 @@ export async function sendSupabaseMessage(
 }
 
 /**
- * Deletes a conversation and all its messages from Supabase.
+ * Permanently deletes a conversation for the current user ("Delete for me").
+ * The friend's account will continue to show the conversation and its history
+ * until the friend also deletes it.
  */
 export async function deleteSupabaseConversation(
   conversationId: string,
@@ -1363,35 +1417,87 @@ export async function deleteSupabaseConversation(
 ): Promise<boolean> {
   if (!conversationId || !currentUserId) return false;
 
-  // 1. Verify user is a participant
-  const { data: conv, error: fetchErr } = await supabase
-    .from('conversations')
-    .select('id, participant1_id, participant2_id')
-    .eq('id', conversationId)
-    .single();
+  // 1. Mark permanently deleted in client storage for this user
+  recordDeletedConversation(currentUserId, conversationId);
 
-  if (fetchErr || !conv) {
-    throw new Error('Conversation not found.');
-  }
-
-  if (conv.participant1_id !== currentUserId && conv.participant2_id !== currentUserId) {
-    throw new Error('Unauthorized to delete this conversation.');
-  }
-
-  // 2. Delete conversation (Postgres CASCADE deletes related messages)
-  const { error: delErr } = await supabase
-    .from('conversations')
-    .delete()
-    .eq('id', conversationId);
-
-  if (delErr) {
-    throw new Error(delErr.message || 'Failed to delete conversation.');
-  }
-
-  // 3. Mirror delete to backend API if available
+  // 2. Mirror delete to backend API ("delete for me")
   try {
-    api.deleteConversation(conversationId).catch(() => {});
+    await api.deleteConversation(conversationId).catch(() => {});
   } catch {}
+
+  // 3. Dispatch event so UI and open tabs refresh immediately
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('startupz_messages_updated', {
+        detail: { conversationId, deletedForUser: currentUserId },
+      })
+    );
+  }
+
+  return true;
+}
+
+/**
+ * Unsend message (deletes message for everyone, like Instagram)
+ */
+export async function unsendSupabaseMessage(
+  messageId: string,
+  _currentUserId?: string
+): Promise<boolean> {
+  if (!messageId) return false;
+
+  try {
+    await supabase.from('messages').delete().eq('id', messageId);
+  } catch (err) {
+    console.warn('Supabase unsend message error:', err);
+  }
+
+  try {
+    await api.unsendMessage(messageId).catch(() => {});
+  } catch {}
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('startupz_messages_updated', {
+        detail: { messageId, unsent: true },
+      })
+    );
+  }
+
+  return true;
+}
+
+/**
+ * Edit message (updates content for everyone, like Instagram)
+ */
+export async function editSupabaseMessage(
+  messageId: string,
+  newContent: string,
+  _currentUserId?: string
+): Promise<boolean> {
+  if (!messageId || !newContent.trim()) return false;
+  const trimmed = newContent.trim();
+
+  try {
+    await supabase
+      .from('messages')
+      .update({ content: trimmed })
+      .eq('id', messageId);
+  } catch (err) {
+    console.warn('Supabase edit message error:', err);
+  }
+
+  try {
+    await api.editMessage(messageId, trimmed).catch(() => {});
+  } catch {}
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('startupz_messages_updated', {
+        detail: { messageId, edited: true },
+      })
+    );
+  }
 
   return true;
 }

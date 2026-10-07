@@ -516,8 +516,9 @@ export const ProjectsPage: React.FC = () => {
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/20 text-brand-300 text-xs font-semibold border border-brand-500/30">
             <Rocket size={13} /> Pre-Establishment Builder Workspace
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Projects: Collaborate on Ideas
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#FFFFFF] drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)]">
+            <span className="text-[#FFFFFF]">Projects: </span>
+            <span className="bg-gradient-to-r from-[#FFFFFF] via-[#F8FAFC] to-brand-300 bg-clip-text text-transparent">Collaborate on Ideas</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
             Have an idea before officially incorporating a startup? Create a project, choose to publish it public or keep it private, split roles with your team, and chat together in your project group.

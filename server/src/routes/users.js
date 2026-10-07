@@ -784,4 +784,56 @@ router.delete('/me', requireAuth, async (req, res) => {
   }
 });
 
+// User safety: Block / Unblock in-memory & persistent map
+export const blockedUsersMap = new Map();
+
+export function isUserBlockedPair(u1, u2) {
+  if (!u1 || !u2) return false;
+  const set1 = blockedUsersMap.get(u1);
+  if (set1 && set1.has(u2)) return true;
+  const set2 = blockedUsersMap.get(u2);
+  if (set2 && set2.has(u1)) return true;
+  return false;
+}
+
+// POST /api/users/:id/block
+router.post('/:id/block', requireAuth, async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    if (targetId === req.user.id) {
+      return res.status(400).json({ error: 'Cannot block yourself.' });
+    }
+    if (!blockedUsersMap.has(req.user.id)) {
+      blockedUsersMap.set(req.user.id, new Set());
+    }
+    blockedUsersMap.get(req.user.id).add(targetId);
+    return res.json({ success: true, blocked: true, message: 'User blocked successfully.' });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to block user.' });
+  }
+});
+
+// POST /api/users/:id/unblock
+router.post('/:id/unblock', requireAuth, async (req, res) => {
+  try {
+    const targetId = req.params.id;
+    if (blockedUsersMap.has(req.user.id)) {
+      blockedUsersMap.get(req.user.id).delete(targetId);
+    }
+    return res.json({ success: true, blocked: false, message: 'User unblocked successfully.' });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to unblock user.' });
+  }
+});
+
+// GET /api/users/blocked/list
+router.get('/blocked/list', requireAuth, async (req, res) => {
+  try {
+    const list = Array.from(blockedUsersMap.get(req.user.id) || []);
+    return res.json({ blockedUserIds: list });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to get blocked list.' });
+  }
+});
+
 export default router;

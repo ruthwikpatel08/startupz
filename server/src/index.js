@@ -25,7 +25,7 @@ import uploadRoutes from './routes/upload.js';
 import meetingRoutes from './routes/meetings.js';
 import aiRoutes from './routes/ai.js';
 import failedStartupRoutes from './routes/failedStartups.js';
-import problemsRoutes from './routes/problems.js';
+import problemsRoutes, { checkAndRefreshWeeklyProblems } from './routes/problems.js';
 
 import { execSync } from 'child_process';
 import { prisma } from './db.js';
@@ -151,7 +151,7 @@ app.use((req, res) => {
 async function purgeDemoDatabase() {
   const realEmails = ['ruthwikpatel08@gmail.com', 'legacyplayer04@gmail.com', 'lavanyadav0206@gmail.com'];
 
-  // 1. Delete all demo startups, opportunities, and interactions
+  // Delete all demo startups, opportunities, and interactions (preserving real user posts and connections)
   await prisma.opportunityApplication.deleteMany({});
   await prisma.startupOpportunity.deleteMany({});
   await prisma.startupMember.deleteMany({});
@@ -159,10 +159,6 @@ async function purgeDemoDatabase() {
   await prisma.startup.deleteMany({});
   await prisma.investor.deleteMany({});
   await prisma.mentor.deleteMany({});
-  await prisma.comment.deleteMany({});
-  await prisma.like.deleteMany({});
-  await prisma.post.deleteMany({});
-  await prisma.connection.deleteMany({});
   await prisma.startupProposal.deleteMany({});
   await prisma.videoMeeting.deleteMany({});
 
@@ -236,8 +232,7 @@ async function ensureDatabaseReady() {
       }
     }
 
-    // Always run demo purge to guarantee clean state
-    await purgeDemoDatabase();
+    // Demo purge is no longer run automatically to preserve all user posts and interactions permanently
   } catch (e) {
     console.warn('Startup verification notice:', e.message);
   }
@@ -246,4 +241,5 @@ async function ensureDatabaseReady() {
 app.listen(PORT, async () => {
   console.log(`🚀 StartupZ Server running on http://localhost:${PORT}`);
   await ensureDatabaseReady();
+  checkAndRefreshWeeklyProblems().catch(() => {});
 });

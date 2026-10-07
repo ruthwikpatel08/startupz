@@ -1,13 +1,18 @@
 import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { isUserBlockedPair } from './users.js';
 
 const router = express.Router();
+
+// Per-user deleted conversations tracking (Map<userId, Set<conversationId>>)
+const userDeletedConversations = new Map();
 
 // GET /api/messages/conversations
 router.get('/conversations', requireAuth, async (req, res) => {
   try {
     const currentUserId = req.user.id;
+    const userDeletedSet = userDeletedConversations.get(currentUserId) || new Set();
 
     const conversations = await prisma.conversation.findMany({
       where: {
@@ -25,7 +30,10 @@ router.get('/conversations', requireAuth, async (req, res) => {
       },
     });
 
-    const otherUserIds = conversations.map((c) =>
+    // Filter out conversations deleted for current user
+    const visibleConversations = conversations.filter((c) => !userDeletedSet.has(c.id));
+
+    const otherUserIds = visibleConversations.map((c) =>
       c.participant1Id === currentUserId ? c.participant2Id : c.participant1Id
     );
 
@@ -56,7 +64,7 @@ router.get('/conversations', requireAuth, async (req, res) => {
 
     const unreadMap = new Map(unreadMessages.map((u) => [u.conversationId, u._count]));
 
-    const formatted = conversations.map((c) => {
+    const formatted = visibleConversations.map((c) => {
       const otherId = c.participant1Id === currentUserId ? c.participant2Id : c.participant1Id;
       return {
         id: c.id,
@@ -147,6 +155,11 @@ router.post('/', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Cannot message yourself.' });
     }
 
+    // Safety check: verify neither party has blocked the other
+    if (isUserBlockedPair(req.user.id, receiverId)) {
+      return res.status(403).json({ error: 'Cannot send messages to a blocked user.' });
+    }
+
     const [p1, p2] = [req.user.id, receiverId].sort();
 
     let conversation = await prisma.conversation.findUnique({
@@ -175,6 +188,14 @@ router.post('/', requireAuth, async (req, res) => {
           lastMessageAt: new Date(),
         },
       });
+    }
+
+    // Unhide conversation for participants if it was previously hidden/deleted
+    if (userDeletedConversations.has(receiverId)) {
+      userDeletedConversations.get(receiverId).delete(conversation.id);
+    }
+    if (userDeletedConversations.has(req.user.id)) {
+      userDeletedConversations.get(req.user.id).delete(conversation.id);
     }
 
     const message = await prisma.message.create({
@@ -219,7 +240,52 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/messages/conversations/:conversationId or /api/messages/:conversationId
+// DELETE /api/messages/message/:id - Unsend message (like Instagram)
+router.delete('/message/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const msg = await prisma.message.findUnique({ where: { id } });
+    if (!msg) {
+      return res.status(404).json({ error: 'Message not found.' });
+    }
+    if (msg.senderId !== req.user.id && !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Unauthorized to unsend this message.' });
+    }
+    await prisma.message.delete({ where: { id } });
+    return res.json({ success: true, message: 'Message unsent successfully.', messageId: id });
+  } catch (error) {
+    console.error('Unsend message error:', error);
+    return res.status(500).json({ error: 'Failed to unsend message.' });
+  }
+});
+
+// PUT /api/messages/message/:id - Edit message (like Instagram)
+router.put('/message/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: 'Updated message content is required.' });
+    }
+    const msg = await prisma.message.findUnique({ where: { id } });
+    if (!msg) {
+      return res.status(404).json({ error: 'Message not found.' });
+    }
+    if (msg.senderId !== req.user.id) {
+      return res.status(403).json({ error: 'Only the sender can edit this message.' });
+    }
+    const updated = await prisma.message.update({
+      where: { id },
+      data: { content: content.trim() },
+    });
+    return res.json({ success: true, message: 'Message updated.', data: updated });
+  } catch (error) {
+    console.error('Edit message error:', error);
+    return res.status(500).json({ error: 'Failed to edit message.' });
+  }
+});
+
+// DELETE /api/messages/conversations/:conversationId - "Delete chat for me"
 const deleteConversationHandler = async (req, res) => {
   try {
     const { conversationId } = req.params;
@@ -227,7 +293,6 @@ const deleteConversationHandler = async (req, res) => {
     let conv = await prisma.conversation.findUnique({ where: { id: conversationId } });
 
     if (!conv) {
-      // Fallback check if conversationId is other participant's ID
       const [p1, p2] = [req.user.id, conversationId].sort();
       conv = await prisma.conversation.findUnique({
         where: {
@@ -247,9 +312,24 @@ const deleteConversationHandler = async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized to delete this conversation.' });
     }
 
-    await prisma.conversation.delete({ where: { id: conv.id } });
+    // Mark conversation as deleted for current user permanently
+    if (!userDeletedConversations.has(req.user.id)) {
+      userDeletedConversations.set(req.user.id, new Set());
+    }
+    userDeletedConversations.get(req.user.id).add(conv.id);
 
-    return res.json({ message: 'Conversation deleted successfully.', conversationId: conv.id });
+    const otherId = conv.participant1Id === req.user.id ? conv.participant2Id : conv.participant1Id;
+
+    // If the other participant has also deleted this conversation, purge completely
+    if (userDeletedConversations.get(otherId)?.has(conv.id)) {
+      await prisma.conversation.delete({ where: { id: conv.id } }).catch(() => null);
+    }
+
+    return res.json({
+      message: 'Conversation deleted from your account permanently.',
+      conversationId: conv.id,
+      deletedForMe: true,
+    });
   } catch (error) {
     console.error('Delete conversation error:', error);
     return res.status(500).json({ error: 'Failed to delete conversation.' });
