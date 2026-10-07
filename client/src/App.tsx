@@ -137,6 +137,7 @@ const AppContent: React.FC = () => {
   }
 
   const isPublicLanding = !user && location.pathname === '/';
+  const isMessagesPage = location.pathname.startsWith('/messages');
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-[#F8F9FB] transition-colors selection:bg-brand-600 selection:text-white relative w-full max-w-full overflow-x-hidden">
@@ -145,11 +146,13 @@ const AppContent: React.FC = () => {
       <div className={`flex-1 flex w-full ${isPublicLanding ? '' : 'pt-14'}`}>
         {user && <Sidebar />}
         <main
-          className={`flex-1 min-w-0 flex flex-col justify-between overflow-x-hidden pb-16 lg:pb-0 ${
+          className={`flex-1 min-w-0 flex flex-col justify-between overflow-x-hidden ${
+            isMessagesPage ? 'pb-0' : 'pb-16 lg:pb-0'
+          } ${
             !user || isAuthOrMeetingPage ? '' : 'lg:pl-60 xl:pl-64'
           }`}
         >
-          <div className={`flex-1 min-w-0 ${!user || isAuthOrMeetingPage ? '' : 'px-4 sm:px-6 lg:px-8 xl:px-10'}`}>
+          <div className={`flex-1 min-w-0 w-full ${!user || isAuthOrMeetingPage ? '' : (isMessagesPage ? 'p-0' : 'px-0 sm:px-2 md:px-4')}`}>
             <React.Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public landing for logged-out users; existing dashboard for logged-in users */}
@@ -272,7 +275,7 @@ const AppContent: React.FC = () => {
               </Routes>
             </React.Suspense>
           </div>
-          <Footer />
+          {!isMessagesPage && <Footer />}
         </main>
       </div>
       <MobileBottomBar />

@@ -719,8 +719,8 @@ export const MessagesPage: React.FC = () => {
         'Founder';
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-0 sm:px-4 md:px-6 lg:px-8 py-0 sm:py-3 md:py-5 h-[calc(100dvh-64px)] md:h-[calc(100vh-80px)] flex flex-col">
-      <div className="flex-1 card-base shadow-sm overflow-hidden flex flex-col md:flex-row border-0 sm:border border-slate-200 dark:border-dark-800 rounded-none sm:rounded-xl">
+    <div className="w-full max-w-7xl mx-auto px-0 sm:px-4 md:px-6 lg:px-8 py-0 sm:py-3 md:py-5 h-[calc(100dvh-56px)] md:h-[calc(100vh-80px)] flex flex-col">
+      <div className="flex-1 card-base shadow-none sm:shadow-sm overflow-hidden flex flex-col md:flex-row border-0 sm:border border-slate-200 dark:border-dark-800 rounded-none sm:rounded-xl">
         
         {/* Left Side: Conversation List / Inbox */}
         {/* On mobile: Hidden if a conversation is selected. On desktop: Always visible */}
@@ -1193,7 +1193,7 @@ export const MessagesPage: React.FC = () => {
               ) : (
                 <form
                   onSubmit={handleSendMessage}
-                  className="p-2.5 sm:p-3 border-t border-slate-200 dark:border-dark-800 bg-white dark:bg-dark-900 flex items-center gap-2 shrink-0"
+                  className="p-2.5 sm:p-3 pb-[max(0.625rem,env(safe-area-inset-bottom))] border-t border-slate-200 dark:border-dark-800 bg-white dark:bg-dark-900 flex items-center gap-2 shrink-0 sticky bottom-0 z-10"
                 >
                   <input
                     ref={inputRef}

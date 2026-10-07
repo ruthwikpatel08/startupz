@@ -1420,8 +1420,8 @@ export const ProfilePage: React.FC = () => {
   const completionPercentage = Math.round((completedFields / totalFields) * 100);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-dark-950 py-8 px-3 sm:px-6 lg:px-8 font-sans transition-colors selection:bg-brand-600 selection:text-white w-full max-w-full overflow-x-hidden">
-      <div className="max-w-6xl mx-auto space-y-6 w-full overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-dark-950 py-4 sm:py-8 px-2.5 sm:px-6 lg:px-8 font-sans transition-colors selection:bg-brand-600 selection:text-white w-full max-w-full overflow-x-hidden">
+      <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6 w-full overflow-x-hidden">
 
         {/* Success Notice Banner */}
         {photoSavedNotice && (

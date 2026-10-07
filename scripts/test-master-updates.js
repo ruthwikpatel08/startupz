@@ -121,6 +121,20 @@ test('9. Problem Statements use Gemini securely with weekly cadence and graceful
   assert(problemsRouteContent.includes('retaining existing problems') || problemsRouteContent.includes('retaining'), 'Problems route must retain existing problems on failure');
 });
 
+// 10. Mobile View Fit & Downer Bar Removal in Chat
+test('10. Mobile View Fit: Remove downer bar while chatting in messages', () => {
+  const bottomBarContent = fs.readFileSync('client/src/components/common/MobileBottomBar.tsx', 'utf8');
+  assert(bottomBarContent.includes("location.pathname.startsWith('/messages')"), 'MobileBottomBar must hide on /messages route while chatting');
+
+  const appContent = fs.readFileSync('client/src/App.tsx', 'utf8');
+  assert(appContent.includes('isMessagesPage'), 'App.tsx must track isMessagesPage');
+  assert(appContent.includes("!isMessagesPage && <Footer />"), 'App.tsx must hide footer on /messages');
+
+  const messagesPageContent = fs.readFileSync('client/src/pages/Messages/MessagesPage.tsx', 'utf8');
+  assert(messagesPageContent.includes('100dvh-56px'), 'MessagesPage must fit viewport minus 56px navbar on mobile');
+  assert(messagesPageContent.includes('sticky bottom-0'), 'MessagesPage composer form must be pinned to bottom');
+});
+
 console.log(`\nResults: ${passed} passed, ${failed} failed.`);
 if (failed > 0) {
   process.exit(1);

@@ -13,16 +13,17 @@ export const MobileBottomBar: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
 
-  // Hide on auth or meeting rooms or when logged out
-  const isAuthOrMeeting =
+  // Hide on auth, meeting rooms, when logged out, or while chatting in messages
+  const isExcluded =
     location.pathname.startsWith('/login') ||
     location.pathname.startsWith('/register') ||
     location.pathname.startsWith('/forgot-password') ||
     location.pathname.startsWith('/reset-password') ||
     location.pathname.startsWith('/auth/callback') ||
-    location.pathname.startsWith('/meeting');
+    location.pathname.startsWith('/meeting') ||
+    location.pathname.startsWith('/messages');
 
-  if (!user || isAuthOrMeeting) {
+  if (!user || isExcluded) {
     return null;
   }
 
@@ -37,7 +38,7 @@ export const MobileBottomBar: React.FC = () => {
   const isOpportunities = location.pathname.startsWith('/opportunities');
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-dark-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-3 py-1 shadow-modal select-none">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-dark-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-3 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] shadow-modal select-none">
       <div className="flex items-center justify-around max-w-md mx-auto relative">
         
         {/* 1) Home */}

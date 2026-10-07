@@ -189,8 +189,8 @@ export const Navbar: React.FC = () => {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-40 w-full bg-white dark:bg-dark-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
-        <div className="w-full px-4 sm:px-6 lg:px-6">
-          <div className="flex items-center justify-between h-14 gap-4 w-full">
+        <div className="w-full px-2.5 sm:px-6 lg:px-6">
+          <div className="flex items-center justify-between h-14 gap-2 sm:gap-4 w-full">
             
             {/* 1. LEFT EDGE: HookZ logo + name */}
             <div className="flex items-center shrink-0">
@@ -225,7 +225,7 @@ export const Navbar: React.FC = () => {
             )}
 
             {/* 3. RIGHT EDGE: All action icons grouped tightly together */}
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 justify-end">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0 justify-end">
               {/* Mobile Search Button (Opens dedicated /search page like Instagram) */}
               {!isAuthPage && (
                 <button
