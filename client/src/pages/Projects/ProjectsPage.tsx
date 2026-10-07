@@ -20,8 +20,12 @@ import {
   Globe,
   Bell,
   Trash2,
+  Bookmark,
+  UserPlus,
 } from 'lucide-react';
 import { Avatar } from '../../components/common/Avatar';
+import { api } from '../../services/api';
+import { fetchUserConnections } from '../../lib/supabase';
 
 export interface PendingApplicant {
   userId: string;
@@ -29,6 +33,13 @@ export interface PendingApplicant {
   avatar?: string | null;
   roleDescription?: string;
   appliedAt: string;
+}
+
+export interface InvitedUser {
+  userId: string;
+  fullName: string;
+  avatar?: string | null;
+  invitedAt: string;
 }
 
 export interface ProjectRole {
@@ -41,7 +52,8 @@ export interface ProjectRole {
     avatar?: string | null;
   } | null;
   pendingApplicant?: PendingApplicant | null;
-  status: 'OPEN' | 'PENDING' | 'ASSIGNED';
+  invitedUser?: InvitedUser | null;
+  status: 'OPEN' | 'PENDING' | 'INVITED' | 'ASSIGNED';
 }
 
 export interface BuilderProject {
@@ -200,6 +212,30 @@ export const ProjectsPage: React.FC = () => {
     projects.forEach((p) => syncProjectGroup(p));
   }, []);
 
+  // Saved Projects state
+  const [savedProjectIds, setSavedProjectIds] = useState<Set<string>>(() => {
+    try {
+      const mirror = localStorage.getItem('startupz_saved_items');
+      if (mirror) {
+        const parsed = JSON.parse(mirror);
+        if (Array.isArray(parsed)) {
+          return new Set(
+            parsed
+              .filter((item: any) => (item.itemType === 'PROJECT' || item.type === 'PROJECT') && item.itemId)
+              .map((item: any) => item.itemId)
+          );
+        }
+      }
+    } catch {}
+    return new Set();
+  });
+
+  // Assign Connection Modal State
+  const [assignModalRole, setAssignModalRole] = useState<{ projectId: string; roleId: string; roleName: string } | null>(null);
+  const [connectionsList, setConnectionsList] = useState<Array<{ id: string; fullName: string; avatar?: string | null; headline?: string }>>([]);
+  const [loadingConnections, setLoadingConnections] = useState(false);
+  const [connectionSearchQuery, setConnectionSearchQuery] = useState('');
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -214,10 +250,284 @@ export const ProjectsPage: React.FC = () => {
     } catch {}
   };
 
-  const handleDeleteProject = (projectId: string) => {
+  // Fetch projects from server on mount & merge with local storage
+  useEffect(() => {
+    let isMounted = true;
+    const fetchServerProjects = async () => {
+      try {
+        const res = await api.getProjects().catch(() => null);
+        if (res && Array.isArray(res.projects)) {
+          const serverList: BuilderProject[] = res.projects;
+          setProjects((prev) => {
+            const map = new Map<string, BuilderProject>();
+            prev.forEach((p) => {
+              if (p && p.id && !['proj-1', 'proj-2', 'proj-3'].includes(p.id)) {
+                map.set(p.id, p);
+              }
+            });
+            serverList.forEach((p) => {
+              if (p && p.id && !['proj-1', 'proj-2', 'proj-3'].includes(p.id)) {
+                const existing = map.get(p.id);
+                map.set(p.id, existing ? { ...p, ...existing, roles: p.roles || existing.roles } : p);
+              }
+            });
+            const merged = Array.from(map.values());
+            if (isMounted) {
+              try {
+                localStorage.setItem('startupz_builder_projects', JSON.stringify(merged));
+              } catch {}
+              merged.forEach((p) => syncProjectGroup(p));
+            }
+            return merged;
+          });
+        }
+      } catch (err) {
+        console.warn('Could not fetch server projects:', err);
+      }
+    };
+
+    fetchServerProjects();
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
+
+  // Load saved projects list
+  useEffect(() => {
+    let isMounted = true;
+    const loadSaved = async () => {
+      try {
+        const res = await api.getSavedItems('PROJECT').catch(() => null);
+        if (res && Array.isArray(res.savedItems)) {
+          const ids = new Set<string>(res.savedItems.map((item: any) => item.itemId));
+          if (isMounted) {
+            setSavedProjectIds((prev) => new Set([...Array.from(prev), ...Array.from(ids)]));
+          }
+        }
+      } catch {}
+    };
+    if (user) loadSaved();
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
+
+  const handleBookmarkToggle = async (projectId: string, projectTitle: string) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    const isCurrentlySaved = savedProjectIds.has(projectId);
+    const newSaved = new Set(savedProjectIds);
+    if (isCurrentlySaved) {
+      newSaved.delete(projectId);
+    } else {
+      newSaved.add(projectId);
+    }
+    setSavedProjectIds(newSaved);
+
+    try {
+      const raw = localStorage.getItem('startupz_saved_items');
+      let items: any[] = raw ? JSON.parse(raw) : [];
+      if (isCurrentlySaved) {
+        items = items.filter((x: any) => !(x.itemId === projectId && (x.itemType === 'PROJECT' || x.type === 'PROJECT')));
+      } else {
+        const targetProj = projects.find((p) => p.id === projectId);
+        items.unshift({
+          id: `saved-proj-${projectId}`,
+          itemId: projectId,
+          itemType: 'PROJECT',
+          type: 'PROJECT',
+          createdAt: new Date().toISOString(),
+          project: targetProj || { id: projectId, title: projectTitle },
+        });
+      }
+      localStorage.setItem('startupz_saved_items', JSON.stringify(items));
+    } catch {}
+
+    try {
+      await api.toggleSave('PROJECT', projectId).catch(() => null);
+    } catch {}
+
+    showToast(isCurrentlySaved ? 'Project removed from saved items.' : `Project "${projectTitle}" saved!`);
+  };
+
+  const handleOpenAssignModal = async (projectId: string, roleId: string, roleName: string) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setAssignModalRole({ projectId, roleId, roleName });
+    setConnectionSearchQuery('');
+    setLoadingConnections(true);
+    try {
+      const res = await api.getConnections().catch(() => null);
+      if (res && Array.isArray(res.connections) && res.connections.length > 0) {
+        const formatted = res.connections
+          .map((c: any) => ({
+            id: c.user?.id || c.targetUserId || c.id,
+            fullName: c.user?.profile?.fullName || c.user?.email?.split('@')[0] || 'Connection',
+            avatar: c.user?.profile?.avatar || null,
+            headline: c.user?.profile?.headline || '',
+          }))
+          .filter((c: any) => c.id && c.id !== user.id);
+        setConnectionsList(formatted);
+      } else {
+        const supData = await fetchUserConnections(user.id).catch(() => null);
+        if (supData && Array.isArray(supData.connections)) {
+          const list: any[] = [];
+          for (const c of supData.connections) {
+            const otherId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
+            if (otherId && otherId !== user.id && c.status === 'ACCEPTED') {
+              list.push({
+                id: otherId,
+                fullName: 'Connected Builder',
+                avatar: null,
+                headline: 'Connection',
+              });
+            }
+          }
+          setConnectionsList(list);
+        } else {
+          setConnectionsList([]);
+        }
+      }
+    } catch (err) {
+      console.warn('Error fetching connections:', err);
+      setConnectionsList([]);
+    } finally {
+      setLoadingConnections(false);
+    }
+  };
+
+  const handleSendRoleInvite = async (projectId: string, roleId: string, targetUserId: string, targetName: string) => {
+    try {
+      await api.inviteProjectRole(projectId, roleId, targetUserId).catch(() => null);
+    } catch (err) {}
+
+    const updated = projects.map((p) => {
+      if (p.id === projectId) {
+        return {
+          ...p,
+          roles: p.roles.map((r) => {
+            if (r.id === roleId) {
+              return {
+                ...r,
+                status: 'INVITED' as const,
+                invitedUser: {
+                  userId: targetUserId,
+                  fullName: targetName,
+                  avatar: null,
+                  invitedAt: 'Just now',
+                },
+                pendingApplicant: null,
+              };
+            }
+            return r;
+          }),
+        };
+      }
+      return p;
+    });
+
+    saveProjects(updated);
+    setAssignModalRole(null);
+    showToast(`Role invitation sent to ${targetName}! Once they accept, the role will be filled.`);
+  };
+
+  const handleRespondInvite = async (projectId: string, roleId: string, action: 'ACCEPT' | 'DECLINE') => {
+    if (!user) return;
+    try {
+      await api.respondProjectInvite(projectId, roleId, action).catch(() => null);
+    } catch (err) {}
+
+    const userName = user.profile?.fullName || user.email?.split('@')[0] || 'Builder';
+    let triggeredCompletion = false;
+    let completedProject: BuilderProject | null = null;
+
+    const updated = projects.map((p) => {
+      if (p.id === projectId) {
+        const nextRoles = p.roles.map((r) => {
+          if (r.id === roleId) {
+            if (action === 'ACCEPT') {
+              return {
+                ...r,
+                status: 'ASSIGNED' as const,
+                assignedTo: {
+                  userId: user.id,
+                  fullName: userName,
+                  avatar: user.profile?.avatar || null,
+                },
+                invitedUser: null,
+              };
+            } else {
+              return {
+                ...r,
+                status: 'OPEN' as const,
+                invitedUser: null,
+              };
+            }
+          }
+          return r;
+        });
+
+        const updatedProj = { ...p, roles: nextRoles };
+        if (action === 'ACCEPT') {
+          syncProjectGroup(updatedProj);
+          const allFilled = nextRoles.every((r) => r.status === 'ASSIGNED');
+          if (allFilled && p.visibility === 'PUBLIC') {
+            triggeredCompletion = true;
+            completedProject = updatedProj;
+          }
+        }
+        return updatedProj;
+      }
+      return p;
+    });
+
+    saveProjects(updated);
+
+    if (action === 'ACCEPT') {
+      if (triggeredCompletion && completedProject) {
+        setRoleCompletionModal(completedProject);
+      } else {
+        showToast('Role accepted! You are now part of the project team and added to project chat.');
+      }
+    } else {
+      showToast('Role invitation declined.');
+    }
+  };
+
+  const handleCancelInvite = (projectId: string, roleId: string) => {
+    const updated = projects.map((p) => {
+      if (p.id === projectId) {
+        return {
+          ...p,
+          roles: p.roles.map((r) => {
+            if (r.id === roleId) {
+              return {
+                ...r,
+                status: 'OPEN' as const,
+                invitedUser: null,
+              };
+            }
+            return r;
+          }),
+        };
+      }
+      return p;
+    });
+    saveProjects(updated);
+    showToast('Invitation cancelled. Role reopened.');
+  };
+
+  const handleDeleteProject = async (projectId: string) => {
     if (!window.confirm('Are you sure you want to delete this project idea?')) {
       return;
     }
+    try {
+      await api.deleteProject(projectId).catch(() => null);
+    } catch {}
     const updated = projects.filter((p) => p.id !== projectId);
     saveProjects(updated);
     try {
@@ -245,7 +555,7 @@ export const ProjectsPage: React.FC = () => {
     setRolesList((prev) => prev.filter((r) => r !== roleName));
   };
 
-  const handleCreateProject = (e: React.FormEvent) => {
+  const handleCreateProject = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormTouched(true);
     if (!user) {
@@ -255,8 +565,7 @@ export const ProjectsPage: React.FC = () => {
     if (!isFormValid) return;
 
     const creatorName = user.profile?.fullName || user.email?.split('@')[0] || 'Builder';
-    const newProject: BuilderProject = {
-      id: `proj-${Date.now()}`,
+    const payload = {
       title: newTitle.trim(),
       ideaSummary: newTagline.trim(),
       tagline: newTagline.trim(),
@@ -265,18 +574,13 @@ export const ProjectsPage: React.FC = () => {
       detailedDescription: newDetailedDescription.trim(),
       stage: newStage,
       visibility: newVisibility,
-      creator: {
-        userId: user.id,
-        fullName: creatorName,
-        avatar: user.profile?.avatar || null,
-        role: user.profile?.headline || 'Project Lead',
-      },
+      tags: newTechStack,
       roles: [
         {
           id: `r-creator-${Date.now()}`,
           roleName: 'Project Lead',
-          iconType: 'product',
-          status: 'ASSIGNED',
+          iconType: 'product' as const,
+          status: 'ASSIGNED' as const,
           assignedTo: {
             userId: user.id,
             fullName: creatorName,
@@ -286,13 +590,31 @@ export const ProjectsPage: React.FC = () => {
         ...rolesList.map((rName, idx) => ({
           id: `r-open-${Date.now()}-${idx}`,
           roleName: rName,
-          iconType: (rName.toLowerCase().includes('design') ? 'design' : rName.toLowerCase().includes('market') || rName.toLowerCase().includes('sales') ? 'marketing' : 'code') as any,
+          iconType: (rName.toLowerCase().includes('design') ? 'design' : rName.toLowerCase().includes('market') || rName.toLowerCase().includes('sales') ? 'marketing' : 'code') as 'design' | 'marketing' | 'code',
           status: 'OPEN' as const,
         })),
-      ],
-      tags: newTechStack,
-      createdAt: 'Just now',
+      ] as ProjectRole[],
     };
+
+    let serverProj: BuilderProject | null = null;
+    try {
+      const res = await api.createProject(payload).catch(() => null);
+      if (res && res.project) {
+        serverProj = res.project;
+      }
+    } catch (err) {}
+
+    const newProject: BuilderProject = serverProj || ({
+      id: `proj-${Date.now()}`,
+      ...payload,
+      creator: {
+        userId: user.id,
+        fullName: creatorName,
+        avatar: user.profile?.avatar || null,
+        role: user.profile?.headline || 'Project Lead',
+      },
+      createdAt: 'Just now',
+    } as BuilderProject);
 
     const updated = [newProject, ...projects];
     saveProjects(updated);
@@ -314,11 +636,15 @@ export const ProjectsPage: React.FC = () => {
     setNewVisibility('PUBLIC');
   };
 
-  const handleApplyRole = (projectId: string, roleId: string) => {
+  const handleApplyRole = async (projectId: string, roleId: string) => {
     if (!user) {
       navigate('/login');
       return;
     }
+
+    try {
+      await api.applyProjectRole(projectId, roleId).catch(() => null);
+    } catch {}
 
     const userName = user.profile?.fullName || user.email?.split('@')[0] || 'Builder';
     const userHeadline = user.profile?.headline || 'Team Collaborator';
@@ -333,7 +659,6 @@ export const ProjectsPage: React.FC = () => {
           roles: p.roles.map((r) => {
             if (r.id === roleId) {
               if (isCreator) {
-                // Creator joins their own role directly
                 return {
                   ...r,
                   status: 'ASSIGNED' as const,
@@ -345,7 +670,6 @@ export const ProjectsPage: React.FC = () => {
                   pendingApplicant: null,
                 };
               }
-              // Normal applicant: create a pending application, notify owner
               return {
                 ...r,
                 status: 'PENDING' as const,
@@ -376,7 +700,11 @@ export const ProjectsPage: React.FC = () => {
     }
   };
 
-  const handleAcceptApplicant = (projectId: string, roleId: string) => {
+  const handleAcceptApplicant = async (projectId: string, roleId: string) => {
+    try {
+      await api.respondProjectApplicant(projectId, roleId, 'ACCEPT').catch(() => null);
+    } catch {}
+
     let triggeredCompletion = false;
     let completedProject: BuilderProject | null = null;
 
@@ -421,7 +749,11 @@ export const ProjectsPage: React.FC = () => {
     }
   };
 
-  const handleDeclineApplicant = (projectId: string, roleId: string) => {
+  const handleDeclineApplicant = async (projectId: string, roleId: string) => {
+    try {
+      await api.respondProjectApplicant(projectId, roleId, 'DECLINE').catch(() => null);
+    } catch {}
+
     const updated = projects.map((p) => {
       if (p.id === projectId) {
         return {
@@ -445,7 +777,11 @@ export const ProjectsPage: React.FC = () => {
     showToast('Application declined. Role reopened.');
   };
 
-  const handleToggleVisibility = (projectId: string, newVis: 'PUBLIC' | 'PRIVATE') => {
+  const handleToggleVisibility = async (projectId: string, newVis: 'PUBLIC' | 'PRIVATE') => {
+    try {
+      await api.updateProject(projectId, { visibility: newVis }).catch(() => null);
+    } catch {}
+
     const updated = projects.map((p) => (p.id === projectId ? { ...p, visibility: newVis } : p));
     saveProjects(updated);
     showToast(`Project visibility set to ${newVis}.`);
@@ -653,13 +989,27 @@ export const ProjectsPage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Team Chat Link & Delete Action */}
+                    {/* Save Bookmark, Team Chat Link & Delete Action */}
                     <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleBookmarkToggle(project.id, project.title)}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold border transition-colors cursor-pointer ${
+                          savedProjectIds.has(project.id)
+                            ? 'bg-brand-50 text-brand-600 border-brand-200 dark:bg-brand-950/60 dark:text-brand-400 dark:border-brand-900'
+                            : 'bg-slate-50 text-slate-500 border-slate-200 dark:bg-dark-800 dark:text-slate-400 dark:border-dark-700 hover:text-slate-700'
+                        }`}
+                        title={savedProjectIds.has(project.id) ? 'Remove from Saved' : 'Save Project'}
+                      >
+                        <Bookmark size={12} className={savedProjectIds.has(project.id) ? 'fill-current' : ''} />
+                        <span>{savedProjectIds.has(project.id) ? 'Saved' : 'Save'}</span>
+                      </button>
+
                       {isCreator && (
                         <button
                           type="button"
                           onClick={() => handleDeleteProject(project.id)}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors"
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer"
                           title="Delete this project"
                         >
                           <Trash2 size={12} />
@@ -712,8 +1062,10 @@ export const ProjectsPage: React.FC = () => {
                       {project.roles.map((role) => {
                         const isAssigned = role.status === 'ASSIGNED';
                         const isPending = role.status === 'PENDING';
+                        const isInvited = role.status === 'INVITED';
                         const isMyAssignedRole = isAssigned && role.assignedTo?.userId === user?.id;
                         const isMyPendingRole = isPending && role.pendingApplicant?.userId === user?.id;
+                        const isMyInvitedRole = isInvited && role.invitedUser?.userId === user?.id;
 
                         return (
                           <div
@@ -723,6 +1075,8 @@ export const ProjectsPage: React.FC = () => {
                                 ? 'bg-slate-50/70 dark:bg-dark-850/40 border-slate-200/60 dark:border-dark-800'
                                 : isPending
                                 ? 'bg-amber-50/60 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/60'
+                                : isInvited
+                                ? 'bg-indigo-50/60 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-900/60'
                                 : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800'
                             }`}
                           >
@@ -783,15 +1137,79 @@ export const ProjectsPage: React.FC = () => {
                                     Applicant under review
                                   </span>
                                 )
+                              ) : isInvited ? (
+                                isMyInvitedRole ? (
+                                  /* Target user sees invitation with Accept / Decline */
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-[11px] text-brand-600 dark:text-brand-400 font-bold">
+                                      Invited You!
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRespondInvite(project.id, role.id, 'ACCEPT')}
+                                      className="px-2.5 py-1 rounded text-[11px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 inline-flex items-center gap-1 cursor-pointer shadow-xs"
+                                    >
+                                      <Check size={11} /> Accept Role
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRespondInvite(project.id, role.id, 'DECLINE')}
+                                      className="px-2.5 py-1 rounded text-[11px] font-bold bg-slate-200 dark:bg-dark-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 cursor-pointer"
+                                    >
+                                      Decline
+                                    </button>
+                                  </div>
+                                ) : isCreator ? (
+                                  /* Creator sees invitation pending acceptance */
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-[11px] text-indigo-700 dark:text-indigo-400 font-semibold">
+                                      Invited: {role.invitedUser?.fullName} (Waiting for acceptance)
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCancelInvite(project.id, role.id)}
+                                      className="px-2 py-0.5 rounded text-[10px] font-semibold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+                                      title="Cancel role invitation"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">
+                                    Invitation sent to {role.invitedUser?.fullName}
+                                  </span>
+                                )
                               ) : (
                                 /* Role is OPEN */
-                                <button
-                                  type="button"
-                                  onClick={() => handleApplyRole(project.id, role.id)}
-                                  className="btn-primary !py-1 !px-2.5 !text-[11px] font-semibold cursor-pointer inline-flex items-center gap-1"
-                                >
-                                  <Plus size={11} /> {isCreator ? 'Take Role' : 'Apply for Role'}
-                                </button>
+                                <div className="flex items-center gap-1.5">
+                                  {isCreator ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenAssignModal(project.id, role.id, role.roleName)}
+                                        className="btn-primary !py-1 !px-2.5 !text-[11px] font-semibold cursor-pointer inline-flex items-center gap-1"
+                                        title="Invite a connection to this role"
+                                      >
+                                        <UserPlus size={11} /> Assign Connection
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleApplyRole(project.id, role.id)}
+                                        className="btn-secondary !py-1 !px-2 !text-[11px] font-semibold cursor-pointer inline-flex items-center gap-1"
+                                      >
+                                        Take Role
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleApplyRole(project.id, role.id)}
+                                      className="btn-primary !py-1 !px-2.5 !text-[11px] font-semibold cursor-pointer inline-flex items-center gap-1"
+                                    >
+                                      <Plus size={11} /> Apply for Role
+                                    </button>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </div>
@@ -1226,6 +1644,128 @@ export const ProjectsPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Connection to Role Modal */}
+      {assignModalRole && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto font-sans">
+          <div className="max-w-md w-full bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-6 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-8">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-dark-800">
+              <div className="flex items-center gap-2.5">
+                <span className="p-2 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400">
+                  <UserPlus size={18} />
+                </span>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    Assign Role to Connection
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Role: <strong className="text-brand-600 dark:text-brand-400">{assignModalRole.roleName}</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAssignModalRole(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Select one of your connections to send a role invitation. The role will be officially filled only once they accept.
+            </p>
+
+            {/* Search connections */}
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                value={connectionSearchQuery}
+                onChange={(e) => setConnectionSearchQuery(e.target.value)}
+                placeholder="Search connections by name..."
+                className="input-base pl-9 pr-3 py-1.5 text-xs w-full"
+              />
+            </div>
+
+            {/* Connections list */}
+            <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+              {loadingConnections ? (
+                <div className="py-8 text-center text-xs text-slate-400">
+                  Loading your connections...
+                </div>
+              ) : (
+                (() => {
+                  const filtered = connectionsList.filter(
+                    (c) =>
+                      !connectionSearchQuery.trim() ||
+                      c.fullName.toLowerCase().includes(connectionSearchQuery.toLowerCase()) ||
+                      (c.headline && c.headline.toLowerCase().includes(connectionSearchQuery.toLowerCase()))
+                  );
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="py-8 text-center space-y-2">
+                        <Users size={24} className="mx-auto text-slate-400" />
+                        <p className="text-xs text-slate-500">
+                          {connectionsList.length === 0
+                            ? "You don't have any accepted connections yet. Connect with other builders first!"
+                            : 'No matching connections found.'}
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return filtered.map((conn) => (
+                    <div
+                      key={conn.id}
+                      className="p-2.5 rounded-xl border border-slate-200 dark:border-dark-800 hover:border-brand-500 flex items-center justify-between gap-3 bg-slate-50/50 dark:bg-dark-850/40 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Avatar src={conn.avatar} name={conn.fullName} size="sm" className="!w-8 !h-8 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                            {conn.fullName}
+                          </p>
+                          {conn.headline && (
+                            <p className="text-[11px] text-slate-400 truncate">
+                              {conn.headline}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleSendRoleInvite(
+                            assignModalRole.projectId,
+                            assignModalRole.roleId,
+                            conn.id,
+                            conn.fullName
+                          )
+                        }
+                        className="btn-primary !py-1 !px-3 !text-xs font-semibold shrink-0 cursor-pointer"
+                      >
+                        Send Request
+                      </button>
+                    </div>
+                  ));
+                })()
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 dark:border-dark-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setAssignModalRole(null)}
+                className="btn-secondary !text-xs !py-1.5 !px-3.5 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -26,6 +26,7 @@ import meetingRoutes from './routes/meetings.js';
 import aiRoutes from './routes/ai.js';
 import failedStartupRoutes from './routes/failedStartups.js';
 import problemsRoutes, { checkAndRefreshWeeklyProblems } from './routes/problems.js';
+import projectsRoutes from './routes/projects.js';
 
 import { execSync } from 'child_process';
 import { prisma } from './db.js';
@@ -134,6 +135,7 @@ app.use('/api/meetings', meetingRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/failed-startups', failedStartupRoutes);
 app.use('/api/problems', problemsRoutes);
+app.use('/api/projects', projectsRoutes);
 
 // Error Handler
 app.use((err, req, res, next) => {

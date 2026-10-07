@@ -1,6 +1,7 @@
 import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { supabaseAdmin } from '../supabase.js';
 
 const router = express.Router();
 
@@ -353,15 +354,78 @@ router.put('/:id', requireAuth, async (req, res) => {
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const conn = await prisma.connection.findUnique({ where: { id } });
+    const currentUserId = req.user.id;
 
-    if (!conn || (conn.senderId !== req.user.id && conn.receiverId !== req.user.id)) {
-      return res.status(403).json({ error: 'Unauthorized to remove this connection.' });
+    // 1. Look up by direct connection id
+    let conn = await prisma.connection.findUnique({ where: { id } });
+
+    // 2. Or look up by target user id pair
+    if (!conn) {
+      conn = await prisma.connection.findFirst({
+        where: {
+          OR: [
+            { senderId: currentUserId, receiverId: id },
+            { senderId: id, receiverId: currentUserId },
+          ],
+        },
+      });
     }
 
-    await prisma.connection.delete({ where: { id } });
-    return res.json({ message: 'Connection removed.' });
+    let otherUserId = null;
+    if (conn) {
+      if (conn.senderId !== currentUserId && conn.receiverId !== currentUserId) {
+        return res.status(403).json({ error: 'Unauthorized to remove this connection.' });
+      }
+      otherUserId = conn.senderId === currentUserId ? conn.receiverId : conn.senderId;
+      await prisma.connection.deleteMany({
+        where: {
+          OR: [
+            { id: conn.id },
+            { senderId: currentUserId, receiverId: otherUserId },
+            { senderId: otherUserId, receiverId: currentUserId },
+          ],
+        },
+      });
+    } else {
+      // If no conn was found by id, still ensure any connection between currentUserId and id is removed
+      otherUserId = id;
+      await prisma.connection.deleteMany({
+        where: {
+          OR: [
+            { senderId: currentUserId, receiverId: otherUserId },
+            { senderId: otherUserId, receiverId: currentUserId },
+          ],
+        },
+      });
+    }
+
+    // 3. Sync deletion to Supabase table
+    if (supabaseAdmin && otherUserId) {
+      try {
+        await supabaseAdmin
+          .from('connections')
+          .delete()
+          .or(`id.eq.${id},and(sender_id.eq.${currentUserId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${currentUserId})`);
+      } catch (supaErr) {
+        console.warn('Supabase connection delete error notice:', supaErr?.message);
+      }
+    }
+
+    // 4. Delete associated connection notifications
+    if (otherUserId) {
+      await prisma.notification.deleteMany({
+        where: {
+          OR: [
+            { userId: currentUserId, senderId: otherUserId, type: { in: ['CONNECTION_REQUEST', 'CONNECTION_ACCEPTED'] } },
+            { userId: otherUserId, senderId: currentUserId, type: { in: ['CONNECTION_REQUEST', 'CONNECTION_ACCEPTED'] } },
+          ],
+        },
+      }).catch(() => null);
+    }
+
+    return res.json({ message: 'Connection removed successfully.', otherUserId });
   } catch (error) {
+    console.error('Failed to remove connection:', error);
     return res.status(500).json({ error: 'Failed to remove connection.' });
   }
 });
@@ -631,6 +695,74 @@ router.put('/startup-proposals/:id', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Respond proposal error:', error);
     return res.status(500).json({ error: 'Failed to respond to startup proposal.' });
+  }
+});
+
+// DELETE /api/connections/:id - Disconnect / Remove connection in both directions
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const currentUserId = req.user.id;
+    const targetUserId = req.body?.targetUserId || req.query?.targetUserId;
+
+    let whereClause = {
+      OR: [
+        { id },
+        { senderId: currentUserId, receiverId: id },
+        { senderId: id, receiverId: currentUserId },
+      ],
+    };
+
+    if (targetUserId) {
+      whereClause.OR.push(
+        { senderId: currentUserId, receiverId: targetUserId },
+        { senderId: targetUserId, receiverId: currentUserId }
+      );
+    }
+
+    const connsToDelete = await prisma.connection.findMany({
+      where: whereClause,
+    });
+
+    const otherUserIds = new Set();
+    for (const c of connsToDelete) {
+      if (c.senderId === currentUserId) otherUserIds.add(c.receiverId);
+      else otherUserIds.add(c.senderId);
+    }
+    if (targetUserId) otherUserIds.add(targetUserId);
+
+    if (connsToDelete.length > 0) {
+      await prisma.connection.deleteMany({
+        where: { id: { in: connsToDelete.map((c) => c.id) } },
+      });
+    }
+
+    for (const otherId of otherUserIds) {
+      await prisma.notification.deleteMany({
+        where: {
+          OR: [
+            { userId: currentUserId, senderId: otherId, type: { in: ['CONNECTION_REQUEST', 'CONNECTION_ACCEPTED'] } },
+            { userId: otherId, senderId: currentUserId, type: { in: ['CONNECTION_REQUEST', 'CONNECTION_ACCEPTED'] } },
+          ],
+        },
+      }).catch(() => null);
+
+      if (supabaseAdmin) {
+        await supabaseAdmin
+          .from('connections')
+          .delete()
+          .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${currentUserId})`)
+          .catch(() => null);
+      }
+    }
+
+    return res.json({
+      message: 'Connection successfully removed on both profiles.',
+      removedUserIds: Array.from(otherUserIds),
+    });
+  } catch (error) {
+    console.error('Delete connection error:', error);
+    return res.status(500).json({ error: 'Failed to delete connection.' });
   }
 });
 

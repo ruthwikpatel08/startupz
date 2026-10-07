@@ -521,8 +521,9 @@ router.put('/profile', requireAuth, async (req, res) => {
 
     if (headline !== undefined && typeof headline === 'string') {
       const cleanHeadline = headline.trim();
-      if (cleanHeadline.length > 100) {
-        return res.status(400).json({ error: 'Headline cannot exceed 100 characters.' });
+      const wordCount = cleanHeadline.split(/\s+/).filter(Boolean).length;
+      if (wordCount > 50) {
+        return res.status(400).json({ error: 'Headline cannot exceed 50 words.' });
       }
       if (cleanHeadline.length > 0 && cleanHeadline.length < 3) {
         return res.status(400).json({ error: 'Headline must be at least 3 characters.' });

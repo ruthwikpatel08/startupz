@@ -1,14 +1,15 @@
 import assert from 'assert';
 
-// Self-check validation logic for Headline and One-Line Bio
+// Self-check validation logic for Headline (up to 50 words) and One-Line Bio
 function validateHeadline(headline) {
   if (headline === undefined || headline === null) return { valid: true };
   const clean = String(headline).trim();
   if (clean.length > 0 && clean.length < 3) {
     return { valid: false, error: 'Headline must be at least 3 characters.' };
   }
-  if (clean.length > 100) {
-    return { valid: false, error: 'Headline cannot exceed 100 characters.' };
+  const wordCount = clean ? clean.split(/\s+/).filter(Boolean).length : 0;
+  if (wordCount > 50) {
+    return { valid: false, error: 'Headline cannot exceed 50 words.' };
   }
   return { valid: true };
 }
@@ -31,8 +32,13 @@ console.log('Running profile validation assertions...');
 assert.strictEqual(validateHeadline('').valid, true, 'Empty headline is valid (optional)');
 assert.strictEqual(validateHeadline('CS Student | AI Builder').valid, true, 'Valid headline passes');
 assert.strictEqual(validateHeadline('AB').valid, false, 'Headline under 3 chars rejected');
-assert.strictEqual(validateHeadline('A'.repeat(101)).valid, false, 'Headline over 100 chars rejected');
-assert.strictEqual(validateHeadline('A'.repeat(100)).valid, true, 'Headline exactly 100 chars passes');
+
+// 50 words test
+const fiftyWords = Array(50).fill('developer').join(' ');
+assert.strictEqual(validateHeadline(fiftyWords).valid, true, 'Headline with exactly 50 words passes');
+
+const fiftyOneWords = Array(51).fill('developer').join(' ');
+assert.strictEqual(validateHeadline(fiftyOneWords).valid, false, 'Headline with 51 words rejected');
 
 // One-line bio tests
 assert.strictEqual(validateOneLineBio('').valid, true, 'Empty one-line bio is valid (optional)');

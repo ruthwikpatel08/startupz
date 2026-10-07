@@ -31,6 +31,7 @@ import {
   sendSupabaseMessage,
   deleteSupabaseConversation,
   getDeletedConversationIds,
+  recordDeletedConversation,
   unsendSupabaseMessage,
   editSupabaseMessage,
   markMessagesAsRead,
@@ -117,6 +118,10 @@ export const MessagesPage: React.FC = () => {
           const parsed = JSON.parse(rawGroups);
           if (Array.isArray(parsed)) {
             parsed.forEach((g: any) => {
+              const key = `group_${g.projectId || g.id}`;
+              if (deletedIds.has(g.id) || (g.projectId && deletedIds.has(g.projectId)) || deletedIds.has(key)) {
+                return;
+              }
               const groupConv: any = {
                 id: g.id,
                 projectId: g.projectId,
@@ -139,7 +144,6 @@ export const MessagesPage: React.FC = () => {
                 lastMessageAt: g.lastMessageAt || g.createdAt || new Date().toISOString(),
                 members: g.members || [],
               };
-              const key = `group_${g.projectId || g.id}`;
               convMap.set(key, groupConv);
             });
           }
@@ -668,8 +672,35 @@ export const MessagesPage: React.FC = () => {
 
     setDeletingConv(true);
     try {
-      await deleteSupabaseConversation(selectedConversation.id, user.id);
-      setConversations((prev) => prev.filter((c) => c.id !== selectedConversation.id));
+      const convId = selectedConversation.id;
+      const isProject = (selectedConversation as any)?.isProjectGroup;
+      const projId = (selectedConversation as any)?.projectId;
+
+      // 1. Delete in Supabase / backend
+      await deleteSupabaseConversation(convId, user.id);
+
+      // 2. If project group, also remove from localStorage project groups & messages, and record deleted
+      if (isProject) {
+        try {
+          const rawGroups = localStorage.getItem('startupz_project_groups');
+          if (rawGroups) {
+            const parsed = JSON.parse(rawGroups);
+            if (Array.isArray(parsed)) {
+              const filtered = parsed.filter((g: any) => g.id !== convId && g.projectId !== projId);
+              localStorage.setItem('startupz_project_groups', JSON.stringify(filtered));
+            }
+          }
+          if (projId) {
+            localStorage.removeItem(`startupz_project_messages_${projId}`);
+          }
+          localStorage.removeItem(`startupz_project_messages_${convId}`);
+          recordDeletedConversation(user.id, convId);
+          if (projId) recordDeletedConversation(user.id, projId);
+          recordDeletedConversation(user.id, `group_${projId || convId}`);
+        } catch {}
+      }
+
+      setConversations((prev) => prev.filter((c) => c.id !== convId && (c as any).projectId !== projId));
       setSelectedConversation(null);
       setMessages([]);
       navigate('/messages', { replace: true });

@@ -17,6 +17,7 @@ import {
   MapPin,
   Globe,
   Flame,
+  FolderKanban,
 } from 'lucide-react';
 
 export const SavedItemsPage: React.FC = () => {
@@ -29,7 +30,30 @@ export const SavedItemsPage: React.FC = () => {
     try {
       const typeParam = filterType === 'ALL' ? undefined : filterType;
       const res: any = await api.getSavedItems(typeParam);
-      const items = Array.isArray(res) ? res : res?.savedItems || [];
+      let items = Array.isArray(res) ? res : res?.savedItems || [];
+
+      // Local storage mirror backup
+      try {
+        const rawLocal = localStorage.getItem('startupz_saved_items');
+        if (rawLocal) {
+          const localItems: any[] = JSON.parse(rawLocal);
+          if (Array.isArray(localItems)) {
+            const filteredLocal = localItems.filter((li) =>
+              filterType === 'ALL' || li.itemType === filterType
+            );
+            // Merge with API items by itemType and itemId
+            const existingKeys = new Set(items.map((i: any) => `${i.itemType}_${i.itemId}`));
+            filteredLocal.forEach((li) => {
+              const key = `${li.itemType}_${li.itemId}`;
+              if (!existingKeys.has(key)) {
+                items.push(li);
+                existingKeys.add(key);
+              }
+            });
+          }
+        }
+      } catch {}
+
       setSavedItems(items);
     } catch (err) {
       console.error('Failed to load saved items:', err);
@@ -46,6 +70,14 @@ export const SavedItemsPage: React.FC = () => {
     try {
       await api.toggleSave(itemType, itemId);
       setSavedItems((prev) => prev.filter((item) => !(item.itemType === itemType && item.itemId === itemId)));
+      try {
+        const rawLocal = localStorage.getItem('startupz_saved_items');
+        if (rawLocal) {
+          const localItems: any[] = JSON.parse(rawLocal);
+          const nextLocal = localItems.filter((i) => !(i.itemType === itemType && i.itemId === itemId));
+          localStorage.setItem('startupz_saved_items', JSON.stringify(nextLocal));
+        }
+      } catch {}
     } catch (err) {
       console.error('Failed to remove saved item:', err);
     }
@@ -53,6 +85,7 @@ export const SavedItemsPage: React.FC = () => {
 
   const tabs = [
     { key: 'ALL', label: 'All Saved' },
+    { key: 'PROJECT', label: 'Projects', icon: FolderKanban },
     { key: 'PROBLEM', label: 'Problem Statements', icon: Globe },
     { key: 'STARTUP', label: 'Startups', icon: Compass },
     { key: 'USER', label: 'People & Co-Founders', icon: Users },
@@ -229,6 +262,27 @@ export const SavedItemsPage: React.FC = () => {
                       )}
                     </div>
                   )}
+
+                  {item.itemType === 'PROJECT' && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-800">
+                          {d.stage || 'MVP Build'}
+                        </span>
+                      </div>
+                      <h3 className="font-semibold text-base text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors line-clamp-1">
+                        {d.title || 'Builder Project'}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                        {d.ideaSummary || d.problemSolved || d.tagline || 'Collaborative startup builder project'}
+                      </p>
+                      {d.creator?.fullName && (
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 pt-0.5">
+                          Lead: {d.creator.fullName}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Bottom link */}
@@ -239,6 +293,8 @@ export const SavedItemsPage: React.FC = () => {
                         ? `/problems/${item.itemId}`
                         : item.itemType === 'STARTUP'
                         ? `/startups/${item.itemId}`
+                        : item.itemType === 'PROJECT'
+                        ? `/projects`
                         : item.itemType === 'USER'
                         ? `/profile/${item.itemId}`
                         : item.itemType === 'INVESTOR'

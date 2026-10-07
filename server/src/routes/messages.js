@@ -1,12 +1,44 @@
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { isUserBlockedPair } from './users.js';
 
 const router = express.Router();
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DELETED_CHATS_FILE = path.resolve(__dirname, '../../data/deleted_conversations.json');
+
+function loadDeletedConversations() {
+  const map = new Map();
+  try {
+    if (fs.existsSync(DELETED_CHATS_FILE)) {
+      const raw = fs.readFileSync(DELETED_CHATS_FILE, 'utf8');
+      const obj = JSON.parse(raw);
+      for (const [k, v] of Object.entries(obj)) {
+        if (Array.isArray(v)) map.set(k, new Set(v));
+      }
+    }
+  } catch {}
+  return map;
+}
+
+function saveDeletedConversations(map) {
+  try {
+    const dir = path.dirname(DELETED_CHATS_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const obj = {};
+    for (const [k, v] of map.entries()) {
+      obj[k] = Array.from(v);
+    }
+    fs.writeFileSync(DELETED_CHATS_FILE, JSON.stringify(obj, null, 2), 'utf8');
+  } catch {}
+}
+
 // Per-user deleted conversations tracking (Map<userId, Set<conversationId>>)
-const userDeletedConversations = new Map();
+const userDeletedConversations = loadDeletedConversations();
 
 // GET /api/messages/conversations
 router.get('/conversations', requireAuth, async (req, res) => {
@@ -197,6 +229,7 @@ router.post('/', requireAuth, async (req, res) => {
     if (userDeletedConversations.has(req.user.id)) {
       userDeletedConversations.get(req.user.id).delete(conversation.id);
     }
+    saveDeletedConversations(userDeletedConversations);
 
     const message = await prisma.message.create({
       data: {
@@ -317,6 +350,7 @@ const deleteConversationHandler = async (req, res) => {
       userDeletedConversations.set(req.user.id, new Set());
     }
     userDeletedConversations.get(req.user.id).add(conv.id);
+    saveDeletedConversations(userDeletedConversations);
 
     const otherId = conv.participant1Id === req.user.id ? conv.participant2Id : conv.participant1Id;
 

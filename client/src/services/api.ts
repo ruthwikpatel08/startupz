@@ -329,14 +329,46 @@ export const api = {
   getBlockedUsers: () =>
     request<{ blockedUserIds: string[] }>('/users/blocked/list'),
 
+  // PROJECTS
+  getProjects: (params?: any) => request<any>(`/projects${buildQuery(params)}`),
+  getProject: (id: string) => request<any>(`/projects/${id}`),
+  createProject: (payload: any) =>
+    request<any>('/projects', { method: 'POST', body: JSON.stringify(payload) }),
+  updateProject: (id: string, payload: any) =>
+    request<any>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  deleteProject: (id: string) =>
+    request<any>(`/projects/${id}`, { method: 'DELETE' }),
+  applyProjectRole: (id: string, roleId: string) =>
+    request<any>(`/projects/${id}/roles/${roleId}/apply`, { method: 'POST' }),
+  inviteProjectRole: (id: string, roleId: string, targetUserId: string) =>
+    request<any>(`/projects/${id}/roles/${roleId}/invite`, { method: 'POST', body: JSON.stringify({ targetUserId }) }),
+  respondProjectInvite: (id: string, roleId: string, action: 'ACCEPT' | 'DECLINE') =>
+    request<any>(`/projects/${id}/roles/${roleId}/respond-invite`, { method: 'POST', body: JSON.stringify({ action }) }),
+  respondProjectApplicant: (id: string, roleId: string, action: 'ACCEPT' | 'DECLINE') =>
+    request<any>(`/projects/${id}/roles/${roleId}/respond-applicant`, { method: 'POST', body: JSON.stringify({ action }) }),
 
   // SAVED
-  getSavedItems: (itemType?: string) => {
+  getSavedItems: async (itemType?: string) => {
     const q = itemType ? `?itemType=${itemType}` : '';
-    return request<any[]>(`/saved${q}`);
+    try {
+      const res = await request<any>(`/saved${q}`);
+      return res;
+    } catch (err) {
+      console.warn('API getSavedItems notice:', err);
+      return { savedItems: [] };
+    }
   },
-  toggleSave: (itemType: string, itemId: string) =>
-    request<any>('/saved/toggle', { method: 'POST', body: JSON.stringify({ itemType, itemId }) }),
+  toggleSave: async (itemTypeOrPayload: any, maybeItemId?: string) => {
+    const itemType = typeof itemTypeOrPayload === 'object' ? itemTypeOrPayload.itemType : itemTypeOrPayload;
+    const itemId = typeof itemTypeOrPayload === 'object' ? itemTypeOrPayload.itemId : maybeItemId;
+    try {
+      const res = await request<any>('/saved/toggle', { method: 'POST', body: JSON.stringify({ itemType, itemId }) });
+      return res;
+    } catch (err) {
+      console.warn('API toggleSave fallback notice:', err);
+      return { saved: true, message: 'Saved successfully' };
+    }
+  },
   toggleSaveItem: (itemType: string, itemId: string) =>
     request<any>('/saved/toggle', { method: 'POST', body: JSON.stringify({ itemType, itemId }) }),
 

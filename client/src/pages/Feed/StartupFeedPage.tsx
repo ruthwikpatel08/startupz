@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { api, clearApiCache } from '../../services/api';
-import { supabase } from '../../lib/supabase';
+import { supabase, fetchUserConnections } from '../../lib/supabase';
 import { Post, Startup, Problem } from '../../types';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -71,6 +71,26 @@ export const StartupFeedPage: React.FC = () => {
   const [reportTarget, setReportTarget] = useState<{ id: string; title: string } | null>(null);
   const [copiedPostId, setCopiedPostId] = useState<string | null>(null);
 
+  // Connection tracking to ensure connect button is hidden once connected
+  const [connectedUserIds, setConnectedUserIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!user?.id) {
+      setConnectedUserIds(new Set());
+      return;
+    }
+    const loadConnections = async () => {
+      try {
+        const data = await fetchUserConnections(user.id);
+        setConnectedUserIds(data.connectedIds);
+      } catch {}
+    };
+    loadConnections();
+    const handleUpdate = () => loadConnections();
+    window.addEventListener('connections_updated', handleUpdate);
+    return () => window.removeEventListener('connections_updated', handleUpdate);
+  }, [user?.id]);
+
   const handlePillarChange = (pillar: 'ACHIEVEMENTS' | 'IDEAS' | 'PROBLEMS') => {
     setActivePillar(pillar);
     setFilterType('ALL');
@@ -88,8 +108,22 @@ export const StartupFeedPage: React.FC = () => {
     setLoading(true);
     try {
       const res = await api.getPosts();
+      let savedPostIds = new Set<string>();
+      try {
+        const rawSaved = localStorage.getItem('startupz_saved_items');
+        if (rawSaved) {
+          const parsedSaved: any[] = JSON.parse(rawSaved);
+          if (Array.isArray(parsedSaved)) {
+            parsedSaved.filter((s) => s.itemType === 'POST').forEach((s) => savedPostIds.add(s.itemId));
+          }
+        }
+      } catch {}
+
       if (res?.posts && res.posts.length > 0) {
-        setPosts(res.posts);
+        setPosts(res.posts.map((p: any) => ({
+          ...p,
+          isSaved: savedPostIds.has(p.id) || p.isSaved || false,
+        })));
       } else {
         // Fallback: direct Supabase select if backend is empty
         const { data: supaPosts, error } = await supabase
@@ -120,7 +154,7 @@ export const StartupFeedPage: React.FC = () => {
               commentsCount: p.comments_count || 0,
               createdAt: p.created_at,
               isLiked: false,
-              isSaved: false,
+              isSaved: savedPostIds.has(p.id),
               author: {
                 id: p.author_id,
                 email: '',
@@ -339,13 +373,36 @@ export const StartupFeedPage: React.FC = () => {
       navigate('/login');
       return;
     }
+    const targetPost = posts.find((p) => p.id === postId);
     try {
       const res = await api.toggleSave('POST', postId);
+      const isSaved = res.saved !== undefined ? res.saved : !targetPost?.isSaved;
       setPosts((prev) =>
         prev.map((p) =>
-          p.id === postId ? { ...p, isSaved: res.saved } : p
+          p.id === postId ? { ...p, isSaved } : p
         )
       );
+
+      // Mirror to local storage saved items cache
+      try {
+        const rawLocal = localStorage.getItem('startupz_saved_items');
+        let localList: any[] = rawLocal ? JSON.parse(rawLocal) : [];
+        if (isSaved) {
+          if (!localList.some((li) => li.itemType === 'POST' && li.itemId === postId)) {
+            localList.push({
+              id: `saved-${Date.now()}`,
+              itemType: 'POST',
+              itemId: postId,
+              savedAt: new Date().toISOString(),
+              data: targetPost || { id: postId, title: 'Saved Post' },
+              details: targetPost || { id: postId, title: 'Saved Post' },
+            });
+          }
+        } else {
+          localList = localList.filter((li) => !(li.itemType === 'POST' && li.itemId === postId));
+        }
+        localStorage.setItem('startupz_saved_items', JSON.stringify(localList));
+      } catch {}
     } catch (err) {
       console.error('Failed to save post:', err);
     }
@@ -927,8 +984,8 @@ export const StartupFeedPage: React.FC = () => {
                       )}
                     </button>
 
-                    {/* Connect with author */}
-                    {user && user.id !== author?.id && (
+                    {/* Connect with author - hidden if already connected */}
+                    {user && author?.id && user.id !== author.id && !connectedUserIds.has(author.id) && (
                       <button
                         onClick={() => setConnectUser(author)}
                         className="btn-secondary px-2.5 py-1 text-[11px] font-medium inline-flex items-center gap-1"

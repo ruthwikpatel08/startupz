@@ -2,6 +2,7 @@ import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { supabaseAdmin } from '../supabase.js';
+import { getAllProjectsList } from './projects.js';
 
 const router = express.Router();
 
@@ -26,6 +27,7 @@ router.get('/', requireAuth, async (req, res) => {
     const opportunityIds = savedItems.filter((s) => s.itemType === 'OPPORTUNITY').map((s) => s.itemId);
     const postIds = savedItems.filter((s) => s.itemType === 'POST').map((s) => s.itemId);
     const problemIds = savedItems.filter((s) => s.itemType === 'PROBLEM').map((s) => s.itemId);
+    const projectIds = savedItems.filter((s) => s.itemType === 'PROJECT').map((s) => s.itemId);
 
     const [startups, users, investors, opportunities, posts, problems] = await Promise.all([
       prisma.startup.findMany({
@@ -64,6 +66,8 @@ router.get('/', requireAuth, async (req, res) => {
     const oppMap = new Map(opportunities.map((o) => [o.id, o]));
     const postMap = new Map(posts.map((p) => [p.id, p]));
     const problemMap = new Map(problems.map((p) => [p.id, p]));
+    const allProjects = getAllProjectsList();
+    const projectMap = new Map(allProjects.map((p) => [p.id, p]));
 
     // Query Supabase for any posts not present in local SQLite Prisma
     const missingPostIds = postIds.filter((pid) => !postMap.has(pid));
@@ -117,6 +121,9 @@ router.get('/', requireAuth, async (req, res) => {
             tags: prob.tags.map((t) => t.tag.name),
           };
         }
+      }
+      if (item.itemType === 'PROJECT') {
+        data = projectMap.get(item.itemId);
       }
 
       // If data is still missing, provide an item stub rather than silently discarding

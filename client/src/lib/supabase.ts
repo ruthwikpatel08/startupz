@@ -989,27 +989,53 @@ export async function respondConnectionRequest(
 }
 
 /**
- * Removes a connection in Supabase.
+ * Removes a connection in Supabase and backend for both users.
  */
 export async function removeConnection(
   connectionId: string,
-  currentUserId: string
+  currentUserId: string,
+  targetUserId?: string
 ): Promise<boolean> {
-  const { error } = await supabase
-    .from('connections')
-    .delete()
-    .eq('id', connectionId)
-    .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`);
-
-  if (error) {
-    throw new Error(error.message || 'Unable to remove connection.');
+  // 1. Delete in Supabase by connection ID
+  try {
+    if (connectionId) {
+      await supabase.from('connections').delete().eq('id', connectionId);
+    }
+  } catch (err) {
+    console.warn('Supabase delete connection notice:', err);
   }
 
-  try {
-    api.removeConnection(connectionId).catch(() => {});
-  } catch {}
+  // 2. Also delete in Supabase by user ID pair if targetUserId is known
+  if (targetUserId) {
+    try {
+      await supabase
+        .from('connections')
+        .delete()
+        .or(
+          `and(sender_id.eq.${currentUserId},receiver_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},receiver_id.eq.${currentUserId})`
+        );
+    } catch (err) {
+      console.warn('Supabase pair delete notice:', err);
+    }
+  }
 
+  // 3. Mirror to backend API
+  try {
+    const idToPass = connectionId || targetUserId;
+    if (idToPass) {
+      await api.removeConnection(idToPass);
+    }
+  } catch (err) {
+    console.warn('Backend API removeConnection notice:', err);
+  }
+
+  // 4. Invalidate cache for BOTH users and clear all user connection caches
   invalidateUserConnectionsCache(currentUserId);
+  if (targetUserId) {
+    invalidateUserConnectionsCache(targetUserId);
+  }
+  userConnectionsCache.clear();
+  inFlightConnectionsRequests.clear();
 
   return true;
 }
