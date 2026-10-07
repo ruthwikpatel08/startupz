@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { api, isDemoRecord } from '../../services/api';
 import { EmptyState } from '../../components/common/EmptyState';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
@@ -17,6 +17,7 @@ import {
   GraduationCap,
   Globe,
   ArrowRight,
+  ArrowLeft,
   ExternalLink,
   UserPlus,
   Rocket,
@@ -24,6 +25,7 @@ import {
 } from 'lucide-react';
 
 export const GlobalSearchPage: React.FC = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryParam = searchParams.get('q') || '';
   const typeParam = searchParams.get('type') || 'ALL';
@@ -213,13 +215,24 @@ export const GlobalSearchPage: React.FC = () => {
       
       {/* Search Header */}
       <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
-            <Search className="text-brand-600 dark:text-brand-400" size={26} /> Network & Ecosystem Search
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Discover verified founders, startups, investors, mentors, opportunities, and documented problems.
-          </p>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Go back to previous page"
+            className="p-2 -ml-1 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer shrink-0"
+            title="Go back"
+          >
+            <ArrowLeft size={22} />
+          </button>
+          <div>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
+              <Search className="text-brand-600 dark:text-brand-400" size={24} /> Network & Ecosystem Search
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+              Discover verified founders, startups, investors, mentors, opportunities, and documented problems.
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleSearchSubmit} className="relative">

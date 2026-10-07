@@ -287,6 +287,19 @@ router.delete('/:id', requireAuth, async (req, res) => {
     }
 
     await prisma.post.delete({ where: { id } });
+
+    // Clean up any saved items referencing this post
+    await prisma.savedItem.deleteMany({
+      where: { itemType: 'POST', itemId: id },
+    }).catch(() => null);
+
+    // Mirror delete to Supabase if configured
+    if (supabaseAdmin) {
+      try {
+        await supabaseAdmin.from('posts').delete().eq('id', id);
+      } catch (sErr) {}
+    }
+
     return res.json({ message: 'Post deleted successfully.' });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to delete post.' });
