@@ -672,11 +672,15 @@ export const AuthCallbackPage: React.FC = () => {
                 <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
                   <span>Describe Yourself in One Line <span className="text-slate-400 font-normal">(One-Line Tagline)</span></span>
                   <span className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">Displayed on profile cards</span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {oneLineBio.length}/160
+                  </span>
                 </label>
                 <div className="relative">
                   <FileText size={13} className="absolute left-3 top-2.5 text-slate-400" />
                   <input
                     type="text"
+                    maxLength={160}
                     value={oneLineBio}
                     onChange={(e) => setOneLineBio(e.target.value)}
                     placeholder="e.g. AI Founder & Full-Stack Architect building scalable GTM tools"

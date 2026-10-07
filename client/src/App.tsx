@@ -119,7 +119,7 @@ const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
 
   const isAuthOrMeetingPage =
-    location.pathname === '/' ||
+    (!user && location.pathname === '/') ||
     location.pathname === '/onboarding' ||
     location.pathname.startsWith('/login') ||
     location.pathname.startsWith('/register') ||

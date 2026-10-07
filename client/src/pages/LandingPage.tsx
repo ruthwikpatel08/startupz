@@ -326,8 +326,7 @@ export const LandingPage: React.FC = () => {
                                   <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
                                     @{username}
                                   </span>
-                                  <RoleBadge role={displayRole} size="sm" />
-                                  <VerificationBadge badge="Active Member" isVerified={true} size="sm" />
+                                  <VerificationBadge badge="Active Builder" isVerified={true} size="sm" />
                                 </div>
                                 <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{p.headline}</p>
                                 <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
@@ -343,22 +342,16 @@ export const LandingPage: React.FC = () => {
                             </div>
                           </div>
 
-                          {p.skills && (
-                            <div className="flex flex-wrap gap-1 pt-0.5">
-                              {p.skills.split(',').slice(0, 4).map((sk: string, idx: number) => (
-                                <span
-                                  key={idx}
-                                  className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                                >
-                                  {sk.trim()}
-                                </span>
-                              ))}
-                            </div>
+                          {/* One-Line Bio (Normal with bold letters, no quotes, instead of skills) */}
+                          {(p.one_line_bio || p.oneLineBio) && (
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-2 pt-0.5">
+                              {p.one_line_bio || p.oneLineBio}
+                            </p>
                           )}
                         </div>
 
                         <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
-                          <span className="text-xs text-slate-400 font-normal">
+                          <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                             Active Builder
                           </span>
 

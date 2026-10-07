@@ -124,7 +124,7 @@ export function mapSupabaseToAppUser(
     role,
     roleChangeCount,
     isVerified: !!authUser.email_confirmed_at || isGoogle,
-    verificationBadge: isGoogle ? 'Verified via Google' : (authUser.email_confirmed_at ? 'Verified Member' : null),
+    verificationBadge: isGoogle ? 'Verified via Google' : (authUser.email_confirmed_at ? 'Active Builder' : null),
     isSuspended: false,
     isAdmin: metadata.isAdmin === true || metadata.role === 'ADMIN' || authUser.email === 'ruthwikpatel08@gmail.com' || authUser.email === 'admin@startupz.com',
     onboardingCompleted: profileRow?.onboarding_completed !== false && metadata.onboarding_completed !== false,

@@ -289,7 +289,7 @@ export const FindCoFounderPage: React.FC = () => {
               email: p.email,
               role: (p.preferred_role || 'FOUNDER').toUpperCase(),
               preferred_role: p.preferred_role,
-              verificationBadge: p.auth_provider === 'google' ? 'Verified via Google' : 'Verified Member',
+              verificationBadge: p.auth_provider === 'google' ? 'Verified via Google' : 'Active Builder',
               matchPercentage: null,
               matchExplanation: null,
               profile: {
@@ -911,7 +911,6 @@ export const FindCoFounderPage: React.FC = () => {
                           <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
                             @{username}
                           </span>
-                          <RoleBadge role={categoryRole} size="sm" />
                           <VerificationBadge badge={cand.verificationBadge} isVerified={true} size="sm" />
                         </div>
                         <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{cand.profile?.headline}</p>
@@ -946,22 +945,9 @@ export const FindCoFounderPage: React.FC = () => {
                   )}
 
                   {(cand.profile?.oneLineBio || cand.profile?.headline) && (
-                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300 line-clamp-2 leading-relaxed italic">
-                      "{cand.profile.oneLineBio || cand.profile.headline}"
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-relaxed">
+                      {cand.profile.oneLineBio || cand.profile.headline}
                     </p>
-                  )}
-
-                  {cand.profile?.skills && (
-                    <div className="flex flex-wrap gap-1 pt-0.5">
-                      {cand.profile.skills.split(',').slice(0, 4).map((sk: string, idx: number) => (
-                        <span
-                          key={idx}
-                          className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                        >
-                          {sk.trim()}
-                        </span>
-                      ))}
-                    </div>
                   )}
                 </div>
 

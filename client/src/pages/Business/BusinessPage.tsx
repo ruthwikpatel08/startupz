@@ -464,8 +464,7 @@ export const BusinessPage: React.FC = () => {
                                 <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
                                   @{username}
                                 </span>
-                                <RoleBadge role="FOUNDER" size="sm" />
-                                <VerificationBadge badge="Verified Founder" isVerified={true} size="sm" />
+                                <VerificationBadge badge="Active Builder" isVerified={true} size="sm" />
                               </div>
                               <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 mt-0.5">{f.headline}</p>
                               <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
@@ -482,8 +481,8 @@ export const BusinessPage: React.FC = () => {
                         </div>
 
                         {(f.oneLineBio || f.headline) && (
-                          <p className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-2 leading-relaxed italic">
-                            "{f.oneLineBio || f.headline}"
+                          <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-relaxed">
+                            {f.oneLineBio || f.headline}
                           </p>
                         )}
 

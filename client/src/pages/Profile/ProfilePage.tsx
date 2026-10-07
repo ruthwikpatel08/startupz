@@ -670,7 +670,7 @@ export const ProfilePage: React.FC = () => {
           role: uRole,
           roleChangeCount: changeCount,
           isVerified: true,
-          verificationBadge: sbProfile.auth_provider === 'google' ? 'Verified via Google' : 'Verified Member',
+          verificationBadge: sbProfile.auth_provider === 'google' ? 'Verified via Google' : 'Active Builder',
           isSuspended: false,
           isAdmin: currentUser?.isAdmin || false,
           createdAt: sbProfile.created_at || new Date().toISOString(),
@@ -1047,6 +1047,32 @@ export const ProfilePage: React.FC = () => {
 
     const newUsernameChangedAt = isUsernameChanging ? new Date().toISOString() : formData.usernameChangedAt;
 
+    // Validate headline
+    const cleanHeadline = String(formData.headline || '').trim();
+    if (cleanHeadline && cleanHeadline.length < 3) {
+      setSaveError('Headline must be at least 3 characters.');
+      setSaving(false);
+      return;
+    }
+    if (cleanHeadline && cleanHeadline.length > 100) {
+      setSaveError('Headline cannot exceed 100 characters.');
+      setSaving(false);
+      return;
+    }
+
+    // Validate one-line bio
+    const cleanOneLine = String(formData.oneLineBio || '').trim();
+    if (cleanOneLine && cleanOneLine.length < 3) {
+      setSaveError('One-line bio must be at least 3 characters.');
+      setSaving(false);
+      return;
+    }
+    if (cleanOneLine && cleanOneLine.length > 160) {
+      setSaveError('One-line bio cannot exceed 160 characters.');
+      setSaving(false);
+      return;
+    }
+
     const serializedAchievements = (formData.hackathons?.length > 0 || formData.projects?.length > 0)
       ? JSON.stringify({
           hackathons: formData.hackathons || [],
@@ -1355,13 +1381,13 @@ export const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Profile Header Row */}
-          <div className="px-6 sm:px-8 pb-6 pt-0 relative">
-            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 -mt-14 sm:-mt-16 mb-6">
+          {/* Profile Header Row with solid white background so details never overlap cover image */}
+          <div className="px-6 sm:px-8 pb-6 pt-3 relative bg-white dark:bg-dark-900 border-t border-slate-100 dark:border-dark-800">
+            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mb-6">
               
               {/* Profile Photo */}
               <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 w-full md:w-auto">
-                <div className="relative shrink-0 group">
+                <div className="relative shrink-0 group -mt-16 sm:-mt-20">
                   {hasCustomAvatar ? (
                     <img
                       src={avatar!}
@@ -1408,7 +1434,7 @@ export const ProfilePage: React.FC = () => {
                       </span>
                     )}
                     <VerificationBadge badge={profileUser.verificationBadge} isVerified={profileUser.isVerified} />
-                    <RoleBadge role={profileUser.role} />
+                    {isMe && <RoleBadge role={profileUser.role} />}
                   </div>
 
                   <p className="text-sm sm:text-base font-normal text-slate-600 dark:text-slate-300">
@@ -1416,8 +1442,8 @@ export const ProfilePage: React.FC = () => {
                   </p>
 
                   {p.oneLineBio && (
-                    <p className="text-xs sm:text-sm font-medium text-brand-600 dark:text-brand-400 italic">
-                      "{p.oneLineBio}"
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                      {p.oneLineBio}
                     </p>
                   )}
 
@@ -2463,30 +2489,47 @@ export const ProfilePage: React.FC = () => {
                 )}
               </div>
 
-              {/* Headline & One-liner */}
+              {/* Headline & One-liner with live character counts and validation */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Headline</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Headline</label>
+                    <span className={`text-[10px] font-medium ${(formData.headline?.length || 0) > 100 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                      {formData.headline?.length || 0}/100
+                    </span>
+                  </div>
                   <input
                     type="text"
+                    maxLength={100}
                     value={formData.headline || ''}
                     onChange={(e) => setFormData({ ...formData, headline: e.target.value })}
                     placeholder="e.g. CS Sophomore | Full-Stack Builder & Hackathon Enthusiast"
                     className="input-base w-full px-3 py-1.5 text-xs"
                   />
+                  {formData.headline && formData.headline.trim().length > 0 && formData.headline.trim().length < 3 && (
+                    <p className="text-[10px] text-rose-500 mt-1">Must be at least 3 characters</p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
-                    <span>One-Line Bio</span>
-                    <span className="text-[10px] text-brand-600 font-medium">Shown on preview cards</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      <span>One-Line Bio</span>
+                    </label>
+                    <span className={`text-[10px] font-medium ${(formData.oneLineBio?.length || 0) > 160 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                      {formData.oneLineBio?.length || 0}/160
+                    </span>
+                  </div>
                   <input
                     type="text"
+                    maxLength={160}
                     value={formData.oneLineBio || ''}
                     onChange={(e) => setFormData({ ...formData, oneLineBio: e.target.value })}
                     placeholder="e.g. Building AI tools & looking for hackathon teammates"
                     className="input-base w-full px-3 py-1.5 text-xs"
                   />
+                  {formData.oneLineBio && formData.oneLineBio.trim().length > 0 && formData.oneLineBio.trim().length < 3 && (
+                    <p className="text-[10px] text-rose-500 mt-1">Must be at least 3 characters</p>
+                  )}
                 </div>
               </div>
             </div>

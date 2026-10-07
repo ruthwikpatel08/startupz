@@ -519,6 +519,26 @@ router.put('/profile', requireAuth, async (req, res) => {
       isCategorySelected,
     } = req.body;
 
+    if (headline !== undefined && typeof headline === 'string') {
+      const cleanHeadline = headline.trim();
+      if (cleanHeadline.length > 100) {
+        return res.status(400).json({ error: 'Headline cannot exceed 100 characters.' });
+      }
+      if (cleanHeadline.length > 0 && cleanHeadline.length < 3) {
+        return res.status(400).json({ error: 'Headline must be at least 3 characters.' });
+      }
+    }
+
+    if (oneLineBio !== undefined && typeof oneLineBio === 'string') {
+      const cleanBio = oneLineBio.trim();
+      if (cleanBio.length > 160) {
+        return res.status(400).json({ error: 'One-line bio cannot exceed 160 characters.' });
+      }
+      if (cleanBio.length > 0 && cleanBio.length < 3) {
+        return res.status(400).json({ error: 'One-line bio must be at least 3 characters.' });
+      }
+    }
+
     const updatedProfile = {
       fullName: fullName !== undefined ? fullName.trim() : undefined,
       headline: headline !== undefined ? headline : (oneLineBio !== undefined ? oneLineBio : undefined),

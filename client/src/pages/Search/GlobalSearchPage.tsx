@@ -94,7 +94,7 @@ export const GlobalSearchPage: React.FC = () => {
               email: p.email,
               role: (p.preferred_role || 'FOUNDER').toUpperCase(),
               isVerified: true,
-              verificationBadge: p.auth_provider === 'google' ? 'Verified via Google' : 'Verified Member',
+              verificationBadge: p.auth_provider === 'google' ? 'Verified via Google' : 'Active Builder',
               profile: {
                 id: p.id,
                 userId: p.user_id,
@@ -312,7 +312,6 @@ export const GlobalSearchPage: React.FC = () => {
                             <span className="text-xs text-brand-600 dark:text-brand-400 font-mono font-medium">
                               @{username}
                             </span>
-                            <RoleBadge role={role} size="sm" />
                             <VerificationBadge badge={u.verificationBadge} isVerified={true} size="sm" />
                           </div>
                           <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">{u.profile?.headline || role}</p>
@@ -324,17 +323,10 @@ export const GlobalSearchPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {u.profile?.skills && (
-                        <div className="flex flex-wrap gap-1">
-                          {u.profile.skills.split(',').slice(0, 3).map((sk: string, idx: number) => (
-                            <span
-                              key={idx}
-                              className="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-dark-700"
-                            >
-                              {sk.trim()}
-                            </span>
-                          ))}
-                        </div>
+                      {(u.profile?.oneLineBio || (u.profile as any)?.one_line_bio) && (
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-2">
+                          {u.profile.oneLineBio || (u.profile as any).one_line_bio}
+                        </p>
                       )}
 
                       {/* Card Action Buttons */}

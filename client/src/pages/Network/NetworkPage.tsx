@@ -92,7 +92,7 @@ export const NetworkPage: React.FC = () => {
             email: p?.email || '',
             role: p?.preferred_role || 'FOUNDER',
             isVerified: true,
-            verificationBadge: 'Verified Member',
+            verificationBadge: 'Active Builder',
             profile: {
               id: p?.id || otherId,
               userId: otherId,
@@ -155,7 +155,7 @@ export const NetworkPage: React.FC = () => {
             email: p?.email || '',
             role: p?.preferred_role || 'FOUNDER',
             isVerified: true,
-            verificationBadge: 'Verified Member',
+            verificationBadge: 'Active Builder',
             profile: {
               id: p?.id || otherId,
               fullName: p?.full_name || 'Startup Builder',
@@ -612,27 +612,16 @@ export const NetworkPage: React.FC = () => {
                           >
                             {name}
                           </Link>
-                          <RoleBadge role={u?.role || 'MEMBER'} size="sm" />
                         </div>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">{headline}</p>
                         <p className="text-[10px] text-slate-400 mt-0.5">{location}</p>
                       </div>
                     </div>
 
-                    {u?.profile?.skills && (
-                      <div className="flex flex-wrap gap-1">
-                        {u.profile.skills
-                          .split(',')
-                          .slice(0, 3)
-                          .map((s: string, idx: number) => (
-                            <span
-                              key={idx}
-                              className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300 font-medium border border-slate-200/60 dark:border-dark-800"
-                            >
-                              {s.trim()}
-                            </span>
-                          ))}
-                      </div>
+                    {(u?.profile?.oneLineBio || (u?.profile as any)?.one_line_bio) && (
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-2">
+                        {u.profile.oneLineBio || (u.profile as any).one_line_bio}
+                      </p>
                     )}
                   </div>
 
