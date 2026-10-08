@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { supabase, removeConnection } from '../../lib/supabase';
 import { Avatar } from '../../components/common/Avatar';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -222,7 +222,16 @@ export const NetworkPage: React.FC = () => {
   useEffect(() => {
     fetchData();
 
-    if (!user?.id) return;
+    const handleConnUpdate = () => {
+      fetchData();
+    };
+    window.addEventListener('connections_updated', handleConnUpdate);
+
+    if (!user?.id) {
+      return () => {
+        window.removeEventListener('connections_updated', handleConnUpdate);
+      };
+    }
 
     const channel = supabase
       .channel(`network-conns:${user.id}`)
@@ -240,6 +249,7 @@ export const NetworkPage: React.FC = () => {
       .subscribe();
 
     return () => {
+      window.removeEventListener('connections_updated', handleConnUpdate);
       supabase.removeChannel(channel);
     };
   }, [user?.id]);
@@ -389,31 +399,24 @@ export const NetworkPage: React.FC = () => {
     }
   };
 
-  const handleRemove = async (connectionId: string) => {
+  const handleRemove = async (connectionId: string, otherUserId?: string) => {
     if (!user?.id) return;
     if (!window.confirm('Are you sure you want to remove this connection?')) return;
     setActionLoading((prev) => ({ ...prev, [connectionId]: true }));
     try {
-      // 1. Delete from Supabase
-      const { error: supaErr } = await supabase
-        .from('connections')
-        .delete()
-        .eq('id', connectionId)
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
+      // 1. Delete in Supabase and Backend across both profiles
+      await removeConnection(connectionId, user.id, otherUserId);
 
-      if (supaErr) {
-        console.warn('Supabase delete connection notice:', supaErr);
-      }
-
-      // 2. Mirror to backend API
-      try {
-        await api.removeConnection(connectionId);
-      } catch (e) {
-        console.warn('Backend removeConnection notice:', e);
-      }
-
-      setConnections((prev) => prev.filter((c) => c.connectionId !== connectionId));
-      setPendingSent((prev) => prev.filter((r) => r.id !== connectionId));
+      // 2. Clean up local state immediately so it disappears from My Network instantly
+      setConnections((prev) =>
+        prev.filter((c) => c.connectionId !== connectionId && (!otherUserId || c.user?.id !== otherUserId))
+      );
+      setPendingSent((prev) =>
+        prev.filter((r) => r.id !== connectionId && (!otherUserId || r.receiver?.id !== otherUserId))
+      );
+      setPendingReceived((prev) =>
+        prev.filter((r) => r.id !== connectionId && (!otherUserId || r.sender?.id !== otherUserId))
+      );
 
       // Broadcast event so profile and homepage update instantly
       window.dispatchEvent(new CustomEvent('connections_updated'));
@@ -426,6 +429,7 @@ export const NetworkPage: React.FC = () => {
           payload: {
             connectionId,
             userId: user?.id,
+            targetUserId: otherUserId,
             action: 'REMOVED',
             timestamp: new Date().toISOString(),
           },
@@ -635,7 +639,7 @@ export const NetworkPage: React.FC = () => {
                     </button>
 
                     <button
-                      onClick={() => handleRemove(c.connectionId)}
+                      onClick={() => handleRemove(c.connectionId, u?.id)}
                       disabled={actionLoading[c.connectionId]}
                       title="Disconnect"
                       className="p-1 rounded text-slate-400 hover:text-rose-600 transition-colors"

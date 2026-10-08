@@ -56,7 +56,12 @@ router.get('/', optionalAuth, async (req, res) => {
 
     const filtered = all.filter((p) => {
       if (p.visibility === 'PUBLIC') return true;
-      if (currentUserId && p.creator?.userId === currentUserId) return true;
+      if (currentUserId) {
+        const creatorId = p.creator?.userId || p.creatorId;
+        const isCreator = creatorId === currentUserId;
+        const isTeamMember = Array.isArray(p.roles) && p.roles.some((r) => r.assignedTo?.userId === currentUserId);
+        if (isCreator || isTeamMember) return true;
+      }
       return false;
     });
 
@@ -78,7 +83,14 @@ router.get('/:id', optionalAuth, async (req, res) => {
       return res.status(404).json({ error: 'Project not found.' });
     }
 
-    if (project.visibility === 'PRIVATE' && (!req.user || req.user.id !== project.creator?.userId)) {
+    const currentUserId = req.user?.id;
+    const creatorId = project.creator?.userId || project.creatorId;
+    const isMemberOrCreator = currentUserId && (
+      creatorId === currentUserId ||
+      (Array.isArray(project.roles) && project.roles.some((r) => r.assignedTo?.userId === currentUserId))
+    );
+
+    if (project.visibility === 'PRIVATE' && !isMemberOrCreator) {
       return res.status(403).json({ error: 'This project is private.' });
     }
 
@@ -168,7 +180,8 @@ router.put('/:id', requireAuth, async (req, res) => {
     }
 
     const existing = all[idx];
-    if (existing.creator.userId !== req.user.id && !req.user.isAdmin) {
+    const creatorId = existing.creator?.userId || existing.creatorId;
+    if (creatorId !== req.user.id && !req.user.isAdmin) {
       return res.status(403).json({ error: 'Only the project creator can edit this project.' });
     }
 
@@ -201,7 +214,8 @@ router.delete('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Project not found.' });
     }
 
-    if (project.creator.userId !== req.user.id && !req.user.isAdmin) {
+    const creatorId = project.creator?.userId || project.creatorId;
+    if (creatorId !== req.user.id && !req.user.isAdmin) {
       return res.status(403).json({ error: 'Only the project creator can delete this project.' });
     }
 
@@ -214,7 +228,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/projects/:id/roles/:roleId/apply - External user applies for open role
+// POST /api/projects/:id/roles/:roleId/apply - External user applies for open role (allows any number of applicants)
 router.post('/:id/roles/:roleId/apply', requireAuth, async (req, res) => {
   try {
     const { id, roleId } = req.params;
@@ -236,9 +250,10 @@ router.post('/:id/roles/:roleId/apply', requireAuth, async (req, res) => {
 
     const applicantName = req.user.profile?.fullName || req.user.email?.split('@')[0] || 'Builder';
     const applicantHeadline = req.user.profile?.headline || 'Team Collaborator';
+    const creatorId = project.creator?.userId || project.creatorId;
 
     // If creator applies to their own role, directly assign
-    if (project.creator.userId === req.user.id) {
+    if (creatorId === req.user.id) {
       role.status = 'ASSIGNED';
       role.assignedTo = {
         userId: req.user.id,
@@ -246,11 +261,20 @@ router.post('/:id/roles/:roleId/apply', requireAuth, async (req, res) => {
         avatar: req.user.profile?.avatar || null,
       };
       role.pendingApplicant = null;
+      role.pendingApplicants = [];
       role.invitedUser = null;
     } else {
-      // Normal application: mark as PENDING and notify team lead
-      role.status = 'PENDING';
-      role.pendingApplicant = {
+      // Normal application: allow any number of people to apply for this role
+      if (!Array.isArray(role.pendingApplicants)) {
+        role.pendingApplicants = role.pendingApplicant ? [role.pendingApplicant] : [];
+      }
+
+      const alreadyApplied = role.pendingApplicants.some((a) => a.userId === req.user.id);
+      if (alreadyApplied) {
+        return res.status(400).json({ error: 'You have already applied for this role.' });
+      }
+
+      const newApplicant = {
         userId: req.user.id,
         fullName: applicantName,
         avatar: req.user.profile?.avatar || null,
@@ -258,10 +282,15 @@ router.post('/:id/roles/:roleId/apply', requireAuth, async (req, res) => {
         appliedAt: new Date().toISOString(),
       };
 
+      role.pendingApplicants.push(newApplicant);
+      role.pendingApplicant = role.pendingApplicants[0]; // backward compatibility
+      // Role remains open so other people can also apply
+      role.status = 'OPEN';
+
       // Notify project creator
       await prisma.notification.create({
         data: {
-          userId: project.creator.userId,
+          userId: creatorId,
           senderId: req.user.id,
           type: 'PROJECT_APPLICATION',
           title: `Role Application: ${role.roleName}`,
@@ -415,7 +444,7 @@ router.post('/:id/roles/:roleId/respond-invite', requireAuth, async (req, res) =
 router.post('/:id/roles/:roleId/respond-applicant', requireAuth, async (req, res) => {
   try {
     const { id, roleId } = req.params;
-    const { action } = req.body; // 'ACCEPT' or 'DECLINE'
+    const { action, applicantUserId } = req.body; // 'ACCEPT' or 'DECLINE'
 
     const all = getAllProjectsList();
     const project = all.find((p) => p.id === id);
@@ -424,7 +453,8 @@ router.post('/:id/roles/:roleId/respond-applicant', requireAuth, async (req, res
       return res.status(404).json({ error: 'Project not found.' });
     }
 
-    if (project.creator.userId !== req.user.id && !req.user.isAdmin) {
+    const creatorId = project.creator?.userId || project.creatorId;
+    if (creatorId !== req.user.id && !req.user.isAdmin) {
       return res.status(403).json({ error: 'Only the project lead can accept applicants.' });
     }
 
@@ -433,13 +463,20 @@ router.post('/:id/roles/:roleId/respond-applicant', requireAuth, async (req, res
       return res.status(404).json({ error: 'Role not found.' });
     }
 
-    if (!role.pendingApplicant) {
+    if (!Array.isArray(role.pendingApplicants)) {
+      role.pendingApplicants = role.pendingApplicant ? [role.pendingApplicant] : [];
+    }
+
+    const applicant = applicantUserId
+      ? role.pendingApplicants.find((a) => a.userId === applicantUserId) || role.pendingApplicant
+      : role.pendingApplicants[0] || role.pendingApplicant;
+
+    if (!applicant) {
       return res.status(400).json({ error: 'No pending applicant for this role.' });
     }
 
-    const applicant = role.pendingApplicant;
-
     if (action === 'ACCEPT') {
+      // Role is filled by this single person! Remaining applicants cleared
       role.status = 'ASSIGNED';
       role.assignedTo = {
         userId: applicant.userId,
@@ -447,6 +484,8 @@ router.post('/:id/roles/:roleId/respond-applicant', requireAuth, async (req, res
         avatar: applicant.avatar || null,
       };
       role.pendingApplicant = null;
+      role.pendingApplicants = [];
+      role.invitedUser = null;
 
       // Notify applicant
       await prisma.notification.create({
@@ -460,18 +499,86 @@ router.post('/:id/roles/:roleId/respond-applicant', requireAuth, async (req, res
         },
       }).catch(() => null);
     } else {
-      role.status = 'OPEN';
-      role.pendingApplicant = null;
+      // Decline: remove only this applicant from pending list
+      role.pendingApplicants = role.pendingApplicants.filter((a) => a.userId !== applicant.userId);
+      role.pendingApplicant = role.pendingApplicants[0] || null;
+      if (role.pendingApplicants.length === 0) {
+        role.status = 'OPEN';
+      }
     }
 
     writeProjects(all);
 
     return res.json({
-      message: action === 'ACCEPT' ? 'Applicant accepted! Role filled.' : 'Applicant declined. Role reopened.',
+      message: action === 'ACCEPT' ? 'Applicant accepted! Role filled.' : 'Applicant declined.',
       project,
     });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to respond to applicant.' });
+  }
+});
+
+// POST /api/projects/:id/roles/:roleId/assign - Lead directly assigns connection to role
+router.post('/:id/roles/:roleId/assign', requireAuth, async (req, res) => {
+  try {
+    const { id, roleId } = req.params;
+    const { targetUserId, targetFullName, targetAvatar } = req.body;
+
+    if (!targetUserId) {
+      return res.status(400).json({ error: 'Target user ID is required.' });
+    }
+
+    const all = getAllProjectsList();
+    const project = all.find((p) => p.id === id);
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found.' });
+    }
+
+    const creatorId = project.creator?.userId || project.creatorId;
+    if (creatorId !== req.user.id && !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Only the project lead can assign roles.' });
+    }
+
+    const role = project.roles.find((r) => r.id === roleId);
+    if (!role) {
+      return res.status(404).json({ error: 'Role not found.' });
+    }
+
+    const targetUser = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      include: { profile: true },
+    }).catch(() => null);
+
+    const targetName = targetUser?.profile?.fullName || targetUser?.email?.split('@')[0] || targetFullName || 'Connection';
+    const avatar = targetUser?.profile?.avatar || targetAvatar || null;
+
+    role.status = 'ASSIGNED';
+    role.assignedTo = {
+      userId: targetUserId,
+      fullName: targetName,
+      avatar,
+    };
+    role.pendingApplicant = null;
+    role.pendingApplicants = [];
+    role.invitedUser = null;
+
+    // Send notification
+    await prisma.notification.create({
+      data: {
+        userId: targetUserId,
+        senderId: req.user.id,
+        type: 'PROJECT_ROLE_ASSIGNED',
+        title: `Role Assigned: ${role.roleName} 🎉`,
+        message: `${req.user.profile?.fullName || 'Project Lead'} assigned you as "${role.roleName}" on "${project.title}".`,
+        link: `/projects`,
+      },
+    }).catch(() => null);
+
+    writeProjects(all);
+    return res.json({ message: `Role assigned to ${targetName}!`, project });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to assign role.' });
   }
 });
 

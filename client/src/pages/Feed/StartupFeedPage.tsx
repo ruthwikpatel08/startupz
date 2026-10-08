@@ -354,17 +354,109 @@ export const StartupFeedPage: React.FC = () => {
       navigate('/login');
       return;
     }
+    const currentPost = posts.find((p) => p.id === postId);
+    const currentlyLiked = !!currentPost?.isLiked;
+    const nextLiked = !currentlyLiked;
+    const nextLikesCount = Math.max(0, (currentPost?.likesCount || 0) + (nextLiked ? 1 : -1));
+
+    // Optimistic UI update
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? { ...p, isLiked: nextLiked, likesCount: nextLikesCount }
+          : p
+      )
+    );
+
     try {
       const res = await api.likePost(postId);
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === postId
-            ? { ...p, isLiked: res.liked, likesCount: res.likesCount }
-            : p
-        )
-      );
+      if (res && res.liked !== undefined) {
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === postId
+              ? { ...p, isLiked: res.liked, likesCount: res.likesCount }
+              : p
+          )
+        );
+      }
     } catch (err) {
-      console.error('Failed to toggle like:', err);
+      console.warn('API like failed, falling back to Supabase:', err);
+      try {
+        if (nextLiked) {
+          await supabase.from('likes').insert({ post_id: postId, user_id: user.id });
+        } else {
+          await supabase.from('likes').delete().match({ post_id: postId, user_id: user.id });
+        }
+      } catch (sErr) {
+        console.error('Failed to toggle like:', sErr);
+        // Revert on failure
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === postId
+              ? { ...p, isLiked: currentlyLiked, likesCount: currentPost?.likesCount || 0 }
+              : p
+          )
+        );
+      }
+    }
+  };
+
+  const handleToggleComments = async (postId: string) => {
+    const willOpen = !expandedComments[postId];
+    setExpandedComments((prev) => ({
+      ...prev,
+      [postId]: willOpen,
+    }));
+
+    if (willOpen) {
+      const targetPost = posts.find((p) => p.id === postId);
+      if (!targetPost?.comments || targetPost.comments.length === 0) {
+        try {
+          const res = await api.getPostComments(postId).catch(() => null);
+          if (res?.comments) {
+            setPosts((prev) =>
+              prev.map((p) =>
+                p.id === postId ? { ...p, comments: res.comments } : p
+              )
+            );
+            return;
+          }
+        } catch {}
+
+        try {
+          const { data: supaComments } = await supabase
+            .from('comments')
+            .select('id, content, created_at, author_id, profiles:author_id(full_name, avatar)')
+            .eq('post_id', postId)
+            .order('created_at', { ascending: true });
+
+          if (supaComments) {
+            const formatted: any = supaComments.map((sc: any) => ({
+              id: sc.id,
+              postId,
+              authorId: sc.author_id,
+              content: sc.content,
+              createdAt: sc.created_at,
+              author: {
+                id: sc.author_id,
+                email: '',
+                role: 'STUDENT',
+                profile: {
+                  fullName: sc.profiles?.full_name || 'Member',
+                  avatar: sc.profiles?.avatar || null,
+                },
+              },
+            }));
+            setPosts((prev) =>
+              prev.map((p) =>
+                p.id === postId ? { ...p, comments: formatted } : p
+              )
+            );
+          }
+        } catch (sErr) {
+          console.warn('Supabase comments fetch error:', sErr);
+        }
+      }
     }
   };
 
@@ -416,25 +508,90 @@ export const StartupFeedPage: React.FC = () => {
     const text = (commentInputs[postId] || '').trim();
     if (!text) return;
 
+    const tempCommentId = `c-temp-${Date.now()}`;
+    const optimisticComment: any = {
+      id: tempCommentId,
+      postId,
+      authorId: user.id,
+      content: text,
+      createdAt: new Date().toISOString(),
+      author: {
+        id: user.id,
+        email: user.email,
+        role: user.role || 'STUDENT',
+        profile: {
+          fullName: user.profile?.fullName || user.email?.split('@')[0] || 'You',
+          avatar: user.profile?.avatar || null,
+        },
+      },
+    };
+
+    setCommentInputs((prev) => ({ ...prev, [postId]: '' }));
     setSubmittingComment((prev) => ({ ...prev, [postId]: true }));
+
+    // Optimistically update comments and commentsCount
+    setPosts((prev) =>
+      prev.map((p) => {
+        if (p.id === postId) {
+          const comments = p.comments || [];
+          return {
+            ...p,
+            commentsCount: (p.commentsCount || 0) + 1,
+            comments: [...comments, optimisticComment],
+          };
+        }
+        return p;
+      })
+    );
+
     try {
       const res = await api.addComment(postId, text);
-      setPosts((prev) =>
-        prev.map((p) => {
-          if (p.id === postId) {
-            const comments = p.comments || [];
-            return {
-              ...p,
-              commentsCount: p.commentsCount + 1,
-              comments: [...comments, res.comment],
-            };
-          }
-          return p;
-        })
-      );
-      setCommentInputs((prev) => ({ ...prev, [postId]: '' }));
+      if (res?.comment) {
+        setPosts((prev) =>
+          prev.map((p) => {
+            if (p.id === postId) {
+              const comments = (p.comments || []).map((c: any) =>
+                c.id === tempCommentId ? res.comment : c
+              );
+              return {
+                ...p,
+                comments,
+              };
+            }
+            return p;
+          })
+        );
+      }
     } catch (err) {
-      console.error('Failed to add comment:', err);
+      console.warn('API addComment failed, trying Supabase insert fallback:', err);
+      try {
+        const { data: supaComment, error: supaErr } = await supabase
+          .from('comments')
+          .insert({
+            post_id: postId,
+            author_id: user.id,
+            content: text,
+          })
+          .select()
+          .single();
+
+        if (supaErr) throw supaErr;
+      } catch (sErr) {
+        console.error('Failed to add comment:', sErr);
+        // Revert optimistic comment
+        setPosts((prev) =>
+          prev.map((p) => {
+            if (p.id === postId) {
+              return {
+                ...p,
+                commentsCount: Math.max(0, (p.commentsCount || 1) - 1),
+                comments: (p.comments || []).filter((c: any) => c.id !== tempCommentId),
+              };
+            }
+            return p;
+          })
+        );
+      }
     } finally {
       setSubmittingComment((prev) => ({ ...prev, [postId]: false }));
     }
@@ -940,12 +1097,7 @@ export const StartupFeedPage: React.FC = () => {
 
                     {/* Comments Toggle */}
                     <button
-                      onClick={() =>
-                        setExpandedComments((prev) => ({
-                          ...prev,
-                          [post.id]: !prev[post.id],
-                        }))
-                      }
+                      onClick={() => handleToggleComments(post.id)}
                       className="flex items-center gap-1.5 font-medium hover:text-brand-600 transition-colors"
                     >
                       <MessageSquare size={15} />

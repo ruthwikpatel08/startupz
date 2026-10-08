@@ -1011,9 +1011,11 @@ export async function removeConnection(
       await supabase
         .from('connections')
         .delete()
-        .or(
-          `and(sender_id.eq.${currentUserId},receiver_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},receiver_id.eq.${currentUserId})`
-        );
+        .match({ sender_id: currentUserId, receiver_id: targetUserId });
+      await supabase
+        .from('connections')
+        .delete()
+        .match({ sender_id: targetUserId, receiver_id: currentUserId });
     } catch (err) {
       console.warn('Supabase pair delete notice:', err);
     }
@@ -1023,7 +1025,8 @@ export async function removeConnection(
   try {
     const idToPass = connectionId || targetUserId;
     if (idToPass) {
-      await api.removeConnection(idToPass);
+      const q = targetUserId ? `?targetUserId=${targetUserId}` : '';
+      await api.removeConnection(`${idToPass}${q}`);
     }
   } catch (err) {
     console.warn('Backend API removeConnection notice:', err);

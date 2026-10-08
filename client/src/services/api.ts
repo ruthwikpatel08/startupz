@@ -296,6 +296,7 @@ export const api = {
   createPost: (payload: any) => request<any>('/posts', { method: 'POST', body: JSON.stringify(payload) }),
   deletePost: (id: string) => request<any>(`/posts/${id}`, { method: 'DELETE' }),
   likePost: (id: string) => request<any>(`/posts/${id}/like`, { method: 'POST' }),
+  getPostComments: (id: string) => request<any>(`/posts/${id}/comments`),
   addComment: (id: string, content: string) =>
     request<any>(`/posts/${id}/comments`, { method: 'POST', body: JSON.stringify({ content }) }),
 
@@ -342,10 +343,12 @@ export const api = {
     request<any>(`/projects/${id}/roles/${roleId}/apply`, { method: 'POST' }),
   inviteProjectRole: (id: string, roleId: string, targetUserId: string) =>
     request<any>(`/projects/${id}/roles/${roleId}/invite`, { method: 'POST', body: JSON.stringify({ targetUserId }) }),
+  assignProjectRole: (id: string, roleId: string, payload: { targetUserId: string; targetFullName?: string; targetAvatar?: string | null }) =>
+    request<any>(`/projects/${id}/roles/${roleId}/assign`, { method: 'POST', body: JSON.stringify(payload) }),
   respondProjectInvite: (id: string, roleId: string, action: 'ACCEPT' | 'DECLINE') =>
     request<any>(`/projects/${id}/roles/${roleId}/respond-invite`, { method: 'POST', body: JSON.stringify({ action }) }),
-  respondProjectApplicant: (id: string, roleId: string, action: 'ACCEPT' | 'DECLINE') =>
-    request<any>(`/projects/${id}/roles/${roleId}/respond-applicant`, { method: 'POST', body: JSON.stringify({ action }) }),
+  respondProjectApplicant: (id: string, roleId: string, action: 'ACCEPT' | 'DECLINE', applicantUserId?: string) =>
+    request<any>(`/projects/${id}/roles/${roleId}/respond-applicant`, { method: 'POST', body: JSON.stringify({ action, applicantUserId }) }),
 
   // SAVED
   getSavedItems: async (itemType?: string) => {
