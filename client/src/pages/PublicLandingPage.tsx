@@ -1,6 +1,7 @@
-﻿import React from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { GraduationCap, Users, Zap, Trophy, Rocket } from 'lucide-react';
+import { SEO } from '../components/common/SEO';
 
 export const PublicLandingPage: React.FC = () => {
   return (
@@ -12,6 +13,11 @@ export const PublicLandingPage: React.FC = () => {
         fontFamily: 'Inter, system-ui, sans-serif',
       }}
     >
+      <SEO
+        title="HookZ — Connect with Founders, Co-Founders & Investors"
+        description="HookZ is a startup networking platform where founders, co-founders, mentors and investors connect, discover opportunities and build startups together."
+        canonicalPath="/"
+      />
       {/* Top Nav */}
       <header
         style={{

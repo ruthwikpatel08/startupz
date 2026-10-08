@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase, getAuthErrorMessage } from '../../lib/supabase';
 import { Rocket, Lock, Check, AlertCircle, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { SEO } from '../../components/common/SEO';
 
 export const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
@@ -52,6 +53,7 @@ export const ResetPasswordPage: React.FC = () => {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <SEO title="Update Password | HookZ" noindex={true} />
       <div className="max-w-md w-full space-y-6">
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2 mb-3">

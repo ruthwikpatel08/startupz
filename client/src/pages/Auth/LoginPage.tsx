@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase, getAuthErrorMessage, recordAuthProviderHint, resolveEmailOrUsername, upsertUserProfile, invalidateUserProfileCache } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Rocket, Lock, Mail, ArrowRight, Sparkles, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw, UserCheck } from 'lucide-react';
+import { SEO } from '../../components/common/SEO';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -134,6 +135,7 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-indigo-50/30 via-white to-slate-50 dark:from-dark-900 dark:via-dark-900 dark:to-dark-950">
+      <SEO title="Sign In | HookZ" noindex={true} />
       <div className="max-w-md w-full">
         
         {/* Main Card */}

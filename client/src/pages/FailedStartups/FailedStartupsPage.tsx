@@ -6,6 +6,7 @@ import { FailedStartup, RaisedSolution } from '../../types';
 import { RaiseSolutionModal } from '../../components/common/RaiseSolutionModal';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { Avatar } from '../../components/common/Avatar';
+import { SEO } from '../../components/common/SEO';
 import {
   Skull,
   Lightbulb,
@@ -117,6 +118,12 @@ export const FailedStartupsPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <SEO
+        title="Failed Startups Archive & Post-Mortem Insights | HookZ"
+        description="Learn from honest post-mortems of past startups. Discover unsolved market problems and raise next-generation solutions on HookZ."
+        canonicalPath="/failed-startups"
+        breadcrumbs={[{ name: 'Failed Startups', path: '/failed-startups' }]}
+      />
       {/* 1. HERO BANNER */}
       <div>
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">

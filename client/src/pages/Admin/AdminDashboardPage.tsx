@@ -20,6 +20,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
+import { SEO } from '../../components/common/SEO';
 
 export const AdminDashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -131,7 +132,7 @@ export const AdminDashboardPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      
+      <SEO title="Admin Dashboard | HookZ" noindex={true} />
       {/* Admin Banner */}
       <div className="card-base bg-slate-900 border-slate-800 p-6 sm:p-8 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm">
         <div className="space-y-1.5">

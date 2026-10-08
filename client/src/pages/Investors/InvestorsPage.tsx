@@ -9,6 +9,7 @@ import { SendPitchModal } from '../../components/common/SendPitchModal';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { Avatar } from '../../components/common/Avatar';
 import { EmptyState } from '../../components/common/EmptyState';
+import { SEO } from '../../components/common/SEO';
 import {
   TrendingUp,
   Search,
@@ -169,6 +170,12 @@ export const InvestorsPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <SEO
+        title="Find Startup Investors | HookZ"
+        description="Discover vetted venture funds, syndicates, and angel investors actively backing early-stage startups and student founders on HookZ."
+        canonicalPath="/investors"
+        breadcrumbs={[{ name: 'Investors', path: '/investors' }]}
+      />
       
       {/* Header */}
       <div>

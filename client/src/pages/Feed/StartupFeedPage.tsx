@@ -9,6 +9,7 @@ import { ConnectModal } from '../../components/common/ConnectModal';
 import { ReportModal } from '../../components/common/ReportModal';
 import { Avatar } from '../../components/common/Avatar';
 import { ProblemCard } from '../../components/problems/ProblemCard';
+import { SEO } from '../../components/common/SEO';
 import {
   Share2,
   Heart,
@@ -694,6 +695,13 @@ export const StartupFeedPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
+      <SEO
+        title="Startup Feed — Ideas, Updates & Wins | HookZ"
+        description="Follow real-time startup milestones, breakthrough ideas, problem solutions, and founder updates across the HookZ ecosystem."
+        canonicalPath="/feed"
+        breadcrumbs={[{ name: 'Feed', path: '/feed' }]}
+      />
+      <h1 className="sr-only">Startup Feed — Real-Time Achievements, Ideas & Updates | HookZ</h1>
       {/* Toast notifications */}
       {successToast && (
         <div className="fixed top-18 right-6 z-50 p-4 rounded-xl bg-emerald-600 text-white shadow-modal text-xs font-semibold flex items-center gap-2.5 animate-in fade-in slide-in-from-top-3 max-w-md">

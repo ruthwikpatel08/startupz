@@ -33,6 +33,7 @@ import { RoleBadge, VerificationBadge } from '../components/common/Badge';
 import { supabase, fetchUserConnections } from '../lib/supabase';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { SEO } from '../components/common/SEO';
 
 export const LandingPage: React.FC = () => {
   const { user } = useAuth();
@@ -233,7 +234,11 @@ export const LandingPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
-      
+      <SEO
+        title="HookZ — Startup Networking Platform"
+        description="HookZ is a startup networking platform where founders, co-founders, mentors and investors connect, discover opportunities and build startups together."
+        canonicalPath="/"
+      />
       {/* 1. ECOSYSTEM DIRECTORY & COMMUNITY */}
       <section className="relative pt-6 pb-16 lg:pt-8 lg:pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

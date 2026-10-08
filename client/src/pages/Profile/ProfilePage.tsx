@@ -19,6 +19,7 @@ import { ConnectModal } from '../../components/common/ConnectModal';
 import { StartupConnectionModal } from '../../components/common/StartupConnectionModal';
 import { ReportModal } from '../../components/common/ReportModal';
 import { Modal } from '../../components/common/Modal';
+import { SEO } from '../../components/common/SEO';
 import { searchLocations, searchColleges, resolveIndianLocation } from '../../data/indiaData';
 import {
   MapPin,
@@ -1353,6 +1354,7 @@ export const ProfilePage: React.FC = () => {
   if (!profileUser) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 py-20 px-4 text-center font-sans">
+        <SEO title="Profile Not Found | HookZ" noindex={true} />
         <div className="max-w-md mx-auto p-8 rounded-2xl bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 shadow-sm space-y-4">
           <h2 className="text-xl font-bold text-[#0F172A] dark:text-white">Profile Not Found</h2>
           <p className="text-sm text-[#64748B] dark:text-slate-400">
@@ -1422,6 +1424,21 @@ export const ProfilePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-dark-950 py-4 sm:py-8 px-2.5 sm:px-6 lg:px-8 font-sans transition-colors selection:bg-brand-600 selection:text-white w-full max-w-full overflow-x-hidden">
+      {isMe ? (
+        <SEO title="Your Profile | HookZ" noindex={true} />
+      ) : (
+        <SEO
+          title={`${p.fullName || 'Builder Profile'} | HookZ Network`}
+          description={p.headline || p.oneLineBio || p.bio || `Connect with ${p.fullName || 'builders'} on HookZ.`}
+          canonicalPath={`/profile/${id}`}
+          ogType="profile"
+          ogImage={avatar || undefined}
+          breadcrumbs={[
+            { name: 'Community', path: '/cofounders' },
+            { name: p.fullName || 'Profile', path: `/profile/${id}` },
+          ]}
+        />
+      )}
       <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6 w-full overflow-x-hidden">
 
         {/* Success Notice Banner */}

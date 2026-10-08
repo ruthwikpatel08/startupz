@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { Rocket, ShieldAlert, Sparkles, Lock, ArrowRight } from 'lucide-react';
 import { StartupStage } from '../../types';
+import { SEO } from '../../components/common/SEO';
 
 export const CreateStartupPage: React.FC = () => {
   const navigate = useNavigate();
@@ -102,7 +103,7 @@ export const CreateStartupPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      
+      <SEO title="Publish Startup Idea or Venture | HookZ" noindex={true} />
       {/* Page Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

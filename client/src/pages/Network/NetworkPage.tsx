@@ -6,6 +6,7 @@ import { supabase, removeConnection } from '../../lib/supabase';
 import { Avatar } from '../../components/common/Avatar';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
+import { SEO } from '../../components/common/SEO';
 import {
   Users,
   UserCheck,
@@ -473,6 +474,7 @@ export const NetworkPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <SEO title="My Network | HookZ" noindex={true} />
 
       {/* "Let's Chat" success banner shown after accepting a connection */}
       {justAccepted && (

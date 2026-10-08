@@ -9,6 +9,7 @@ import { StartupConnectionModal } from '../../components/common/StartupConnectio
 import { EmptyState } from '../../components/common/EmptyState';
 import { supabase, fetchUserConnections } from '../../lib/supabase';
 import { Avatar } from '../../components/common/Avatar';
+import { SEO } from '../../components/common/SEO';
 import {
   Users,
   Search,
@@ -612,6 +613,12 @@ export const FindCoFounderPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 w-full overflow-x-hidden">
+      <SEO
+        title="Find a Co-Founder for Your Startup | HookZ"
+        description="Discover and connect with technical and business co-founders. Filter by skills, vision, domain expertise, and builder background on HookZ."
+        canonicalPath="/cofounders"
+        breadcrumbs={[{ name: 'Co-Founders', path: '/cofounders' }]}
+      />
       
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

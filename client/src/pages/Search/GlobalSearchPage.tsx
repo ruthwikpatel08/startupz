@@ -7,6 +7,7 @@ import { ConnectModal } from '../../components/common/ConnectModal';
 import { StartupConnectionModal } from '../../components/common/StartupConnectionModal';
 import { Avatar } from '../../components/common/Avatar';
 import { supabase } from '../../lib/supabase';
+import { SEO } from '../../components/common/SEO';
 import {
   Search,
   Users,
@@ -212,7 +213,7 @@ export const GlobalSearchPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5 sm:space-y-6">
-      
+      <SEO title="Search | HookZ" noindex={true} />
       {/* Search Header */}
       <div className="space-y-4">
         <div className="flex items-center gap-3">

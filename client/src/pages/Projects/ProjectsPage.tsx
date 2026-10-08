@@ -23,6 +23,7 @@ import {
   Bookmark,
   UserPlus,
 } from 'lucide-react';
+import { SEO } from '../../components/common/SEO';
 import { Avatar } from '../../components/common/Avatar';
 import { api } from '../../services/api';
 import { supabase, fetchUserConnections } from '../../lib/supabase';
@@ -945,6 +946,12 @@ export const ProjectsPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5 sm:space-y-8">
+      <SEO
+        title="Builder Projects & Collaborative Teams | HookZ"
+        description="Discover collaborative builder projects, split roles with teammates, and build real-world products together on HookZ."
+        canonicalPath="/projects"
+        breadcrumbs={[{ name: 'Projects', path: '/projects' }]}
+      />
       
       {/* Toast Notification */}
       {toastMessage && (

@@ -7,6 +7,7 @@ import { VerificationBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { Avatar } from '../../components/common/Avatar';
+import { SEO } from '../../components/common/SEO';
 import {
   Compass,
   Search,
@@ -169,6 +170,12 @@ export const ExploreStartupsPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <SEO
+        title="Discover Startups | HookZ"
+        description="Discover cutting-edge startup ideas, join as a co-founder, or support early-stage founders and ventures across the HookZ ecosystem."
+        canonicalPath="/startups"
+        breadcrumbs={[{ name: 'Startups', path: '/startups' }]}
+      />
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

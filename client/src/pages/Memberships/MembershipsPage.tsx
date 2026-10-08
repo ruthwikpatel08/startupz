@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Zap, Crown, ShieldCheck, Sparkles, Rocket, ArrowRight, HelpCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { SEO } from '../../components/common/SEO';
 
 export const MembershipsPage: React.FC = () => {
   const { user } = useAuth();
@@ -104,6 +105,12 @@ export const MembershipsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8">
+      <SEO
+        title="Ecosystem Memberships & Tiers | HookZ"
+        description="Choose the right tier to match with co-founders, hire technical builders, pitch verified investors, and access platform discovery tools on HookZ."
+        canonicalPath="/memberships"
+        breadcrumbs={[{ name: 'Memberships', path: '/memberships' }]}
+      />
       <div className="max-w-6xl mx-auto space-y-12">
 
         {/* Header Section */}

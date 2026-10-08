@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getCategoryColor } from '../../components/problems/ProblemCard';
 import { AIInsightSection } from '../../components/problems/AIInsightSection';
 import { ShareProblemModal } from '../../components/problems/ShareProblemModal';
+import { SEO } from '../../components/common/SEO';
 import {
   ArrowLeft,
   Bookmark,
@@ -103,6 +104,7 @@ export const ProblemDetailPage: React.FC = () => {
   if (!problem) {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center space-y-4">
+        <SEO title="Problem Statement Not Found | HookZ" noindex={true} />
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">
           Problem Statement Not Found
         </h2>
@@ -125,6 +127,15 @@ export const ProblemDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen py-8 sm:py-10 space-y-8">
+      <SEO
+        title={`${problem.title} | HookZ World Challenges`}
+        description={problem.description ? problem.description.slice(0, 155) : `Explore ${problem.title} on HookZ.`}
+        canonicalPath={`/problems/${id}`}
+        breadcrumbs={[
+          { name: 'Problems', path: '/problems' },
+          { name: problem.title, path: `/problems/${id}` },
+        ]}
+      />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         
         {/* Navigation Breadcrumb */}

@@ -9,6 +9,7 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { Modal } from '../../components/common/Modal';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { Avatar } from '../../components/common/Avatar';
+import { SEO } from '../../components/common/SEO';
 import {
   GraduationCap,
   Search,
@@ -149,6 +150,12 @@ export const MentorsPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <SEO
+        title="Find Startup Mentors | HookZ"
+        description="Connect 1-on-1 with vetted mentors who have built, scaled, and exited startups. Get actionable feedback on fundraising, architecture, and go-to-market."
+        canonicalPath="/mentors"
+        breadcrumbs={[{ name: 'Mentors', path: '/mentors' }]}
+      />
       {/* Header */}
       <div>
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">

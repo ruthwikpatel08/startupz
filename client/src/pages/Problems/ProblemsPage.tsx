@@ -7,6 +7,7 @@ import { ProblemCard } from '../../components/problems/ProblemCard';
 import { ProblemFilters } from '../../components/problems/ProblemFilters';
 import { ShareProblemModal } from '../../components/problems/ShareProblemModal';
 import { EmptyState } from '../../components/common/EmptyState';
+import { SEO } from '../../components/common/SEO';
 import {
   Globe,
   Sparkles,
@@ -218,6 +219,12 @@ export const ProblemsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen py-8 sm:py-12 space-y-8">
+      <SEO
+        title="Discover Startup Ideas & Global Problems | HookZ"
+        description="Explore high-impact world challenges, unsolved market problems, and startup opportunities curated for ambitious builders on HookZ."
+        canonicalPath="/problems"
+        breadcrumbs={[{ name: 'Problems', path: '/problems' }]}
+      />
       
       {/* Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">

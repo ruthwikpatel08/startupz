@@ -1,0 +1,40 @@
+# robots.txt for HookZ (https://hookz.in)
+User-agent: *
+Allow: /
+Allow: /startups
+Allow: /startups/*
+Allow: /cofounders
+Allow: /investors
+Allow: /mentors
+Allow: /opportunities
+Allow: /projects
+Allow: /feed
+Allow: /problems
+Allow: /problems/*
+Allow: /failed-startups
+Allow: /business
+Allow: /memberships
+Allow: /profile/*
+
+# Disallow private user areas, authentication, and internal pages
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /auth/
+Disallow: /onboarding
+Disallow: /dashboard
+Disallow: /network
+Disallow: /messages
+Disallow: /saved
+Disallow: /meeting/
+Disallow: /startups/create
+Disallow: /admin
+Disallow: /admin/
+Disallow: /search
+
+# Disallow backend/api
+Disallow: /api/
+Disallow: /uploads/
+
+Sitemap: https://hookz.in/sitemap.xml

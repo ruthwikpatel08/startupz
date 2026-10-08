@@ -8,6 +8,7 @@ import { Avatar } from '../../components/common/Avatar';
 import { RoleBadge, VerificationBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { StartupConnectionModal } from '../../components/common/StartupConnectionModal';
+import { SEO } from '../../components/common/SEO';
 import {
   Compass,
   Users,
@@ -187,6 +188,13 @@ export const BusinessPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <SEO
+        title="Business & Innovation Opportunities | HookZ"
+        description="Explore enterprise collaboration, pilot opportunities, venture partnerships, and talent directories on HookZ."
+        canonicalPath="/business"
+        breadcrumbs={[{ name: 'Business', path: '/business' }]}
+      />
+      <h1 className="sr-only">Business & Innovation Opportunities | HookZ</h1>
       
       {/* 3 Core Business Pillars Header (Fixed on mobile view, no sliding) */}
       <div className="grid grid-cols-3 gap-1.5 sm:gap-3.5 w-full">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase, getAuthErrorMessage } from '../../lib/supabase';
 import { Rocket, Mail, Check, AlertCircle, RefreshCw } from 'lucide-react';
+import { SEO } from '../../components/common/SEO';
 
 export const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -36,6 +37,7 @@ export const ForgotPasswordPage: React.FC = () => {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <SEO title="Reset Password | HookZ" noindex={true} />
       <div className="max-w-md w-full space-y-6">
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2 mb-3">

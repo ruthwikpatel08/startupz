@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { upsertUserProfile } from '../../lib/supabase';
+import { SEO } from '../../components/common/SEO';
 
 const STUDENT_AREAS = [
   'Graphic Designer','UI/UX Designer','Frontend Developer','Backend Developer',
@@ -177,6 +178,7 @@ export const OnboardingPage: React.FC = () => {
   if (step === 1) {
     return (
       <div style={baseStyle}>
+        <SEO title="Account Onboarding | HookZ" noindex={true} />
         <div style={cardStyle}>
           <div style={{ marginBottom: 8, fontSize: 13, fontWeight: 600, color: '#4f46e5' }}>
             Step 1 of 3
@@ -226,6 +228,7 @@ export const OnboardingPage: React.FC = () => {
   if (step === 2) {
     return (
       <div style={baseStyle}>
+        <SEO title="Account Onboarding | HookZ" noindex={true} />
         <div style={cardStyle}>
           <div style={{ marginBottom: 8, fontSize: 13, fontWeight: 600, color: '#4f46e5' }}>
             Step 2 of 3
@@ -358,6 +361,7 @@ export const OnboardingPage: React.FC = () => {
   // Step 3: Review & Finish
   return (
     <div style={baseStyle}>
+      <SEO title="Account Onboarding | HookZ" noindex={true} />
       <div style={cardStyle}>
         <div style={{ marginBottom: 8, fontSize: 13, fontWeight: 600, color: '#4f46e5' }}>
           Step 3 of 3

@@ -6,6 +6,7 @@ import { StartupOpportunity, OpportunityApplication } from '../../types';
 import { FALLBACK_OPPORTUNITIES } from '../../data/curatedFallbackData';
 import { Modal } from '../../components/common/Modal';
 import { EmptyState } from '../../components/common/EmptyState';
+import { SEO } from '../../components/common/SEO';
 import {
   Briefcase,
   Search,
@@ -196,6 +197,12 @@ export const OpportunitiesPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <SEO
+        title="Startup Opportunities | HookZ"
+        description="Join early-stage startups as an intern, founding engineer, design lead, or growth partner. Explore curated startup roles on HookZ."
+        canonicalPath="/opportunities"
+        breadcrumbs={[{ name: 'Opportunities', path: '/opportunities' }]}
+      />
       
       {/* Header & Tabs */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

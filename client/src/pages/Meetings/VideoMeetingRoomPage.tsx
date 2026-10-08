@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { VideoMeeting } from '../../types';
 import { Avatar } from '../../components/common/Avatar';
+import { SEO } from '../../components/common/SEO';
 import {
   Mic,
   MicOff,
@@ -178,6 +179,7 @@ export const VideoMeetingRoomPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 space-y-4">
+      <SEO title="Private Video Meeting | HookZ" noindex={true} />
       {/* Top Meeting Header */}
       <div className="card-base p-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">

@@ -8,6 +8,7 @@ import { VerificationBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { IdeaFeedbackModal } from '../../components/common/IdeaFeedbackModal';
 import { Avatar } from '../../components/common/Avatar';
+import { SEO } from '../../components/common/SEO';
 import {
   Rocket,
   MapPin,
@@ -135,6 +136,7 @@ export const StartupDetailPage: React.FC = () => {
   if (!startup) {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center space-y-4">
+        <SEO title="Startup Profile Not Found | HookZ" noindex={true} />
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Startup Profile Not Found</h2>
         <p className="text-xs text-slate-500">The requested venture does not exist or has been removed.</p>
         <Link to="/startups" className="inline-block px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold">
@@ -154,6 +156,24 @@ export const StartupDetailPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <SEO
+        title={`${startup.name} | Startups on HookZ`}
+        description={startup.oneLineDescription || startup.problem || `Explore ${startup.name} on HookZ.`}
+        canonicalPath={`/startups/${id}`}
+        ogImage={startup.logo || undefined}
+        breadcrumbs={[
+          { name: 'Startups', path: '/startups' },
+          { name: startup.name, path: `/startups/${id}` },
+        ]}
+        schema={{
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: startup.name,
+          description: startup.oneLineDescription || startup.problem,
+          url: `https://hookz.in/startups/${id}`,
+          ...(startup.logo ? { logo: startup.logo } : {}),
+        }}
+      />
       
       {/* 1. HERO HEADER */}
       <div className="card-base p-6 sm:p-7 space-y-6">

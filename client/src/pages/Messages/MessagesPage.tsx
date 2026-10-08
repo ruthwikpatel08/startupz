@@ -7,6 +7,7 @@ import { VerificationBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
 import { Avatar } from '../../components/common/Avatar';
 import { Modal } from '../../components/common/Modal';
+import { SEO } from '../../components/common/SEO';
 import {
   MessageSquare,
   Send,
@@ -751,6 +752,7 @@ export const MessagesPage: React.FC = () => {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-0 sm:px-4 md:px-6 lg:px-8 py-0 sm:py-3 md:py-5 h-[calc(100dvh-56px)] md:h-[calc(100vh-80px)] flex flex-col">
+      <SEO title="Direct Messages | HookZ" noindex={true} />
       <div className="flex-1 card-base shadow-none sm:shadow-sm overflow-hidden flex flex-col md:flex-row border-0 sm:border border-slate-200 dark:border-dark-800 rounded-none sm:rounded-xl">
         
         {/* Left Side: Conversation List / Inbox */}

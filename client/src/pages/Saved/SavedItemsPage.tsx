@@ -19,6 +19,7 @@ import {
   Flame,
   FolderKanban,
 } from 'lucide-react';
+import { SEO } from '../../components/common/SEO';
 
 export const SavedItemsPage: React.FC = () => {
   const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
@@ -96,7 +97,7 @@ export const SavedItemsPage: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5 sm:space-y-6">
-      
+      <SEO title="Saved Items | HookZ" noindex={true} />
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
