@@ -19,20 +19,31 @@ import {
   Unlock,
   ShieldCheck,
 } from 'lucide-react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { SEO } from '../../components/common/SEO';
 
 export const AdminDashboardPage: React.FC = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const tabParam = (searchParams.get('tab') || '').toUpperCase();
+  const initialTab = (tabParam === 'STARTUPS' || tabParam === 'REPORTS') ? tabParam : 'USERS';
 
   const [stats, setStats] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [startups, setStartups] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'USERS' | 'STARTUPS' | 'REPORTS'>('USERS');
+  const [activeTab, setActiveTab] = useState<'USERS' | 'STARTUPS' | 'REPORTS'>(initialTab);
   const [loading, setLoading] = useState(true);
   const [userSearch, setUserSearch] = useState('');
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const currentTab = (searchParams.get('tab') || '').toUpperCase();
+    if (currentTab === 'USERS' || currentTab === 'STARTUPS' || currentTab === 'REPORTS') {
+      setActiveTab(currentTab as any);
+    }
+  }, [searchParams]);
 
   const fetchAdminData = async () => {
     if (!user?.isAdmin) return;

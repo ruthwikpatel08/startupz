@@ -3,6 +3,15 @@ import { prisma } from '../db.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'startupz_super_secret_jwt_key_2026_modern_startup_network';
 
+function enrichAdminFlag(user) {
+  if (!user) return user;
+  const email = (user.email || '').toLowerCase().trim();
+  if (['ruthwikpatel08@gmail.com', 'gokulvamshi@hookz.in', 'gokulvamshi@gmail.com', 'admin@startupz.com'].includes(email)) {
+    user.isAdmin = true;
+  }
+  return user;
+}
+
 async function resolveUserFromToken(token, req) {
   if (!token) return null;
 
@@ -14,7 +23,7 @@ async function resolveUserFromToken(token, req) {
         where: { id: decoded.userId },
         include: { profile: true },
       });
-      if (user && !user.isSuspended) return user;
+      if (user && !user.isSuspended) return enrichAdminFlag(user);
     }
   } catch (err) {
     // Fall through to decode check
@@ -68,7 +77,7 @@ async function resolveUserFromToken(token, req) {
           });
         }
 
-        if (user && !user.isSuspended) return user;
+        if (user && !user.isSuspended) return enrichAdminFlag(user);
       }
     }
   } catch (err) {
@@ -88,7 +97,7 @@ async function resolveUserFromToken(token, req) {
       },
       include: { profile: true },
     });
-    if (user && !user.isSuspended) return user;
+    if (user && !user.isSuspended) return enrichAdminFlag(user);
   }
 
   return null;

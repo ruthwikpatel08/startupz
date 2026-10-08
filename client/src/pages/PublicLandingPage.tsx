@@ -272,18 +272,16 @@ export const PublicLandingPage: React.FC = () => {
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#b45309', marginTop: 2 }}>
                     Founder & Lead Architect
                   </div>
-                  <Link
-                    to="/profile/ruthwikpatel08"
+                  <span
                     style={{
                       fontSize: 12,
                       fontFamily: 'monospace',
                       fontWeight: 600,
                       color: '#4f46e5',
-                      textDecoration: 'none',
                     }}
                   >
                     @ruthwikpatel08
-                  </Link>
+                  </span>
                 </div>
               </div>
               <p style={{ fontSize: 13, color: '#4b5563', lineHeight: 1.6, margin: '0 0 16px' }}>
@@ -318,24 +316,9 @@ export const PublicLandingPage: React.FC = () => {
               }}
             >
               <GoldenBadge label="HookZ Founder" size="sm" />
-              <Link
-                to="/profile/ruthwikpatel08"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  padding: '7px 16px',
-                  borderRadius: 8,
-                  background: '#4f46e5',
-                  color: '#fff',
-                  fontWeight: 600,
-                  fontSize: 13,
-                  textDecoration: 'none',
-                }}
-              >
-                <span>View Profile</span>
-                <ArrowRight size={13} />
-              </Link>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#92400e' }}>
+                ✨ Platform Founder
+              </span>
             </div>
           </div>
 
@@ -372,18 +355,16 @@ export const PublicLandingPage: React.FC = () => {
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#b45309', marginTop: 2 }}>
                     Co-Founder & Operations
                   </div>
-                  <Link
-                    to="/profile/gokulvamshi"
+                  <span
                     style={{
                       fontSize: 12,
                       fontFamily: 'monospace',
                       fontWeight: 600,
                       color: '#4f46e5',
-                      textDecoration: 'none',
                     }}
                   >
                     @gokulvamshi
-                  </Link>
+                  </span>
                 </div>
               </div>
               <p style={{ fontSize: 13, color: '#4b5563', lineHeight: 1.6, margin: '0 0 16px' }}>
@@ -418,24 +399,9 @@ export const PublicLandingPage: React.FC = () => {
               }}
             >
               <GoldenBadge label="HookZ Co-Founder" size="sm" />
-              <Link
-                to="/profile/gokulvamshi"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 4,
-                  padding: '7px 16px',
-                  borderRadius: 8,
-                  background: '#4f46e5',
-                  color: '#fff',
-                  fontWeight: 600,
-                  fontSize: 13,
-                  textDecoration: 'none',
-                }}
-              >
-                <span>View Profile</span>
-                <ArrowRight size={13} />
-              </Link>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#92400e' }}>
+                ✨ Platform Co-Founder
+              </span>
             </div>
           </div>
         </div>

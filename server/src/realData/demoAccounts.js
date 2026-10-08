@@ -32,6 +32,7 @@ export const demoAccounts = [
   {
     email: 'gokulvamshi@hookz.in',
     role: 'FOUNDER',
+    isAdmin: true,
     isVerified: true,
     verificationBadge: 'HookZ Co-Founder',
     profile: {

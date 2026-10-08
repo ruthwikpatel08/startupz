@@ -27,6 +27,7 @@ import {
   Sparkles,
   ArrowRight,
   Crown,
+  Briefcase,
 } from 'lucide-react';
 
 export const BusinessPage: React.FC = () => {
@@ -399,57 +400,58 @@ export const BusinessPage: React.FC = () => {
           {/* HookZ Leadership Spotlight */}
           <div className="space-y-3 pt-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                <Crown size={14} className="text-amber-500 fill-amber-500/20" /> HookZ Leadership
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Crown size={14} className="text-brand-600" /> HookZ Leadership
               </span>
               <span className="text-[11px] text-slate-400 font-medium">Platform Architects</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Ruthwik Patel */}
-              <div className="p-5 rounded-2xl bg-gradient-to-b from-amber-50/70 via-white to-amber-50/20 dark:from-amber-950/20 dark:via-dark-900 dark:to-dark-900 border-2 border-amber-300 dark:border-amber-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-3.5 ring-1 ring-amber-400/20">
-                <div className="space-y-3">
+              <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3.5">
+                <div className="space-y-2.5">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3.5">
-                      <img
+                    <div className="flex items-center gap-3">
+                      <Avatar
                         src="/images/founders/ruthwik-patel.png"
-                        alt="Ruthwik Patel"
-                        className="w-14 h-14 rounded-xl object-cover object-top ring-2 ring-amber-400 shadow-xs"
+                        name="Ruthwik Patel"
+                        size="lg"
                       />
                       <div>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <Link
-                            to="/profile/ruthwikpatel08"
-                            className="font-bold text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
-                          >
+                          <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
                             Ruthwik Patel
-                          </Link>
-                          <span className="text-xs text-brand-600 dark:text-brand-400 font-mono font-semibold">
+                          </h3>
+                          <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
                             @ruthwikpatel08
                           </span>
+                          <VerificationBadge badge="Verified Founder" isVerified={true} size="sm" />
                         </div>
-                        <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mt-0.5">
+                        <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 mt-0.5">
                           Founder & Lead Architect
                         </p>
-                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
                           <span className="flex items-center gap-1">
-                            <MapPin size={11} /> Bengaluru / Hyderabad, India
+                            <MapPin size={12} /> Bengaluru / Hyderabad, India
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={12} /> Full-time Founder
                           </span>
                         </div>
                       </div>
                     </div>
-                    <GoldenBadge label="HookZ Founder" size="sm" />
                   </div>
 
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                    Architected and founded HookZ to bridge student builders, co-founders, and early capital worldwide. Full-stack systems and product engineering.
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                    Architected and founded HookZ with the vision to bridge ambitious student builders, technical co-founders, and early-stage capital. Full-stack systems and product engineering.
                   </p>
 
                   <div className="flex flex-wrap gap-1">
                     {['Full-Stack Architecture', 'Product Strategy', 'AI Systems', 'Scaling'].map((skill) => (
                       <span
                         key={skill}
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-900 dark:text-amber-300 border border-amber-300/60 dark:border-amber-500/30"
+                        className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
                       >
                         {skill}
                       </span>
@@ -457,58 +459,50 @@ export const BusinessPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-amber-200/60 dark:border-dark-800 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1">
-                    <Sparkles size={12} className="text-amber-500" /> Platform Founder
+                <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs text-slate-500">
+                  <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 font-medium">
+                    <Briefcase size={13} className="text-brand-600" /> Platform Founder
                   </span>
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to="/profile/ruthwikpatel08"
-                      className="btn-primary !text-xs !py-1 !px-3 inline-flex items-center gap-1"
-                    >
-                      <span>Profile</span>
-                      <ArrowRight size={12} />
-                    </Link>
-                  </div>
                 </div>
               </div>
 
               {/* Gokul Vamshi */}
-              <div className="p-5 rounded-2xl bg-gradient-to-b from-amber-50/70 via-white to-amber-50/20 dark:from-amber-950/20 dark:via-dark-900 dark:to-dark-900 border-2 border-amber-300 dark:border-amber-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-3.5 ring-1 ring-amber-400/20">
-                <div className="space-y-3">
+              <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3.5">
+                <div className="space-y-2.5">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3.5">
-                      <img
+                    <div className="flex items-center gap-3">
+                      <Avatar
                         src="/images/founders/gokul-vamshi.jpg"
-                        alt="Gokul Vamshi"
-                        className="w-14 h-14 rounded-xl object-cover object-top ring-2 ring-amber-400 shadow-xs"
+                        name="Gokul Vamshi"
+                        size="lg"
                       />
                       <div>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <Link
-                            to="/profile/gokulvamshi"
-                            className="font-bold text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
-                          >
+                          <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
                             Gokul Vamshi
-                          </Link>
-                          <span className="text-xs text-brand-600 dark:text-brand-400 font-mono font-semibold">
+                          </h3>
+                          <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
                             @gokulvamshi
                           </span>
+                          <VerificationBadge badge="Verified Founder" isVerified={true} size="sm" />
                         </div>
-                        <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mt-0.5">
+                        <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 mt-0.5">
                           Co-Founder & Operations
                         </p>
-                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
                           <span className="flex items-center gap-1">
-                            <MapPin size={11} /> Telangana / Hyderabad, India
+                            <MapPin size={12} /> Telangana / Hyderabad, India
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={12} /> Full-time Founder
                           </span>
                         </div>
                       </div>
                     </div>
-                    <GoldenBadge label="HookZ Co-Founder" size="sm" />
                   </div>
 
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
                     Co-founded HookZ to empower student innovators and entrepreneurial ecosystems. Drives operations, builder relations, and venture community growth.
                   </p>
 
@@ -516,7 +510,7 @@ export const BusinessPage: React.FC = () => {
                     {['Operations', 'Partnerships', 'Community Growth', 'Product Ops'].map((skill) => (
                       <span
                         key={skill}
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-900 dark:text-amber-300 border border-amber-300/60 dark:border-amber-500/30"
+                        className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
                       >
                         {skill}
                       </span>
@@ -524,19 +518,10 @@ export const BusinessPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-amber-200/60 dark:border-dark-800 flex items-center justify-between">
-                  <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1">
-                    <Sparkles size={12} className="text-amber-500" /> Platform Co-Founder
+                <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs text-slate-500">
+                  <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 font-medium">
+                    <Briefcase size={13} className="text-brand-600" /> Platform Co-Founder
                   </span>
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to="/profile/gokulvamshi"
-                      className="btn-primary !text-xs !py-1 !px-3 inline-flex items-center gap-1"
-                    >
-                      <span>Profile</span>
-                      <ArrowRight size={12} />
-                    </Link>
-                  </div>
                 </div>
               </div>
             </div>

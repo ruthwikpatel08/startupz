@@ -335,7 +335,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isVerified: true,
       verificationBadge: 'Verified via Google',
       isSuspended: false,
-      isAdmin: cleanEmail.includes('admin'),
+      isAdmin: cleanEmail.includes('admin') || cleanEmail === 'ruthwikpatel08@gmail.com' || cleanEmail === 'gokulvamshi@hookz.in' || cleanEmail === 'gokulvamshi@gmail.com' || cleanEmail === 'admin@startupz.com',
       createdAt: new Date().toISOString(),
       profile: {
         id: userId,

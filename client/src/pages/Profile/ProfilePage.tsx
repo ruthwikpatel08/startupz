@@ -59,6 +59,8 @@ import {
   AlertOctagon,
   UserX,
   Lock,
+  Sliders,
+  ChevronDown,
 } from 'lucide-react';
 
 export const PROFILE_ROLE_OPTIONS = [
@@ -215,6 +217,28 @@ export const ProfilePage: React.FC = () => {
       ))
     ))
   );
+
+  const isProfileFounder = Boolean(
+    isTargetRuthwik ||
+    profileUser?.email?.toLowerCase() === 'ruthwikpatel08@gmail.com' ||
+    profileUser?.profile?.username?.toLowerCase() === 'ruthwikpatel08' ||
+    profileUser?.id === 'c3e1a001-8888-4444-9999-000000000001' ||
+    (isMe && isCurrentRuthwik)
+  );
+
+  const isProfileCoFounder = Boolean(
+    isTargetGokul ||
+    profileUser?.email?.toLowerCase() === 'gokulvamshi@hookz.in' ||
+    profileUser?.email?.toLowerCase() === 'gokulvamshi@gmail.com' ||
+    profileUser?.profile?.username?.toLowerCase() === 'gokulvamshi' ||
+    profileUser?.id === 'c3e1a001-8888-4444-9999-000000000002' ||
+    (isMe && isCurrentGokul)
+  );
+
+  const isFounderOrCoFounder = isProfileFounder || isProfileCoFounder;
+
+  const [adminStats, setAdminStats] = useState<any>(null);
+  const [adminBarExpanded, setAdminBarExpanded] = useState(false);
   const [connectionsCount, setConnectionsCount] = useState<number>(0);
   const [connInfo, setConnInfo] = useState<ConnectionStatusInfo>({
     status: null,
@@ -864,7 +888,7 @@ export const ProfilePage: React.FC = () => {
           isVerified: true,
           verificationBadge: 'HookZ Co-Founder',
           isSuspended: false,
-          isAdmin: false,
+          isAdmin: true,
           createdAt: sbProfile?.created_at || '2024-01-01T00:00:00.000Z',
           connectionStatus: null,
           startups: [],
@@ -1089,8 +1113,20 @@ export const ProfilePage: React.FC = () => {
   };
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (typeof document !== 'undefined') {
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
     fetchUserProfile(true);
     loadConnectionsAndStatus();
+
+    if (isTargetRuthwik || isTargetGokul || isProfileFounder || isProfileCoFounder) {
+      api.getAdminStats().then((res: any) => {
+        if (res?.stats) setAdminStats(res.stats);
+        else if (res && typeof res === 'object') setAdminStats(res);
+      }).catch(() => null);
+    }
 
     // Subscribe to realtime profile changes so any updates by other users reflect live
     const profileChannel = supabase
@@ -1570,6 +1606,215 @@ export const ProfilePage: React.FC = () => {
         />
       )}
       <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6 w-full overflow-x-hidden">
+
+        {/* ============================================================== */}
+        {/* ADMIN BAR: Rendered ONLY on Founder & Co-Founder profiles     */}
+        {/* ============================================================== */}
+        {isFounderOrCoFounder && (
+          <div className="rounded-2xl border border-amber-500/30 dark:border-amber-400/30 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white shadow-xl shadow-brand-950/20 p-4 sm:p-5 relative overflow-hidden backdrop-blur-md transition-all">
+            {/* Ambient Lighting Accents */}
+            <div className="absolute -top-16 -right-16 w-56 h-56 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-brand-500/15 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 space-y-4">
+              {/* Header Row */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wider uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-xs">
+                      <ShieldCheck size={13} className="text-amber-400" />
+                      HookZ Admin Bar
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                      </span>
+                      Platform Admin Active
+                    </span>
+                  </div>
+                  <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    <span>
+                      {isProfileFounder
+                        ? 'Ruthwik Patel — Platform Founder & Root Administrator'
+                        : 'Gokul Vamshi — Platform Co-Founder & Executive Administrator'}
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-300">
+                    Full administrative privileges granted. Access moderation, startup verification, user controls, and problem statements.
+                  </p>
+                </div>
+
+                {/* Right Action Cluster */}
+                <div className="flex items-center gap-2 self-start sm:self-center shrink-0 flex-wrap">
+                  <Link
+                    to="/admin"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-md shadow-brand-900/30 transition-all hover:scale-[1.02] cursor-pointer"
+                    title="Open Full Admin Portal"
+                  >
+                    <ShieldCheck size={14} />
+                    <span>Admin Dashboard</span>
+                    <ExternalLink size={12} className="opacity-70" />
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => setAdminBarExpanded((prev) => !prev)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 border border-white/10 text-xs font-medium transition-all cursor-pointer"
+                    title="Toggle Quick Platform Metrics and Tools"
+                  >
+                    <Sliders size={13} />
+                    <span>{adminBarExpanded ? 'Hide Tools' : 'Quick Tools'}</span>
+                    <ChevronDown
+                      size={14}
+                      className={`transition-transform duration-200 ${adminBarExpanded ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons Row */}
+              <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 gap-2 pt-1 border-t border-white/10">
+                <Link
+                  to="/admin?tab=USERS"
+                  className="flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-sky-500/40 text-xs text-slate-200 hover:text-white transition-all group"
+                  title="Moderate registered users and manage badges"
+                >
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Users size={14} className="text-sky-400 shrink-0 group-hover:scale-110 transition-transform" />
+                    <span className="truncate">Users</span>
+                  </div>
+                  {adminStats?.totalUsers != null && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/10 text-slate-300 font-mono">
+                      {adminStats.totalUsers}
+                    </span>
+                  )}
+                </Link>
+
+                <Link
+                  to="/admin?tab=STARTUPS"
+                  className="flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-amber-500/40 text-xs text-slate-200 hover:text-white transition-all group"
+                  title="Verify startups and approve ecosystem listings"
+                >
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Rocket size={14} className="text-amber-400 shrink-0 group-hover:scale-110 transition-transform" />
+                    <span className="truncate">Startups</span>
+                  </div>
+                  {adminStats?.totalStartups != null && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/10 text-slate-300 font-mono">
+                      {adminStats.totalStartups}
+                    </span>
+                  )}
+                </Link>
+
+                <Link
+                  to="/admin?tab=REPORTS"
+                  className="flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-rose-500/40 text-xs text-slate-200 hover:text-white transition-all group"
+                  title="Review community reports and safety flags"
+                >
+                  <div className="flex items-center gap-1.5 truncate">
+                    <AlertTriangle size={14} className="text-rose-400 shrink-0 group-hover:scale-110 transition-transform" />
+                    <span className="truncate">Reports</span>
+                  </div>
+                  {adminStats?.pendingReports != null && (
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
+                        adminStats.pendingReports > 0
+                          ? 'bg-rose-500/30 text-rose-300 font-bold border border-rose-500/40'
+                          : 'bg-white/10 text-slate-300'
+                      }`}
+                    >
+                      {adminStats.pendingReports}
+                    </span>
+                  )}
+                </Link>
+
+                <Link
+                  to="/admin/problems"
+                  className="flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-indigo-500/40 text-xs text-slate-200 hover:text-white transition-all group"
+                  title="Manage worldwide problem statements"
+                >
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Sparkles size={14} className="text-indigo-400 shrink-0 group-hover:scale-110 transition-transform" />
+                    <span className="truncate">Problems</span>
+                  </div>
+                  <ChevronRight size={13} className="text-slate-400 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+
+                <Link
+                  to="/admin/problems/create"
+                  className="col-span-2 xs:col-span-1 sm:col-span-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/40 hover:border-emerald-400 text-xs text-emerald-200 hover:text-white transition-all group font-semibold shadow-xs"
+                  title="Create and publish a worldwide problem statement"
+                >
+                  <Plus size={14} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+                  <span className="truncate">Post Problem</span>
+                </Link>
+              </div>
+
+              {/* Collapsible Quick Platform Metrics Console */}
+              {adminBarExpanded && (
+                <div className="mt-3 p-3.5 rounded-xl bg-black/40 border border-white/10 backdrop-blur-md space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold text-slate-300 tracking-wider uppercase flex items-center gap-1.5">
+                      <Clock size={12} className="text-amber-400" />
+                      Live Platform Telemetry & Metrics
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        api.getAdminStats().then((res: any) => {
+                          if (res?.stats) setAdminStats(res.stats);
+                          else if (res && typeof res === 'object') setAdminStats(res);
+                        }).catch(() => null);
+                      }}
+                      className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <RefreshCw size={11} />
+                      <span>Refresh</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
+                      <p className="text-[11px] text-slate-400">Total Users</p>
+                      <p className="text-base sm:text-lg font-bold text-white mt-0.5 font-mono">
+                        {adminStats?.totalUsers ?? '—'}
+                      </p>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
+                      <p className="text-[11px] text-slate-400">Startups</p>
+                      <p className="text-base sm:text-lg font-bold text-white mt-0.5 font-mono">
+                        {adminStats?.totalStartups ?? '—'}
+                      </p>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
+                      <p className="text-[11px] text-slate-400">Opportunities</p>
+                      <p className="text-base sm:text-lg font-bold text-white mt-0.5 font-mono">
+                        {adminStats?.totalOpportunities ?? '—'}
+                      </p>
+                    </div>
+                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
+                      <p className="text-[11px] text-slate-400">Pending Reports</p>
+                      <p className={`text-base sm:text-lg font-bold mt-0.5 font-mono ${(adminStats?.pendingReports || 0) > 0 ? 'text-rose-400' : 'text-white'}`}>
+                        {adminStats?.pendingReports ?? 0}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-white/5 flex-wrap gap-2">
+                    <span className="flex items-center gap-1">
+                      <ShieldCheck size={12} className="text-emerald-400" />
+                      Executive Tool Engine Online
+                    </span>
+                    <span className="text-slate-400">
+                      Supabase DB & Prisma Engine Authoritative
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Success Notice Banner */}
         {photoSavedNotice && (

@@ -658,12 +658,9 @@ export const LandingPage: React.FC = () => {
                     <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mt-0.5">
                       Founder & Lead Architect
                     </p>
-                    <Link
-                      to="/profile/ruthwikpatel08"
-                      className="inline-flex items-center text-xs font-mono font-semibold text-brand-600 dark:text-brand-400 hover:underline mt-0.5"
-                    >
+                    <span className="inline-flex items-center text-xs font-mono font-semibold text-brand-600 dark:text-brand-400 mt-0.5">
                       @ruthwikpatel08
-                    </Link>
+                    </span>
                   </div>
                 </div>
 
@@ -683,15 +680,11 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="pt-5 mt-4 border-t border-amber-200/60 dark:border-amber-900/40 flex items-center justify-between">
+              <div className="pt-4 mt-3 border-t border-amber-200/60 dark:border-amber-900/40 flex items-center justify-between">
                 <GoldenBadge label="HookZ Founder" size="md" />
-                <Link
-                  to="/profile/ruthwikpatel08"
-                  className="btn-primary !text-xs !py-1.5 !px-3.5 inline-flex items-center gap-1.5 shadow-sm"
-                >
-                  <span>View Profile</span>
-                  <ArrowRight size={13} />
-                </Link>
+                <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1">
+                  <Sparkles size={12} className="text-amber-500" /> Platform Founder
+                </span>
               </div>
             </div>
 
@@ -718,12 +711,9 @@ export const LandingPage: React.FC = () => {
                     <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mt-0.5">
                       Co-Founder & Operations
                     </p>
-                    <Link
-                      to="/profile/gokulvamshi"
-                      className="inline-flex items-center text-xs font-mono font-semibold text-brand-600 dark:text-brand-400 hover:underline mt-0.5"
-                    >
+                    <span className="inline-flex items-center text-xs font-mono font-semibold text-brand-600 dark:text-brand-400 mt-0.5">
                       @gokulvamshi
-                    </Link>
+                    </span>
                   </div>
                 </div>
 
@@ -743,15 +733,11 @@ export const LandingPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="pt-5 mt-4 border-t border-amber-200/60 dark:border-amber-900/40 flex items-center justify-between">
+              <div className="pt-4 mt-3 border-t border-amber-200/60 dark:border-amber-900/40 flex items-center justify-between">
                 <GoldenBadge label="HookZ Co-Founder" size="md" />
-                <Link
-                  to="/profile/gokulvamshi"
-                  className="btn-primary !text-xs !py-1.5 !px-3.5 inline-flex items-center gap-1.5 shadow-sm"
-                >
-                  <span>View Profile</span>
-                  <ArrowRight size={13} />
-                </Link>
+                <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1">
+                  <Sparkles size={12} className="text-amber-500" /> Platform Co-Founder
+                </span>
               </div>
             </div>
           </div>

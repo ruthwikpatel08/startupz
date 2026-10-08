@@ -107,7 +107,17 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean 
     return <Navigate to="/onboarding" replace />;
   }
 
-  if (adminOnly && !user.isAdmin) {
+  const isPlatformAdmin = Boolean(
+    user?.isAdmin ||
+    user?.email?.toLowerCase() === 'ruthwikpatel08@gmail.com' ||
+    user?.email?.toLowerCase() === 'gokulvamshi@hookz.in' ||
+    user?.email?.toLowerCase() === 'gokulvamshi@gmail.com' ||
+    user?.email?.toLowerCase() === 'admin@startupz.com' ||
+    user?.profile?.username?.toLowerCase() === 'ruthwikpatel08' ||
+    user?.profile?.username?.toLowerCase() === 'gokulvamshi'
+  );
+
+  if (adminOnly && !isPlatformAdmin) {
     return <Navigate to="/" replace />;
   }
 
@@ -117,6 +127,15 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; adminOnly?: boolean 
 const AppContent: React.FC = () => {
   const location = useLocation();
   const { user, loading } = useAuth();
+
+  // Ensure window scrolls to top on any route change (e.g. clicking any profile)
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (typeof document !== 'undefined') {
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   const isAuthOrMeetingPage =
     (!user && location.pathname === '/') ||

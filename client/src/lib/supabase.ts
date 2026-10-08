@@ -126,7 +126,15 @@ export function mapSupabaseToAppUser(
     isVerified: !!authUser.email_confirmed_at || isGoogle,
     verificationBadge: isGoogle ? 'Verified via Google' : (authUser.email_confirmed_at ? 'Active Builder' : null),
     isSuspended: false,
-    isAdmin: metadata.isAdmin === true || metadata.role === 'ADMIN' || authUser.email === 'ruthwikpatel08@gmail.com' || authUser.email === 'admin@startupz.com',
+    isAdmin:
+      metadata.isAdmin === true ||
+      metadata.role === 'ADMIN' ||
+      authUser.email?.toLowerCase() === 'ruthwikpatel08@gmail.com' ||
+      authUser.email?.toLowerCase() === 'gokulvamshi@hookz.in' ||
+      authUser.email?.toLowerCase() === 'gokulvamshi@gmail.com' ||
+      authUser.email?.toLowerCase() === 'admin@startupz.com' ||
+      profile.username?.toLowerCase() === 'ruthwikpatel08' ||
+      profile.username?.toLowerCase() === 'gokulvamshi',
     onboardingCompleted: profileRow?.onboarding_completed !== false && metadata.onboarding_completed !== false,
     onboarding_completed: profileRow?.onboarding_completed !== false && metadata.onboarding_completed !== false,
     createdAt: authUser.created_at,
