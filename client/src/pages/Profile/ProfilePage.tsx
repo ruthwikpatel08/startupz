@@ -837,6 +837,71 @@ export const ProfilePage: React.FC = () => {
             updateUser(backendData);
           }
           fetchUserPosts(backendData.id || targetId);
+        } else {
+          const lower = (targetId || '').toLowerCase();
+          if (lower.includes('ruthwik') || targetId === 'c3e1a001-8888-4444-9999-000000000001') {
+            const rpUser: any = {
+              id: 'c3e1a001-8888-4444-9999-000000000001',
+              email: 'ruthwikpatel08@gmail.com',
+              username: 'ruthwikpatel08',
+              role: 'FOUNDER',
+              isVerified: true,
+              verificationBadge: 'HookZ Founder',
+              profile: {
+                id: 'p-ruthwik',
+                userId: 'c3e1a001-8888-4444-9999-000000000001',
+                fullName: 'Ruthwik Patel',
+                username: 'ruthwikpatel08',
+                headline: 'Founder & Lead Architect | HookZ',
+                oneLineBio: 'Leading HookZ to connect builders, co-founders, and investors worldwide.',
+                location: 'Bengaluru / Hyderabad, India',
+                bio: 'Architected and founded HookZ with the vision to bridge ambitious student builders, technical co-founders, and early-stage capital. Passionate about full-stack systems, product scaling, and democratizing startup discovery worldwide.',
+                avatar: '/images/founders/ruthwik-patel.png',
+                skills: 'Full-Stack Architecture, React, Node.js, Product Strategy, Startup Scaling, AI Systems',
+                startupInterests: 'Ecosystem Infrastructure, AI, Open Data',
+                industries: 'Technology & Innovation, Artificial Intelligence',
+                preferredRole: 'Founder',
+                availability: 'Full-time',
+                startupExperience: 'Founder & Lead Architect @ HookZ',
+                achievements: 'Architected HookZ network platform.',
+                education: 'Computer Science & Software Systems',
+                openTo: 'Co-Founder, Startup Team, Mentorship, Investment',
+                profileCompletion: 100,
+              },
+            };
+            setProfileUser(rpUser);
+          } else if (lower.includes('gokul') || targetId === 'c3e1a001-8888-4444-9999-000000000002') {
+            const gvUser: any = {
+              id: 'c3e1a001-8888-4444-9999-000000000002',
+              email: 'gokulvamshi@hookz.in',
+              username: 'gokulvamshi',
+              role: 'FOUNDER',
+              isVerified: true,
+              verificationBadge: 'HookZ Co-Founder',
+              profile: {
+                id: 'p-gokul',
+                userId: 'c3e1a001-8888-4444-9999-000000000002',
+                fullName: 'Gokul Vamshi',
+                username: 'gokulvamshi',
+                headline: 'Co-Founder & Operations | HookZ',
+                oneLineBio: 'Co-Founder at HookZ. Building startup partnerships, student community initiatives, and collaborative venture infrastructure.',
+                location: 'Telangana / Hyderabad, India',
+                bio: 'Co-founded HookZ to empower student innovators and entrepreneurial ecosystems. Drives operations, strategic venture partnerships, builder relations, and collaborative project infrastructure across university and startup communities.',
+                avatar: '/images/founders/gokul-vamshi.jpg',
+                skills: 'Venture Operations, Strategic Partnerships, Community Growth, Product Ops',
+                startupInterests: 'Student Communities, Venture Incubation, Product Growth',
+                industries: 'Technology & Innovation, Community Platforms',
+                preferredRole: 'Co-Founder',
+                availability: 'Full-time',
+                startupExperience: 'Co-Founder & Operations @ HookZ',
+                achievements: 'Co-founded HookZ startup platform.',
+                education: 'Business Operations & Venture Growth',
+                openTo: 'Co-Founder, Startup Team, Mentorship, Partnerships',
+                profileCompletion: 100,
+              },
+            };
+            setProfileUser(gvUser);
+          }
         }
       }
     } catch (err) {

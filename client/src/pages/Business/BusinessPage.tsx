@@ -5,7 +5,7 @@ import { supabase, fetchUserConnections } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Startup } from '../../types';
 import { Avatar } from '../../components/common/Avatar';
-import { RoleBadge, VerificationBadge } from '../../components/common/Badge';
+import { RoleBadge, VerificationBadge, GoldenBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { StartupConnectionModal } from '../../components/common/StartupConnectionModal';
 import { SEO } from '../../components/common/SEO';
@@ -26,6 +26,7 @@ import {
   Clock,
   Sparkles,
   ArrowRight,
+  Crown,
 } from 'lucide-react';
 
 export const BusinessPage: React.FC = () => {
@@ -393,6 +394,152 @@ export const BusinessPage: React.FC = () => {
               <span>Explore All Founders</span>
               <ArrowRight size={14} />
             </Link>
+          </div>
+
+          {/* HookZ Leadership Spotlight */}
+          <div className="space-y-3 pt-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                <Crown size={14} className="text-amber-500 fill-amber-500/20" /> HookZ Leadership
+              </span>
+              <span className="text-[11px] text-slate-400 font-medium">Platform Architects</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Ruthwik Patel */}
+              <div className="p-5 rounded-2xl bg-gradient-to-b from-amber-50/70 via-white to-amber-50/20 dark:from-amber-950/20 dark:via-dark-900 dark:to-dark-900 border-2 border-amber-300 dark:border-amber-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-3.5 ring-1 ring-amber-400/20">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3.5">
+                      <img
+                        src="/images/founders/ruthwik-patel.png"
+                        alt="Ruthwik Patel"
+                        className="w-14 h-14 rounded-xl object-cover object-top ring-2 ring-amber-400 shadow-xs"
+                      />
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Link
+                            to="/profile/ruthwikpatel08"
+                            className="font-bold text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                          >
+                            Ruthwik Patel
+                          </Link>
+                          <span className="text-xs text-brand-600 dark:text-brand-400 font-mono font-semibold">
+                            @ruthwikpatel08
+                          </span>
+                        </div>
+                        <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mt-0.5">
+                          Founder & Lead Architect
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                          <span className="flex items-center gap-1">
+                            <MapPin size={11} /> Bengaluru / Hyderabad, India
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <GoldenBadge label="HookZ Founder" size="sm" />
+                  </div>
+
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    Architected and founded HookZ to bridge student builders, co-founders, and early capital worldwide. Full-stack systems and product engineering.
+                  </p>
+
+                  <div className="flex flex-wrap gap-1">
+                    {['Full-Stack Architecture', 'Product Strategy', 'AI Systems', 'Scaling'].map((skill) => (
+                      <span
+                        key={skill}
+                        className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-900 dark:text-amber-300 border border-amber-300/60 dark:border-amber-500/30"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-amber-200/60 dark:border-dark-800 flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1">
+                    <Sparkles size={12} className="text-amber-500" /> Platform Founder
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to="/profile/ruthwikpatel08"
+                      className="btn-primary !text-xs !py-1 !px-3 inline-flex items-center gap-1"
+                    >
+                      <span>Profile</span>
+                      <ArrowRight size={12} />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+
+              {/* Gokul Vamshi */}
+              <div className="p-5 rounded-2xl bg-gradient-to-b from-amber-50/70 via-white to-amber-50/20 dark:from-amber-950/20 dark:via-dark-900 dark:to-dark-900 border-2 border-amber-300 dark:border-amber-500/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-3.5 ring-1 ring-amber-400/20">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3.5">
+                      <img
+                        src="/images/founders/gokul-vamshi.jpg"
+                        alt="Gokul Vamshi"
+                        className="w-14 h-14 rounded-xl object-cover object-top ring-2 ring-amber-400 shadow-xs"
+                      />
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Link
+                            to="/profile/gokulvamshi"
+                            className="font-bold text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                          >
+                            Gokul Vamshi
+                          </Link>
+                          <span className="text-xs text-brand-600 dark:text-brand-400 font-mono font-semibold">
+                            @gokulvamshi
+                          </span>
+                        </div>
+                        <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mt-0.5">
+                          Co-Founder & Operations
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                          <span className="flex items-center gap-1">
+                            <MapPin size={11} /> Telangana / Hyderabad, India
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <GoldenBadge label="HookZ Co-Founder" size="sm" />
+                  </div>
+
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    Co-founded HookZ to empower student innovators and entrepreneurial ecosystems. Drives operations, builder relations, and venture community growth.
+                  </p>
+
+                  <div className="flex flex-wrap gap-1">
+                    {['Operations', 'Partnerships', 'Community Growth', 'Product Ops'].map((skill) => (
+                      <span
+                        key={skill}
+                        className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-900 dark:text-amber-300 border border-amber-300/60 dark:border-amber-500/30"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-amber-200/60 dark:border-dark-800 flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1">
+                    <Sparkles size={12} className="text-amber-500" /> Platform Co-Founder
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to="/profile/gokulvamshi"
+                      className="btn-primary !text-xs !py-1 !px-3 inline-flex items-center gap-1"
+                    >
+                      <span>Profile</span>
+                      <ArrowRight size={12} />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Real Founder Profiles Grid */}

@@ -497,6 +497,8 @@ export async function resolveEmailOrUsername(identifier: string): Promise<string
     'ruthwik': 'ruthwikpatel08@gmail.com',
     'ruthwikpatel': 'ruthwikpatel08@gmail.com',
     'ruthwikpatel08': 'ruthwikpatel08@gmail.com',
+    'gokul': 'gokulvamshi@hookz.in',
+    'gokulvamshi': 'gokulvamshi@hookz.in',
     'legacy': 'legacyplayer04@gmail.com',
     'legacyplayer': 'legacyplayer04@gmail.com',
     'legacyplayer04': 'legacyplayer04@gmail.com',

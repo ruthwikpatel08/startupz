@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Crown, Sparkles } from 'lucide-react';
 
 interface VerificationBadgeProps {
   badge?: string | null;
@@ -8,6 +8,29 @@ interface VerificationBadgeProps {
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
+
+export const GoldenBadge: React.FC<{
+  label?: string;
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+}> = ({ label = 'HookZ Founder', size = 'md', className = '' }) => {
+  const sizeClasses = {
+    sm: 'text-[10px] px-2 py-0.5 gap-1',
+    md: 'text-xs px-2.5 py-0.5 gap-1.5',
+    lg: 'text-sm px-3 py-1 gap-1.5',
+  };
+  const iconSizes = { sm: 11, md: 13, lg: 15 };
+
+  return (
+    <span
+      className={`inline-flex items-center font-bold tracking-wide rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-slate-950 shadow-xs border border-amber-300 dark:border-yellow-300 ring-1 ring-amber-400/40 select-none ${sizeClasses[size]} ${className}`}
+      title={label}
+    >
+      <Crown size={iconSizes[size]} className="text-amber-950 fill-amber-900/30 shrink-0" />
+      <span>{label}</span>
+    </span>
+  );
+};
 
 export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
   badge,
@@ -20,6 +43,11 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
   if (!isVerified && !badgeText) return null;
 
   const text = badgeText || 'Verified';
+  const isGolden = text.toLowerCase().includes('founder') && text.toLowerCase().includes('hookz');
+  if (isGolden) {
+    return <GoldenBadge label={text} size={size} className={className} />;
+  }
+
   const sizeClasses = {
     sm: 'text-[10px] px-1.5 py-0.5 gap-1',
     md: 'text-xs px-2 py-0.5 gap-1.5',
