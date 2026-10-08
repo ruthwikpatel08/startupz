@@ -1,6 +1,7 @@
 import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
+import { supabaseAdmin } from '../supabase.js';
 
 const router = express.Router();
 
@@ -431,6 +432,12 @@ router.post('/', requireAuth, async (req, res) => {
       images,
       visibility = 'PUBLIC',
       isConfidential = false,
+      // Opportunity / Hiring fields linked to startup
+      hiringType,
+      opportunityRole,
+      opportunityWorkplaceType,
+      opportunityCompensation,
+      opportunityDescription,
     } = req.body;
 
     if (!name || !oneLineDescription || !problem || !solution || !industry) {
@@ -465,6 +472,7 @@ router.post('/', requireAuth, async (req, res) => {
       },
     });
 
+    // 1. Create Launch Post in Prisma
     await prisma.post.create({
       data: {
         authorId: req.user.id,
@@ -473,7 +481,47 @@ router.post('/', requireAuth, async (req, res) => {
         title: `Announcing ${startup.name} on HookZ! 🚀`,
         content: `Excited to unveil ${startup.name} (${startup.stage} Stage): ${startup.oneLineDescription}\n\nProblem: "${startup.problem.slice(0, 140)}..."\n\nLooking for: ${startup.requiredSkills || 'Passionate collaborators'}. Connect or check out our startup profile!`,
       },
-    });
+    }).catch((e) => console.warn('Prisma launch post notice:', e.message));
+
+    // 2. Automatically link opportunities (Jobs / Internships) based on startup application
+    if (hiringType && hiringType !== 'NONE') {
+      const oppRoleName = (opportunityRole || requiredSkills?.split(',')[0] || 'Software Engineer').trim();
+      const oppDesc = (opportunityDescription || `${startup.name} is looking for talent to join our ${startup.stage} stage venture in ${startup.industry}. We are building: ${startup.oneLineDescription}`).trim();
+      const oppWorkplace = opportunityWorkplaceType || 'Remote';
+      const oppComp = opportunityCompensation || (fundingStatus === 'Funded' ? 'Competitive Salary' : 'Equity + Stipend');
+
+      if (hiringType === 'INTERNSHIP' || hiringType === 'BOTH') {
+        const internTitle = oppRoleName.toLowerCase().includes('intern') ? oppRoleName : `${oppRoleName} (Internship)`;
+        await prisma.startupOpportunity.create({
+          data: {
+            startupId: startup.id,
+            role: internTitle,
+            requiredSkills: requiredSkills || 'Problem Solving, Teamwork',
+            commitment: 'Internship',
+            compensation: oppComp.toLowerCase().includes('stipend') ? oppComp : 'Paid Stipend',
+            location: startup.location || 'Remote',
+            workplaceType: oppWorkplace,
+            description: `[Internship Wanted] ${oppDesc}`,
+          },
+        }).catch((e) => console.warn('Prisma auto internship opportunity notice:', e.message));
+      }
+
+      if (hiringType === 'JOB' || hiringType === 'BOTH') {
+        const jobTitle = oppRoleName.replace(/\bintern(ship)?\b/gi, '').trim() || `${startup.name} Team Lead`;
+        await prisma.startupOpportunity.create({
+          data: {
+            startupId: startup.id,
+            role: jobTitle,
+            requiredSkills: requiredSkills || 'Full-Stack, Product Strategy',
+            commitment: 'Full-time',
+            compensation: oppComp,
+            location: startup.location || 'Remote',
+            workplaceType: oppWorkplace,
+            description: `[Job Opening] ${oppDesc}`,
+          },
+        }).catch((e) => console.warn('Prisma auto job opportunity notice:', e.message));
+      }
+    }
 
     return res.status(201).json({
       message: 'Startup published successfully!',
@@ -517,6 +565,34 @@ router.delete('/:id', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized to delete this startup.' });
     }
 
+    // 1. Purge all posts linked to this startup so they don't linger in profile posts & updates
+    await prisma.post.deleteMany({
+      where: {
+        OR: [
+          { startupId: id },
+          { title: { contains: existing.name } },
+          { content: { contains: existing.name } },
+        ],
+      },
+    }).catch((e) => console.warn('Prisma post cleanup warning:', e.message));
+
+    // 2. Clean up from Supabase posts and startups if available
+    try {
+      if (supabaseAdmin) {
+        await supabaseAdmin.from('posts').delete().or(`startup_id.eq.${id},content.ilike.%${existing.name}%`);
+        await supabaseAdmin.from('startups').delete().eq('id', id);
+      }
+    } catch (sbErr) {
+      console.warn('Supabase post cleanup warning:', sbErr.message);
+    }
+
+    // 3. Delete startup opportunities & related applications
+    await prisma.opportunityApplication.deleteMany({
+      where: { opportunity: { startupId: id } },
+    }).catch(() => {});
+    await prisma.startupOpportunity.deleteMany({ where: { startupId: id } }).catch(() => {});
+
+    // 4. Finally delete the startup
     await prisma.startup.delete({ where: { id } });
     return res.json({ message: 'Startup successfully deleted.' });
   } catch (error) {

@@ -26,6 +26,7 @@ router.get('/', optionalAuth, async (req, res) => {
         );
       } else if (tLower === 'jobs' || tLower === 'job') {
         orConditions.push(
+          { description: { contains: '[Job Opening]' } },
           { commitment: 'Full-time' },
           { commitment: 'Part-time' },
           { role: { contains: 'Engineer' } },

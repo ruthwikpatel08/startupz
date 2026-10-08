@@ -10,8 +10,9 @@ const router = express.Router();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_FILE = path.resolve(__dirname, '../../data/projects.json');
+const MESSAGES_FILE = path.resolve(__dirname, '../../data/project_messages.json');
 
-// Persistent JSON file helper
+// Persistent JSON file helper for projects
 function readProjects() {
   try {
     if (fs.existsSync(DATA_FILE)) {
@@ -34,6 +35,44 @@ function writeProjects(projects) {
     fs.writeFileSync(DATA_FILE, JSON.stringify(projects, null, 2), 'utf8');
   } catch (err) {
     console.error('Error writing projects.json:', err.message);
+  }
+}
+
+// Persistent JSON file helper for project team group chat messages
+export function readProjectMessages(projectId) {
+  try {
+    if (fs.existsSync(MESSAGES_FILE)) {
+      const raw = fs.readFileSync(MESSAGES_FILE, 'utf8');
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        return Array.isArray(parsed[projectId]) ? parsed[projectId] : [];
+      }
+    }
+  } catch (err) {
+    console.warn('Error reading project_messages.json:', err.message);
+  }
+  return [];
+}
+
+export function writeProjectMessage(projectId, message) {
+  try {
+    const dir = path.dirname(MESSAGES_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    let allMsgs = {};
+    if (fs.existsSync(MESSAGES_FILE)) {
+      try {
+        allMsgs = JSON.parse(fs.readFileSync(MESSAGES_FILE, 'utf8')) || {};
+      } catch {}
+    }
+    if (!Array.isArray(allMsgs[projectId])) {
+      allMsgs[projectId] = [];
+    }
+    allMsgs[projectId].push(message);
+    fs.writeFileSync(MESSAGES_FILE, JSON.stringify(allMsgs, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Error writing project_messages.json:', err.message);
   }
 }
 
@@ -579,6 +618,66 @@ router.post('/:id/roles/:roleId/assign', requireAuth, async (req, res) => {
     return res.json({ message: `Role assigned to ${targetName}!`, project });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to assign role.' });
+  }
+});
+
+// GET /api/projects/:id/messages - Retrieve all messages for project group chat
+router.get('/:id/messages', optionalAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const msgs = readProjectMessages(id);
+    return res.json({ messages: msgs });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to retrieve project messages.' });
+  }
+});
+
+// POST /api/projects/:id/messages - Send a message to project group chat
+router.post('/:id/messages', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: 'Message content cannot be empty.' });
+    }
+
+    const senderName = req.user.profile?.fullName || req.user.email?.split('@')[0] || 'Member';
+    const newMsg = {
+      id: `pmsg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      projectId: id,
+      conversationId: `proj-group-${id}`,
+      senderId: req.user.id,
+      content: content.trim(),
+      createdAt: new Date().toISOString(),
+      sender: {
+        id: req.user.id,
+        email: req.user.email,
+        role: req.user.role || 'BUILDER',
+        isVerified: req.user.isVerified || false,
+        profile: {
+          id: req.user.profile?.id || req.user.id,
+          userId: req.user.id,
+          fullName: senderName,
+          avatar: req.user.profile?.avatar || null,
+          headline: req.user.profile?.headline || 'Team Collaborator',
+        },
+      },
+    };
+
+    writeProjectMessage(id, newMsg);
+
+    // Update project lastMessage
+    const all = getAllProjectsList();
+    const proj = all.find((p) => p.id === id);
+    if (proj) {
+      proj.lastMessage = `${senderName.split(' ')[0]}: ${content.trim()}`;
+      proj.lastMessageAt = new Date().toISOString();
+      writeProjects(all);
+    }
+
+    return res.status(201).json({ message: 'Project message sent successfully!', data: newMsg });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to send project message.' });
   }
 });
 

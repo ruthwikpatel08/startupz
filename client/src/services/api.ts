@@ -45,44 +45,34 @@ const REAL_ACCOUNT_EMAILS = [
 
 export function isDemoRecord(item: any): boolean {
   if (!item) return false;
+  // Projects created by users must NEVER be filtered
+  if (item.creator || item.creatorId || item.roles || item.techStack) {
+    return false;
+  }
+
+  // Items created by users should never be filtered unless marked with demo banner
   const str = JSON.stringify(item).toLowerCase();
-  
+  if (str.includes('[demo account]') || str.includes('demo presentation account')) {
+    return true;
+  }
+
   // Real registered users must never be filtered
   if (REAL_ACCOUNT_EMAILS.some((email) => str.includes(email.toLowerCase()))) {
     return false;
   }
 
-  return (
-    str.includes('[demo account]') ||
-    str.includes('demo account') ||
-    str.includes('contact@') ||
-    str.includes('advisory@') ||
-    str.includes('demo.') ||
-    str.includes('admin@startupz.com') ||
-    str.includes('@startupz.com') ||
-    str.includes('sarah.chen') ||
-    str.includes('marcus.dev') ||
-    str.includes('david.kim') ||
-    str.includes('maya.design') ||
-    str.includes('priya.growth') ||
-    str.includes('elena.investor') ||
-    str.includes('dr.aravind') ||
-    str.includes('healthventures') ||
-    str.includes('@codeflow.dev') ||
-    str.includes('@hyperbuild.co') ||
-    str.includes('@aiagri.io') ||
-    str.includes('@pixelcraft.studio') ||
-    str.includes('@marketscale.io') ||
-    str.includes('@apexventures.vc') ||
-    str.includes('bitspilanitbi') ||
-    str.includes('cieiiithyderabad') ||
-    str.includes('berkeleyskydeck') ||
-    str.includes('startxstanford') ||
-    str.includes('creativedestructionlab') ||
-    str.includes('masschallenge') ||
-    str.includes('villgro') ||
-    str.includes('nexus startup hub')
-  );
+  // Strictly filter only the specific demo presentation seed accounts
+  const seedDemoIdentifiers = [
+    'admin@startupz.com',
+    'sarah.chen@aiagri.io',
+    'marcus.dev@codeflow.dev',
+    'david.kim@hyperbuild.co',
+    'maya.design@pixelcraft.studio',
+    'priya.growth@marketscale.io',
+    'elena.investor@apexventures.vc',
+    'dr.aravind@healthventures.in',
+  ];
+  return seedDemoIdentifiers.some((id) => str.includes(id));
 }
 
 function sanitizeData(data: any): any {
@@ -349,6 +339,10 @@ export const api = {
     request<any>(`/projects/${id}/roles/${roleId}/respond-invite`, { method: 'POST', body: JSON.stringify({ action }) }),
   respondProjectApplicant: (id: string, roleId: string, action: 'ACCEPT' | 'DECLINE', applicantUserId?: string) =>
     request<any>(`/projects/${id}/roles/${roleId}/respond-applicant`, { method: 'POST', body: JSON.stringify({ action, applicantUserId }) }),
+  getProjectMessages: (projectId: string) =>
+    request<{ messages: any[] }>(`/projects/${projectId}/messages`),
+  sendProjectMessage: (projectId: string, content: string) =>
+    request<{ message: any }>(`/projects/${projectId}/messages`, { method: 'POST', body: JSON.stringify({ content }) }),
 
   // SAVED
   getSavedItems: async (itemType?: string) => {

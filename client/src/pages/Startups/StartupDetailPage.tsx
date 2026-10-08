@@ -114,10 +114,16 @@ export const StartupDetailPage: React.FC = () => {
       return;
     }
     try {
+      await api.deleteStartup(startup.id).catch(() => null);
       try {
-        await api.deleteStartup(startup.id);
-      } catch (err) {
+        await supabase.from('posts').delete().eq('startup_id', startup.id);
+        if (startup.name) {
+          await supabase.from('posts').delete().ilike('title', `%${startup.name}%`);
+        }
+        await supabase.from('startup_opportunities').delete().eq('startup_id', startup.id);
         await supabase.from('startups').delete().eq('id', startup.id);
+      } catch (err) {
+        console.warn('Supabase cleanup notice on startup delete:', err);
       }
       navigate('/startups');
     } catch (err: any) {

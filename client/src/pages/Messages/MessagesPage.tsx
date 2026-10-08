@@ -112,43 +112,70 @@ export const MessagesPage: React.FC = () => {
         }
       });
 
-      // Load project groups from local storage
+      // Load project groups from local storage and backend API projects
       try {
         const rawGroups = localStorage.getItem('startupz_project_groups');
-        if (rawGroups) {
-          const parsed = JSON.parse(rawGroups);
-          if (Array.isArray(parsed)) {
-            parsed.forEach((g: any) => {
-              const key = `group_${g.projectId || g.id}`;
-              if (deletedIds.has(g.id) || (g.projectId && deletedIds.has(g.projectId)) || deletedIds.has(key)) {
-                return;
+        const localGroups = rawGroups ? JSON.parse(rawGroups) : [];
+        const groupList: any[] = Array.isArray(localGroups) ? [...localGroups] : [];
+
+        // Also fetch user's projects from API so any assigned team member sees the group chat!
+        try {
+          const pRes = await api.getProjects().catch(() => null);
+          const serverProjs = Array.isArray(pRes?.projects) ? pRes.projects : [];
+          serverProjs.forEach((sp: any) => {
+            const isCreator = user?.id && (sp.creator?.userId === user.id || sp.creatorId === user.id);
+            const isMember = user?.id && Array.isArray(sp.roles) && sp.roles.some((r: any) => r.assignedTo?.userId === user.id);
+            if (isCreator || isMember) {
+              const exists = groupList.some((g: any) => g.id === sp.id || g.projectId === sp.id);
+              if (!exists) {
+                const members = (sp.roles || []).filter((r: any) => r.assignedTo).map((r: any) => ({
+                  userId: r.assignedTo.userId,
+                  fullName: r.assignedTo.fullName,
+                  role: r.roleName,
+                  avatar: r.assignedTo.avatar || null,
+                }));
+                groupList.push({
+                  id: `group-${sp.id}`,
+                  projectId: sp.id,
+                  title: sp.title,
+                  members,
+                  createdAt: sp.createdAt || new Date().toISOString(),
+                });
               }
-              const groupConv: any = {
-                id: g.id,
-                projectId: g.projectId,
-                isProjectGroup: true,
-                projectTitle: g.title,
-                participant: {
-                  id: g.id,
-                  email: 'team@hookz.build',
-                  role: 'PROJECT_TEAM',
-                  isVerified: true,
-                  profile: {
-                    id: g.id,
-                    userId: g.id,
-                    fullName: `[Project Group] ${g.title}`,
-                    avatar: null,
-                    headline: `${g.members?.length || 1} team members`,
-                  },
-                },
-                lastMessage: g.lastMessage || 'Project team group established.',
-                lastMessageAt: g.lastMessageAt || g.createdAt || new Date().toISOString(),
-                members: g.members || [],
-              };
-              convMap.set(key, groupConv);
-            });
+            }
+          });
+        } catch {}
+
+        groupList.forEach((g: any) => {
+          const pId = g.projectId || g.id;
+          const key = `group_${pId}`;
+          if (deletedIds.has(g.id) || (g.projectId && deletedIds.has(g.projectId)) || deletedIds.has(key)) {
+            return;
           }
-        }
+          const groupConv: any = {
+            id: g.id,
+            projectId: pId,
+            isProjectGroup: true,
+            projectTitle: g.title,
+            participant: {
+              id: g.id,
+              email: 'team@hookz.build',
+              role: 'PROJECT_TEAM',
+              isVerified: true,
+              profile: {
+                id: g.id,
+                userId: g.id,
+                fullName: `[Project Group] ${g.title}`,
+                avatar: null,
+                headline: `${g.members?.length || 1} team members`,
+              },
+            },
+            lastMessage: g.lastMessage || 'Project team group established.',
+            lastMessageAt: g.lastMessageAt || g.createdAt || new Date().toISOString(),
+            members: g.members || [],
+          };
+          convMap.set(key, groupConv);
+        });
       } catch (err) {
         console.error('Failed to load project groups:', err);
       }
@@ -309,27 +336,42 @@ export const MessagesPage: React.FC = () => {
         // Handle Project Group Messages
         if ((selectedConversation as any)?.isProjectGroup) {
           const pId = (selectedConversation as any).projectId || selectedConversation.id;
-          const raw = localStorage.getItem(`startupz_project_messages_${pId}`);
-          const parsed = raw
-            ? JSON.parse(raw)
-            : [
-                {
-                  id: `init-${selectedConversation.id}`,
-                  conversationId: selectedConversation.id,
-                  senderId: 'system',
-                  content: `Welcome to the team chat for "${(selectedConversation as any).projectTitle || 'Project'}"! Team members and collaborators can coordinate and chat here.`,
-                  createdAt: selectedConversation.lastMessageAt || new Date().toISOString(),
-                  sender: {
-                    id: 'system',
-                    profile: {
-                      fullName: 'HookZ System',
-                      avatar: null,
-                      headline: 'Workspace',
-                    },
+          let msgs: any[] = [];
+          try {
+            const sRes = await api.getProjectMessages(pId).catch(() => null);
+            if (sRes && Array.isArray(sRes.messages) && sRes.messages.length > 0) {
+              msgs = sRes.messages;
+              try {
+                localStorage.setItem(`startupz_project_messages_${pId}`, JSON.stringify(msgs));
+              } catch {}
+            }
+          } catch {}
+
+          if (msgs.length === 0) {
+            const raw = localStorage.getItem(`startupz_project_messages_${pId}`);
+            msgs = raw ? JSON.parse(raw) : [];
+          }
+
+          if (msgs.length === 0) {
+            msgs = [
+              {
+                id: `init-${selectedConversation.id}`,
+                conversationId: selectedConversation.id,
+                senderId: 'system',
+                content: `Welcome to the team chat for "${(selectedConversation as any).projectTitle || 'Project'}"! Team members and collaborators can coordinate and chat here.`,
+                createdAt: selectedConversation.lastMessageAt || new Date().toISOString(),
+                sender: {
+                  id: 'system',
+                  profile: {
+                    fullName: 'HookZ System',
+                    avatar: null,
+                    headline: 'Workspace',
                   },
                 },
-              ];
-          setMessages(parsed);
+              },
+            ];
+          }
+          setMessages(msgs);
           setTimeout(() => scrollToBottom('auto'), 50);
           return;
         }
@@ -368,6 +410,44 @@ export const MessagesPage: React.FC = () => {
   // Supabase Realtime subscription for instant message updates in the active conversation
   useEffect(() => {
     if (!selectedConversation || selectedConversation.id === 'draft') return;
+
+    if ((selectedConversation as any)?.isProjectGroup) {
+      const pId = (selectedConversation as any).projectId || selectedConversation.id;
+      const projChannel = supabase
+        .channel(`proj_room_${pId}`)
+        .on('broadcast', { event: 'new_project_msg' }, ({ payload }) => {
+          if (payload && payload.id) {
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === payload.id)) return prev;
+              return [...prev, payload];
+            });
+          }
+        })
+        .subscribe();
+
+      // Poll every 3 seconds so all members receive all project group messages reliably across browsers
+      const pInterval = setInterval(async () => {
+        try {
+          const sRes = await api.getProjectMessages(pId).catch(() => null);
+          if (sRes && Array.isArray(sRes.messages) && sRes.messages.length > 0) {
+            setMessages((prev) => {
+              if (
+                sRes.messages.length !== prev.length ||
+                (sRes.messages.length > 0 && sRes.messages[sRes.messages.length - 1]?.id !== prev[prev.length - 1]?.id)
+              ) {
+                return sRes.messages;
+              }
+              return prev;
+            });
+          }
+        } catch {}
+      }, 3000);
+
+      return () => {
+        supabase.removeChannel(projChannel);
+        clearInterval(pInterval);
+      };
+    }
 
     const channel = supabase
       .channel(`chat_room_${selectedConversation.id}`)
@@ -522,11 +602,31 @@ export const MessagesPage: React.FC = () => {
 
       const storageKey = `startupz_project_messages_${pId}`;
       try {
+        // 1. Post to Server API so all project members receive it
+        let savedMsg = newMsg;
+        try {
+          const apiRes = await api.sendProjectMessage(pId, contentToSend).catch(() => null);
+          if (apiRes && apiRes.message) {
+            savedMsg = apiRes.message;
+          }
+        } catch {}
+
+        // 2. Broadcast via Supabase Realtime channel to all active project members
+        try {
+          const projChannel = supabase.channel(`proj_room_${pId}`);
+          projChannel.send({
+            type: 'broadcast',
+            event: 'new_project_msg',
+            payload: savedMsg,
+          });
+        } catch {}
+
+        // 3. Cache in local storage
         const raw = localStorage.getItem(storageKey);
         const existing: any[] = raw ? JSON.parse(raw) : [];
-        const updatedMsgs = [...existing, newMsg];
+        const updatedMsgs = [...existing, savedMsg];
         localStorage.setItem(storageKey, JSON.stringify(updatedMsgs));
-        setMessages((prev) => [...prev, newMsg]);
+        setMessages((prev) => [...prev, savedMsg]);
         setNewMessage('');
 
         // Update lastMessage in group list

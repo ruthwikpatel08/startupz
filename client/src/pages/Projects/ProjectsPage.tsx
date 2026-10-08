@@ -258,15 +258,35 @@ export const ProjectsPage: React.FC = () => {
     const fetchServerProjects = async () => {
       try {
         const res = await api.getProjects().catch(() => null);
-        if (res && Array.isArray(res.projects)) {
-          const serverList: BuilderProject[] = res.projects;
-          if (isMounted) {
-            setProjects(serverList);
+        const serverList: BuilderProject[] = res && Array.isArray(res.projects) ? res.projects : [];
+        if (isMounted) {
+          // Strictly merge with existing local user-created projects so nothing gets automatically lost or deleted
+          const stored = (() => {
             try {
-              localStorage.setItem('startupz_builder_projects', JSON.stringify(serverList));
-            } catch {}
-            serverList.forEach((p) => syncProjectGroup(p));
-          }
+              const raw = localStorage.getItem('startupz_builder_projects');
+              return raw ? JSON.parse(raw) : [];
+            } catch {
+              return [];
+            }
+          })();
+          const projMap = new Map<string, BuilderProject>();
+          // 1. Keep all existing local user projects
+          (Array.isArray(stored) ? stored : []).forEach((p: any) => {
+            if (p && p.id) projMap.set(p.id, p);
+          });
+          // 2. Merge server projects
+          serverList.forEach((p) => {
+            if (p && p.id) {
+              const local = projMap.get(p.id);
+              projMap.set(p.id, local ? { ...local, ...p } : p);
+            }
+          });
+          const merged = Array.from(projMap.values());
+          setProjects(merged);
+          try {
+            localStorage.setItem('startupz_builder_projects', JSON.stringify(merged));
+          } catch {}
+          merged.forEach((p) => syncProjectGroup(p));
         }
       } catch (err) {
         console.warn('Could not fetch server projects:', err);
@@ -945,7 +965,7 @@ export const ProjectsPage: React.FC = () => {
   });
 
   return (
-    <div className="max-w-6xl mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5 sm:space-y-8">
+    <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5 sm:space-y-8">
       <SEO
         title="Builder Projects & Collaborative Teams | HookZ"
         description="Discover collaborative builder projects, split roles with teammates, and build real-world products together on HookZ."
@@ -1061,7 +1081,7 @@ export const ProjectsPage: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {filteredProjects.map((project) => {
             const isCreator = user?.id === project.creator.userId;
             const openRolesCount = project.roles.filter((r) => r.status === 'OPEN').length;

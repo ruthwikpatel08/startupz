@@ -28,6 +28,13 @@ export const CreateStartupPage: React.FC = () => {
   const [visibility, setVisibility] = useState<'PUBLIC' | 'CONNECTIONS_ONLY' | 'PRIVATE'>('PUBLIC');
   const [isConfidential, setIsConfidential] = useState(false);
 
+  // Hiring & Opportunities linking (Jobs & Internships)
+  const [hiringType, setHiringType] = useState<'NONE' | 'INTERNSHIP' | 'JOB' | 'BOTH'>('NONE');
+  const [opportunityRole, setOpportunityRole] = useState('');
+  const [opportunityWorkplaceType, setOpportunityWorkplaceType] = useState('Remote');
+  const [opportunityCompensation, setOpportunityCompensation] = useState('');
+  const [opportunityDescription, setOpportunityDescription] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,6 +78,12 @@ export const CreateStartupPage: React.FC = () => {
         pitchDeckUrl,
         visibility,
         isConfidential,
+        // Link to Opportunities (Jobs / Internships)
+        hiringType,
+        opportunityRole: hiringType !== 'NONE' ? opportunityRole : undefined,
+        opportunityWorkplaceType: hiringType !== 'NONE' ? opportunityWorkplaceType : undefined,
+        opportunityCompensation: hiringType !== 'NONE' ? opportunityCompensation : undefined,
+        opportunityDescription: hiringType !== 'NONE' ? opportunityDescription : undefined,
       });
 
       navigate(`/startups/${res.startup.id}`);
@@ -95,6 +108,11 @@ export const CreateStartupPage: React.FC = () => {
     setFundingStatus('Bootstrapped');
     setFundingRequired('$250,000');
     setCurrentTraction('3 live pilot farms, 1,200 acres actively monitored');
+    setHiringType('BOTH');
+    setOpportunityRole('Full Stack Engineer & AI Specialist');
+    setOpportunityWorkplaceType('Remote');
+    setOpportunityCompensation('Paid Stipend + Equity');
+    setOpportunityDescription('Seeking ambitious student builders or engineers to co-build our edge telemetry gateway.');
   };
 
   const industries = ['AI', 'AgTech', 'HealthTech', 'ClimateTech', 'EdTech', 'FinTech', 'B2B SaaS', 'Consumer Tech', 'Robotics', 'Other'];
@@ -327,6 +345,102 @@ export const CreateStartupPage: React.FC = () => {
               placeholder="e.g. AI Developer, Full Stack Engineer, Growth Marketer"
               className="input-base w-full px-3 py-2 text-sm"
             />
+          </div>
+
+          {/* Hiring & Opportunities Linking (Internships & Jobs) */}
+          <div className="p-4 rounded-xl border border-brand-200/70 dark:border-brand-900/60 bg-brand-50/40 dark:bg-brand-950/20 space-y-3.5">
+            <div>
+              <label className="block text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-1">
+                Looking for Talent or Team Members? (Appear under Opportunities)
+              </label>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Choose if you are seeking interns or full-time builders. We will automatically link and display these openings in the Opportunities directory.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { id: 'NONE', label: 'Not Hiring Now' },
+                { id: 'INTERNSHIP', label: 'Internship Wanted' },
+                { id: 'JOB', label: 'Job Opening' },
+                { id: 'BOTH', label: 'Both (Jobs & Internships)' },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => setHiringType(opt.id as any)}
+                  className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all text-center cursor-pointer ${
+                    hiringType === opt.id
+                      ? 'bg-brand-600 text-white border-brand-600 shadow-xs'
+                      : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-brand-300'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {hiringType !== 'NONE' && (
+              <div className="pt-2 border-t border-brand-100 dark:border-brand-900/50 space-y-3 animate-in fade-in duration-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Opportunity Role Title *
+                    </label>
+                    <input
+                      type="text"
+                      value={opportunityRole}
+                      onChange={(e) => setOpportunityRole(e.target.value)}
+                      placeholder="e.g. Frontend Engineer, Product Design Intern"
+                      className="input-base w-full px-3 py-2 text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Workplace Type
+                    </label>
+                    <select
+                      value={opportunityWorkplaceType}
+                      onChange={(e) => setOpportunityWorkplaceType(e.target.value)}
+                      className="input-base w-full px-3 py-2 text-sm"
+                    >
+                      <option value="Remote">Remote</option>
+                      <option value="Hybrid">Hybrid</option>
+                      <option value="On-site">On-site</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Compensation / Stipend
+                    </label>
+                    <input
+                      type="text"
+                      value={opportunityCompensation}
+                      onChange={(e) => setOpportunityCompensation(e.target.value)}
+                      placeholder="e.g. Paid Stipend ($500/mo), Equity + Stipend, Full-time"
+                      className="input-base w-full px-3 py-2 text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Role Overview / What You Need
+                    </label>
+                    <input
+                      type="text"
+                      value={opportunityDescription}
+                      onChange={(e) => setOpportunityDescription(e.target.value)}
+                      placeholder="Brief role summary for applicants"
+                      className="input-base w-full px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Links & Traction */}

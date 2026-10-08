@@ -242,9 +242,9 @@ export const LandingPage: React.FC = () => {
       />
       {/* 1. ECOSYSTEM DIRECTORY & COMMUNITY */}
       <section className="relative pt-6 pb-16 lg:pt-8 lg:pb-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Community Profiles: Students, Operators, Specialists & Community Members */}
-          <div className="max-w-5xl mx-auto mb-10">
+          <div className="w-full mb-10">
             <div className="mb-6">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 text-xs font-semibold border border-brand-200/60 dark:border-brand-900/60 mb-1.5">
                 <Sparkles size={12} /> Community Talent Showcase
@@ -290,7 +290,7 @@ export const LandingPage: React.FC = () => {
               }
 
               return (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {visibleProfiles.map((p) => {
                     const displayName = p.full_name || 'Community Member';
                     const displayRole = p.role_label || 'Other';
@@ -481,7 +481,7 @@ export const LandingPage: React.FC = () => {
 
       {/* 1.5 LATEST PLATFORM UPDATES SECTION */}
       <section className="py-14 bg-slate-50/80 dark:bg-slate-900/40 border-y border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-800 mb-1.5">

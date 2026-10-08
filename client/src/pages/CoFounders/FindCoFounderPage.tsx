@@ -612,7 +612,7 @@ export const FindCoFounderPage: React.FC = () => {
   const investorStages = ['ALL', 'Pre-Seed', 'Seed', 'Series A', 'Series B', 'Grants', 'Idea / Prototype'];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 w-full overflow-x-hidden">
+    <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 overflow-x-hidden">
       <SEO
         title="Find a Co-Founder for Your Startup | HookZ"
         description="Discover and connect with technical and business co-founders. Filter by skills, vision, domain expertise, and builder background on HookZ."

@@ -196,7 +196,7 @@ export const OpportunitiesPage: React.FC = () => {
   const commitments = ['ALL', 'Internship', 'Full-time', 'Part-time', 'Grant / Fellowship', 'Grant / Incubation', 'National Challenge Grant', 'Contract'];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <SEO
         title="Startup Opportunities | HookZ"
         description="Join early-stage startups as an intern, founding engineer, design lead, or growth partner. Explore curated startup roles on HookZ."
@@ -357,7 +357,7 @@ export const OpportunitiesPage: React.FC = () => {
               }}
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {opportunities.map((opp) => (
                 <div
                   key={opp.id}

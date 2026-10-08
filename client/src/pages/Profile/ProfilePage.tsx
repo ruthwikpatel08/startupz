@@ -778,6 +778,34 @@ export const ProfilePage: React.FC = () => {
       }
 
       postsList.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      // Filter out any orphaned LAUNCH posts whose startup has been deleted
+      try {
+        const { data: activeStartups } = await supabase
+          .from('startups')
+          .select('id, name')
+          .eq('founder_id', authorId);
+
+        const activeNames = new Set((activeStartups || []).map((s: any) => s.name?.toLowerCase()));
+        const activeIds = new Set((activeStartups || []).map((s: any) => s.id));
+
+        postsList = postsList.filter((p: any) => {
+          if (p.postType === 'LAUNCH' || p.title?.startsWith('Announcing ')) {
+            if (p.startupId && !activeIds.has(p.startupId)) return false;
+            if (p.title) {
+              const match = p.title.match(/Announcing (.+) on HookZ/i);
+              if (match && match[1]) {
+                const sName = match[1].trim().toLowerCase();
+                if (!activeNames.has(sName)) return false;
+              }
+            }
+          }
+          return true;
+        });
+      } catch (err) {
+        console.warn('Startup check notice for user posts:', err);
+      }
+
       setUserPosts(postsList);
     } catch (err) {
       console.error('Failed to load profile posts:', err);
@@ -1381,8 +1409,8 @@ export const ProfilePage: React.FC = () => {
       setSaving(false);
       return;
     }
-    if (headlineWords > 50) {
-      setSaveError('Headline cannot exceed 50 words.');
+    if (headlineWords > 20) {
+      setSaveError('Headline cannot exceed 20 words.');
       setSaving(false);
       return;
     }
@@ -3235,8 +3263,8 @@ export const ProfilePage: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Headline</label>
-                    <span className={`text-[10px] font-medium ${(formData.headline?.trim().split(/\s+/).filter(Boolean).length || 0) > 50 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
-                      {formData.headline?.trim().split(/\s+/).filter(Boolean).length || 0}/50 words
+                    <span className={`text-[10px] font-medium ${(formData.headline?.trim().split(/\s+/).filter(Boolean).length || 0) > 20 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                      {formData.headline?.trim().split(/\s+/).filter(Boolean).length || 0}/20 words
                     </span>
                   </div>
                   <input
@@ -3249,8 +3277,8 @@ export const ProfilePage: React.FC = () => {
                   {formData.headline && formData.headline.trim().length > 0 && formData.headline.trim().length < 3 && (
                     <p className="text-[10px] text-rose-500 mt-1">Must be at least 3 characters</p>
                   )}
-                  {formData.headline && (formData.headline.trim().split(/\s+/).filter(Boolean).length || 0) > 50 && (
-                    <p className="text-[10px] text-rose-500 mt-1">Cannot exceed 50 words</p>
+                  {formData.headline && (formData.headline.trim().split(/\s+/).filter(Boolean).length || 0) > 20 && (
+                    <p className="text-[10px] text-rose-500 mt-1">Cannot exceed 20 words</p>
                   )}
                 </div>
                 <div>

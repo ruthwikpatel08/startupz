@@ -215,7 +215,7 @@ export const BusinessPage: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       <SEO
         title="Business & Innovation Opportunities | HookZ"
         description="Explore enterprise collaboration, pilot opportunities, venture partnerships, and talent directories on HookZ."
