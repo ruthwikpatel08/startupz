@@ -149,11 +149,11 @@ const PROFILE_CACHE_TTL_MS = 5000; // 5 seconds fresh cache TTL
 
 export const KNOWN_ACCOUNT_MAP: Record<string, string> = {
   'admin': 'admin@startupz.com',
-  'ruthwik': 'ruthwikpatel08@gmail.com',
-  'ruthwikpatel': 'ruthwikpatel08@gmail.com',
-  'ruthwikpatel08': 'ruthwikpatel08@gmail.com',
-  'gokul': 'gokulvamshi@hookz.in',
-  'gokulvamshi': 'gokulvamshi@hookz.in',
+  'ruthwik': 'ruthwik9595@gmail.com',
+  'ruthwikpatel': 'ruthwik9595@gmail.com',
+  'ruthwikpatel08': 'ruthwik9595@gmail.com',
+  'gokul': 'gokulvamshi.workspace@gmail.com',
+  'gokulvamshi': 'gokulvamshi.workspace@gmail.com',
   'legacy': 'legacyplayer04@gmail.com',
   'legacyplayer': 'legacyplayer04@gmail.com',
   'legacyplayer04': 'legacyplayer04@gmail.com',
@@ -237,47 +237,47 @@ export async function fetchUserProfile(userId: string, forceRefresh = false, ema
         if (!data) {
           if (uName === 'ruthwikpatel08' || uName === 'ruthwik' || uName === 'ruthwikpatel') {
             data = {
-              id: 'p-ruthwik',
-              user_id: 'c3e1a001-8888-4444-9999-000000000001',
-              email: 'ruthwikpatel08@gmail.com',
-              full_name: 'Ruthwik Patel',
+              id: 'b669157c-4d30-42f4-a8bf-4e27dc425e00',
+              user_id: 'b669157c-4d30-42f4-a8bf-4e27dc425e00',
+              email: 'ruthwik9595@gmail.com',
+              full_name: 'Ruthwik patel',
               username: 'ruthwikpatel08',
               preferred_role: 'FOUNDER',
               role: 'FOUNDER',
-              headline: 'Founder & Lead Architect | HookZ',
-              one_line_bio: 'Leading HookZ to connect builders, co-founders, and investors worldwide.',
-              bio: 'Architected and founded HookZ with the vision to bridge ambitious student builders, technical co-founders, and early-stage capital. Passionate about full-stack systems, product scaling, and democratizing startup discovery worldwide.',
-              avatar: '/images/founders/ruthwik-patel.png',
-              location: 'Bengaluru / Hyderabad, India',
-              skills: 'Full-Stack Architecture, React, Node.js, Product Strategy, Startup Scaling, AI Systems',
-              startup_experience: 'Founder & Lead Architect @ HookZ',
-              achievements: 'Architected HookZ network platform.',
-              education: 'Computer Science & Software Systems',
-              open_to: 'Co-Founder, Startup Team, Mentorship, Investment',
-              profile_completion: 100,
+              headline: 'Founder of Hookz',
+              one_line_bio: 'Started',
+              bio: 'Started',
+              avatar: '',
+              location: 'Hyderabad, Telangana, India',
+              skills: '',
+              startup_experience: '',
+              achievements: '',
+              education: '',
+              open_to: 'Startup Team',
+              profile_completion: 40,
               verification_badge: 'HookZ Founder',
               is_verified: true,
             };
           } else if (uName === 'gokulvamshi' || uName === 'gokul') {
             data = {
-              id: 'p-gokul',
-              user_id: 'c3e1a001-8888-4444-9999-000000000002',
-              email: 'gokulvamshi@hookz.in',
+              id: '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba',
+              user_id: '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba',
+              email: 'gokulvamshi.workspace@gmail.com',
               full_name: 'Gokul Vamshi',
               username: 'gokulvamshi',
-              preferred_role: 'COFOUNDER',
-              role: 'COFOUNDER',
-              headline: 'Co-Founder & Operations | HookZ',
-              one_line_bio: 'Co-Founder at HookZ. Building startup partnerships, student community initiatives, and collaborative venture infrastructure.',
-              bio: 'Co-founded HookZ to empower student innovators and entrepreneurial ecosystems. Drives operations, strategic venture partnerships, builder relations, and collaborative project infrastructure across university and startup communities.',
-              avatar: '/images/founders/gokul-vamshi.jpg',
-              location: 'Telangana / Hyderabad, India',
-              skills: 'Venture Operations, Strategic Partnerships, Community Growth, Product Ops',
-              startup_experience: 'Co-Founder & Operations @ HookZ',
-              achievements: 'Co-founded HookZ startup platform.',
-              education: 'Business Operations & Venture Growth',
-              open_to: 'Co-Founder, Startup Team, Mentorship, Partnerships',
-              profile_completion: 100,
+              preferred_role: 'DEVELOPER',
+              role: 'DEVELOPER',
+              headline: 'Student | Technical Builder',
+              one_line_bio: 'Student | Technical Builder',
+              bio: '',
+              avatar: '',
+              location: 'Kolhapur',
+              skills: 'React, Node.js',
+              startup_experience: '',
+              achievements: '',
+              education: '',
+              open_to: 'Co-Founder,Startup Team,Investment',
+              profile_completion: 40,
               verification_badge: 'HookZ Co-Founder',
               is_verified: true,
             };
@@ -697,11 +697,18 @@ export const isUUID = (val?: string | null): boolean =>
 export async function resolveUserIdToUUID(identifier?: string | null): Promise<string | null> {
   if (!identifier) return null;
   if (isUUID(identifier)) return identifier;
+  const clean = identifier.toLowerCase().trim().replace(/^@/, '');
+  if (clean === 'ruthwikpatel08' || clean === 'ruthwik' || clean.includes('ruthwik9595')) {
+    return 'b669157c-4d30-42f4-a8bf-4e27dc425e00';
+  }
+  if (clean === 'gokulvamshi' || clean === 'gokul' || clean.includes('gokulvamshi.workspace')) {
+    return '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba';
+  }
   try {
     const { data: p } = await supabase
       .from('profiles')
       .select('user_id')
-      .or(`username.eq.${identifier},full_name.ilike.${identifier},email.ilike.${identifier}`)
+      .or(`username.ilike.${clean},full_name.ilike.%${clean}%,email.ilike.%${clean}%`)
       .limit(1)
       .maybeSingle();
     if (p?.user_id && isUUID(p.user_id)) {

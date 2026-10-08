@@ -47,6 +47,8 @@ export const BusinessPage: React.FC = () => {
   // Founders data & loading state
   const [founders, setFounders] = useState<any[]>([]);
   const [loadingFounders, setLoadingFounders] = useState(false);
+  const [ruthwikProfile, setRuthwikProfile] = useState<any>(null);
+  const [gokulProfile, setGokulProfile] = useState<any>(null);
 
   // Modals for Pitch & Connect
   const [connectUser, setConnectUser] = useState<any | null>(null);
@@ -79,6 +81,30 @@ export const BusinessPage: React.FC = () => {
     const loadFounders = async () => {
       setLoadingFounders(true);
       try {
+        // Fetch Ruthwik & Gokul leadership profiles from Supabase
+        const { data: leadProfiles } = await supabase
+          .from('profiles')
+          .select('id, user_id, full_name, username, headline, one_line_bio, avatar, location, skills, preferred_role, bio, email')
+          .or('username.ilike.ruthwikpatel08,username.ilike.gokulvamshi,email.ilike.%ruthwik9595%,email.ilike.%gokulvamshi%');
+
+        if (leadProfiles && Array.isArray(leadProfiles)) {
+          const rp = leadProfiles.find(
+            (p: any) =>
+              p.username?.toLowerCase() === 'ruthwikpatel08' ||
+              p.email?.toLowerCase().includes('ruthwik') ||
+              p.user_id === 'b669157c-4d30-42f4-a8bf-4e27dc425e00'
+          );
+          if (rp) setRuthwikProfile(rp);
+
+          const gv = leadProfiles.find(
+            (p: any) =>
+              p.username?.toLowerCase() === 'gokulvamshi' ||
+              p.email?.toLowerCase().includes('gokul') ||
+              p.user_id === '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba'
+          );
+          if (gv) setGokulProfile(gv);
+        }
+
         const { data: supaProfiles } = await supabase
           .from('profiles')
           .select('id, user_id, full_name, username, headline, one_line_bio, avatar, location, skills, preferred_role, bio')
@@ -408,152 +434,266 @@ export const BusinessPage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Ruthwik Patel */}
-              <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3.5">
-                <div className="space-y-2.5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <Avatar
-                        src="/images/founders/ruthwik-patel.png"
-                        name="Ruthwik Patel"
-                        size="lg"
-                      />
-                      <div>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <Link
-                            to="/profile/ruthwikpatel08"
-                            className="font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
-                          >
-                            Ruthwik Patel
-                          </Link>
-                          <Link
-                            to="/profile/ruthwikpatel08"
-                            className="text-xs text-brand-600 dark:text-brand-400 font-mono hover:underline"
-                          >
-                            @ruthwikpatel08
-                          </Link>
+              {(() => {
+                const rp = ruthwikProfile || {
+                  id: 'b669157c-4d30-42f4-a8bf-4e27dc425e00',
+                  user_id: 'b669157c-4d30-42f4-a8bf-4e27dc425e00',
+                  full_name: 'Ruthwik patel',
+                  username: 'ruthwikpatel08',
+                  headline: 'Founder of Hookz',
+                  location: 'Hyderabad, Telangana, India',
+                  bio: 'Started',
+                  one_line_bio: 'Started',
+                  avatar: '',
+                  skills: '',
+                  email: 'ruthwik9595@gmail.com',
+                };
+                const rpDisplayName = rp.full_name || 'Ruthwik patel';
+                const rpUsername = rp.username || 'ruthwikpatel08';
+                const rpHeadline = rp.headline || 'Founder of Hookz';
+                const rpLocation = rp.location || 'Hyderabad, Telangana, India';
+                const rpBio = rp.bio || rp.one_line_bio || '';
+                const rpSkills = (rp.skills || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+                const rpConnStatus = connectionStatusMap.get(rp.user_id || rp.id);
+                const rpTargetUserObj = {
+                  id: rp.user_id || rp.id,
+                  email: rp.email || '',
+                  profile: {
+                    fullName: rpDisplayName,
+                    username: rpUsername,
+                    avatar: rp.avatar || '',
+                    headline: rpHeadline,
+                  },
+                };
+
+                return (
+                  <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3.5">
+                    <div className="space-y-2.5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            src={rp.avatar || ''}
+                            name={rpDisplayName}
+                            size="lg"
+                          />
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <Link
+                                to={`/profile/${rpUsername}`}
+                                className="font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                              >
+                                {rpDisplayName}
+                              </Link>
+                              <Link
+                                to={`/profile/${rpUsername}`}
+                                className="text-xs text-brand-600 dark:text-brand-400 font-mono hover:underline"
+                              >
+                                @{rpUsername}
+                              </Link>
+                            </div>
+                            <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 mt-0.5">
+                              {rpHeadline}
+                            </p>
+                            <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                              <span className="flex items-center gap-1">
+                                <MapPin size={12} /> {rpLocation}
+                              </span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <Clock size={12} /> Full-time Founder
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 mt-0.5">
-                          Founder & Lead Architect
+                        <GoldenBadge label="HookZ Founder" size="sm" />
+                      </div>
+
+                      {rpBio && (
+                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                          {rpBio}
                         </p>
-                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
-                          <span className="flex items-center gap-1">
-                            <MapPin size={12} /> Bengaluru / Hyderabad, India
-                          </span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            <Clock size={12} /> Full-time Founder
-                          </span>
+                      )}
+
+                      {rpSkills.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {rpSkills.map((skill: string) => (
+                            <span
+                              key={skill}
+                              className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
+                            >
+                              {skill}
+                            </span>
+                          ))}
                         </div>
+                      )}
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
+                      <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 font-medium">
+                        <Briefcase size={13} className="text-brand-600" /> Platform Founder
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          to={`/profile/${rpUsername}`}
+                          className="btn-primary !text-xs !py-1.5 !px-3 inline-flex items-center gap-1 shadow-xs"
+                        >
+                          <span>View Profile</span>
+                          <ArrowRight size={12} />
+                        </Link>
+                        {user?.id && user.id !== (rp.user_id || rp.id) && (
+                          rpConnStatus === 'ACCEPTED' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
+                              <Check size={12} /> Connected
+                            </span>
+                          ) : rpConnStatus === 'PENDING' ? (
+                            <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
+                              Pending
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleConnectClick(rpTargetUserObj)}
+                              className="btn-secondary !text-xs !py-1.5 !px-2.5 flex items-center gap-1"
+                            >
+                              <UserPlus size={12} /> Connect
+                            </button>
+                          )
+                        )}
                       </div>
                     </div>
-                    <GoldenBadge label="HookZ Founder" size="sm" />
                   </div>
-
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
-                    Architected and founded HookZ with the vision to bridge ambitious student builders, technical co-founders, and early-stage capital. Full-stack systems and product engineering.
-                  </p>
-
-                  <div className="flex flex-wrap gap-1">
-                    {['Full-Stack Architecture', 'Product Strategy', 'AI Systems', 'Scaling'].map((skill) => (
-                      <span
-                        key={skill}
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs text-slate-500">
-                  <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 font-medium">
-                    <Briefcase size={13} className="text-brand-600" /> Platform Founder
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to="/profile/ruthwikpatel08"
-                      className="btn-primary !text-xs !py-1.5 !px-3 inline-flex items-center gap-1 shadow-xs"
-                    >
-                      <span>View Profile</span>
-                      <ArrowRight size={12} />
-                    </Link>
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Gokul Vamshi */}
-              <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3.5">
-                <div className="space-y-2.5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <Avatar
-                        src="/images/founders/gokul-vamshi.jpg"
-                        name="Gokul Vamshi"
-                        size="lg"
-                      />
-                      <div>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <Link
-                            to="/profile/gokulvamshi"
-                            className="font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
-                          >
-                            Gokul Vamshi
-                          </Link>
-                          <Link
-                            to="/profile/gokulvamshi"
-                            className="text-xs text-brand-600 dark:text-brand-400 font-mono hover:underline"
-                          >
-                            @gokulvamshi
-                          </Link>
+              {(() => {
+                const gv = gokulProfile || {
+                  id: '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba',
+                  user_id: '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba',
+                  full_name: 'Gokul Vamshi',
+                  username: 'gokulvamshi',
+                  headline: 'Student | Technical Builder',
+                  location: 'Kolhapur',
+                  bio: '',
+                  one_line_bio: 'Student | Technical Builder',
+                  avatar: '',
+                  skills: 'React, Node.js',
+                  email: 'gokulvamshi.workspace@gmail.com',
+                };
+                const gvDisplayName = gv.full_name || 'Gokul Vamshi';
+                const gvUsername = gv.username || 'gokulvamshi';
+                const gvHeadline = gv.headline || 'Student | Technical Builder';
+                const gvLocation = gv.location || 'Kolhapur';
+                const gvBio = gv.bio || gv.one_line_bio || '';
+                const gvSkills = (gv.skills || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+                const gvConnStatus = connectionStatusMap.get(gv.user_id || gv.id);
+                const gvTargetUserObj = {
+                  id: gv.user_id || gv.id,
+                  email: gv.email || '',
+                  profile: {
+                    fullName: gvDisplayName,
+                    username: gvUsername,
+                    avatar: gv.avatar || '',
+                    headline: gvHeadline,
+                  },
+                };
+
+                return (
+                  <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3.5">
+                    <div className="space-y-2.5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            src={gv.avatar || ''}
+                            name={gvDisplayName}
+                            size="lg"
+                          />
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <Link
+                                to={`/profile/${gvUsername}`}
+                                className="font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                              >
+                                {gvDisplayName}
+                              </Link>
+                              <Link
+                                to={`/profile/${gvUsername}`}
+                                className="text-xs text-brand-600 dark:text-brand-400 font-mono hover:underline"
+                              >
+                                @{gvUsername}
+                              </Link>
+                            </div>
+                            <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 mt-0.5">
+                              {gvHeadline}
+                            </p>
+                            <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                              <span className="flex items-center gap-1">
+                                <MapPin size={12} /> {gvLocation}
+                              </span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <Clock size={12} /> Full-time Founder
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 mt-0.5">
-                          Co-Founder & Operations
+                        <GoldenBadge label="HookZ Co-Founder" size="sm" />
+                      </div>
+
+                      {gvBio && (
+                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                          {gvBio}
                         </p>
-                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
-                          <span className="flex items-center gap-1">
-                            <MapPin size={12} /> Telangana / Hyderabad, India
-                          </span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            <Clock size={12} /> Full-time Founder
-                          </span>
+                      )}
+
+                      {gvSkills.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {gvSkills.map((skill: string) => (
+                            <span
+                              key={skill}
+                              className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
+                            >
+                              {skill}
+                            </span>
+                          ))}
                         </div>
+                      )}
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
+                      <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 font-medium">
+                        <Briefcase size={13} className="text-brand-600" /> Platform Co-Founder
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          to={`/profile/${gvUsername}`}
+                          className="btn-primary !text-xs !py-1.5 !px-3 inline-flex items-center gap-1 shadow-xs"
+                        >
+                          <span>View Profile</span>
+                          <ArrowRight size={12} />
+                        </Link>
+                        {user?.id && user.id !== (gv.user_id || gv.id) && (
+                          gvConnStatus === 'ACCEPTED' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
+                              <Check size={12} /> Connected
+                            </span>
+                          ) : gvConnStatus === 'PENDING' ? (
+                            <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
+                              Pending
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleConnectClick(gvTargetUserObj)}
+                              className="btn-secondary !text-xs !py-1.5 !px-2.5 flex items-center gap-1"
+                            >
+                              <UserPlus size={12} /> Connect
+                            </button>
+                          )
+                        )}
                       </div>
                     </div>
-                    <GoldenBadge label="HookZ Co-Founder" size="sm" />
                   </div>
-
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
-                    Co-founded HookZ to empower student innovators and entrepreneurial ecosystems. Drives operations, builder relations, and venture community growth.
-                  </p>
-
-                  <div className="flex flex-wrap gap-1">
-                    {['Operations', 'Partnerships', 'Community Growth', 'Product Ops'].map((skill) => (
-                      <span
-                        key={skill}
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs text-slate-500">
-                  <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 font-medium">
-                    <Briefcase size={13} className="text-brand-600" /> Platform Co-Founder
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to="/profile/gokulvamshi"
-                      className="btn-primary !text-xs !py-1.5 !px-3 inline-flex items-center gap-1 shadow-xs"
-                    >
-                      <span>View Profile</span>
-                      <ArrowRight size={12} />
-                    </Link>
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
             </div>
           </div>
 
@@ -568,6 +708,8 @@ export const BusinessPage: React.FC = () => {
             const visibleFounders = founders.filter((f) => {
               if (user?.id && (f.user_id === user.id || f.id === user.id || f.userId === user.id)) return false;
               if (user?.email && f.email && f.email.toLowerCase() === user.email.toLowerCase()) return false;
+              if (f.username?.toLowerCase() === 'ruthwikpatel08' || f.username?.toLowerCase() === 'gokulvamshi') return false;
+              if (f.user_id === 'b669157c-4d30-42f4-a8bf-4e27dc425e00' || f.user_id === '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba') return false;
               const fIds = [f.user_id, f.id, f.userId].filter(Boolean);
               const isConnected = fIds.some(
                 (id) => connectionStatusMap.get(id) === 'ACCEPTED' || connectionStatusMap.get(id) === 'CONNECTED'

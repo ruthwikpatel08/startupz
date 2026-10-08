@@ -13,6 +13,7 @@ import {
   removeConnection,
   ConnectionStatusInfo,
   invalidateUserProfileCache,
+  isUuid,
 } from '../../lib/supabase';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
@@ -174,7 +175,8 @@ export const ProfilePage: React.FC = () => {
     targetId && (
       targetId.toLowerCase() === 'ruthwikpatel08' ||
       targetId.toLowerCase().includes('ruthwik') ||
-      targetId === 'c3e1a001-8888-4444-9999-000000000001'
+      targetId === 'c3e1a001-8888-4444-9999-000000000001' ||
+      targetId === 'b669157c-4d30-42f4-a8bf-4e27dc425e00'
     )
   );
 
@@ -182,23 +184,29 @@ export const ProfilePage: React.FC = () => {
     targetId && (
       targetId.toLowerCase() === 'gokulvamshi' ||
       targetId.toLowerCase().includes('gokul') ||
-      targetId === 'c3e1a001-8888-4444-9999-000000000002'
+      targetId === 'c3e1a001-8888-4444-9999-000000000002' ||
+      targetId === '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba'
     )
   );
 
   const isCurrentRuthwik = Boolean(
     currentUser && (
       currentUser.email?.toLowerCase() === 'ruthwikpatel08@gmail.com' ||
+      currentUser.email?.toLowerCase() === 'ruthwik9595@gmail.com' ||
       currentUser.profile?.username?.toLowerCase() === 'ruthwikpatel08' ||
-      currentUser.id === 'c3e1a001-8888-4444-9999-000000000001'
+      currentUser.id === 'c3e1a001-8888-4444-9999-000000000001' ||
+      currentUser.id === 'b669157c-4d30-42f4-a8bf-4e27dc425e00'
     )
   );
 
   const isCurrentGokul = Boolean(
     currentUser && (
       currentUser.email?.toLowerCase() === 'gokulvamshi@hookz.in' ||
+      currentUser.email?.toLowerCase() === 'gokulvamshi.workspace@gmail.com' ||
+      currentUser.email?.toLowerCase() === 'gokulvamshi@gmail.com' ||
       currentUser.profile?.username?.toLowerCase() === 'gokulvamshi' ||
-      currentUser.id === 'c3e1a001-8888-4444-9999-000000000002'
+      currentUser.id === 'c3e1a001-8888-4444-9999-000000000002' ||
+      currentUser.id === '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba'
     )
   );
 
@@ -221,21 +229,33 @@ export const ProfilePage: React.FC = () => {
   const isProfileFounder = Boolean(
     isTargetRuthwik ||
     profileUser?.email?.toLowerCase() === 'ruthwikpatel08@gmail.com' ||
+    profileUser?.email?.toLowerCase() === 'ruthwik9595@gmail.com' ||
     profileUser?.profile?.username?.toLowerCase() === 'ruthwikpatel08' ||
     profileUser?.id === 'c3e1a001-8888-4444-9999-000000000001' ||
+    profileUser?.id === 'b669157c-4d30-42f4-a8bf-4e27dc425e00' ||
     (isMe && isCurrentRuthwik)
   );
 
   const isProfileCoFounder = Boolean(
     isTargetGokul ||
     profileUser?.email?.toLowerCase() === 'gokulvamshi@hookz.in' ||
+    profileUser?.email?.toLowerCase() === 'gokulvamshi.workspace@gmail.com' ||
     profileUser?.email?.toLowerCase() === 'gokulvamshi@gmail.com' ||
     profileUser?.profile?.username?.toLowerCase() === 'gokulvamshi' ||
     profileUser?.id === 'c3e1a001-8888-4444-9999-000000000002' ||
+    profileUser?.id === '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba' ||
     (isMe && isCurrentGokul)
   );
 
   const isFounderOrCoFounder = isProfileFounder || isProfileCoFounder;
+
+  // The admin bar is displayed ONLY when Ruthwik views his own profile or Gokul views his own profile (never to other users)
+  const isFounderSelf = Boolean(
+    isMe && (
+      (isCurrentRuthwik && (isProfileFounder || isTargetRuthwik)) ||
+      (isCurrentGokul && (isProfileCoFounder || isTargetGokul))
+    )
+  );
 
   const [adminStats, setAdminStats] = useState<any>(null);
   const [adminBarExpanded, setAdminBarExpanded] = useState(false);
@@ -831,12 +851,13 @@ export const ProfilePage: React.FC = () => {
     try {
       if (isTargetRuthwik) {
         // 1. HookZ Founder - Ruthwik Patel
-        const sbProfile = await fetchUserProfileFromSupabase('ruthwikpatel08', true, 'ruthwikpatel08@gmail.com').catch(() => null);
+        const sbProfile = await fetchUserProfileFromSupabase('ruthwikpatel08', true, 'ruthwik9595@gmail.com').catch(() => null);
+        const realUserId = sbProfile?.user_id || 'b669157c-4d30-42f4-a8bf-4e27dc425e00';
         const rpUser: any = {
-          id: sbProfile?.user_id || 'c3e1a001-8888-4444-9999-000000000001',
-          email: 'ruthwikpatel08@gmail.com',
-          username: 'ruthwikpatel08',
-          role: 'FOUNDER',
+          id: realUserId,
+          email: sbProfile?.email || 'ruthwik9595@gmail.com',
+          username: sbProfile?.username || 'ruthwikpatel08',
+          role: sbProfile?.preferred_role || 'FOUNDER',
           roleChangeCount: 0,
           isVerified: true,
           verificationBadge: 'HookZ Founder',
@@ -846,29 +867,29 @@ export const ProfilePage: React.FC = () => {
           connectionStatus: null,
           startups: [],
           profile: {
-            id: sbProfile?.id || 'p-ruthwik',
-            userId: sbProfile?.user_id || 'c3e1a001-8888-4444-9999-000000000001',
-            fullName: 'Ruthwik Patel',
-            username: 'ruthwikpatel08',
-            headline: sbProfile?.headline || 'Founder & Lead Architect | HookZ',
-            oneLineBio: sbProfile?.one_line_bio || 'Leading HookZ to connect builders, co-founders, and investors worldwide.',
-            location: sbProfile?.location || 'Bengaluru / Hyderabad, India',
-            bio: sbProfile?.bio || 'Architected and founded HookZ with the vision to bridge ambitious student builders, technical co-founders, and early-stage capital. Passionate about full-stack systems, product scaling, and democratizing startup discovery worldwide.',
-            avatar: sbProfile?.avatar || '/images/founders/ruthwik-patel.png',
+            id: sbProfile?.id || realUserId,
+            userId: realUserId,
+            fullName: sbProfile?.full_name || 'Ruthwik Patel',
+            username: sbProfile?.username || 'ruthwikpatel08',
+            headline: sbProfile?.headline || 'Founder of Hookz',
+            oneLineBio: sbProfile?.one_line_bio || sbProfile?.headline || 'Started',
+            location: sbProfile?.location || 'Hyderabad, Telangana, India',
+            bio: sbProfile?.bio || '',
+            avatar: sbProfile?.avatar || '',
             coverImage: sbProfile?.cover_image || '',
-            skills: sbProfile?.skills || 'Full-Stack Architecture, React, Node.js, Product Strategy, Startup Scaling, AI Systems',
-            startupInterests: sbProfile?.startup_interests || 'Ecosystem Infrastructure, AI, Open Data',
-            industries: sbProfile?.industries || 'Technology & Innovation, Artificial Intelligence',
+            skills: sbProfile?.skills || '',
+            startupInterests: sbProfile?.startup_interests || '',
+            industries: sbProfile?.industries || '',
             preferredRole: 'Founder',
             availability: sbProfile?.availability || 'Full-time',
-            startupExperience: sbProfile?.startup_experience || 'Founder & Lead Architect @ HookZ',
-            achievements: sbProfile?.achievements || 'Architected HookZ network platform.',
-            education: sbProfile?.education || 'Computer Science & Software Systems',
+            startupExperience: sbProfile?.startup_experience || '',
+            achievements: sbProfile?.achievements || '',
+            education: sbProfile?.education || '',
             githubUrl: sbProfile?.github_url || '',
             linkedinUrl: sbProfile?.linkedin_url || '',
             websiteUrl: sbProfile?.website_url || '',
-            openTo: sbProfile?.open_to || 'Co-Founder, Startup Team, Mentorship, Investment',
-            profileCompletion: 100,
+            openTo: sbProfile?.open_to || 'Startup Team',
+            profileCompletion: sbProfile?.profile_completion || 40,
           },
         };
         setProfileUser(rpUser);
@@ -876,14 +897,16 @@ export const ProfilePage: React.FC = () => {
           updateUser(rpUser);
         }
         fetchUserPosts(rpUser.id);
+        loadConnectionsAndStatus();
       } else if (isTargetGokul) {
         // 2. HookZ Co-Founder - Gokul Vamshi
-        const sbProfile = await fetchUserProfileFromSupabase('gokulvamshi', true, 'gokulvamshi@hookz.in').catch(() => null);
+        const sbProfile = await fetchUserProfileFromSupabase('gokulvamshi', true, 'gokulvamshi.workspace@gmail.com').catch(() => null);
+        const realUserId = sbProfile?.user_id || '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba';
         const gvUser: any = {
-          id: sbProfile?.user_id || 'c3e1a001-8888-4444-9999-000000000002',
-          email: 'gokulvamshi@hookz.in',
-          username: 'gokulvamshi',
-          role: 'FOUNDER',
+          id: realUserId,
+          email: sbProfile?.email || 'gokulvamshi.workspace@gmail.com',
+          username: sbProfile?.username || 'gokulvamshi',
+          role: sbProfile?.preferred_role || 'COFOUNDER',
           roleChangeCount: 0,
           isVerified: true,
           verificationBadge: 'HookZ Co-Founder',
@@ -893,29 +916,29 @@ export const ProfilePage: React.FC = () => {
           connectionStatus: null,
           startups: [],
           profile: {
-            id: sbProfile?.id || 'p-gokul',
-            userId: sbProfile?.user_id || 'c3e1a001-8888-4444-9999-000000000002',
-            fullName: 'Gokul Vamshi',
-            username: 'gokulvamshi',
-            headline: sbProfile?.headline || 'Co-Founder & Operations | HookZ',
-            oneLineBio: sbProfile?.one_line_bio || 'Co-Founder at HookZ. Building startup partnerships, student community initiatives, and collaborative venture infrastructure.',
-            location: sbProfile?.location || 'Telangana / Hyderabad, India',
-            bio: sbProfile?.bio || 'Co-founded HookZ to empower student innovators and entrepreneurial ecosystems. Drives operations, strategic venture partnerships, builder relations, and collaborative project infrastructure across university and startup communities.',
-            avatar: sbProfile?.avatar || '/images/founders/gokul-vamshi.jpg',
+            id: sbProfile?.id || realUserId,
+            userId: realUserId,
+            fullName: sbProfile?.full_name || 'Gokul Vamshi',
+            username: sbProfile?.username || 'gokulvamshi',
+            headline: sbProfile?.headline || 'Student | Technical Builder',
+            oneLineBio: sbProfile?.one_line_bio || sbProfile?.headline || '',
+            location: sbProfile?.location || 'Kolhapur',
+            bio: sbProfile?.bio || '',
+            avatar: sbProfile?.avatar || '',
             coverImage: sbProfile?.cover_image || '',
-            skills: sbProfile?.skills || 'Venture Operations, Strategic Partnerships, Community Growth, Product Ops',
-            startupInterests: sbProfile?.startup_interests || 'Student Communities, Venture Incubation, Product Growth',
-            industries: sbProfile?.industries || 'Technology & Innovation, Community Platforms',
+            skills: sbProfile?.skills || 'React, Node.js',
+            startupInterests: sbProfile?.startup_interests || '',
+            industries: sbProfile?.industries || '',
             preferredRole: 'Co-Founder',
             availability: sbProfile?.availability || 'Full-time',
-            startupExperience: sbProfile?.startup_experience || 'Co-Founder & Operations @ HookZ',
-            achievements: sbProfile?.achievements || 'Co-founded HookZ startup platform.',
-            education: sbProfile?.education || 'Business Operations & Venture Growth',
+            startupExperience: sbProfile?.startup_experience || '',
+            achievements: sbProfile?.achievements || '',
+            education: sbProfile?.education || '',
             githubUrl: sbProfile?.github_url || '',
             linkedinUrl: sbProfile?.linkedin_url || '',
             websiteUrl: sbProfile?.website_url || '',
-            openTo: sbProfile?.open_to || 'Co-Founder, Startup Team, Mentorship, Partnerships',
-            profileCompletion: 100,
+            openTo: sbProfile?.open_to || 'Co-Founder,Startup Team,Investment',
+            profileCompletion: sbProfile?.profile_completion || 40,
           },
         };
         setProfileUser(gvUser);
@@ -923,6 +946,7 @@ export const ProfilePage: React.FC = () => {
           updateUser(gvUser);
         }
         fetchUserPosts(gvUser.id);
+        loadConnectionsAndStatus();
       } else {
         // 3. Regular user profile lookup
         const sbProfile = await fetchUserProfileFromSupabase(targetId, true, isMe ? currentUser?.email || undefined : undefined).catch(() => null);
@@ -1003,10 +1027,20 @@ export const ProfilePage: React.FC = () => {
   const loadConnectionsList = async (userId: string) => {
     setConnectionsListLoading(true);
     try {
+      let resolvedId = userId;
+      if (!isUuid(resolvedId)) {
+        if (resolvedId.toLowerCase().includes('ruthwik')) resolvedId = 'b669157c-4d30-42f4-a8bf-4e27dc425e00';
+        else if (resolvedId.toLowerCase().includes('gokul')) resolvedId = '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba';
+        else {
+          const p = await fetchUserProfileFromSupabase(resolvedId, false).catch(() => null);
+          if (p?.user_id) resolvedId = p.user_id;
+        }
+      }
+
       const { data: conns } = await supabase
         .from('connections')
         .select('*')
-        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+        .or(`sender_id.eq.${resolvedId},receiver_id.eq.${resolvedId}`)
         .eq('status', 'ACCEPTED');
 
       if (!conns || conns.length === 0) {
@@ -1014,7 +1048,7 @@ export const ProfilePage: React.FC = () => {
         return;
       }
 
-      const otherIds = conns.map((c) => (c.sender_id === userId ? c.receiver_id : c.sender_id));
+      const otherIds = conns.map((c) => (c.sender_id === resolvedId ? c.receiver_id : c.sender_id));
       const { data: profiles } = await supabase
         .from('profiles')
         .select('*')
@@ -1022,7 +1056,7 @@ export const ProfilePage: React.FC = () => {
       const profMap = new Map((profiles || []).map((p) => [p.user_id, p]));
 
       const list = conns.map((c) => {
-        const otherId = c.sender_id === userId ? c.receiver_id : c.sender_id;
+        const otherId = c.sender_id === resolvedId ? c.receiver_id : c.sender_id;
         const p = profMap.get(otherId);
         return {
           connectionId: c.id,
@@ -1045,7 +1079,10 @@ export const ProfilePage: React.FC = () => {
 
   const handleOpenConnectionsModal = () => {
     setConnectionsModalOpen(true);
-    const userId = targetId || profileUser?.id;
+    const userId =
+      profileUser?.profile?.userId ||
+      profileUser?.id ||
+      (isTargetRuthwik ? 'b669157c-4d30-42f4-a8bf-4e27dc425e00' : isTargetGokul ? '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba' : targetId);
     if (userId) loadConnectionsList(userId);
   };
 
@@ -1092,10 +1129,15 @@ export const ProfilePage: React.FC = () => {
 
   const loadConnectionsAndStatus = async () => {
     try {
-      const checkTargetId =
+      let checkTargetId =
         profileUser?.profile?.userId ||
         profileUser?.id ||
-        (isMe ? currentUser?.id : targetId);
+        (isMe ? currentUser?.id : (isTargetRuthwik ? 'b669157c-4d30-42f4-a8bf-4e27dc425e00' : isTargetGokul ? '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba' : targetId));
+
+      if (checkTargetId && !isUuid(checkTargetId)) {
+        if (checkTargetId.toLowerCase().includes('ruthwik')) checkTargetId = 'b669157c-4d30-42f4-a8bf-4e27dc425e00';
+        else if (checkTargetId.toLowerCase().includes('gokul')) checkTargetId = '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba';
+      }
 
       if (checkTargetId) {
         const countPromise = fetchConnectionCount(checkTargetId);
@@ -1608,9 +1650,9 @@ export const ProfilePage: React.FC = () => {
       <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6 w-full overflow-x-hidden">
 
         {/* ============================================================== */}
-        {/* ADMIN BAR: Rendered ONLY on Founder & Co-Founder profiles     */}
+        {/* ADMIN BAR: Rendered ONLY on Founder & Co-Founder profiles FOR THEMSELVES */}
         {/* ============================================================== */}
-        {isFounderOrCoFounder && (
+        {isFounderSelf && (
           <div className="rounded-2xl border border-amber-500/30 dark:border-amber-400/30 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950 text-white shadow-xl shadow-brand-950/20 p-4 sm:p-5 relative overflow-hidden backdrop-blur-md transition-all">
             {/* Ambient Lighting Accents */}
             <div className="absolute -top-16 -right-16 w-56 h-56 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
