@@ -40,10 +40,12 @@ export const ForgotPasswordPage: React.FC = () => {
       <SEO title="Reset Password | HookZ" noindex={true} />
       <div className="max-w-md w-full space-y-6">
         <div className="text-center">
-          <Link to="/" className="inline-flex items-center gap-2 mb-3">
-            <div className="w-9 h-9 rounded-md bg-brand-600 flex items-center justify-center text-white shadow-xs">
-              <Rocket size={18} />
-            </div>
+          <Link to="/" className="inline-flex items-center gap-2 mb-3 group">
+            <img
+              src="/logo-icon.png"
+              alt="HookZ"
+              className="w-8 h-8 rounded-md object-contain shadow-xs group-hover:scale-105 transition-transform"
+            />
             <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
               Hook<span className="text-brand-600 dark:text-brand-400">Z</span>
             </span>

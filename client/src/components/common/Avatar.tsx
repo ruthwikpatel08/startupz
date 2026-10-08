@@ -68,7 +68,7 @@ export const Avatar: React.FC<AvatarProps> = ({
     >
       {showDefaultLogo && size === '2xl' ? (
         <div className="flex flex-col items-center justify-center">
-          <Rocket className="w-8 h-8 mb-1 text-white" />
+          <img src="/logo-icon.png" alt="HookZ" className="w-8 h-8 mb-1 object-contain" />
           <span className="text-xs font-semibold tracking-wider">{initials}</span>
         </div>
       ) : (

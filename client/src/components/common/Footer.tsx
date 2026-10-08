@@ -19,10 +19,12 @@ export const Footer: React.FC = () => {
           
           {/* Brand Col */}
           <div className="space-y-3.5">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-md bg-brand-600 flex items-center justify-center text-white">
-                <Rocket size={15} />
-              </div>
+            <Link to="/" className="flex items-center gap-2 group">
+              <img
+                src="/logo-icon.png"
+                alt="HookZ"
+                className="w-7 h-7 rounded-md object-contain shadow-xs group-hover:scale-105 transition-transform"
+              />
               <span className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                 Hook<span className="text-brand-600">Z</span>
               </span>

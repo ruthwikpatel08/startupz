@@ -33,9 +33,12 @@ export const PublicLandingPage: React.FC = () => {
           zIndex: 50,
         }}
       >
-        <span style={{ fontWeight: 800, fontSize: 22, color: '#4f46e5', letterSpacing: '-0.5px' }}>
-          HookZ
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <img src="/logo-icon.png" alt="HookZ" style={{ width: 28, height: 28, objectFit: 'contain' }} />
+          <span style={{ fontWeight: 800, fontSize: 22, color: '#4f46e5', letterSpacing: '-0.5px' }}>
+            HookZ
+          </span>
+        </div>
         <div style={{ display: 'flex', gap: 12 }}>
           <Link
             to="/login"

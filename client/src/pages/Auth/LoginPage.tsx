@@ -143,10 +143,12 @@ export const LoginPage: React.FC = () => {
           
           {/* Top Logo & Header */}
           <div className="text-center mb-6">
-            <Link to="/" className="inline-flex items-center justify-center mb-3">
-              <div className="w-11 h-11 rounded-xl bg-brand-600 flex items-center justify-center text-white shadow-sm hover:scale-105 transition-transform">
-                <Rocket size={22} />
-              </div>
+            <Link to="/" className="inline-flex items-center justify-center mb-3 group">
+              <img
+                src="/logo-icon.png"
+                alt="HookZ"
+                className="w-12 h-12 object-contain group-hover:scale-105 transition-transform"
+              />
             </Link>
             <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Welcome back to Hook<span className="text-brand-600">Z</span>

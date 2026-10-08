@@ -197,11 +197,13 @@ export const Navbar: React.FC = () => {
               <Link
                 to={user ? '/dashboard' : '/login'}
                 title="HookZ"
-                className="flex items-center gap-2 cursor-pointer"
+                className="flex items-center gap-2 cursor-pointer group"
               >
-                <div className="w-7 h-7 rounded-md bg-brand-600 flex items-center justify-center text-white shadow-subtle">
-                  <Rocket size={15} />
-                </div>
+                <img
+                  src="/logo-icon.png"
+                  alt="HookZ"
+                  className="w-7 h-7 rounded-md object-contain shadow-xs group-hover:scale-105 transition-transform"
+                />
                 <span className="text-base font-extrabold startupz-logo-title tracking-tight text-slate-900 dark:text-white">
                   Hook<span className="text-brand-600">Z</span>
                 </span>
