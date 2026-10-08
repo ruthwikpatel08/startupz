@@ -29,6 +29,7 @@ import {
   BriefcaseBusiness,
   GraduationCap,
   X,
+  Edit3,
 } from 'lucide-react';
 
 export function getUserCategory(user: any): 'students' | 'others' | 'founders' | 'cofounders' | 'marketers' | 'investors' | 'mentors' {
@@ -311,6 +312,44 @@ export const FindCoFounderPage: React.FC = () => {
               },
             };
           });
+
+          // Always ensure current user's profile is fresh with updated role
+          if (currentUser?.id) {
+            const { data: myP } = await supabase
+              .from('profiles')
+              .select('*')
+              .or(`user_id.eq.${currentUser.id},id.eq.${currentUser.id}`)
+              .maybeSingle();
+            if (myP) {
+              const mappedMyP = {
+                id: myP.user_id || myP.id,
+                email: myP.email,
+                role: (myP.preferred_role || 'FOUNDER').toUpperCase(),
+                preferred_role: myP.preferred_role,
+                verificationBadge: myP.auth_provider === 'google' ? 'Verified via Google' : 'Active Builder',
+                matchPercentage: null,
+                matchExplanation: null,
+                profile: {
+                  id: myP.id,
+                  userId: myP.user_id || myP.id,
+                  fullName: myP.full_name,
+                  username: myP.username || (myP.email ? myP.email.split('@')[0] : 'user'),
+                  headline: myP.headline || '',
+                  oneLineBio: myP.one_line_bio || myP.headline || '',
+                  location: myP.location || '',
+                  bio: myP.bio || '',
+                  avatar: myP.avatar,
+                  coverImage: myP.cover_image || '',
+                  skills: myP.skills || '',
+                  preferredRole: myP.preferred_role,
+                  availability: myP.availability || 'Full-time',
+                  openTo: myP.open_to,
+                },
+              };
+              supaMappedProfiles.unshift(mappedMyP);
+            }
+          }
+
           cachedSupaProfiles = supaMappedProfiles;
           cachedSupaProfilesExpiresAt = Date.now() + CACHE_TTL_MS;
         }
@@ -428,7 +467,8 @@ export const FindCoFounderPage: React.FC = () => {
       const candId = (cand.id || cand.profile?.userId || cand.profile?.id || '').trim();
       const candUsername = (cand.profile?.username || (candEmail ? candEmail.split('@')[0] : '')).toLowerCase().trim();
 
-      // 1. DO NOT show the currently logged-in user's profile to themselves!
+      // 1. Identify if this is the currently logged-in user's profile
+      let isMe = false;
       if (currentUser) {
         const curEmail = (currentUser.email || '').toLowerCase().trim();
         const curId = (currentUser.id || '').trim();
@@ -436,24 +476,30 @@ export const FindCoFounderPage: React.FC = () => {
         const curFullName = (currentUser.profile?.fullName || '').toLowerCase().trim();
         const candFullName = (cand.profile?.fullName || cand.organization || '').toLowerCase().trim();
 
-        if (curEmail && candEmail && curEmail === candEmail) continue;
-        if (curId && candId && curId === candId) continue;
-        if (curUsername && candUsername && curUsername === candUsername) continue;
-        if (curFullName && candFullName && curFullName === candFullName) continue;
+        if (
+          (curEmail && candEmail && curEmail === candEmail) ||
+          (curId && candId && curId === candId) ||
+          (curUsername && candUsername && curUsername === candUsername) ||
+          (curFullName && candFullName && curFullName === candFullName)
+        ) {
+          isMe = true;
+        }
       }
 
-      // 2. DO NOT show already connected people to the user!
-      if (
-        (candId && connectedUserIds.has(candId)) ||
-        (cand.userId && connectedUserIds.has(cand.userId)) ||
-        (cand.user_id && connectedUserIds.has(cand.user_id)) ||
-        (cand.user?.id && connectedUserIds.has(cand.user.id)) ||
-        (cand.profile?.userId && connectedUserIds.has(cand.profile.userId)) ||
-        (cand.profile?.id && connectedUserIds.has(cand.profile.id)) ||
-        cand.connectionStatus === 'CONNECTED' ||
-        cand.connectionStatus === 'ACCEPTED'
-      ) {
-        continue;
+      // 2. DO NOT show already connected people to the user (unless viewing own profile)
+      if (!isMe) {
+        if (
+          (candId && connectedUserIds.has(candId)) ||
+          (cand.userId && connectedUserIds.has(cand.userId)) ||
+          (cand.user_id && connectedUserIds.has(cand.user_id)) ||
+          (cand.user?.id && connectedUserIds.has(cand.user.id)) ||
+          (cand.profile?.userId && connectedUserIds.has(cand.profile.userId)) ||
+          (cand.profile?.id && connectedUserIds.has(cand.profile.id)) ||
+          cand.connectionStatus === 'CONNECTED' ||
+          cand.connectionStatus === 'ACCEPTED'
+        ) {
+          continue;
+        }
       }
 
       // 2. Strict deduplication - never show the same profile multiple times!
@@ -503,7 +549,7 @@ export const FindCoFounderPage: React.FC = () => {
         if (!roleMatch.includes(targetRole.toLowerCase())) continue;
       }
 
-      filteredCandidates.push(cand);
+      filteredCandidates.push({ ...cand, isMe });
     }
 
     return filteredCandidates;
@@ -910,7 +956,7 @@ export const FindCoFounderPage: React.FC = () => {
                       <div>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <Link
-                            to={`/profile/${cand.id}`}
+                            to={cand.isMe ? '/profile' : `/profile/${cand.id}`}
                             className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
                           >
                             {displayName}
@@ -918,6 +964,12 @@ export const FindCoFounderPage: React.FC = () => {
                           <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
                             @{username}
                           </span>
+                          <RoleBadge role={categoryRole} size="sm" />
+                          {cand.isMe && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-100 text-brand-700 dark:bg-brand-950/80 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+                              You
+                            </span>
+                          )}
                           <VerificationBadge badge={cand.verificationBadge} isVerified={true} size="sm" />
                         </div>
                         <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{cand.profile?.headline}</p>
@@ -959,51 +1011,70 @@ export const FindCoFounderPage: React.FC = () => {
                 </div>
 
                 <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
-                  <span className="text-xs text-slate-400 font-normal">
-                    {cand.profile?.startupExperience || 'Active Builder'}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <RoleBadge role={categoryRole} size="sm" />
+                  </div>
 
                   <div className="flex items-center gap-1.5">
-                    <Link
-                      to={`/profile/${cand.id}`}
-                      className="btn-tertiary !text-xs !py-1 !px-2"
-                    >
-                      View Profile
-                    </Link>
-
-                    {/* Startup Connection Button */}
-                    <button
-                      onClick={() => setStartupConnectUser(cand)}
-                      className="btn-secondary !text-xs !py-1 !px-2.5 flex items-center gap-1"
-                      title="Propose Co-Founding a Startup"
-                    >
-                      <Rocket size={12} /> Pitch
-                    </button>
-
-                    {/* User Connection Button */}
-                    {cand.connectionStatus?.status === 'ACCEPTED' ? (
-                      <div className="flex items-center gap-1.5">
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
-                          <Check size={12} /> Connected
-                        </span>
+                    {cand.isMe ? (
+                      <>
                         <Link
-                          to={`/messages?user=${cand.id}`}
-                          className="btn-primary !text-xs !py-1 !px-2 flex items-center gap-1"
+                          to="/profile"
+                          className="btn-primary !text-xs !py-1 !px-2.5 flex items-center gap-1"
                         >
-                          <MessageSquare size={12} /> Chat
+                          <Edit3 size={12} /> Edit Profile
                         </Link>
-                      </div>
-                    ) : cand.connectionStatus?.status === 'PENDING' ? (
-                      <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
-                        Pending
-                      </span>
+                        <Link
+                          to="/profile"
+                          className="btn-tertiary !text-xs !py-1 !px-2"
+                        >
+                          View
+                        </Link>
+                      </>
                     ) : (
-                      <button
-                        onClick={() => setConnectUser(cand)}
-                        className="btn-primary !text-xs !py-1 !px-2.5 flex items-center gap-1"
-                      >
-                        <UserPlus size={12} /> Connect
-                      </button>
+                      <>
+                        <Link
+                          to={`/profile/${cand.id}`}
+                          className="btn-tertiary !text-xs !py-1 !px-2"
+                        >
+                          View Profile
+                        </Link>
+
+                        {/* Startup Connection Button */}
+                        <button
+                          onClick={() => setStartupConnectUser(cand)}
+                          className="btn-secondary !text-xs !py-1 !px-2.5 flex items-center gap-1"
+                          title="Propose Co-Founding a Startup"
+                        >
+                          <Rocket size={12} /> Pitch
+                        </button>
+
+                        {/* User Connection Button */}
+                        {cand.connectionStatus?.status === 'ACCEPTED' ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
+                              <Check size={12} /> Connected
+                            </span>
+                            <Link
+                              to={`/messages?user=${cand.id}`}
+                              className="btn-primary !text-xs !py-1 !px-2 flex items-center gap-1"
+                            >
+                              <MessageSquare size={12} /> Chat
+                            </Link>
+                          </div>
+                        ) : cand.connectionStatus?.status === 'PENDING' ? (
+                          <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
+                            Pending
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setConnectUser(cand)}
+                            className="btn-primary !text-xs !py-1 !px-2.5 flex items-center gap-1"
+                          >
+                            <UserPlus size={12} /> Connect
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

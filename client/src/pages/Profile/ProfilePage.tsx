@@ -16,6 +16,7 @@ import {
   isUuid,
 } from '../../lib/supabase';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
+import { invalidateFindCoFounderCache } from '../CoFounders/FindCoFounderPage';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { StartupConnectionModal } from '../../components/common/StartupConnectionModal';
 import { ReportModal } from '../../components/common/ReportModal';
@@ -1558,6 +1559,7 @@ export const ProfilePage: React.FC = () => {
       setEditOpen(false);
       setPhotoSavedNotice('Profile changes saved successfully!');
       setTimeout(() => setPhotoSavedNotice(null), 4000);
+      invalidateFindCoFounderCache();
       window.dispatchEvent(new CustomEvent('profile_updated', { detail: authoritativeUser }));
     } catch (err: any) {
       setSaveError(err.message || 'Failed to update profile.');
@@ -2020,7 +2022,7 @@ export const ProfilePage: React.FC = () => {
                         <span>Official HookZ Leadership</span>
                       </span>
                     )}
-                    {isMe && <RoleBadge role={profileUser.role} />}
+                    <RoleBadge role={profileUser.role || p.preferredRole || 'STUDENT'} />
                   </div>
 
                   <p className="text-sm sm:text-base font-normal text-slate-600 dark:text-slate-300">

@@ -24,6 +24,7 @@ import {
   MapPin,
   Clock,
   Crown,
+  Edit3,
 } from 'lucide-react';
 import { GoogleAccountChooserModal } from '../components/auth/GoogleAccountChooserModal';
 import { QuickLoginModal } from '../components/auth/QuickLoginModal';
@@ -36,6 +37,68 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { SEO } from '../components/common/SEO';
 
+export function getProfileRoleAndCategory(profile: any): {
+  role: string;
+  category: 'students' | 'founders' | 'cofounders' | 'others';
+} {
+  const pref = (profile.preferred_role || profile.preferredRole || profile.role || '').toString().trim();
+  const prefUpper = pref.toUpperCase();
+  const headline = (profile.headline || '').toLowerCase();
+  const bio = (profile.bio || profile.one_line_bio || profile.oneLineBio || '').toLowerCase();
+
+  // 1. Explicit role check
+  if (prefUpper.includes('STUDENT')) {
+    return { role: 'Student', category: 'students' };
+  }
+  if (prefUpper.includes('COFOUNDER') || prefUpper.includes('CO-FOUNDER')) {
+    return { role: 'Co-Founder', category: 'cofounders' };
+  }
+  if (prefUpper.includes('FOUNDER')) {
+    return { role: 'Founder', category: 'founders' };
+  }
+  if (prefUpper.includes('INVESTOR') || prefUpper.includes('INVESTING') || profile.investorProfile) {
+    return { role: 'Investor', category: 'others' };
+  }
+  if (prefUpper.includes('MENTOR') || prefUpper.includes('ADVISOR') || profile.mentorProfile) {
+    return { role: 'Mentor', category: 'others' };
+  }
+  if (prefUpper.includes('MARKETER') || prefUpper.includes('MARKETING') || prefUpper.includes('GROWTH')) {
+    return { role: 'Marketer', category: 'others' };
+  }
+  if (prefUpper.includes('DEVELOPER') || prefUpper.includes('ENGINEER')) {
+    return { role: 'Developer', category: 'others' };
+  }
+  if (prefUpper.includes('DESIGNER')) {
+    return { role: 'Designer', category: 'others' };
+  }
+  if (prefUpper.startsWith('OTHER:')) {
+    const customRole = pref.substring(6).trim();
+    return { role: customRole || 'Other', category: 'others' };
+  }
+  if (prefUpper === 'OTHER' || prefUpper === 'OTHERS') {
+    return { role: 'Others', category: 'others' };
+  }
+
+  // 2. Fallback based on headline/bio if role is generic or empty
+  if (headline.includes('student') || bio.includes('student')) {
+    return { role: 'Student', category: 'students' };
+  }
+  if (headline.includes('co-founder') || headline.includes('cofounder')) {
+    return { role: 'Co-Founder', category: 'cofounders' };
+  }
+  if (headline.includes('founder')) {
+    return { role: 'Founder', category: 'founders' };
+  }
+  if (headline.includes('developer') || headline.includes('engineer')) {
+    return { role: 'Developer', category: 'others' };
+  }
+  if (headline.includes('designer')) {
+    return { role: 'Designer', category: 'others' };
+  }
+
+  return { role: pref || 'Student', category: 'students' };
+}
+
 export const LandingPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -45,77 +108,98 @@ export const LandingPage: React.FC = () => {
   const [recentConnections, setRecentConnections] = useState<any[]>([]);
   const [otherProfiles, setOtherProfiles] = useState<any[]>([]);
   const [otherProfilesLoading, setOtherProfilesLoading] = useState<boolean>(true);
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'students' | 'founders' | 'cofounders' | 'others'>('all');
   const [connectUser, setConnectUser] = useState<any | null>(null);
   const [startupConnectUser, setStartupConnectUser] = useState<any | null>(null);
   const [connectionStatusMap, setConnectionStatusMap] = useState<Map<string, string>>(new Map());
 
-  // Fetch profiles of students and members who selected 'other' / custom roles
+  // Fetch profiles across categories and listen for real-time updates
   useEffect(() => {
     let isMounted = true;
-    const fetchOtherAndStudentMembers = async () => {
+    const fetchCommunityProfiles = async () => {
       try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(40);
+        const [byUpdatedRes, byCreatedRes] = await Promise.allSettled([
+          supabase
+            .from('profiles')
+            .select('*')
+            .order('updated_at', { ascending: false, nullsFirst: false })
+            .limit(60),
+          supabase
+            .from('profiles')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(60),
+        ]);
 
-        let filtered: any[] = [];
-        if (data && data.length > 0) {
-          filtered = data.filter((p: any) => {
-            const role = (p.preferred_role || '').toLowerCase();
-            const headline = (p.headline || '').toLowerCase();
-            return (
-              role.includes('student') ||
-              role === 'student' ||
-              role.includes('other') ||
-              role === 'other' ||
-              role.startsWith('other:') ||
-              role.includes('sales') ||
-              headline.includes('student') ||
-              headline.includes('operator') ||
-              headline.includes('specialist') ||
-              (!role.includes('founder') && !role.includes('investor') && !role.includes('mentor'))
-            );
-          });
+        let rawList: any[] = [];
+        if (byUpdatedRes.status === 'fulfilled' && byUpdatedRes.value.data) {
+          rawList = [...rawList, ...byUpdatedRes.value.data];
+        }
+        if (byCreatedRes.status === 'fulfilled' && byCreatedRes.value.data) {
+          rawList = [...rawList, ...byCreatedRes.value.data];
         }
 
-        // Format raw profiles to extract clean role label from real profiles only
-        const mappedFiltered = filtered.map((p) => {
-          let roleLabel = 'Others';
-          const pref = p.preferred_role || '';
-          if (pref.toLowerCase().includes('student') || (p.headline && p.headline.toLowerCase().includes('student'))) {
-            roleLabel = 'Student';
-          } else if (pref.toLowerCase().startsWith('other:')) {
-            roleLabel = pref.substring(6).trim();
-          } else if (pref.toLowerCase() === 'other' || pref.toLowerCase() === 'others') {
-            roleLabel = 'Others';
-          } else if (pref) {
-            roleLabel = pref;
+        // Always ensure the logged-in user's profile is included with latest data
+        if (user?.id) {
+          const { data: myProf } = await supabase
+            .from('profiles')
+            .select('*')
+            .or(`user_id.eq.${user.id},id.eq.${user.id}`)
+            .maybeSingle();
+          if (myProf) {
+            rawList.unshift(myProf);
           }
+        }
+
+        // Deduplicate profiles by user_id / id
+        const profMap = new Map<string, any>();
+        for (const p of rawList) {
+          const key = p.user_id || p.id || p.email;
+          if (key && !profMap.has(key)) {
+            profMap.set(key, p);
+          }
+        }
+
+        const mapped = Array.from(profMap.values()).map((p) => {
+          const { role, category } = getProfileRoleAndCategory(p);
           return {
             ...p,
-            role_label: roleLabel,
+            role_label: role,
+            category: category,
             oneLineBio: p.one_line_bio || p.headline || '',
           };
         });
 
-        const unique = Array.from(new Map(mappedFiltered.map((item) => [item.full_name || item.id, item])).values());
         if (isMounted) {
-          setOtherProfiles(unique.slice(0, 8));
+          setOtherProfiles(mapped);
         }
-      } catch {
-        // Fallback
+      } catch (err) {
+        console.warn('Failed to load community profiles:', err);
       } finally {
         if (isMounted) setOtherProfilesLoading(false);
       }
     };
 
-    fetchOtherAndStudentMembers();
+    fetchCommunityProfiles();
+
+    // Listen for realtime database changes on profiles table
+    const profilesChannel = supabase
+      .channel('landing-page-profiles-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        fetchCommunityProfiles();
+      })
+      .subscribe();
+
+    // Listen for client-side profile save event
+    const handleProfileEvt = () => fetchCommunityProfiles();
+    window.addEventListener('profile_updated', handleProfileEvt);
+
     return () => {
       isMounted = false;
+      supabase.removeChannel(profilesChannel);
+      window.removeEventListener('profile_updated', handleProfileEvt);
     };
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -245,16 +329,51 @@ export const LandingPage: React.FC = () => {
         <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Community Profiles: Students, Operators, Specialists & Community Members */}
           <div className="w-full mb-10">
-            <div className="mb-6">
+            <div className="mb-4">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 text-xs font-semibold border border-brand-200/60 dark:border-brand-900/60 mb-1.5">
                 <Sparkles size={12} /> Community Talent Showcase
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                Students, Specialists & Community Members
+                Students, Founders & Ecosystem Talent
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                Discover ambitious students, operators, specialists & emerging innovators across the ecosystem
+                Discover ambitious students, founders, co-founders & innovators across their respective roles
               </p>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+              {[
+                { id: 'all', label: 'All Talent', count: otherProfiles.length },
+                { id: 'students', label: 'Students', count: otherProfiles.filter((p) => p.category === 'students').length },
+                { id: 'founders', label: 'Founders', count: otherProfiles.filter((p) => p.category === 'founders').length },
+                { id: 'cofounders', label: 'Co-Founders', count: otherProfiles.filter((p) => p.category === 'cofounders').length },
+                { id: 'others', label: 'Specialists & Others', count: otherProfiles.filter((p) => p.category === 'others').length },
+              ].map((tab) => {
+                const isActive = selectedCategory === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setSelectedCategory(tab.id as any)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+                      isActive
+                        ? 'bg-brand-600 text-white shadow-xs'
+                        : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                        isActive
+                          ? 'bg-white/20 text-white'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
             {otherProfilesLoading ? (
@@ -263,13 +382,9 @@ export const LandingPage: React.FC = () => {
               </div>
             ) : (() => {
               const visibleProfiles = otherProfiles.filter((p) => {
-                if (user?.id && (p.user_id === user.id || p.id === user.id || p.userId === user.id)) return false;
-                if (user?.email && p.email && p.email.toLowerCase() === user.email.toLowerCase()) return false;
-                const pIds = [p.user_id, p.id, p.userId].filter(Boolean);
-                const isConnected = pIds.some(
-                  (id) => connectionStatusMap.get(id) === 'ACCEPTED' || connectionStatusMap.get(id) === 'CONNECTED'
-                ) || p.connectionStatus === 'ACCEPTED' || p.connectionStatus === 'CONNECTED';
-                if (isConnected) return false;
+                if (selectedCategory !== 'all' && p.category !== selectedCategory) {
+                  return false;
+                }
                 return true;
               });
 
@@ -277,7 +392,7 @@ export const LandingPage: React.FC = () => {
                 return (
                   <div className="text-center py-8 px-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                      You are connected with all featured talent. Explore more peers in the directory!
+                      No members found in this category yet.
                     </p>
                     <Link
                       to="/cofounders"
@@ -291,12 +406,20 @@ export const LandingPage: React.FC = () => {
 
               return (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {visibleProfiles.map((p) => {
+                  {visibleProfiles.slice(0, 12).map((p) => {
                     const displayName = p.full_name || 'Community Member';
                     const displayRole = p.role_label || 'Other';
                     const username = p.username || displayName.toLowerCase().replace(/\s+/g, '_');
                     const profileUrl = p.user_id ? `/profile/${p.user_id}` : '/cofounders';
                     const connStatus = p.user_id ? connectionStatusMap.get(p.user_id) : undefined;
+                    const isMe = Boolean(
+                      user && (
+                        (p.user_id && p.user_id === user.id) ||
+                        (p.id && p.id === user.id) ||
+                        (p.userId && p.userId === user.id) ||
+                        (p.email && user.email && p.email.toLowerCase() === user.email.toLowerCase())
+                      )
+                    );
                     const targetUserObj = {
                       id: p.user_id || p.id,
                       email: p.email || '',
@@ -311,7 +434,11 @@ export const LandingPage: React.FC = () => {
                     return (
                       <div
                         key={p.id}
-                        className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3"
+                        className={`p-4 rounded-xl bg-white dark:bg-slate-900 border ${
+                          isMe
+                            ? 'border-brand-400 dark:border-brand-600 ring-1 ring-brand-400/30'
+                            : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                        } shadow-subtle transition-colors flex flex-col justify-between space-y-3`}
                       >
                         <div className="space-y-2.5">
                           <div className="flex items-start justify-between gap-3">
@@ -332,6 +459,12 @@ export const LandingPage: React.FC = () => {
                                   <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
                                     @{username}
                                   </span>
+                                  <RoleBadge role={displayRole} size="sm" />
+                                  {isMe && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-100 text-brand-700 dark:bg-brand-950/80 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+                                      You
+                                    </span>
+                                  )}
                                   <VerificationBadge badge="Active Builder" isVerified={true} size="sm" />
                                 </div>
                                 <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{p.headline}</p>
@@ -348,7 +481,7 @@ export const LandingPage: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* One-Line Bio (Normal with bold letters, no quotes, instead of skills) */}
+                          {/* One-Line Bio */}
                           {(p.one_line_bio || p.oneLineBio) && (
                             <p className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-2 pt-0.5">
                               {p.one_line_bio || p.oneLineBio}
@@ -357,51 +490,70 @@ export const LandingPage: React.FC = () => {
                         </div>
 
                         <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
-                          <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                            Active Builder
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <RoleBadge role={displayRole} size="sm" />
+                          </div>
 
                           <div className="flex items-center gap-1.5">
-                            <Link
-                              to={profileUrl}
-                              className="btn-tertiary !text-xs !py-1 !px-2"
-                            >
-                              View Profile
-                            </Link>
-
-                            {/* Startup Connection (Pitch) Button */}
-                            <button
-                              onClick={() => handlePitchClick(targetUserObj)}
-                              className="btn-secondary !text-xs !py-1 !px-2.5 flex items-center gap-1"
-                              title="Propose Co-Founding a Startup"
-                            >
-                              <Rocket size={12} /> Pitch
-                            </button>
-
-                            {/* User Connection Button */}
-                            {connStatus === 'ACCEPTED' ? (
-                              <div className="flex items-center gap-1.5">
-                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
-                                  <Check size={12} /> Connected
-                                </span>
+                            {isMe ? (
+                              <>
                                 <Link
-                                  to={`/messages?user=${p.user_id}`}
-                                  className="btn-primary !text-xs !py-1 !px-2 flex items-center gap-1"
+                                  to="/profile"
+                                  className="btn-primary !text-xs !py-1 !px-2.5 flex items-center gap-1"
                                 >
-                                  <MessageSquare size={12} /> Chat
+                                  <Edit3 size={12} /> Edit Profile
                                 </Link>
-                              </div>
-                            ) : connStatus === 'PENDING' ? (
-                              <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
-                                Pending
-                              </span>
+                                <Link
+                                  to="/profile"
+                                  className="btn-tertiary !text-xs !py-1 !px-2"
+                                >
+                                  View
+                                </Link>
+                              </>
                             ) : (
-                              <button
-                                onClick={() => handleConnectClick(targetUserObj)}
-                                className="btn-primary !text-xs !py-1 !px-2.5 flex items-center gap-1"
-                              >
-                                <UserPlus size={12} /> Connect
-                              </button>
+                              <>
+                                <Link
+                                  to={profileUrl}
+                                  className="btn-tertiary !text-xs !py-1 !px-2"
+                                >
+                                  View Profile
+                                </Link>
+
+                                {/* Startup Connection (Pitch) Button */}
+                                <button
+                                  onClick={() => handlePitchClick(targetUserObj)}
+                                  className="btn-secondary !text-xs !py-1 !px-2.5 flex items-center gap-1"
+                                  title="Propose Co-Founding a Startup"
+                                >
+                                  <Rocket size={12} /> Pitch
+                                </button>
+
+                                {/* User Connection Button */}
+                                {connStatus === 'ACCEPTED' ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
+                                      <Check size={12} /> Connected
+                                    </span>
+                                    <Link
+                                      to={`/messages?user=${p.user_id}`}
+                                      className="btn-primary !text-xs !py-1 !px-2 flex items-center gap-1"
+                                    >
+                                      <MessageSquare size={12} /> Chat
+                                    </Link>
+                                  </div>
+                                ) : connStatus === 'PENDING' ? (
+                                  <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
+                                    Pending
+                                  </span>
+                                ) : (
+                                  <button
+                                    onClick={() => handleConnectClick(targetUserObj)}
+                                    className="btn-primary !text-xs !py-1 !px-2.5 flex items-center gap-1"
+                                  >
+                                    <UserPlus size={12} /> Connect
+                                  </button>
+                                )}
+                              </>
                             )}
                           </div>
                         </div>

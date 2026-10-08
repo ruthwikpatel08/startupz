@@ -111,10 +111,16 @@ export const BusinessPage: React.FC = () => {
           .or('preferred_role.ilike.%founder%,headline.ilike.%founder%')
           .limit(8);
 
-        const mappedFounders = (supaProfiles || []).map((f: any) => ({
-          ...f,
-          oneLineBio: f.one_line_bio || f.headline || '',
-        }));
+        const mappedFounders = (supaProfiles || [])
+          .filter((f: any) => {
+            const pref = (f.preferred_role || '').trim().toUpperCase();
+            if (pref && !pref.includes('FOUNDER')) return false;
+            return true;
+          })
+          .map((f: any) => ({
+            ...f,
+            oneLineBio: f.one_line_bio || f.headline || '',
+          }));
 
         const unique = Array.from(new Map(mappedFounders.map((f: any) => [f.full_name || f.id, f])).values());
         setFounders(unique.slice(0, 6));
@@ -138,19 +144,21 @@ export const BusinessPage: React.FC = () => {
     }
 
     const handleConnEvt = () => {
-      if (user?.id && activeTab === 'network') loadFounders();
+      if (activeTab === 'network') loadFounders();
     };
     window.addEventListener('connections_updated', handleConnEvt);
+    window.addEventListener('profile_updated', handleConnEvt);
 
     const channel = supabase
       .channel('business-founders-conns')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'connections' }, () => {
-        if (user?.id && activeTab === 'network') loadFounders();
+        if (activeTab === 'network') loadFounders();
       })
       .subscribe();
 
     return () => {
       window.removeEventListener('connections_updated', handleConnEvt);
+      window.removeEventListener('profile_updated', handleConnEvt);
       supabase.removeChannel(channel);
     };
   }, [activeTab, user?.id]);

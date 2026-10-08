@@ -514,7 +514,7 @@ export async function upsertUserProfile(
   }
 
   // 3. Keep Supabase Auth session metadata in sync with profile edits
-  if (dbPayload.full_name || dbPayload.avatar !== undefined) {
+  if (dbPayload.full_name || dbPayload.avatar !== undefined || dbPayload.preferred_role !== undefined) {
     try {
       const authMetaUpdate: any = {};
       if (dbPayload.full_name) {
@@ -524,6 +524,9 @@ export async function upsertUserProfile(
       if (dbPayload.avatar !== undefined) {
         authMetaUpdate.avatar_url = dbPayload.avatar;
         authMetaUpdate.picture = dbPayload.avatar;
+      }
+      if (dbPayload.preferred_role !== undefined) {
+        authMetaUpdate.role = dbPayload.preferred_role;
       }
       await supabase.auth.updateUser({ data: authMetaUpdate });
     } catch {
