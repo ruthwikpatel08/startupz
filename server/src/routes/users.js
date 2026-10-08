@@ -418,8 +418,17 @@ router.get('/recommendations', requireAuth, async (req, res) => {
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await prisma.user.findUnique({
-      where: { id },
+    const cleanId = (id || '').trim().toLowerCase().replace(/^@/, '');
+
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id },
+          { profile: { username: cleanId } },
+          { email: cleanId },
+          { email: { startsWith: `${cleanId}@` } },
+        ],
+      },
       include: {
         profile: true,
         startups: {

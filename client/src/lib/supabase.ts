@@ -139,6 +139,21 @@ const userProfileCache = new Map<string, { data: any; expiresAt: number }>();
 const inFlightProfileRequests = new Map<string, Promise<any | null>>();
 const PROFILE_CACHE_TTL_MS = 5000; // 5 seconds fresh cache TTL
 
+export const KNOWN_ACCOUNT_MAP: Record<string, string> = {
+  'admin': 'admin@startupz.com',
+  'ruthwik': 'ruthwikpatel08@gmail.com',
+  'ruthwikpatel': 'ruthwikpatel08@gmail.com',
+  'ruthwikpatel08': 'ruthwikpatel08@gmail.com',
+  'gokul': 'gokulvamshi@hookz.in',
+  'gokulvamshi': 'gokulvamshi@hookz.in',
+  'legacy': 'legacyplayer04@gmail.com',
+  'legacyplayer': 'legacyplayer04@gmail.com',
+  'legacyplayer04': 'legacyplayer04@gmail.com',
+  'lavan': 'lavanyadav0206@gmail.com',
+  'lavanyadav': 'lavanyadav0206@gmail.com',
+  'lavanyadav0206': 'lavanyadav0206@gmail.com',
+};
+
 export function invalidateUserProfileCache(userId?: string): void {
   if (userId) {
     userProfileCache.delete(userId);
@@ -150,14 +165,14 @@ export function invalidateUserProfileCache(userId?: string): void {
 }
 
 /**
- * Fetch a profile row from Supabase public.profiles by user UUID or email.
+ * Fetch a profile row from Supabase public.profiles by user UUID, username handle, or email.
  * Includes short in-memory caching and deduplication to prevent redundant network requests,
  * with explicit forceRefresh support to always bypass cache.
  */
 export async function fetchUserProfile(userId: string, forceRefresh = false, email?: string): Promise<any | null> {
   if (!userId && !email) return null;
 
-  const cacheKey = userId || email || '';
+  const cacheKey = (userId || email || '').trim().toLowerCase();
   if (!forceRefresh) {
     const cached = userProfileCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
@@ -184,8 +199,90 @@ export async function fetchUserProfile(userId: string, forceRefresh = false, ema
         data = res.data;
       }
 
-      // 2. If not found by UUID or not a UUID, check by email
-      const targetEmail = (email || (!isUuid(userId) && userId.includes('@') ? userId : '')).trim().toLowerCase();
+      // 2. If userId is a username handle (not a UUID and does not contain @)
+      if (!data && userId && !isUuid(userId) && !userId.includes('@')) {
+        const uName = userId.trim().toLowerCase().replace(/^@/, '');
+        
+        // 2a. Query by username column in profiles
+        const uRes = await supabase
+          .from('profiles')
+          .select('*')
+          .ilike('username', uName)
+          .maybeSingle();
+        if (uRes.data) {
+          data = uRes.data;
+        }
+
+        // 2b. If not found by username column, try known email mapping (e.g. ruthwikpatel08 -> ruthwikpatel08@gmail.com)
+        if (!data && KNOWN_ACCOUNT_MAP[uName]) {
+          const mapEmailRes = await supabase
+            .from('profiles')
+            .select('*')
+            .ilike('email', KNOWN_ACCOUNT_MAP[uName])
+            .maybeSingle();
+          if (mapEmailRes.data) {
+            data = mapEmailRes.data;
+          }
+        }
+
+        // 2c. Fallback for built-in HookZ leadership profiles
+        if (!data) {
+          if (uName === 'ruthwikpatel08' || uName === 'ruthwik' || uName === 'ruthwikpatel') {
+            data = {
+              id: 'p-ruthwik',
+              user_id: 'c3e1a001-8888-4444-9999-000000000001',
+              email: 'ruthwikpatel08@gmail.com',
+              full_name: 'Ruthwik Patel',
+              username: 'ruthwikpatel08',
+              preferred_role: 'FOUNDER',
+              role: 'FOUNDER',
+              headline: 'Founder & Lead Architect | HookZ',
+              one_line_bio: 'Leading HookZ to connect builders, co-founders, and investors worldwide.',
+              bio: 'Architected and founded HookZ with the vision to bridge ambitious student builders, technical co-founders, and early-stage capital. Passionate about full-stack systems, product scaling, and democratizing startup discovery worldwide.',
+              avatar: '/images/founders/ruthwik-patel.png',
+              location: 'Bengaluru / Hyderabad, India',
+              skills: 'Full-Stack Architecture, React, Node.js, Product Strategy, Startup Scaling, AI Systems',
+              startup_experience: 'Founder & Lead Architect @ HookZ',
+              achievements: 'Architected HookZ network platform.',
+              education: 'Computer Science & Software Systems',
+              open_to: 'Co-Founder, Startup Team, Mentorship, Investment',
+              profile_completion: 100,
+              verification_badge: 'HookZ Founder',
+              is_verified: true,
+            };
+          } else if (uName === 'gokulvamshi' || uName === 'gokul') {
+            data = {
+              id: 'p-gokul',
+              user_id: 'c3e1a001-8888-4444-9999-000000000002',
+              email: 'gokulvamshi@hookz.in',
+              full_name: 'Gokul Vamshi',
+              username: 'gokulvamshi',
+              preferred_role: 'COFOUNDER',
+              role: 'COFOUNDER',
+              headline: 'Co-Founder & Operations | HookZ',
+              one_line_bio: 'Co-Founder at HookZ. Building startup partnerships, student community initiatives, and collaborative venture infrastructure.',
+              bio: 'Co-founded HookZ to empower student innovators and entrepreneurial ecosystems. Drives operations, strategic venture partnerships, builder relations, and collaborative project infrastructure across university and startup communities.',
+              avatar: '/images/founders/gokul-vamshi.jpg',
+              location: 'Telangana / Hyderabad, India',
+              skills: 'Venture Operations, Strategic Partnerships, Community Growth, Product Ops',
+              startup_experience: 'Co-Founder & Operations @ HookZ',
+              achievements: 'Co-founded HookZ startup platform.',
+              education: 'Business Operations & Venture Growth',
+              open_to: 'Co-Founder, Startup Team, Mentorship, Partnerships',
+              profile_completion: 100,
+              verification_badge: 'HookZ Co-Founder',
+              is_verified: true,
+            };
+          }
+        }
+      }
+
+      // 3. Look up by email (only if userId was an email, or if no userId was provided)
+      const targetEmail = (
+        (!userId && email) ||
+        (userId && userId.includes('@') ? userId : (!isUuid(userId) && email ? email : ''))
+      ).trim().toLowerCase();
+
       if (!data && targetEmail) {
         const emailRes = await supabase
           .from('profiles')
@@ -194,19 +291,6 @@ export async function fetchUserProfile(userId: string, forceRefresh = false, ema
           .maybeSingle();
         if (emailRes.data) {
           data = emailRes.data;
-        }
-      }
-
-      // 3. If still not found and userId is a username (e.g. handle)
-      if (!data && userId && !isUuid(userId) && !userId.includes('@')) {
-        const uName = userId.trim().toLowerCase().replace(/^@/, '');
-        const uRes = await supabase
-          .from('profiles')
-          .select('*')
-          .ilike('username', uName)
-          .maybeSingle();
-        if (uRes.data) {
-          data = uRes.data;
         }
       }
 
@@ -491,24 +575,8 @@ export async function resolveEmailOrUsername(identifier: string): Promise<string
     return clean;
   }
 
-  // Known administrator / core account mappings
-  const knownMap: Record<string, string> = {
-    'admin': 'admin@startupz.com',
-    'ruthwik': 'ruthwikpatel08@gmail.com',
-    'ruthwikpatel': 'ruthwikpatel08@gmail.com',
-    'ruthwikpatel08': 'ruthwikpatel08@gmail.com',
-    'gokul': 'gokulvamshi@hookz.in',
-    'gokulvamshi': 'gokulvamshi@hookz.in',
-    'legacy': 'legacyplayer04@gmail.com',
-    'legacyplayer': 'legacyplayer04@gmail.com',
-    'legacyplayer04': 'legacyplayer04@gmail.com',
-    'lavan': 'lavanyadav0206@gmail.com',
-    'lavanyadav': 'lavanyadav0206@gmail.com',
-    'lavanyadav0206': 'lavanyadav0206@gmail.com',
-  };
-
-  if (knownMap[clean]) {
-    return knownMap[clean];
+  if (KNOWN_ACCOUNT_MAP[clean]) {
+    return KNOWN_ACCOUNT_MAP[clean];
   }
 
   // 1. Try finding in Supabase public.profiles table by username, full_name or email prefix
