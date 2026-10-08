@@ -419,13 +419,18 @@ export const BusinessPage: React.FC = () => {
                       />
                       <div>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                          <Link
+                            to="/profile/ruthwikpatel08"
+                            className="font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                          >
                             Ruthwik Patel
-                          </h3>
-                          <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
+                          </Link>
+                          <Link
+                            to="/profile/ruthwikpatel08"
+                            className="text-xs text-brand-600 dark:text-brand-400 font-mono hover:underline"
+                          >
                             @ruthwikpatel08
-                          </span>
-                          <VerificationBadge badge="Verified Founder" isVerified={true} size="sm" />
+                          </Link>
                         </div>
                         <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 mt-0.5">
                           Founder & Lead Architect
@@ -441,6 +446,7 @@ export const BusinessPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
+                    <GoldenBadge label="HookZ Founder" size="sm" />
                   </div>
 
                   <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
@@ -463,6 +469,15 @@ export const BusinessPage: React.FC = () => {
                   <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 font-medium">
                     <Briefcase size={13} className="text-brand-600" /> Platform Founder
                   </span>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to="/profile/ruthwikpatel08"
+                      className="btn-primary !text-xs !py-1.5 !px-3 inline-flex items-center gap-1 shadow-xs"
+                    >
+                      <span>View Profile</span>
+                      <ArrowRight size={12} />
+                    </Link>
+                  </div>
                 </div>
               </div>
 
@@ -478,13 +493,18 @@ export const BusinessPage: React.FC = () => {
                       />
                       <div>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                          <Link
+                            to="/profile/gokulvamshi"
+                            className="font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                          >
                             Gokul Vamshi
-                          </h3>
-                          <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
+                          </Link>
+                          <Link
+                            to="/profile/gokulvamshi"
+                            className="text-xs text-brand-600 dark:text-brand-400 font-mono hover:underline"
+                          >
                             @gokulvamshi
-                          </span>
-                          <VerificationBadge badge="Verified Founder" isVerified={true} size="sm" />
+                          </Link>
                         </div>
                         <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 mt-0.5">
                           Co-Founder & Operations
@@ -500,6 +520,7 @@ export const BusinessPage: React.FC = () => {
                         </div>
                       </div>
                     </div>
+                    <GoldenBadge label="HookZ Co-Founder" size="sm" />
                   </div>
 
                   <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
@@ -522,6 +543,15 @@ export const BusinessPage: React.FC = () => {
                   <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 font-medium">
                     <Briefcase size={13} className="text-brand-600" /> Platform Co-Founder
                   </span>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to="/profile/gokulvamshi"
+                      className="btn-primary !text-xs !py-1.5 !px-3 inline-flex items-center gap-1 shadow-xs"
+                    >
+                      <span>View Profile</span>
+                      <ArrowRight size={12} />
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
