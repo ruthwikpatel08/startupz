@@ -28,6 +28,8 @@ import {
   FileText,
   UserCheck,
   Trash2,
+  Edit2,
+  X,
 } from 'lucide-react';
 
 export const StartupDetailPage: React.FC = () => {
@@ -128,6 +130,67 @@ export const StartupDetailPage: React.FC = () => {
       navigate('/startups');
     } catch (err: any) {
       alert(err.message || 'Failed to delete startup.');
+    }
+  };
+
+  // Edit Startup Modal State
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    oneLineDescription: '',
+    problem: '',
+    solution: '',
+    targetCustomers: '',
+    industry: '',
+    stage: 'Idea',
+    location: '',
+    businessModel: '',
+    requiredSkills: '',
+    fundingStatus: 'Bootstrapped',
+    fundingRequired: '',
+    website: '',
+    demoLink: '',
+  });
+
+  const handleOpenEditModal = () => {
+    if (!startup) return;
+    setEditFormData({
+      name: startup.name || '',
+      oneLineDescription: startup.oneLineDescription || '',
+      problem: startup.problem || '',
+      solution: startup.solution || '',
+      targetCustomers: startup.targetCustomers || '',
+      industry: startup.industry || '',
+      stage: startup.stage || 'Idea',
+      location: startup.location || '',
+      businessModel: startup.businessModel || '',
+      requiredSkills: startup.requiredSkills || '',
+      fundingStatus: startup.fundingStatus || 'Bootstrapped',
+      fundingRequired: startup.fundingRequired || '',
+      website: startup.website || '',
+      demoLink: startup.demoLink || '',
+    });
+    setEditError(null);
+    setEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!startup) return;
+    setIsSavingEdit(true);
+    setEditError(null);
+
+    try {
+      const res = await api.updateStartup(startup.id, editFormData);
+      const updated = res.startup || { ...startup, ...editFormData };
+      setStartup((prev) => (prev ? { ...prev, ...updated } : null));
+      setEditModalOpen(false);
+    } catch (err: any) {
+      setEditError(err.message || 'Failed to update startup.');
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -257,14 +320,26 @@ export const StartupDetailPage: React.FC = () => {
             </button>
 
             {isOwner && (
-              <button
-                onClick={handleDeleteStartup}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors"
-                title="Delete this startup"
-              >
-                <Trash2 size={14} />
-                <span>Delete</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={handleOpenEditModal}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900/60 hover:bg-brand-100 dark:hover:bg-brand-900/40 transition-colors cursor-pointer"
+                  title="Edit this startup"
+                >
+                  <Edit2 size={14} />
+                  <span>Edit</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteStartup}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer"
+                  title="Delete this startup"
+                >
+                  <Trash2 size={14} />
+                  <span>Delete</span>
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -539,6 +614,263 @@ export const StartupDetailPage: React.FC = () => {
         initialTargetCustomer={startup.targetCustomers || ''}
         industry={startup.industry}
       />
+
+      {/* Edit Startup Modal */}
+      {editModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="card-base max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-dark-700 overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-dark-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-dark-850/50">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400">
+                  <Edit2 size={16} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                    Edit Startup Venture
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Update details, pitch, stage, and customer targets for {startup.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditModalOpen(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
+              {editError && (
+                <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs border border-rose-200 dark:border-rose-900">
+                  {editError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Startup Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.name}
+                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Industry *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.industry}
+                    onChange={(e) => setEditFormData({ ...editFormData, industry: e.target.value })}
+                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  One-Line Pitch / Tagline *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.oneLineDescription}
+                  onChange={(e) => setEditFormData({ ...editFormData, oneLineDescription: e.target.value })}
+                  className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Stage
+                  </label>
+                  <select
+                    value={editFormData.stage}
+                    onChange={(e) => setEditFormData({ ...editFormData, stage: e.target.value })}
+                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                  >
+                    <option value="Idea">Idea</option>
+                    <option value="Prototype">Prototype</option>
+                    <option value="MVP">MVP</option>
+                    <option value="Early Traction">Early Traction</option>
+                    <option value="Scaling">Scaling</option>
+                    <option value="Growth">Growth</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Funding Status
+                  </label>
+                  <select
+                    value={editFormData.fundingStatus}
+                    onChange={(e) => setEditFormData({ ...editFormData, fundingStatus: e.target.value })}
+                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                  >
+                    <option value="Bootstrapped">Bootstrapped</option>
+                    <option value="Seeking Angel">Seeking Angel</option>
+                    <option value="Pre-Seed">Pre-Seed</option>
+                    <option value="Seed Funded">Seed Funded</option>
+                    <option value="Series A+">Series A+</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Location
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.location}
+                    onChange={(e) => setEditFormData({ ...editFormData, location: e.target.value })}
+                    placeholder="e.g. Remote, Bangalore, SF"
+                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  The Problem It Solves *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={editFormData.problem}
+                  onChange={(e) => setEditFormData({ ...editFormData, problem: e.target.value })}
+                  className="input-base w-full px-3 py-2 text-xs sm:text-sm resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  The Proposed Solution *
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={editFormData.solution}
+                  onChange={(e) => setEditFormData({ ...editFormData, solution: e.target.value })}
+                  className="input-base w-full px-3 py-2 text-xs sm:text-sm resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Target Customers
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.targetCustomers}
+                    onChange={(e) => setEditFormData({ ...editFormData, targetCustomers: e.target.value })}
+                    placeholder="e.g. B2B SaaS, College Students"
+                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Business Model
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.businessModel}
+                    onChange={(e) => setEditFormData({ ...editFormData, businessModel: e.target.value })}
+                    placeholder="e.g. Subscription, Marketplace Fee"
+                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Required Skills / Looking For
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.requiredSkills}
+                    onChange={(e) => setEditFormData({ ...editFormData, requiredSkills: e.target.value })}
+                    placeholder="e.g. AI Engineers, Growth Marketer"
+                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Funding Required ($)
+                  </label>
+                  <input
+                    type="text"
+                    value={editFormData.fundingRequired}
+                    onChange={(e) => setEditFormData({ ...editFormData, fundingRequired: e.target.value })}
+                    placeholder="e.g. 50,000"
+                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Website URL
+                  </label>
+                  <input
+                    type="url"
+                    value={editFormData.website}
+                    onChange={(e) => setEditFormData({ ...editFormData, website: e.target.value })}
+                    placeholder="https://example.com"
+                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Demo / Pitch Link
+                  </label>
+                  <input
+                    type="url"
+                    value={editFormData.demoLink}
+                    onChange={(e) => setEditFormData({ ...editFormData, demoLink: e.target.value })}
+                    placeholder="https://youtube.com/..."
+                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditModalOpen(false)}
+                  className="btn-secondary px-4 py-2 text-xs font-medium cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEdit}
+                  className="btn-primary px-4 py-2 text-xs font-medium disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <Edit2 size={13} />
+                  <span>{isSavingEdit ? 'Saving Changes...' : 'Save Changes'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

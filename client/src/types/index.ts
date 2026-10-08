@@ -132,6 +132,9 @@ export interface StartupOpportunity {
   hasApplied?: boolean;
   isSaved?: boolean;
   applications?: OpportunityApplication[];
+  _count?: {
+    applications?: number;
+  };
 }
 
 export interface OpportunityApplication {

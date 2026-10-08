@@ -613,6 +613,50 @@ export const ProjectsPage: React.FC = () => {
     showToast('Invitation cancelled. Role reopened.');
   };
 
+  const handleDeleteRole = async (projectId: string, roleId: string) => {
+    if (!window.confirm('Are you sure you want to delete this role from the project?')) return;
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) return;
+    const nextRoles = project.roles.filter((r) => r.id !== roleId);
+    const updatedProj = { ...project, roles: nextRoles };
+
+    try {
+      await api.updateProject(projectId, { roles: nextRoles }).catch(() => null);
+    } catch {}
+
+    const updated = projects.map((p) => (p.id === projectId ? updatedProj : p));
+    saveProjects(updated);
+    syncProjectGroup(updatedProj);
+    showToast('Role deleted successfully from project.');
+  };
+
+  const handleUnassignRole = async (projectId: string, roleId: string) => {
+    if (!window.confirm('Are you sure you want to unassign this member? The role will become open again for applicants.')) return;
+    const project = projects.find((p) => p.id === projectId);
+    if (!project) return;
+    const nextRoles = project.roles.map((r) => {
+      if (r.id === roleId) {
+        return {
+          ...r,
+          status: 'OPEN' as const,
+          assignedTo: null,
+          invitedUser: null,
+        };
+      }
+      return r;
+    });
+    const updatedProj = { ...project, roles: nextRoles };
+
+    try {
+      await api.updateProject(projectId, { roles: nextRoles }).catch(() => null);
+    } catch {}
+
+    const updated = projects.map((p) => (p.id === projectId ? updatedProj : p));
+    saveProjects(updated);
+    syncProjectGroup(updatedProj);
+    showToast('Member unassigned. Role is now open for applicants.');
+  };
+
   const handleDeleteProject = async (projectId: string) => {
     if (!window.confirm('Are you sure you want to delete this project idea?')) {
       return;
@@ -1247,6 +1291,26 @@ export const ProjectsPage: React.FC = () => {
                                   <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400">
                                     Assigned
                                   </span>
+                                  {isCreator && role.roleName !== 'Project Lead' && (
+                                    <div className="flex items-center gap-1 ml-auto sm:ml-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleUnassignRole(project.id, role.id)}
+                                        className="px-2 py-0.5 rounded text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-800/80 cursor-pointer"
+                                        title="Unassign member and reopen role"
+                                      >
+                                        Unassign
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteRole(project.id, role.id)}
+                                        className="px-2 py-0.5 rounded text-[10px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200 dark:border-rose-900/60 cursor-pointer inline-flex items-center gap-0.5"
+                                        title="Delete this role from project"
+                                      >
+                                        <Trash2 size={11} /> Delete
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               ) : isInvited ? (
                                 isMyInvitedRole ? (
@@ -1340,6 +1404,16 @@ export const ProjectsPage: React.FC = () => {
                                     >
                                       Take Role
                                     </button>
+                                    {isCreator && role.roleName !== 'Project Lead' && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteRole(project.id, role.id)}
+                                        className="p-1 rounded text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 cursor-pointer inline-flex items-center gap-0.5 text-[10px]"
+                                        title="Delete this role from project"
+                                      >
+                                        <Trash2 size={13} />
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
                               ) : (

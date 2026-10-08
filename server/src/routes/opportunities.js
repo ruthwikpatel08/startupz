@@ -293,6 +293,50 @@ router.get('/my-applications', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/opportunities/:id/applications - Get all applicants for an opportunity (Founder/Creator only)
+router.get('/:id/applications', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const opp = await prisma.startupOpportunity.findUnique({
+      where: { id },
+      include: {
+        startup: {
+          select: { id: true, name: true, founderId: true },
+        },
+      },
+    });
+
+    if (!opp) {
+      return res.status(404).json({ error: 'Opportunity not found.' });
+    }
+
+    if (opp.startup.founderId !== req.user.id && !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Only the startup founder can review applicants.' });
+    }
+
+    const applications = await prisma.opportunityApplication.findMany({
+      where: { opportunityId: id },
+      include: {
+        applicant: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            isVerified: true,
+            verificationBadge: true,
+            profile: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return res.json({ applications });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to fetch applicants.' });
+  }
+});
+
 // PUT /api/opportunities/applications/:applicationId/status
 router.put('/applications/:applicationId/status', requireAuth, async (req, res) => {
   try {

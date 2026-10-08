@@ -20,7 +20,11 @@ import {
   Building,
   GraduationCap,
   Lock,
+  Users,
+  Check,
+  X,
 } from 'lucide-react';
+import { Avatar } from '../../components/common/Avatar';
 
 export const OpportunitiesPage: React.FC = () => {
   const { user } = useAuth();
@@ -56,6 +60,51 @@ export const OpportunitiesPage: React.FC = () => {
   const [applying, setApplying] = useState(false);
   const [applySuccess, setApplySuccess] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
+
+  // Review Applicants Modal state for Opportunity Founders
+  const [reviewModalOpp, setReviewModalOpp] = useState<StartupOpportunity | null>(null);
+  const [reviewApplicants, setReviewApplicants] = useState<any[]>([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewActionLoading, setReviewActionLoading] = useState<Record<string, boolean>>({});
+  const [reviewFeedbackMsg, setReviewFeedbackMsg] = useState<string | null>(null);
+
+  const handleOpenReviewModal = async (opp: StartupOpportunity) => {
+    setReviewModalOpp(opp);
+    setReviewLoading(true);
+    setReviewFeedbackMsg(null);
+    try {
+      const res = await api.getOpportunityApplications(opp.id).catch(() => null);
+      if (res && Array.isArray(res.applications)) {
+        setReviewApplicants(res.applications);
+      } else {
+        setReviewApplicants([]);
+      }
+    } catch {
+      setReviewApplicants([]);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const handleReviewDecision = async (applicationId: string, status: 'ACCEPTED' | 'DECLINED') => {
+    setReviewActionLoading((prev) => ({ ...prev, [applicationId]: true }));
+    try {
+      await api.updateApplicationStatus(applicationId, status);
+      setReviewApplicants((prev) =>
+        prev.map((app) => (app.id === applicationId ? { ...app, status } : app))
+      );
+      setReviewFeedbackMsg(
+        status === 'ACCEPTED'
+          ? 'Applicant accepted! Candidate added to startup team members.'
+          : 'Application declined.'
+      );
+      setTimeout(() => setReviewFeedbackMsg(null), 4000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to update application decision.');
+    } finally {
+      setReviewActionLoading((prev) => ({ ...prev, [applicationId]: false }));
+    }
+  };
 
   const filterFallbackOpportunities = (
     typeFilter: string,
@@ -465,22 +514,51 @@ export const OpportunitiesPage: React.FC = () => {
                         Details
                       </button>
 
-                      {opp.hasApplied ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800">
-                          <CheckCircle size={13} /> Applied
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedOpp(opp);
-                          }}
-                          className="btn-primary inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium"
-                        >
-                          <Send size={12} /> Apply Now
-                        </button>
-                      )}
+                      {(() => {
+                        const isFounder = Boolean(
+                          user &&
+                          (opp.startup?.founderId === user.id ||
+                           (opp.startup as any)?.founder?.id === user.id ||
+                           (opp as any).startupFounderId === user.id)
+                        );
+
+                        if (isFounder) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenReviewModal(opp);
+                              }}
+                              className="btn-primary inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white cursor-pointer shadow-xs"
+                              title="Review applicant profiles for this role"
+                            >
+                              <Users size={12} /> Review Profiles {opp._count?.applications !== undefined ? `(${opp._count.applications})` : ''}
+                            </button>
+                          );
+                        }
+
+                        if (opp.hasApplied) {
+                          return (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800">
+                              <CheckCircle size={13} /> Applied
+                            </span>
+                          );
+                        }
+
+                        return (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedOpp(opp);
+                            }}
+                            className="btn-primary inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium cursor-pointer"
+                          >
+                            <Send size={12} /> Apply Now
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -642,7 +720,35 @@ export const OpportunitiesPage: React.FC = () => {
 
             {/* Apply Action Section */}
             <div className="pt-3 border-t border-slate-100 dark:border-dark-800">
-              {applySuccess ? (
+              {Boolean(
+                user &&
+                (selectedOpp.startup?.founderId === user.id ||
+                 (selectedOpp.startup as any)?.founder?.id === user.id ||
+                 (selectedOpp as any).startupFounderId === user.id)
+              ) ? (
+                <div className="p-4 rounded-xl bg-brand-50/50 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-900/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div>
+                    <h5 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <Users size={15} className="text-brand-600" />
+                      You are the Founder of this Opportunity
+                    </h5>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Review candidate profiles who applied for this opening, inspect their qualifications, and decide whether to accept or decline.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const target = selectedOpp;
+                      setSelectedOpp(null);
+                      handleOpenReviewModal(target);
+                    }}
+                    className="btn-primary px-3.5 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs"
+                  >
+                    <Users size={13} /> Review Profiles
+                  </button>
+                </div>
+              ) : applySuccess ? (
                 <div className="text-center py-6 space-y-2">
                   <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
                     <CheckCircle size={22} />
@@ -743,6 +849,206 @@ export const OpportunitiesPage: React.FC = () => {
                   </div>
                 </form>
               )}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Review Profiles / Applicants Modal for Opportunity Founder */}
+      <Modal
+        isOpen={!!reviewModalOpp}
+        onClose={() => setReviewModalOpp(null)}
+        title={`Review Profiles — ${reviewModalOpp?.role || 'Opportunity'}`}
+      >
+        {reviewModalOpp && (
+          <div className="space-y-4">
+            {/* Opportunity Info Banner */}
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-750 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div>
+                <span className="font-bold text-slate-900 dark:text-white text-sm">
+                  {reviewModalOpp.role}
+                </span>
+                <span className="text-slate-500 ml-1.5">@ {reviewModalOpp.startup?.name}</span>
+                <div className="flex items-center gap-3 text-slate-500 mt-1 flex-wrap">
+                  <span className="flex items-center gap-1 font-medium text-brand-600 dark:text-brand-400">
+                    <DollarSign size={13} /> {reviewModalOpp.compensation}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock size={13} /> {reviewModalOpp.commitment}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <MapPin size={13} /> {reviewModalOpp.workplaceType}
+                  </span>
+                </div>
+              </div>
+              <div className="px-2.5 py-1 rounded-md bg-brand-50 dark:bg-brand-950/50 text-brand-700 dark:text-brand-400 font-semibold border border-brand-200 dark:border-brand-900/60">
+                {reviewApplicants.length} Applicant{reviewApplicants.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+
+            {/* Notification / Feedback Banner */}
+            {reviewFeedbackMsg && (
+              <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs border border-emerald-200 dark:border-emerald-800 flex items-center gap-2">
+                <CheckCircle size={16} />
+                <span>{reviewFeedbackMsg}</span>
+              </div>
+            )}
+
+            {/* Applicants List */}
+            {reviewLoading ? (
+              <div className="space-y-3 py-6">
+                {[1, 2].map((i) => (
+                  <div key={i} className="h-28 rounded-xl bg-slate-100 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 animate-pulse" />
+                ))}
+              </div>
+            ) : reviewApplicants.length === 0 ? (
+              <div className="text-center py-10 space-y-2">
+                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-dark-800 flex items-center justify-center mx-auto text-slate-400">
+                  <Users size={24} />
+                </div>
+                <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                  No Candidates Applied Yet
+                </h4>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  When builders or students apply for this opening, their profile details, cover note, and portfolio links will appear here for your review.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+                {reviewApplicants.map((app) => {
+                  const applicant = app.applicant;
+                  const candidateName = applicant?.profile?.fullName || applicant?.email?.split('@')[0] || 'Candidate';
+                  const candidateHeadline = applicant?.profile?.headline || applicant?.role || 'Builder';
+                  const isActionLoading = Boolean(reviewActionLoading[app.id]);
+
+                  return (
+                    <div
+                      key={app.id}
+                      className="p-4 rounded-xl border border-slate-200 dark:border-dark-800 bg-white dark:bg-dark-900 space-y-3 hover:border-slate-300 dark:hover:border-dark-700 transition-colors shadow-2xs"
+                    >
+                      {/* Top Info: Avatar, Name, Link to Profile */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div className="flex items-center gap-3">
+                          <Avatar
+                            src={applicant?.profile?.avatar}
+                            name={candidateName}
+                            size="md"
+                            className="!w-10 !h-10 shrink-0"
+                          />
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-sm text-slate-900 dark:text-white">
+                                {candidateName}
+                              </span>
+                              {applicant?.profile?.location && (
+                                <span className="text-[10px] text-slate-400 flex items-center gap-0.5">
+                                  <MapPin size={10} /> {applicant.profile.location}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-500 line-clamp-1">
+                              {candidateHeadline}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* View Full Profile button */}
+                        <div className="flex items-center gap-2 self-start sm:self-auto">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReviewModalOpp(null);
+                              navigate(`/profile/${applicant?.id}`);
+                            }}
+                            className="btn-secondary !py-1 !px-2.5 !text-[11px] font-semibold inline-flex items-center gap-1 cursor-pointer"
+                          >
+                            <span>View Full Profile</span>
+                            <ExternalLink size={11} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Cover note / Provided Data */}
+                      {app.coverLetter && (
+                        <div className="p-3 rounded-lg bg-slate-50 dark:bg-dark-850/60 border border-slate-100 dark:border-dark-800 text-xs">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300 block mb-0.5 text-[11px]">
+                            Applicant Note / Fit Pitch:
+                          </span>
+                          <p className="text-slate-600 dark:text-slate-400 whitespace-pre-wrap leading-relaxed">
+                            {app.coverLetter}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Resume / Portfolio URL */}
+                      {app.resumeUrl && (
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className="text-slate-500 font-medium">Portfolio / Resume:</span>
+                          <a
+                            href={app.resumeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-brand-600 dark:text-brand-400 hover:underline font-semibold inline-flex items-center gap-1"
+                          >
+                            <span>{app.resumeUrl}</span>
+                            <ExternalLink size={11} />
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Decision Bar */}
+                      <div className="pt-2 border-t border-slate-100 dark:border-dark-800 flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-[10px] text-slate-400">
+                          Applied {new Date(app.createdAt).toLocaleDateString()}
+                        </span>
+
+                        <div className="flex items-center gap-2">
+                          {app.status === 'ACCEPTED' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800">
+                              <CheckCircle size={13} /> Accepted into Team
+                            </span>
+                          ) : app.status === 'DECLINED' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-dark-800 border border-slate-200 dark:border-dark-700">
+                              <X size={13} /> Declined
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                disabled={isActionLoading}
+                                onClick={() => handleReviewDecision(app.id, 'ACCEPTED')}
+                                className="px-3 py-1 rounded-md text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1 cursor-pointer shadow-xs disabled:opacity-50"
+                                title="Accept this candidate into startup team"
+                              >
+                                <Check size={12} /> Accept Candidate
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isActionLoading}
+                                onClick={() => handleReviewDecision(app.id, 'DECLINED')}
+                                className="px-3 py-1 rounded-md text-xs font-bold bg-slate-100 hover:bg-rose-50 hover:text-rose-600 dark:bg-dark-800 dark:hover:bg-rose-950/40 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-dark-700 inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                title="Decline this candidate"
+                              >
+                                <X size={12} /> Decline
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="pt-2 border-t border-slate-100 dark:border-dark-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setReviewModalOpp(null)}
+                className="btn-secondary px-4 py-1.5 text-xs font-medium cursor-pointer"
+              >
+                Close
+              </button>
             </div>
           </div>
         )}

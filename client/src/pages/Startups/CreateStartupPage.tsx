@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
-import { Rocket, ShieldAlert, Sparkles, Lock, ArrowRight } from 'lucide-react';
+import {
+  Rocket,
+  ShieldAlert,
+  Sparkles,
+  Lock,
+  ArrowRight,
+  GraduationCap,
+  Briefcase,
+  Calendar,
+  DollarSign,
+  Clock,
+} from 'lucide-react';
 import { StartupStage } from '../../types';
 import { SEO } from '../../components/common/SEO';
 
@@ -28,12 +39,23 @@ export const CreateStartupPage: React.FC = () => {
   const [visibility, setVisibility] = useState<'PUBLIC' | 'CONNECTIONS_ONLY' | 'PRIVATE'>('PUBLIC');
   const [isConfidential, setIsConfidential] = useState(false);
 
-  // Hiring & Opportunities linking (Jobs & Internships)
-  const [hiringType, setHiringType] = useState<'NONE' | 'INTERNSHIP' | 'JOB' | 'BOTH'>('NONE');
-  const [opportunityRole, setOpportunityRole] = useState('');
-  const [opportunityWorkplaceType, setOpportunityWorkplaceType] = useState('Remote');
-  const [opportunityCompensation, setOpportunityCompensation] = useState('');
-  const [opportunityDescription, setOpportunityDescription] = useState('');
+  // Separate Form 1: Internship Opportunity
+  const [offerInternship, setOfferInternship] = useState(false);
+  const [internshipRole, setInternshipRole] = useState('');
+  const [internshipWorkplaceType, setInternshipWorkplaceType] = useState('Remote');
+  const [internshipCompensation, setInternshipCompensation] = useState('');
+  const [internshipDurationType, setInternshipDurationType] = useState<'Permanent' | 'Custom'>('Custom');
+  const [internshipCustomDays, setInternshipCustomDays] = useState('60');
+  const [internshipDescription, setInternshipDescription] = useState('');
+
+  // Separate Form 2: Job Opening
+  const [offerJob, setOfferJob] = useState(false);
+  const [jobRole, setJobRole] = useState('');
+  const [jobWorkplaceType, setJobWorkplaceType] = useState('Remote');
+  const [jobCompensation, setJobCompensation] = useState('');
+  const [jobDurationType, setJobDurationType] = useState<'Permanent' | 'Custom'>('Permanent');
+  const [jobCustomDays, setJobCustomDays] = useState('180');
+  const [jobDescription, setJobDescription] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,12 +100,30 @@ export const CreateStartupPage: React.FC = () => {
         pitchDeckUrl,
         visibility,
         isConfidential,
-        // Link to Opportunities (Jobs / Internships)
-        hiringType,
-        opportunityRole: hiringType !== 'NONE' ? opportunityRole : undefined,
-        opportunityWorkplaceType: hiringType !== 'NONE' ? opportunityWorkplaceType : undefined,
-        opportunityCompensation: hiringType !== 'NONE' ? opportunityCompensation : undefined,
-        opportunityDescription: hiringType !== 'NONE' ? opportunityDescription : undefined,
+        // Separate Forms: Internships and Jobs
+        internshipData: offerInternship
+          ? {
+              enabled: true,
+              role: internshipRole,
+              workplaceType: internshipWorkplaceType,
+              compensation: internshipCompensation,
+              durationType: internshipDurationType,
+              customDays: internshipCustomDays,
+              description: internshipDescription,
+            }
+          : null,
+        jobData: offerJob
+          ? {
+              enabled: true,
+              role: jobRole,
+              workplaceType: jobWorkplaceType,
+              compensation: jobCompensation,
+              durationType: jobDurationType,
+              customDays: jobCustomDays,
+              description: jobDescription,
+            }
+          : null,
+        hiringType: offerInternship && offerJob ? 'BOTH' : offerInternship ? 'INTERNSHIP' : offerJob ? 'JOB' : 'NONE',
       });
 
       navigate(`/startups/${res.startup.id}`);
@@ -108,11 +148,20 @@ export const CreateStartupPage: React.FC = () => {
     setFundingStatus('Bootstrapped');
     setFundingRequired('$250,000');
     setCurrentTraction('3 live pilot farms, 1,200 acres actively monitored');
-    setHiringType('BOTH');
-    setOpportunityRole('Full Stack Engineer & AI Specialist');
-    setOpportunityWorkplaceType('Remote');
-    setOpportunityCompensation('Paid Stipend + Equity');
-    setOpportunityDescription('Seeking ambitious student builders or engineers to co-build our edge telemetry gateway.');
+    setOfferInternship(true);
+    setInternshipRole('AI Telemetry Research Intern');
+    setInternshipWorkplaceType('Remote');
+    setInternshipCompensation('₹20,000 / month');
+    setInternshipDurationType('Custom');
+    setInternshipCustomDays('90');
+    setInternshipDescription('Build satellite and soil telemetry AI pipelines.');
+    setOfferJob(true);
+    setJobRole('Senior Edge IoT Engineer');
+    setJobWorkplaceType('Hybrid');
+    setJobCompensation('₹1,20,000 / month');
+    setJobDurationType('Permanent');
+    setJobCustomDays('180');
+    setJobDescription('Design embedded sensor firmware and low-power telemetry gateways.');
   };
 
   const industries = ['AI', 'AgTech', 'HealthTech', 'ClimateTech', 'EdTech', 'FinTech', 'B2B SaaS', 'Consumer Tech', 'Robotics', 'Other'];
@@ -347,63 +396,60 @@ export const CreateStartupPage: React.FC = () => {
             />
           </div>
 
-          {/* Hiring & Opportunities Linking (Internships & Jobs) */}
-          <div className="p-4 rounded-xl border border-brand-200/70 dark:border-brand-900/60 bg-brand-50/40 dark:bg-brand-950/20 space-y-3.5">
-            <div>
-              <label className="block text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-1">
-                Looking for Talent or Team Members? (Appear under Opportunities)
+          {/* Separate Form 1: Internship Opportunities */}
+          <div className="p-4 sm:p-5 rounded-xl border border-indigo-200/80 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-400">
+                  <GraduationCap size={18} />
+                </div>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                    Internship Opportunity Form
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Need student builders or interns? Specify allotted stipend and duration (permanent or custom days).
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={offerInternship}
+                  onChange={(e) => setOfferInternship(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer dark:bg-dark-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                <span className="ml-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  {offerInternship ? 'Enabled' : 'Disabled'}
+                </span>
               </label>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Choose if you are seeking interns or full-time builders. We will automatically link and display these openings in the Opportunities directory.
-              </p>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {[
-                { id: 'NONE', label: 'Not Hiring Now' },
-                { id: 'INTERNSHIP', label: 'Internship Wanted' },
-                { id: 'JOB', label: 'Job Opening' },
-                { id: 'BOTH', label: 'Both (Jobs & Internships)' },
-              ].map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => setHiringType(opt.id as any)}
-                  className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all text-center cursor-pointer ${
-                    hiringType === opt.id
-                      ? 'bg-brand-600 text-white border-brand-600 shadow-xs'
-                      : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-brand-300'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-
-            {hiringType !== 'NONE' && (
-              <div className="pt-2 border-t border-brand-100 dark:border-brand-900/50 space-y-3 animate-in fade-in duration-200">
+            {offerInternship && (
+              <div className="pt-3 border-t border-indigo-200/60 dark:border-indigo-900/50 space-y-3.5 animate-in fade-in duration-200">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Opportunity Role Title *
+                      Internship Role Title *
                     </label>
                     <input
                       type="text"
-                      value={opportunityRole}
-                      onChange={(e) => setOpportunityRole(e.target.value)}
-                      placeholder="e.g. Frontend Engineer, Product Design Intern"
-                      className="input-base w-full px-3 py-2 text-sm"
+                      value={internshipRole}
+                      onChange={(e) => setInternshipRole(e.target.value)}
+                      placeholder="e.g. AI Research Intern, Product Design Intern"
+                      className="input-base w-full px-3 py-2 text-xs sm:text-sm"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Workplace Type
+                      Workplace Mode
                     </label>
                     <select
-                      value={opportunityWorkplaceType}
-                      onChange={(e) => setOpportunityWorkplaceType(e.target.value)}
-                      className="input-base w-full px-3 py-2 text-sm"
+                      value={internshipWorkplaceType}
+                      onChange={(e) => setInternshipWorkplaceType(e.target.value)}
+                      className="input-base w-full px-3 py-2 text-xs sm:text-sm"
                     >
                       <option value="Remote">Remote</option>
                       <option value="Hybrid">Hybrid</option>
@@ -413,31 +459,264 @@ export const CreateStartupPage: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Money Allotted / Stipend */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Compensation / Stipend
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                      <DollarSign size={13} className="text-indigo-600" />
+                      Money Allotted / Stipend *
                     </label>
                     <input
                       type="text"
-                      value={opportunityCompensation}
-                      onChange={(e) => setOpportunityCompensation(e.target.value)}
-                      placeholder="e.g. Paid Stipend ($500/mo), Equity + Stipend, Full-time"
-                      className="input-base w-full px-3 py-2 text-sm"
+                      value={internshipCompensation}
+                      onChange={(e) => setInternshipCompensation(e.target.value)}
+                      placeholder="e.g. ₹15,000 / month, $500 / month, Unpaid with Equity"
+                      className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                    />
+                  </div>
+
+                  {/* Duration Category: Permanent vs Custom Days */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                      <Clock size={13} className="text-indigo-600" />
+                      Working Duration Category *
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setInternshipDurationType('Permanent')}
+                        className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                          internshipDurationType === 'Permanent'
+                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                            : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-indigo-300'
+                        }`}
+                      >
+                        Permanent
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setInternshipDurationType('Custom')}
+                        className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                          internshipDurationType === 'Custom'
+                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                            : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-indigo-300'
+                        }`}
+                      >
+                        Custom Days
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {internshipDurationType === 'Custom' && (
+                  <div className="p-2.5 rounded-lg bg-indigo-100/50 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-indigo-950 dark:text-indigo-300 flex items-center gap-1.5">
+                      <Calendar size={14} /> Total Working Days Needed:
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {[30, 60, 90, 180].map((days) => (
+                        <button
+                          key={days}
+                          type="button"
+                          onClick={() => setInternshipCustomDays(String(days))}
+                          className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition-all cursor-pointer ${
+                            internshipCustomDays === String(days)
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700'
+                          }`}
+                        >
+                          {days}d
+                        </button>
+                      ))}
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min="1"
+                          max="730"
+                          value={internshipCustomDays}
+                          onChange={(e) => setInternshipCustomDays(e.target.value)}
+                          className="input-base !w-18 !py-1 !px-2 text-xs text-center"
+                          placeholder="Days"
+                        />
+                        <span className="text-xs text-slate-500">Days</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Internship Overview & Learning Outcomes
+                  </label>
+                  <input
+                    type="text"
+                    value={internshipDescription}
+                    onChange={(e) => setInternshipDescription(e.target.value)}
+                    placeholder="Brief summary of projects, mentor support, and deliverables"
+                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Separate Form 2: Job Opening Form */}
+          <div className="p-4 sm:p-5 rounded-xl border border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400">
+                  <Briefcase size={18} />
+                </div>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                    Job Opening Form
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Hiring core builders or engineers? Specify allotted salary and commitment (permanent or custom days).
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={offerJob}
+                  onChange={(e) => setOfferJob(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer dark:bg-dark-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                <span className="ml-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  {offerJob ? 'Enabled' : 'Disabled'}
+                </span>
+              </label>
+            </div>
+
+            {offerJob && (
+              <div className="pt-3 border-t border-emerald-200/60 dark:border-emerald-900/50 space-y-3.5 animate-in fade-in duration-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Job Position Title *
+                    </label>
+                    <input
+                      type="text"
+                      value={jobRole}
+                      onChange={(e) => setJobRole(e.target.value)}
+                      placeholder="e.g. Senior Full Stack Engineer, Growth Lead"
+                      className="input-base w-full px-3 py-2 text-xs sm:text-sm"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Role Overview / What You Need
+                      Workplace Mode
+                    </label>
+                    <select
+                      value={jobWorkplaceType}
+                      onChange={(e) => setJobWorkplaceType(e.target.value)}
+                      className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                    >
+                      <option value="Remote">Remote</option>
+                      <option value="Hybrid">Hybrid</option>
+                      <option value="On-site">On-site</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Money Allotted / Salary */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                      <DollarSign size={13} className="text-emerald-600" />
+                      Money Allotted / Salary *
                     </label>
                     <input
                       type="text"
-                      value={opportunityDescription}
-                      onChange={(e) => setOpportunityDescription(e.target.value)}
-                      placeholder="Brief role summary for applicants"
-                      className="input-base w-full px-3 py-2 text-sm"
+                      value={jobCompensation}
+                      onChange={(e) => setJobCompensation(e.target.value)}
+                      placeholder="e.g. ₹80,000 / month, $4,000 / month, Equity + Market"
+                      className="input-base w-full px-3 py-2 text-xs sm:text-sm"
                     />
                   </div>
+
+                  {/* Duration Category: Permanent vs Custom Days */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                      <Clock size={13} className="text-emerald-600" />
+                      Working Duration Category *
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setJobDurationType('Permanent')}
+                        className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                          jobDurationType === 'Permanent'
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                            : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-emerald-300'
+                        }`}
+                      >
+                        Permanent
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setJobDurationType('Custom')}
+                        className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                          jobDurationType === 'Custom'
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                            : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-emerald-300'
+                        }`}
+                      >
+                        Custom Days
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {jobDurationType === 'Custom' && (
+                  <div className="p-2.5 rounded-lg bg-emerald-100/50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-emerald-950 dark:text-emerald-300 flex items-center gap-1.5">
+                      <Calendar size={14} /> Contract / Custom Duration:
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {[90, 180, 270, 365].map((days) => (
+                        <button
+                          key={days}
+                          type="button"
+                          onClick={() => setJobCustomDays(String(days))}
+                          className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition-all cursor-pointer ${
+                            jobCustomDays === String(days)
+                              ? 'bg-emerald-600 text-white border-emerald-600'
+                              : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700'
+                          }`}
+                        >
+                          {days}d
+                        </button>
+                      ))}
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min="1"
+                          max="1825"
+                          value={jobCustomDays}
+                          onChange={(e) => setJobCustomDays(e.target.value)}
+                          className="input-base !w-18 !py-1 !px-2 text-xs text-center"
+                          placeholder="Days"
+                        />
+                        <span className="text-xs text-slate-500">Days</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Job Responsibilities & Impact
+                  </label>
+                  <input
+                    type="text"
+                    value={jobDescription}
+                    onChange={(e) => setJobDescription(e.target.value)}
+                    placeholder="Brief outline of architecture, systems, and ownership expectations"
+                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                  />
                 </div>
               </div>
             )}

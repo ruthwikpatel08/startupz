@@ -202,11 +202,16 @@ export const NotificationsDropdown: React.FC = () => {
         fetchNotifications();
       }
     };
+    const handleNotifsUpdated = () => {
+      fetchNotifications();
+    };
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('startupz_notifications_updated', handleNotifsUpdated);
 
     return () => {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('startupz_notifications_updated', handleNotifsUpdated);
     };
   }, [user?.id]);
 
@@ -600,7 +605,7 @@ export const NotificationsDropdown: React.FC = () => {
                 const isConnection = n.type === 'CONNECTION_REQUEST';
                 const isProposal = n.type === 'STARTUP_PROPOSAL';
                 const isAccepted = n.type === 'CONNECTION_ACCEPTED' || n.type === 'PROPOSAL_ACCEPTED';
-                const isMessage = n.type === 'NEW_MESSAGE';
+                const isMessage = n.type === 'NEW_MESSAGE' || n.type === 'MESSAGE' || n.type === 'PROJECT_MESSAGE';
 
                 const senderName =
                   n.sender?.profile?.fullName ||

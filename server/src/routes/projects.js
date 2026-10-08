@@ -673,6 +673,52 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
       proj.lastMessage = `${senderName.split(' ')[0]}: ${content.trim()}`;
       proj.lastMessageAt = new Date().toISOString();
       writeProjects(all);
+
+      // Notify all other team members about the new project group message
+      const memberIds = new Set();
+      const creatorId = proj.creator?.userId || proj.creatorId;
+      if (creatorId && creatorId !== req.user.id) {
+        memberIds.add(creatorId);
+      }
+      if (Array.isArray(proj.roles)) {
+        proj.roles.forEach((r) => {
+          const uId = r.assignedTo?.userId;
+          if (uId && uId !== req.user.id) {
+            memberIds.add(uId);
+          }
+        });
+      }
+
+      for (const mId of memberIds) {
+        // 1. Prisma notification
+        await prisma.notification.create({
+          data: {
+            userId: mId,
+            senderId: req.user.id,
+            type: 'PROJECT_MESSAGE',
+            title: `New message in ${proj.title}`,
+            message: `${senderName}: ${content.trim().slice(0, 100)}`,
+            link: `/messages?projectGroupId=${id}`,
+          },
+        }).catch((e) => console.warn('Prisma project message notif notice:', e.message));
+
+        // 2. Supabase notification
+        if (supabaseAdmin) {
+          try {
+            await supabaseAdmin.from('notifications').insert({
+              user_id: mId,
+              sender_id: req.user.id,
+              type: 'PROJECT_MESSAGE',
+              title: `New message in ${proj.title}`,
+              message: `${senderName}: ${content.trim().slice(0, 100)}`,
+              link: `/messages?projectGroupId=${id}`,
+              is_read: false,
+            });
+          } catch (sbErr) {
+            // Ignored if table schema variation exists
+          }
+        }
+      }
     }
 
     return res.status(201).json({ message: 'Project message sent successfully!', data: newMsg });

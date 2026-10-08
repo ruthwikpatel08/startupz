@@ -219,6 +219,12 @@ export const api = {
   createOpportunity: (payload: any) => request<any>('/opportunities', { method: 'POST', body: JSON.stringify(payload) }),
   applyOpportunity: (id: string, payload: any) => request<any>(`/opportunities/${id}/apply`, { method: 'POST', body: JSON.stringify(payload) }),
   getMyApplications: () => request<any>('/opportunities/my-applications'),
+  getOpportunityApplications: (oppId: string) => request<any>(`/opportunities/${oppId}/applications`),
+  updateApplicationStatus: (appId: string, status: 'ACCEPTED' | 'DECLINED') =>
+    request<any>(`/opportunities/applications/${appId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    }),
 
   // CONNECTIONS & STARTUP PROPOSALS
   getConnections: (params?: any) => request<any>(`/connections${buildQuery(params)}`),

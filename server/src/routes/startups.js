@@ -438,6 +438,8 @@ router.post('/', requireAuth, async (req, res) => {
       opportunityWorkplaceType,
       opportunityCompensation,
       opportunityDescription,
+      internshipData,
+      jobData,
     } = req.body;
 
     if (!name || !oneLineDescription || !problem || !solution || !industry) {
@@ -483,8 +485,56 @@ router.post('/', requireAuth, async (req, res) => {
       },
     }).catch((e) => console.warn('Prisma launch post notice:', e.message));
 
-    // 2. Automatically link opportunities (Jobs / Internships) based on startup application
-    if (hiringType && hiringType !== 'NONE') {
+    // 2. Separate Internship Form Creation
+    if (internshipData && internshipData.enabled) {
+      const durStr = internshipData.durationType === 'Permanent' 
+        ? 'Permanent' 
+        : `${internshipData.customDays || 60} Days`;
+      const internRole = (internshipData.role || `${startup.name} Intern`).trim();
+      const internComp = (internshipData.compensation || 'Paid Stipend').trim();
+      const internWorkplace = internshipData.workplaceType || 'Remote';
+      const internDesc = (internshipData.description || `Internship opportunity at ${startup.name} (${startup.industry}). Allotted Stipend: ${internComp}. Duration: ${durStr}. Work on building real products.`).trim();
+
+      await prisma.startupOpportunity.create({
+        data: {
+          startupId: startup.id,
+          role: internRole.toLowerCase().includes('intern') ? internRole : `${internRole} (Internship)`,
+          requiredSkills: requiredSkills || 'Problem Solving, Teamwork',
+          commitment: `Internship (${durStr})`,
+          compensation: internComp,
+          location: startup.location || 'Remote',
+          workplaceType: internWorkplace,
+          description: internDesc,
+        },
+      }).catch((e) => console.warn('Prisma internship creation notice:', e.message));
+    }
+
+    // 3. Separate Job Opening Form Creation
+    if (jobData && jobData.enabled) {
+      const durStr = jobData.durationType === 'Permanent' 
+        ? 'Permanent' 
+        : `${jobData.customDays || 180} Days`;
+      const jobRoleTitle = (jobData.role || `${startup.name} Team Member`).trim();
+      const jobComp = (jobData.compensation || 'Competitive Salary').trim();
+      const jobWorkplace = jobData.workplaceType || 'Remote';
+      const jobDesc = (jobData.description || `Job opening at ${startup.name} (${startup.industry}). Allotted Compensation: ${jobComp}. Commitment: ${durStr}. Join as a key team member.`).trim();
+
+      await prisma.startupOpportunity.create({
+        data: {
+          startupId: startup.id,
+          role: jobRoleTitle,
+          requiredSkills: requiredSkills || 'Full-Stack, Product Strategy',
+          commitment: `Job (${durStr})`,
+          compensation: jobComp,
+          location: startup.location || 'Remote',
+          workplaceType: jobWorkplace,
+          description: jobDesc,
+        },
+      }).catch((e) => console.warn('Prisma job creation notice:', e.message));
+    }
+
+    // 4. Backwards compatibility for single hiringType if separate forms were not passed
+    if (!internshipData && !jobData && hiringType && hiringType !== 'NONE') {
       const oppRoleName = (opportunityRole || requiredSkills?.split(',')[0] || 'Software Engineer').trim();
       const oppDesc = (opportunityDescription || `${startup.name} is looking for talent to join our ${startup.stage} stage venture in ${startup.industry}. We are building: ${startup.oneLineDescription}`).trim();
       const oppWorkplace = opportunityWorkplaceType || 'Remote';
@@ -543,10 +593,57 @@ router.put('/:id', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized to modify this startup.' });
     }
 
+    const allowed = [
+      'name',
+      'logo',
+      'oneLineDescription',
+      'problem',
+      'solution',
+      'targetCustomers',
+      'industry',
+      'businessModel',
+      'stage',
+      'location',
+      'requiredSkills',
+      'fundingStatus',
+      'fundingRequired',
+      'currentTraction',
+      'website',
+      'demoLink',
+      'pitchDeckUrl',
+      'images',
+      'visibility',
+      'isConfidential',
+    ];
+    const updateData = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) {
+        updateData[key] = req.body[key];
+      }
+    }
+
     const updated = await prisma.startup.update({
       where: { id },
-      data: req.body,
+      data: updateData,
+      include: {
+        founder: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            isVerified: true,
+            verificationBadge: true,
+            profile: true,
+          },
+        },
+      },
     });
+
+    if (supabaseAdmin) {
+      try {
+        await supabaseAdmin.from('startups').update(updateData).eq('id', id);
+      } catch (sbErr) {}
+    }
 
     return res.json({ message: 'Startup updated successfully!', startup: updated });
   } catch (error) {

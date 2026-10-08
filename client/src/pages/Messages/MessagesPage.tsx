@@ -421,6 +421,8 @@ export const MessagesPage: React.FC = () => {
               if (prev.some((m) => m.id === payload.id)) return prev;
               return [...prev, payload];
             });
+            window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
+            window.dispatchEvent(new CustomEvent('startupz_messages_updated'));
           }
         })
         .subscribe();
@@ -619,6 +621,11 @@ export const MessagesPage: React.FC = () => {
             event: 'new_project_msg',
             payload: savedMsg,
           });
+        } catch {}
+
+        try {
+          window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
+          window.dispatchEvent(new CustomEvent('startupz_messages_updated'));
         } catch {}
 
         // 3. Cache in local storage
