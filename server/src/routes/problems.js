@@ -68,6 +68,10 @@ export function invalidateProblemsCache() {
  */
 router.get('/meta', async (req, res) => {
   try {
+    if (!prisma.problem || !prisma.category) {
+      return res.status(503).json({ error: 'Problem challenges metadata service is initializing. Please retry in a moment.' });
+    }
+
     if (cachedProblemMeta && Date.now() < cachedProblemMetaExpiresAt) {
       res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
       return res.json(cachedProblemMeta);
@@ -122,6 +126,10 @@ router.post('/categorize-ai', optionalAuth, async (req, res) => {
  */
 router.get('/', optionalAuth, async (req, res) => {
   try {
+    if (!prisma.problem || !prisma.category) {
+      return res.status(503).json({ error: 'Problem statements service is initializing. Please retry in a moment.' });
+    }
+
     const {
       search,
       q,
@@ -286,6 +294,10 @@ router.get('/', optionalAuth, async (req, res) => {
  */
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
+    if (!prisma.problem) {
+      return res.status(503).json({ error: 'Problem statements service is initializing. Please retry in a moment.' });
+    }
+
     const { id } = req.params;
 
     const problem = await prisma.problem.findUnique({

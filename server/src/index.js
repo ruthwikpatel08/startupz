@@ -59,7 +59,7 @@ app.get('/api/health/db', async (req, res) => {
     const userCount = await prisma.user.count();
     const startupCount = await prisma.startup.count();
     const failedStartupCount = await prisma.failedStartup.count();
-    const problemCount = await prisma.problem.count().catch(() => 0);
+    const problemCount = prisma.problem ? await prisma.problem.count().catch(() => 0) : 0;
     res.json({
       status: 'ok',
       database: 'connected',
@@ -83,7 +83,7 @@ app.get('/api/health/db/init', async (req, res) => {
     await ensureDatabaseReady();
     const userCount = await prisma.user.count();
     const startupCount = await prisma.startup.count();
-    const problemCount = await prisma.problem.count().catch(() => 0);
+    const problemCount = prisma.problem ? await prisma.problem.count().catch(() => 0) : 0;
     res.json({
       status: 'ok',
       message: 'Database schema pushed and seeded successfully.',
@@ -207,13 +207,17 @@ async function purgeDemoDatabase() {
 async function ensureDatabaseReady() {
   try {
     await prisma.user.count();
+    if (!prisma.problem) {
+      throw new Error('Problem model not available on current Prisma Client');
+    }
     await prisma.problem.count();
     console.log('✅ Database connected and verified.');
   } catch (err) {
-    console.log('⚠️ Database uninitialized or schema update needed. Running prisma db push...');
+    console.log('⚠️ Database uninitialized or schema update needed. Running prisma db push & generate...');
     try {
       execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
-      console.log('✅ Database schema pushed successfully.');
+      execSync('npx prisma generate', { stdio: 'inherit' });
+      console.log('✅ Database schema pushed and client generated successfully.');
     } catch (pushErr) {
       console.error('Failed to run prisma db push automatically:', pushErr.message);
     }
@@ -221,7 +225,7 @@ async function ensureDatabaseReady() {
 
   try {
     const userCount = await prisma.user.count();
-    const problemCount = await prisma.problem.count().catch(() => 0);
+    const problemCount = prisma.problem ? await prisma.problem.count().catch(() => 0) : 0;
     if (userCount === 0 || problemCount === 0) {
       console.log('🌱 Database needs seed data (users or problems). Seeding initial accounts and problem statements...');
       try {

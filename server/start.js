@@ -36,7 +36,16 @@ try {
   console.warn('[HookZ Startup] Notice: could not write fallback .env file:', e.message);
 }
 
-// 3. Start the Express API server
+// 3. Ensure Prisma client is generated for current schema before booting
+try {
+  const { execSync } = await import('child_process');
+  console.log('[HookZ Startup] Verifying Prisma Client generation...');
+  execSync('npx prisma generate', { stdio: 'inherit', cwd: __dirname });
+} catch (err) {
+  console.warn('[HookZ Startup] Notice: prisma generate during startup:', err.message);
+}
+
+// 4. Start the Express API server
 console.log('[HookZ Startup] Starting Express API server...');
 await import('./src/index.js');
 
