@@ -23,13 +23,14 @@ import {
   Check,
   MapPin,
   Clock,
+  Crown,
 } from 'lucide-react';
 import { GoogleAccountChooserModal } from '../components/auth/GoogleAccountChooserModal';
 import { QuickLoginModal } from '../components/auth/QuickLoginModal';
 import { ConnectModal } from '../components/common/ConnectModal';
 import { StartupConnectionModal } from '../components/common/StartupConnectionModal';
 import { Avatar } from '../components/common/Avatar';
-import { RoleBadge, VerificationBadge } from '../components/common/Badge';
+import { RoleBadge, VerificationBadge, GoldenBadge } from '../components/common/Badge';
 import { supabase, fetchUserConnections } from '../lib/supabase';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -689,6 +690,131 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* 4. HOOKZ LEADERSHIP & FOUNDERS */}
+      <section className="py-16 bg-gradient-to-b from-amber-500/5 via-slate-50/60 to-transparent dark:from-amber-950/15 dark:via-dark-950/40 dark:to-transparent border-t border-amber-200/40 dark:border-amber-900/30">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-400/20 via-yellow-400/20 to-amber-500/20 border border-amber-300 dark:border-yellow-400/50 text-amber-800 dark:text-amber-300 text-xs font-bold tracking-wide shadow-xs">
+              <Crown size={14} className="text-amber-600 dark:text-amber-400 fill-amber-500/30" />
+              <span>HookZ Leadership</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+              Meet the Founders of HookZ
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-lg mx-auto">
+              Connecting builders, technical co-founders, and investors worldwide to build real ventures.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto">
+            {/* Founder Card - Ruthwik Patel */}
+            <div className="group relative rounded-2xl bg-gradient-to-b from-amber-50/70 via-white to-amber-50/30 dark:from-amber-950/25 dark:via-dark-900 dark:to-amber-950/10 border-2 border-amber-300 dark:border-amber-500/50 shadow-md hover:shadow-xl hover:border-amber-400 dark:hover:border-amber-400 transition-all duration-300 p-6 flex flex-col justify-between ring-1 ring-amber-400/20">
+              <div className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="relative shrink-0">
+                    <img
+                      src="/images/founders/ruthwik-patel.png"
+                      alt="Ruthwik Patel - Founder of HookZ"
+                      className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl object-cover object-top ring-2 ring-amber-400 dark:ring-amber-400 shadow-md group-hover:scale-102 transition-transform duration-300"
+                    />
+                    <span className="absolute -bottom-2 -right-1">
+                      <GoldenBadge label="Founder" size="sm" />
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1 pt-0.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                        Ruthwik Patel
+                      </h3>
+                    </div>
+                    <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mt-0.5">
+                      Founder & Lead Architect
+                    </p>
+                    <span className="inline-flex items-center text-xs font-mono font-semibold text-brand-600 dark:text-brand-400 mt-0.5">
+                      @ruthwikpatel08
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed pt-1">
+                  Architected and founded HookZ with the vision to bridge ambitious student builders, technical co-founders, and early-stage capital. Passionate about full-stack systems, product scaling, and democratizing startup discovery worldwide.
+                </p>
+
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {['Full-Stack Architecture', 'Product Strategy', 'AI Systems', 'Startup Scaling'].map((skill) => (
+                    <span
+                      key={skill}
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-900 dark:text-amber-300 border border-amber-300/60 dark:border-amber-500/30"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 mt-3 border-t border-amber-200/60 dark:border-amber-900/40 flex items-center justify-between">
+                <GoldenBadge label="HookZ Founder" size="md" />
+                <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1">
+                  <Sparkles size={12} className="text-amber-500" /> Platform Founder
+                </span>
+              </div>
+            </div>
+
+            {/* Co-Founder Card - Gokul Vamshi */}
+            <div className="group relative rounded-2xl bg-gradient-to-b from-amber-50/70 via-white to-amber-50/30 dark:from-amber-950/25 dark:via-dark-900 dark:to-amber-950/10 border-2 border-amber-300 dark:border-amber-500/50 shadow-md hover:shadow-xl hover:border-amber-400 dark:hover:border-amber-400 transition-all duration-300 p-6 flex flex-col justify-between ring-1 ring-amber-400/20">
+              <div className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="relative shrink-0">
+                    <img
+                      src="/images/founders/gokul-vamshi.jpg"
+                      alt="Gokul Vamshi - Co-Founder of HookZ"
+                      className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl object-cover object-top ring-2 ring-amber-400 dark:ring-amber-400 shadow-md group-hover:scale-102 transition-transform duration-300"
+                    />
+                    <span className="absolute -bottom-2 -right-1">
+                      <GoldenBadge label="Co-Founder" size="sm" />
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1 pt-0.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                        Gokul Vamshi
+                      </h3>
+                    </div>
+                    <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mt-0.5">
+                      Co-Founder & Operations
+                    </p>
+                    <span className="inline-flex items-center text-xs font-mono font-semibold text-brand-600 dark:text-brand-400 mt-0.5">
+                      @gokulvamshi
+                    </span>
+                  </div>
+                </div>
+
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed pt-1">
+                  Co-founded HookZ to empower student innovators and entrepreneurial ecosystems. Drives operations, strategic venture partnerships, builder relations, and collaborative project infrastructure across university and startup communities.
+                </p>
+
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {['Venture Operations', 'Strategic Partnerships', 'Community Growth', 'Product Ops'].map((skill) => (
+                    <span
+                      key={skill}
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-900 dark:text-amber-300 border border-amber-300/60 dark:border-amber-500/30"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 mt-3 border-t border-amber-200/60 dark:border-amber-900/40 flex items-center justify-between">
+                <GoldenBadge label="HookZ Co-Founder" size="md" />
+                <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1">
+                  <Sparkles size={12} className="text-amber-500" /> Platform Co-Founder
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* 5. CALL TO ACTION BANNER */}
       <section className="py-14">
