@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { supabase, fetchUserConnections } from '../../lib/supabase';
+import { supabase, fetchUserConnections, invalidateUserConnectionsCache } from '../../lib/supabase';
 import { Avatar } from './Avatar';
 import {
   Bell,
@@ -144,20 +144,29 @@ export const NotificationsDropdown: React.FC = () => {
       }
 
       // Check REAL connection status for ALL CONNECTION_REQUEST notifications using cached fetchUserConnections
-      const allConnNotifs = list.filter((n) => n.type === 'CONNECTION_REQUEST' && n.senderId);
+      const allConnNotifs = list.filter((n) => n.type === 'CONNECTION_REQUEST');
       if (allConnNotifs.length > 0 && user?.id) {
         try {
-          const connData = await fetchUserConnections(user.id);
+          const connData = await fetchUserConnections(user.id, true);
           const connStatusMap = connData.statusMap;
+          const connectedIds = connData.connectedIds;
 
           // Apply _actionStatus to every CONNECTION_REQUEST notification
           list = list.map((n) => {
             if (n.type === 'CONNECTION_REQUEST') {
-              const realStatus = n.senderId ? connStatusMap.get(n.senderId) : null;
-              if (realStatus === 'ACCEPTED' || (n.isRead && realStatus !== 'PENDING')) {
-                return { ...n, isRead: true, _actionStatus: 'ACCEPTED' as const };
-              } else if (realStatus === 'REJECTED') {
-                return { ...n, isRead: true, _actionStatus: 'DECLINED' as const };
+              const sid = n.senderId || n.sender?.id;
+              const realStatus = sid ? connStatusMap.get(sid) : null;
+              const isAccepted =
+                (sid && connectedIds.has(sid)) ||
+                realStatus === 'ACCEPTED' ||
+                (n.isRead && realStatus !== 'PENDING') ||
+                n.title?.includes('Connected') ||
+                n.title?.includes('Accepted');
+
+              if (isAccepted) {
+                return { ...n, isRead: true, type: 'CONNECTION_ACCEPTED' as const, _actionStatus: 'ACCEPTED' as const };
+              } else if (realStatus === 'REJECTED' || n.title?.includes('Declined')) {
+                return { ...n, isRead: true, type: 'CONNECTION_REJECTED' as const, _actionStatus: 'DECLINED' as const };
               }
             }
             return n;
@@ -379,16 +388,20 @@ export const NotificationsDropdown: React.FC = () => {
         }
       }
 
-      // 3. Mark notification as read in Supabase
+      // 3. Mark notification as read and updated in Supabase so refresh keeps it accepted
       try {
+        const targetType = action === 'ACCEPT' ? 'CONNECTION_ACCEPTED' : 'CONNECTION_REJECTED';
+        const targetTitle = action === 'ACCEPT' ? 'Connected 🤝' : 'Request Declined';
+
         await supabase
           .from('notifications')
-          .update({ is_read: true })
+          .update({ is_read: true, type: targetType, title: targetTitle })
           .eq('id', notif.id);
+
         if (notif.senderId && user?.id) {
           await supabase
             .from('notifications')
-            .update({ is_read: true })
+            .update({ is_read: true, type: targetType, title: targetTitle })
             .eq('user_id', user.id)
             .eq('sender_id', notif.senderId)
             .eq('type', 'CONNECTION_REQUEST');
@@ -398,6 +411,12 @@ export const NotificationsDropdown: React.FC = () => {
       // 4. Also mark via backend
       try {
         await api.markNotificationAsRead(notif.id);
+      } catch {}
+
+      // Invalidate connection caches so all components fetch updated status
+      try {
+        if (user?.id) invalidateUserConnectionsCache(user.id);
+        if (notif.senderId) invalidateUserConnectionsCache(notif.senderId);
       } catch {}
 
       // 5. Broadcast connections updated to sync counts everywhere

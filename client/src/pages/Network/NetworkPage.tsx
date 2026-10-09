@@ -85,7 +85,7 @@ export const NetworkPage: React.FC = () => {
       const supaConns = supaConnsRes?.data || [];
       const supaProps = supaPropsRes?.data || [];
 
-      if (user?.id && (supaConns.length > 0 || supaProps.length > 0)) {
+      if (user?.id) {
         const supaAcceptedOtherIds = new Set<string>();
         const allOtherIds = new Set<string>();
         supaConns.forEach((c: any) => {
@@ -97,11 +97,11 @@ export const NetworkPage: React.FC = () => {
         });
         supaProps.forEach((pr: any) => allOtherIds.add(pr.sender_id === user.id ? pr.receiver_id : pr.sender_id));
 
-        // When Supabase has connection records, filter out backend connections not accepted in Supabase
-        if (supaConns.length > 0) {
+        // When Supabase connection query succeeds, Supabase is authoritative: filter out connections not accepted in Supabase
+        if (Array.isArray(supaConnsRes?.data)) {
           connList = connList.filter((item: any) => {
             const oId = item.user?.id;
-            return !oId || supaAcceptedOtherIds.has(oId);
+            return oId && supaAcceptedOtherIds.has(oId);
           });
         }
 

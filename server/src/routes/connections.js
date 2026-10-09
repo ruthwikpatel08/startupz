@@ -313,9 +313,39 @@ router.put('/:id', requireAuth, async (req, res) => {
           message: `${req.user.profile?.fullName || 'Your connection'} accepted your connection request. You can now chat!`,
           link: `/messages?user=${req.user.id}`,
         },
-      });
+      }).catch(() => null);
 
-      // 2. Automatically establish Conversation between them so they can immediately chat
+      // 2. Mark receiver's original notification as accepted so upon refresh it never shows Accept/Decline
+      await prisma.notification.updateMany({
+        where: {
+          userId: req.user.id,
+          senderId: conn.senderId,
+          type: 'CONNECTION_REQUEST',
+        },
+        data: {
+          isRead: true,
+          type: 'CONNECTION_ACCEPTED',
+          title: 'Connected 🤝',
+          message: 'You are now connected.',
+        },
+      }).catch(() => null);
+
+      if (supabaseAdmin) {
+        try {
+          await supabaseAdmin
+            .from('notifications')
+            .update({
+              is_read: true,
+              type: 'CONNECTION_ACCEPTED',
+              title: 'Connected 🤝',
+            })
+            .eq('user_id', req.user.id)
+            .eq('sender_id', conn.senderId)
+            .eq('type', 'CONNECTION_REQUEST');
+        } catch {}
+      }
+
+      // 3. Automatically establish Conversation between them so they can immediately chat
       const [p1, p2] = [conn.senderId, conn.receiverId].sort();
       let conv = await prisma.conversation.findUnique({
         where: {
@@ -337,6 +367,35 @@ router.put('/:id', requireAuth, async (req, res) => {
         });
       }
       conversationId = conv.id;
+    } else if (status === 'REJECTED') {
+      await prisma.notification.updateMany({
+        where: {
+          userId: req.user.id,
+          senderId: conn.senderId,
+          type: 'CONNECTION_REQUEST',
+        },
+        data: {
+          isRead: true,
+          type: 'CONNECTION_REJECTED',
+          title: 'Request Declined',
+          message: 'Connection request declined.',
+        },
+      }).catch(() => null);
+
+      if (supabaseAdmin) {
+        try {
+          await supabaseAdmin
+            .from('notifications')
+            .update({
+              is_read: true,
+              type: 'CONNECTION_REJECTED',
+              title: 'Request Declined',
+            })
+            .eq('user_id', req.user.id)
+            .eq('sender_id', conn.senderId)
+            .eq('type', 'CONNECTION_REQUEST');
+        } catch {}
+      }
     }
 
     return res.json({
@@ -383,8 +442,42 @@ router.delete('/:id', requireAuth, async (req, res) => {
       else otherUserIds.add(c.senderId);
     }
     if (targetUserId) otherUserIds.add(targetUserId);
-    if (otherUserIds.size === 0 && id) {
+    if (id && !connsToDelete.some((c) => c.id === id)) {
       otherUserIds.add(id);
+    }
+
+    // Also resolve otherUser in Prisma by email/id if targetUserId is a Supabase UUID
+    const targetIdentifier = targetUserId || id;
+    if (targetIdentifier) {
+      let resolvedUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { id: targetIdentifier },
+            { email: String(targetIdentifier).toLowerCase().trim() },
+            { profile: { id: targetIdentifier } },
+            { profile: { userId: targetIdentifier } },
+          ],
+        },
+      }).catch(() => null);
+
+      if (!resolvedUser && supabaseAdmin) {
+        try {
+          const { data: supaProf } = await supabaseAdmin
+            .from('profiles')
+            .select('email, user_id')
+            .or(`user_id.eq.${targetIdentifier},email.eq.${targetIdentifier}`)
+            .maybeSingle();
+          if (supaProf?.email) {
+            resolvedUser = await prisma.user.findUnique({
+              where: { email: supaProf.email.toLowerCase().trim() },
+            });
+          }
+        } catch {}
+      }
+
+      if (resolvedUser?.id) {
+        otherUserIds.add(resolvedUser.id);
+      }
     }
 
     // Delete in Prisma
@@ -416,11 +509,13 @@ router.delete('/:id', requireAuth, async (req, res) => {
           await supabaseAdmin
             .from('connections')
             .delete()
-            .match({ sender_id: currentUserId, receiver_id: otherId });
+            .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${currentUserId})`);
+
           await supabaseAdmin
-            .from('connections')
+            .from('notifications')
             .delete()
-            .match({ sender_id: otherId, receiver_id: currentUserId });
+            .or(`and(user_id.eq.${currentUserId},sender_id.eq.${otherId}),and(user_id.eq.${otherId},sender_id.eq.${currentUserId})`)
+            .in('type', ['CONNECTION_REQUEST', 'CONNECTION_ACCEPTED']);
         } catch (supaErr) {
           console.warn('Supabase connection delete notice:', supaErr?.message);
         }

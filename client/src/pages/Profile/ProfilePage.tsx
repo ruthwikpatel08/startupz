@@ -1123,12 +1123,9 @@ export const ProfilePage: React.FC = () => {
     if (!window.confirm('Remove this connection?')) return;
     setRemovingConnId(connectionId);
     try {
-      await supabase
-        .from('connections')
-        .delete()
-        .eq('id', connectionId)
-        .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`);
-      try { await api.removeConnection(connectionId); } catch {}
+      const targetConn = connectionsList.find((c) => c.connectionId === connectionId);
+      const otherUserId = targetConn?.userId;
+      await removeConnection(connectionId, currentUser.id, otherUserId);
       setConnectionsList((prev) => prev.filter((c) => c.connectionId !== connectionId));
       setConnectionsCount((prev) => Math.max(0, prev - 1));
       // Refresh connInfo if this was our connection
@@ -1146,6 +1143,7 @@ export const ProfilePage: React.FC = () => {
           payload: {
             connectionId,
             userId: currentUser.id,
+            targetUserId: otherUserId,
             action: 'REMOVED',
             timestamp: new Date().toISOString(),
           },
@@ -1172,9 +1170,9 @@ export const ProfilePage: React.FC = () => {
       }
 
       if (checkTargetId) {
-        const countPromise = fetchConnectionCount(checkTargetId);
+        const countPromise = fetchConnectionCount(checkTargetId, true);
         const statusPromise = (!isMe && currentUser?.id && checkTargetId !== currentUser.id)
-          ? fetchConnectionStatus(currentUser.id, checkTargetId)
+          ? fetchConnectionStatus(currentUser.id, checkTargetId, true)
           : Promise.resolve({ status: null, isSender: false, isReceiver: false, connectionId: null });
 
         const [count, statusInfo] = await Promise.all([countPromise, statusPromise]);
@@ -1332,7 +1330,7 @@ export const ProfilePage: React.FC = () => {
         isReceiver: false,
         connectionId: null,
       });
-      const newCount = await fetchConnectionCount(checkTargetId);
+      const newCount = await fetchConnectionCount(checkTargetId, true);
       setConnectionsCount(newCount);
 
       // Broadcast removal
@@ -1345,6 +1343,7 @@ export const ProfilePage: React.FC = () => {
           payload: {
             connectionId: connInfo.connectionId,
             userId: currentUser.id,
+            targetUserId: checkTargetId,
             action: 'REMOVED',
             timestamp: new Date().toISOString(),
           },
@@ -1923,7 +1922,7 @@ export const ProfilePage: React.FC = () => {
               <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
             )}
 
-            <div className="absolute top-4 right-4 flex items-center gap-2 z-10 flex-wrap justify-end">
+            <div className="absolute top-4 right-4 flex items-center gap-2 z-10 flex-wrap justify-end max-w-[calc(100%-2rem)]">
               {!isMe && (
                 <button
                   onClick={() => setReportOpen(true)}
@@ -1943,7 +1942,7 @@ export const ProfilePage: React.FC = () => {
                       title="Remove background cover image"
                     >
                       <Trash2 size={13} />
-                      <span className="hidden xs:inline">Remove Cover</span>
+                      <span className="hidden sm:inline">Remove Cover</span>
                     </button>
                   )}
                   <button
@@ -1952,7 +1951,7 @@ export const ProfilePage: React.FC = () => {
                     title="Change background cover image from gallery"
                   >
                     <Camera size={14} />
-                    <span className="hidden xs:inline">{p.coverImage ? 'Change Cover' : 'Add Cover'}</span>
+                    <span className="hidden sm:inline">{p.coverImage ? 'Change Cover' : 'Add Cover'}</span>
                   </button>
                   <button
                     onClick={handleOpenEdit}
@@ -1967,11 +1966,11 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* Profile Header Row with solid white background so details never overlap cover image */}
-          <div className="px-6 sm:px-8 pb-6 pt-3 relative bg-white dark:bg-dark-900 border-t border-slate-100 dark:border-dark-800">
-            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mb-6">
+          <div className="px-4 sm:px-8 pb-6 pt-3 relative bg-white dark:bg-dark-900 border-t border-slate-100 dark:border-dark-800 w-full max-w-full overflow-hidden">
+            <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mb-6 w-full min-w-0">
               
               {/* Profile Photo */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 w-full md:w-auto">
+              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 w-full md:flex-1 min-w-0">
                 <div className="relative shrink-0 group -mt-16 sm:-mt-20">
                   {hasCustomAvatar ? (
                     <img
@@ -2009,12 +2008,12 @@ export const ProfilePage: React.FC = () => {
                 </div>
 
                 <div className="space-y-1.5 min-w-0">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight">
+                  <div className="flex items-center gap-2.5 flex-wrap min-w-0">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight break-words">
                       {displayName}
                     </h1>
                     {(profileUser?.username || p.username) && (
-                      <span className="text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/50 px-2.5 py-0.5 rounded-md border border-brand-100 dark:border-brand-900/50">
+                      <span className="text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/50 px-2.5 py-0.5 rounded-md border border-brand-100 dark:border-brand-900/50 break-words">
                         @{profileUser?.username || p.username}
                       </span>
                     )}
@@ -2028,26 +2027,26 @@ export const ProfilePage: React.FC = () => {
                     <RoleBadge role={profileUser.role || p.preferredRole || 'STUDENT'} />
                   </div>
 
-                  <p className="text-sm sm:text-base font-normal text-slate-600 dark:text-slate-300">
+                  <p className="text-sm sm:text-base font-normal text-slate-600 dark:text-slate-300 break-words">
                     {p.headline || (isMe ? 'Add your headline (e.g. CS Sophomore | Full Stack Builder)' : 'Student Builder at HookZ')}
                   </p>
 
                   {p.oneLineBio && (
-                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white break-words">
                       {p.oneLineBio}
                     </p>
                   )}
 
-                  <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex-wrap pt-0.5">
+                  <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex-wrap pt-0.5 min-w-0">
                     {p.education && (
-                      <span className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
-                        <GraduationCap size={15} className="text-brand-600" />
+                      <span className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300 break-words">
+                        <GraduationCap size={15} className="text-brand-600 shrink-0" />
                         <span>{p.education}</span>
                       </span>
                     )}
                     {p.location && (
-                      <span className="flex items-center gap-1.5">
-                        <MapPin size={15} className="text-brand-600" />
+                      <span className="flex items-center gap-1.5 break-words">
+                        <MapPin size={15} className="text-brand-600 shrink-0" />
                         <span>{p.location}</span>
                       </span>
                     )}
@@ -2060,7 +2059,7 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 w-full md:w-auto flex-wrap sm:flex-nowrap pt-2 md:pt-0">
+              <div className="flex items-center gap-2 w-full md:w-auto flex-wrap pt-2 md:pt-0 min-w-0">
                 {!isMe && (
                   <>
                     {isBlocked ? (
@@ -2221,13 +2220,13 @@ export const ProfilePage: React.FC = () => {
         )}
 
         {/* 2. SECTIONS LAID OUT IN CARDS (ABOUT, POSTS, SKILLS, EXPERIENCE, EDUCATION, HACKATHON HISTORY, PROJECTS, SOCIAL LINKS) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full max-w-full min-w-0">
 
           {/* MAIN COLUMN (LEFT 2/3) */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6 w-full max-w-full min-w-0">
 
             {/* 1. ABOUT SECTION */}
-            <div className="card-base p-6 sm:p-7 space-y-4">
+            <div className="card-base p-6 sm:p-7 space-y-4 min-w-0 max-w-full overflow-hidden">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                   About
@@ -2644,14 +2643,14 @@ export const ProfilePage: React.FC = () => {
                   {parsedProjects.map((proj: any, idx: number) => (
                     <div
                       key={proj.id || idx}
-                      className="p-4 rounded-xl border border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850 hover:bg-white dark:hover:bg-dark-900 hover:border-slate-300 transition-all flex flex-col justify-between space-y-3"
+                      className="p-4 rounded-xl border border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850 hover:bg-white dark:hover:bg-dark-900 hover:border-slate-300 transition-all flex flex-col justify-between space-y-3 min-w-0 overflow-hidden break-words"
                     >
-                      <div className="space-y-1.5">
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      <div className="space-y-1.5 min-w-0 break-words">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white break-words">
                           {proj.name || 'Project'}
                         </h3>
                         {proj.description && (
-                          <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed">
+                          <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed break-words">
                             {proj.description}
                           </p>
                         )}
@@ -2762,7 +2761,7 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* RIGHT COLUMN (1/3 WIDTH) */}
-          <div className="space-y-6">
+          <div className="space-y-6 w-full max-w-full min-w-0">
 
             {/* PROFILE COMPLETENESS (FOR OWNER) */}
             {isMe && (

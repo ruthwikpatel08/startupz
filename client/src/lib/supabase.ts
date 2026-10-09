@@ -777,8 +777,8 @@ export async function fetchUserConnections(userId: string, forceRefresh = false)
         }
       }
 
-      // Also mirror/check backend connections if empty (initial load fallback)
-      if (connectionList.length === 0) {
+      // Only fallback to backend connections if Supabase request encountered an error (offline / network failure)
+      if (error && connectionList.length === 0) {
         try {
           const apiConns = await api.getConnections().catch(() => null);
           if (apiConns && Array.isArray(apiConns.connections)) {
@@ -827,7 +827,8 @@ export async function fetchUserConnections(userId: string, forceRefresh = false)
  */
 export async function fetchConnectionStatus(
   currentUserId: string,
-  targetUserId: string
+  targetUserId: string,
+  forceRefresh = false
 ): Promise<ConnectionStatusInfo> {
   if (!currentUserId || !targetUserId || currentUserId === targetUserId) {
     return { status: null, isSender: false, isReceiver: false, connectionId: null };
@@ -839,7 +840,7 @@ export async function fetchConnectionStatus(
   }
   const targetId = u2 || targetUserId;
 
-  const connData = await fetchUserConnections(currentUserId);
+  const connData = await fetchUserConnections(currentUserId, forceRefresh);
   const info = connData.connInfoMap.get(targetId);
   if (info) return info;
 
@@ -857,9 +858,9 @@ export async function fetchConnectionStatus(
 /**
  * Fetches the exact count of accepted connections for a user from Supabase with caching.
  */
-export async function fetchConnectionCount(userId: string): Promise<number> {
+export async function fetchConnectionCount(userId: string, forceRefresh = false): Promise<number> {
   if (!userId) return 0;
-  const connData = await fetchUserConnections(userId);
+  const connData = await fetchUserConnections(userId, forceRefresh);
   return connData.count;
 }
 
@@ -1094,16 +1095,29 @@ export async function removeConnection(
   }
 
   // 2. Also delete in Supabase by user ID pair if targetUserId is known
-  if (targetUserId) {
+  if (targetUserId && currentUserId) {
     try {
+      const u1 = isUUID(currentUserId) ? currentUserId : await resolveUserIdToUUID(currentUserId);
+      const u2 = isUUID(targetUserId) ? targetUserId : await resolveUserIdToUUID(targetUserId);
+
       await supabase
         .from('connections')
         .delete()
-        .match({ sender_id: currentUserId, receiver_id: targetUserId });
+        .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},receiver_id.eq.${currentUserId})`);
+
+      if (u1 && u2 && (u1 !== currentUserId || u2 !== targetUserId)) {
+        await supabase
+          .from('connections')
+          .delete()
+          .or(`and(sender_id.eq.${u1},receiver_id.eq.${u2}),and(sender_id.eq.${u2},receiver_id.eq.${u1})`);
+      }
+
+      // Also clean up any lingering notifications between these two users
       await supabase
-        .from('connections')
+        .from('notifications')
         .delete()
-        .match({ sender_id: targetUserId, receiver_id: currentUserId });
+        .or(`and(user_id.eq.${currentUserId},sender_id.eq.${targetUserId}),and(user_id.eq.${targetUserId},sender_id.eq.${currentUserId})`)
+        .in('type', ['CONNECTION_REQUEST', 'CONNECTION_ACCEPTED']);
     } catch (err) {
       console.warn('Supabase pair delete notice:', err);
     }
@@ -1127,6 +1141,23 @@ export async function removeConnection(
   }
   userConnectionsCache.clear();
   inFlightConnectionsRequests.clear();
+
+  // 5. Broadcast removal over Supabase realtime channel so the other user's browser updates immediately
+  try {
+    const broadcastChannel = supabase.channel('global-connections-broadcast');
+    await broadcastChannel.send({
+      type: 'broadcast',
+      event: 'connection_changed',
+      payload: {
+        userId: currentUserId,
+        targetUserId,
+        connectionId,
+        action: 'REMOVED',
+        timestamp: new Date().toISOString(),
+      },
+    });
+    supabase.removeChannel(broadcastChannel);
+  } catch {}
 
   return true;
 }
