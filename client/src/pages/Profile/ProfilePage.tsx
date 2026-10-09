@@ -1619,7 +1619,7 @@ export const ProfilePage: React.FC = () => {
     .join('')
     .substring(0, 2)
     .toUpperCase() || 'SZ';
-  const avatar = p.avatar;
+  const avatar = p.avatar || (isMe ? currentUser?.profile?.avatar : undefined);
   const hasCustomAvatar = Boolean(
     avatar &&
     typeof avatar === 'string' &&
@@ -2173,39 +2173,39 @@ export const ProfilePage: React.FC = () => {
               
               {/* Profile Photo */}
               <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 w-full md:flex-1 min-w-0">
-                <div className="relative shrink-0 group -mt-16 sm:-mt-20 z-20">
+                <div className="relative w-28 h-28 sm:w-32 sm:h-32 shrink-0 group -mt-16 sm:-mt-20 z-20">
                   {hasCustomAvatar ? (
                     <img
                       src={avatar!}
                       alt={displayName}
                       decoding="async"
-                      className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white dark:border-dark-900 shadow-md bg-white"
+                      className="w-full h-full rounded-full object-cover border-4 border-white dark:border-dark-900 shadow-md bg-white"
                     />
                   ) : (
-                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-dark-900 shadow-md bg-brand-600 text-white flex flex-col items-center justify-center font-bold">
+                    <div className="w-full h-full rounded-full border-4 border-white dark:border-dark-900 shadow-md bg-brand-600 text-white flex flex-col items-center justify-center font-bold">
                       <span className="text-2xl sm:text-3xl font-extrabold tracking-wider">{initials}</span>
                     </div>
                   )}
                   {isMe && (
-                    <div className="absolute -bottom-1 -right-1 flex items-center gap-1 z-30">
-                      {hasCustomAvatar && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemovePhoto('avatar')}
-                          disabled={isRemovingPhoto}
-                          className="p-1.5 rounded-full bg-rose-600 text-white shadow-sm hover:bg-rose-700 transition-colors cursor-pointer disabled:opacity-50"
-                          title="Remove profile photo"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      )}
+                    <div className="absolute -bottom-1 -right-1 flex items-center gap-1.5 z-40">
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto('avatar')}
+                        disabled={isRemovingPhoto}
+                        className="p-2 rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-md transition-all cursor-pointer disabled:opacity-50 border-2 border-white dark:border-dark-900 flex items-center justify-center"
+                        title="Delete profile photo"
+                        aria-label="Delete profile photo"
+                      >
+                        <Trash2 size={13} />
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleRequestGalleryPermission('avatar')}
-                        className="p-1.5 rounded-full bg-brand-600 text-white shadow-sm hover:bg-brand-700 transition-colors cursor-pointer"
+                        className="p-2 rounded-full bg-brand-600 hover:bg-brand-700 text-white shadow-md transition-all cursor-pointer border-2 border-white dark:border-dark-900 flex items-center justify-center"
                         title="Change profile photo"
+                        aria-label="Change profile photo"
                       >
-                        <Camera size={13} />
+                        <Camera size={14} />
                       </button>
                     </div>
                   )}
@@ -3008,9 +3008,9 @@ export const ProfilePage: React.FC = () => {
                       className="btn-secondary flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium cursor-pointer"
                     >
                       <Camera size={13} className="text-brand-600" />
-                      <span>{formData.avatar && !formData.avatar.includes('dicebear') && !formData.avatar.includes('avataaars') ? 'Change Photo' : 'Upload Photo'}</span>
+                      <span>{formData.avatar ? 'Change Photo' : 'Upload Photo'}</span>
                     </button>
-                    {formData.avatar && !formData.avatar.includes('dicebear') && !formData.avatar.includes('avataaars') && (
+                    {formData.avatar && (
                       <button
                         type="button"
                         onClick={() => handleRemovePhoto('avatar')}
