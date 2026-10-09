@@ -292,6 +292,8 @@ export const api = {
   createPost: (payload: any) => request<any>('/posts', { method: 'POST', body: JSON.stringify(payload) }),
   deletePost: (id: string) => request<any>(`/posts/${id}`, { method: 'DELETE' }),
   likePost: (id: string) => request<any>(`/posts/${id}/like`, { method: 'POST' }),
+  votePost: (id: string, payload: { vote: 'up' | 'down' | null; previousVote?: 'up' | 'down' | null }) =>
+    request<any>(`/posts/${id}/vote`, { method: 'POST', body: JSON.stringify(payload) }),
   getPostComments: (id: string) => request<any>(`/posts/${id}/comments`),
   addComment: (id: string, content: string) =>
     request<any>(`/posts/${id}/comments`, { method: 'POST', body: JSON.stringify({ content }) }),

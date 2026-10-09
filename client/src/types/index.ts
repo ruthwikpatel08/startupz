@@ -239,6 +239,9 @@ export interface Post {
   likesCount: number;
   commentsCount: number;
   isLiked?: boolean;
+  userVote?: 'up' | 'down' | null;
+  upvotesCount?: number;
+  downvotesCount?: number;
   isSaved?: boolean;
   createdAt: string;
   updatedAt?: string;

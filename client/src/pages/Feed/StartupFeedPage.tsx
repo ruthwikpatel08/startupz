@@ -13,6 +13,8 @@ import { SEO } from '../../components/common/SEO';
 import {
   Share2,
   Heart,
+  ArrowBigUp,
+  ArrowBigDown,
   MessageSquare,
   Bookmark,
   Send,
@@ -91,6 +93,23 @@ export const StartupFeedPage: React.FC = () => {
     const handleUpdate = () => loadConnections();
     window.addEventListener('connections_updated', handleUpdate);
     return () => window.removeEventListener('connections_updated', handleUpdate);
+  }, [user?.id]);
+
+  // Reddit/Hacker News style idea post votes tracking: postId -> 'up' | 'down' | null
+  const [userVotes, setUserVotes] = useState<Record<string, 'up' | 'down' | null>>({});
+
+  useEffect(() => {
+    try {
+      const storageKey = user?.id ? `startupz_idea_votes_${user.id}` : 'startupz_idea_votes_guest';
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        setUserVotes(JSON.parse(raw));
+      } else {
+        setUserVotes({});
+      }
+    } catch {
+      setUserVotes({});
+    }
   }, [user?.id]);
 
   const handlePillarChange = (pillar: 'ACHIEVEMENTS' | 'IDEAS' | 'PROBLEMS') => {
@@ -425,6 +444,106 @@ export const StartupFeedPage: React.FC = () => {
       }
     } catch (sErr) {
       console.warn('Supabase like sync notice:', sErr);
+    }
+  };
+
+  const handleVotePost = async (postId: string, clickedVote: 'up' | 'down') => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    const currentPost = posts.find((p) => p.id === postId);
+    if (!currentPost) return;
+
+    const currentVote = userVotes[postId] !== undefined
+      ? userVotes[postId]
+      : (currentPost.isLiked ? 'up' : null);
+
+    let nextVote: 'up' | 'down' | null = null;
+    let delta = 0;
+
+    if (currentVote === clickedVote) {
+      // Toggle off: remove vote (return to 0 change from base)
+      nextVote = null;
+      delta = clickedVote === 'up' ? -1 : 1;
+    } else if (currentVote === 'up' && clickedVote === 'down') {
+      // Transition from upvoted to downvoted: -2 net transition
+      nextVote = 'down';
+      delta = -2;
+    } else if (currentVote === 'down' && clickedVote === 'up') {
+      // Transition from downvoted to upvoted: +2 net transition
+      nextVote = 'up';
+      delta = 2;
+    } else {
+      // Transition from unselected to clicked vote: +1 or -1
+      nextVote = clickedVote;
+      delta = clickedVote === 'up' ? 1 : -1;
+    }
+
+    const nextScore = (currentPost.likesCount || 0) + delta;
+
+    // 1. Optimistic UI update
+    setUserVotes((prev) => ({ ...prev, [postId]: nextVote }));
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? {
+              ...p,
+              likesCount: nextScore,
+              isLiked: nextVote === 'up',
+            }
+          : p
+      )
+    );
+
+    // 2. Persist to localStorage
+    try {
+      const storageKey = user?.id ? `startupz_idea_votes_${user.id}` : 'startupz_idea_votes_guest';
+      const raw = localStorage.getItem(storageKey);
+      const existing = raw ? JSON.parse(raw) : {};
+      if (nextVote) {
+        existing[postId] = nextVote;
+      } else {
+        delete existing[postId];
+      }
+      localStorage.setItem(storageKey, JSON.stringify(existing));
+    } catch {}
+
+    // 3. Sync to backend API
+    try {
+      await api.votePost(postId, { vote: nextVote, previousVote: currentVote });
+    } catch {
+      if (nextVote === 'up' && !currentPost.isLiked) {
+        await api.likePost(postId).catch(() => null);
+      } else if (nextVote !== 'up' && currentPost.isLiked) {
+        await api.likePost(postId).catch(() => null);
+      }
+    }
+
+    // 4. Supabase sync & notification if author is another user
+    try {
+      if (nextVote === 'up') {
+        await supabase.from('likes').upsert({ post_id: postId, user_id: user.id }, { onConflict: 'post_id,user_id' });
+        await supabase.from('posts').update({ likes_count: nextScore }).eq('id', postId);
+
+        if (currentPost.authorId && currentPost.authorId !== user.id) {
+          await supabase.from('notifications').insert({
+            user_id: currentPost.authorId,
+            sender_id: user.id,
+            type: 'POST_LIKE',
+            title: 'Upvoted your idea 💡',
+            message: `${user.profile?.fullName || user.email?.split('@')[0] || 'Someone'} upvoted your idea.`,
+            link: '/feed',
+            is_read: false,
+          });
+        }
+      } else {
+        await supabase.from('likes').delete().match({ post_id: postId, user_id: user.id });
+        await supabase.from('posts').update({ likes_count: nextScore }).eq('id', postId);
+      }
+    } catch (sErr) {
+      console.warn('Supabase vote sync notice:', sErr);
     }
   };
 
@@ -1021,6 +1140,24 @@ export const StartupFeedPage: React.FC = () => {
             const authorHeadline = author?.profile?.headline || author?.role;
             const isCommentsOpen = !!expandedComments[post.id];
 
+            const isIdeaPost =
+              activePillar === 'IDEAS' ||
+              (post.postType || '').toUpperCase() === 'IDEA' ||
+              (activePillar !== 'ACHIEVEMENTS' && IDEA_POST_TYPES.has((post.postType || '').toUpperCase()));
+
+            const currentVote = userVotes[post.id] !== undefined
+              ? userVotes[post.id]
+              : (post.isLiked ? 'up' : null);
+
+            const netScore = post.likesCount || 0;
+
+            let scoreColorClass = 'text-slate-600 dark:text-slate-400 font-medium';
+            if (currentVote === 'up' || (currentVote === null && netScore > 0)) {
+              scoreColorClass = 'text-emerald-600 dark:text-emerald-400 font-bold';
+            } else if (currentVote === 'down' || (currentVote === null && netScore < 0)) {
+              scoreColorClass = 'text-rose-600 dark:text-rose-400 font-bold';
+            }
+
             return (
               <div
                 key={post.id}
@@ -1138,19 +1275,76 @@ export const StartupFeedPage: React.FC = () => {
 
                 {/* Post Actions Bar */}
                 <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                  <div className="flex items-center gap-4">
-                    {/* Like Button */}
-                    <button
-                      onClick={() => handleLikePost(post.id)}
-                      className={`flex items-center gap-1.5 font-medium transition-colors ${
-                        post.isLiked
-                          ? 'text-rose-600 dark:text-rose-400'
-                          : 'hover:text-rose-600'
-                      }`}
-                    >
-                      <Heart size={15} className={post.isLiked ? 'fill-rose-600' : ''} />
-                      <span>{post.likesCount || 0}</span>
-                    </button>
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    {/* Reaction: Upvote/Downvote Pill for Ideas, Heart for other feeds */}
+                    {isIdeaPost ? (
+                      <div
+                        className="inline-flex items-center gap-1 sm:gap-1.5 p-0.5 sm:p-1 rounded-full bg-slate-100/90 dark:bg-dark-800 border border-slate-200/90 dark:border-dark-700 shadow-2xs transition-colors duration-150"
+                        role="group"
+                        aria-label="Idea post voting"
+                      >
+                        {/* Upvote Button (▲) */}
+                        <button
+                          type="button"
+                          onClick={() => handleVotePost(post.id, 'up')}
+                          aria-label="Upvote idea"
+                          title="Upvote idea"
+                          className={`p-1 sm:p-1.5 rounded-full border transition-all duration-150 flex items-center justify-center cursor-pointer ${
+                            currentVote === 'up'
+                              ? 'bg-emerald-500 border-emerald-500 text-white shadow-xs'
+                              : 'bg-transparent border-emerald-500/80 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-600'
+                          }`}
+                        >
+                          <ArrowBigUp
+                            size={14}
+                            className="transition-transform duration-150 active:scale-90"
+                            fill={currentVote === 'up' ? 'currentColor' : 'none'}
+                            strokeWidth={currentVote === 'up' ? 1.5 : 2}
+                          />
+                        </button>
+
+                        {/* Score Counter */}
+                        <span
+                          className={`text-xs px-1 min-w-[20px] text-center select-none transition-colors duration-150 ${scoreColorClass}`}
+                        >
+                          {netScore}
+                        </span>
+
+                        {/* Downvote Button (▼) */}
+                        <button
+                          type="button"
+                          onClick={() => handleVotePost(post.id, 'down')}
+                          aria-label="Downvote idea"
+                          title="Downvote idea"
+                          className={`p-1 sm:p-1.5 rounded-full border transition-all duration-150 flex items-center justify-center cursor-pointer ${
+                            currentVote === 'down'
+                              ? 'bg-rose-500 border-rose-500 text-white shadow-xs'
+                              : 'bg-transparent border-rose-500/80 dark:border-rose-500 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-600'
+                          }`}
+                        >
+                          <ArrowBigDown
+                            size={14}
+                            className="transition-transform duration-150 active:scale-90"
+                            fill={currentVote === 'down' ? 'currentColor' : 'none'}
+                            strokeWidth={currentVote === 'down' ? 1.5 : 2}
+                          />
+                        </button>
+                      </div>
+                    ) : (
+                      /* Default Heart reaction button for Achievements / other feeds */
+                      <button
+                        type="button"
+                        onClick={() => handleLikePost(post.id)}
+                        className={`flex items-center gap-1.5 font-medium transition-colors cursor-pointer ${
+                          post.isLiked
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'hover:text-rose-600'
+                        }`}
+                      >
+                        <Heart size={15} className={post.isLiked ? 'fill-rose-600' : ''} />
+                        <span>{post.likesCount || 0}</span>
+                      </button>
+                    )}
 
                     {/* Comments Toggle */}
                     <button

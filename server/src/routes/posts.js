@@ -360,6 +360,70 @@ router.post('/:id/like', requireAuth, async (req, res) => {
   }
 });
 
+// POST /api/posts/:id/vote - Reddit / Hacker News style upvote/downvote
+router.post('/:id/vote', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { vote, previousVote } = req.body;
+    await ensurePostInPrisma(id);
+
+    let delta = 0;
+    if (previousVote === 'up') {
+      if (vote === 'down') delta = -2;
+      else if (!vote) delta = -1;
+    } else if (previousVote === 'down') {
+      if (vote === 'up') delta = 2;
+      else if (!vote) delta = 1;
+    } else {
+      if (vote === 'up') delta = 1;
+      else if (vote === 'down') delta = -1;
+    }
+
+    let updated = null;
+    if (delta !== 0) {
+      if (delta > 0) {
+        updated = await prisma.post.update({
+          where: { id },
+          data: { likesCount: { increment: delta } },
+        }).catch(() => null);
+      } else {
+        updated = await prisma.post.update({
+          where: { id },
+          data: { likesCount: { decrement: Math.abs(delta) } },
+        }).catch(() => null);
+      }
+    }
+
+    const currentPost = updated || (await prisma.post.findUnique({ where: { id } }).catch(() => null));
+    const score = currentPost ? currentPost.likesCount : 0;
+
+    if (supabaseAdmin) {
+      await supabaseAdmin.from('posts').update({ likes_count: score }).eq('id', id).catch(() => null);
+      if (vote === 'up') {
+        await supabaseAdmin.from('likes').upsert({ post_id: id, user_id: req.user.id }, { onConflict: 'post_id,user_id' }).catch(() => null);
+        if (currentPost && currentPost.authorId !== req.user.id) {
+          await supabaseAdmin.from('notifications').insert({
+            user_id: currentPost.authorId,
+            sender_id: req.user.id,
+            type: 'POST_LIKE',
+            title: 'Upvoted your idea 💡',
+            message: `${req.user.profile?.fullName || 'Someone'} upvoted your idea.`,
+            link: '/feed',
+            is_read: false,
+          }).catch(() => null);
+        }
+      } else {
+        await supabaseAdmin.from('likes').delete().match({ post_id: id, user_id: req.user.id }).catch(() => null);
+      }
+    }
+
+    return res.json({ success: true, vote, score });
+  } catch (error) {
+    console.error('Vote post error:', error);
+    return res.status(500).json({ error: 'Failed to vote on post.' });
+  }
+});
+
 // POST /api/posts/:id/comments
 router.post('/:id/comments', requireAuth, async (req, res) => {
   try {
