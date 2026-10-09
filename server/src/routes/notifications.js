@@ -61,10 +61,30 @@ router.put('/read-all', requireAuth, async (req, res) => {
 router.put('/:id/read', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
+    const { type, title, senderId } = req.body || {};
+    const updateData = { isRead: true };
+    if (type) updateData.type = type;
+    if (title) updateData.title = title;
+
     await prisma.notification.updateMany({
       where: { id, userId: req.user.id },
-      data: { isRead: true },
+      data: updateData,
     });
+
+    if (senderId) {
+      await prisma.notification.updateMany({
+        where: {
+          userId: req.user.id,
+          senderId,
+          type: 'CONNECTION_REQUEST',
+        },
+        data: {
+          isRead: true,
+          type: type || 'CONNECTION_ACCEPTED',
+          title: title || 'Connected 🤝',
+        },
+      }).catch(() => null);
+    }
     return res.json({ message: 'Notification marked as read.' });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to update notification.' });

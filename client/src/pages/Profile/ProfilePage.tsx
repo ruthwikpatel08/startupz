@@ -1318,12 +1318,12 @@ export const ProfilePage: React.FC = () => {
   };
 
   const handleDisconnect = async () => {
-    if (!connInfo.connectionId || !currentUser?.id) return;
+    const checkTargetId = targetId || profileUser?.id || '';
+    if ((!connInfo.connectionId && !checkTargetId) || !currentUser?.id) return;
     if (!window.confirm('Are you sure you want to disconnect from this user?')) return;
     setConnActionLoading(true);
     try {
-      const checkTargetId = targetId || profileUser?.id || '';
-      await removeConnection(connInfo.connectionId, currentUser.id, checkTargetId);
+      await removeConnection(connInfo.connectionId || '', currentUser.id, checkTargetId);
       setConnInfo({
         status: null,
         isSender: false,
@@ -1348,7 +1348,6 @@ export const ProfilePage: React.FC = () => {
             timestamp: new Date().toISOString(),
           },
         });
-        supabase.removeChannel(broadcastChannel);
       } catch {}
     } catch (err: any) {
       alert(err.message || 'Failed to remove connection.');
@@ -1679,7 +1678,7 @@ export const ProfilePage: React.FC = () => {
           ]}
         />
       )}
-      <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6 w-full overflow-x-hidden">
+      <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6 w-full max-w-full min-w-0 overflow-x-hidden">
 
         {/* ============================================================== */}
         {/* ADMIN BAR: Rendered ONLY on Founder & Co-Founder profiles FOR THEMSELVES */}
@@ -1907,7 +1906,7 @@ export const ProfilePage: React.FC = () => {
         )}
 
         {/* 1. TOP HERO / COVER & MAIN PROFILE CARD */}
-        <div className="card-base overflow-hidden">
+        <div className="card-base overflow-hidden w-full max-w-full min-w-0">
           
           {/* Cover Section */}
           <div className="h-44 sm:h-52 relative overflow-hidden bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700">
@@ -1922,7 +1921,7 @@ export const ProfilePage: React.FC = () => {
               <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
             )}
 
-            <div className="absolute top-4 right-4 flex items-center gap-2 z-10 flex-wrap justify-end max-w-[calc(100%-2rem)]">
+            <div className="absolute top-4 right-4 flex items-center gap-1.5 sm:gap-2 z-10 flex-wrap justify-end max-w-[calc(100%-1.5rem)]">
               {!isMe && (
                 <button
                   onClick={() => setReportOpen(true)}
@@ -2226,7 +2225,7 @@ export const ProfilePage: React.FC = () => {
           <div className="lg:col-span-2 space-y-6 w-full max-w-full min-w-0">
 
             {/* 1. ABOUT SECTION */}
-            <div className="card-base p-6 sm:p-7 space-y-4 min-w-0 max-w-full overflow-hidden">
+            <div className="card-base p-4 sm:p-7 space-y-4 min-w-0 max-w-full overflow-hidden break-words">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                   About
@@ -2261,7 +2260,7 @@ export const ProfilePage: React.FC = () => {
 
               {/* DESKTOP VIEW: Full bio and interests */}
               <div className="hidden sm:block space-y-4">
-                <p className="text-sm font-normal text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                <p className="text-sm font-normal text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line break-words">
                   {p.bio || 'No background description shared yet. Add a short summary about your hackathon journey, interests, and what you are building!'}
                 </p>
 
@@ -2286,7 +2285,7 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* POSTS & COMMUNITY UPDATES SECTION (Permanent until manually deleted) */}
-            <div className="card-base p-6 sm:p-7 space-y-5">
+            <div className="card-base p-4 sm:p-7 space-y-5 min-w-0 max-w-full overflow-hidden break-words">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Share2 size={18} className="text-brand-600" />
@@ -2319,7 +2318,7 @@ export const ProfilePage: React.FC = () => {
                   {userPosts.map((post) => (
                     <div
                       key={post.id}
-                      className="p-4 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2 relative group"
+                      className="p-4 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2 relative group min-w-0 max-w-full overflow-hidden break-words"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
@@ -2350,12 +2349,12 @@ export const ProfilePage: React.FC = () => {
                       </div>
 
                       {post.title && (
-                        <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-white break-words">
                           {post.title}
                         </h3>
                       )}
 
-                      <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
+                      <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed break-words">
                         {post.content}
                       </p>
 
@@ -2364,10 +2363,10 @@ export const ProfilePage: React.FC = () => {
                           href={post.links.startsWith('http') ? post.links : `https://${post.links}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline"
+                          className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline max-w-full min-w-0"
                         >
-                          <ExternalLink size={12} />
-                          <span className="truncate max-w-xs">{post.links}</span>
+                          <ExternalLink size={12} className="shrink-0" />
+                          <span className="truncate max-w-full">{post.links}</span>
                         </a>
                       )}
 
@@ -2412,7 +2411,7 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* 2. EXPERIENCE SECTION */}
-            <div className="card-base p-6 sm:p-7 space-y-5">
+            <div className="card-base p-4 sm:p-7 space-y-5 min-w-0 max-w-full overflow-hidden break-words">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
                   <Briefcase size={18} className="text-brand-600" />
@@ -2432,12 +2431,12 @@ export const ProfilePage: React.FC = () => {
               {parsedExperiences.length > 0 ? (
                 <div className="relative pl-5 border-l-2 border-slate-200 dark:border-dark-800 space-y-5">
                   {parsedExperiences.map((exp, idx) => (
-                    <div key={exp.id || idx} className="relative group">
+                    <div key={exp.id || idx} className="relative group min-w-0 max-w-full overflow-hidden break-words">
                       <div className="absolute -left-[27px] top-1.5 w-3.5 h-3.5 rounded-full bg-brand-600 border-2 border-white dark:border-dark-900" />
                       <div className="space-y-1">
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white break-words">
                               {exp.category || p.preferredRole || 'Builder'}
                             </h3>
                             {exp.company && (
@@ -2459,7 +2458,7 @@ export const ProfilePage: React.FC = () => {
                         </div>
 
                         {exp.description && (
-                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-0.5 whitespace-pre-line leading-relaxed">
+                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-0.5 whitespace-pre-line leading-relaxed break-words">
                             {exp.description}
                           </p>
                         )}
@@ -2484,7 +2483,7 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* 3. EDUCATION SECTION */}
-            <div className="card-base p-6 sm:p-7 space-y-4">
+            <div className="card-base p-4 sm:p-7 space-y-4 min-w-0 max-w-full overflow-hidden break-words">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
                   <GraduationCap size={18} className="text-brand-600" />
@@ -2502,13 +2501,13 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               {p.education ? (
-                <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50/70 dark:bg-dark-850 border border-slate-200/80 dark:border-dark-800">
+                <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50/70 dark:bg-dark-850 border border-slate-200/80 dark:border-dark-800 min-w-0 max-w-full overflow-hidden break-words">
                   <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 border border-brand-200/50 flex items-center justify-center font-bold text-sm shrink-0">
                     <BookOpen size={18} />
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
-                      <span>{p.education}</span>
+                  <div className="space-y-1 min-w-0 max-w-full overflow-hidden break-words">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap break-words">
+                      <span className="break-words">{p.education}</span>
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       College / University Program
@@ -2532,7 +2531,7 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* 4. HACKATHON HISTORY SECTION */}
-            <div className="card-base p-6 sm:p-7 space-y-4">
+            <div className="card-base p-4 sm:p-7 space-y-4 min-w-0 max-w-full overflow-hidden break-words">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
@@ -2561,12 +2560,12 @@ export const ProfilePage: React.FC = () => {
                   {parsedHackathons.map((hack: any, idx: number) => (
                     <div
                       key={idx}
-                      className="p-4 rounded-xl border border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850 hover:bg-white dark:hover:bg-dark-900 hover:border-slate-300 transition-all space-y-2"
+                      className="p-4 rounded-xl border border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850 hover:bg-white dark:hover:bg-dark-900 hover:border-slate-300 transition-all space-y-2 min-w-0 max-w-full overflow-hidden break-words"
                     >
                       <div className="flex items-start justify-between gap-3 flex-wrap">
-                        <div className="space-y-1">
+                        <div className="space-y-1 min-w-0 max-w-full overflow-hidden break-words">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white break-words">
                               {hack.name || 'Hackathon Event'}
                             </h3>
                             {hack.award && (
@@ -2587,10 +2586,10 @@ export const ProfilePage: React.FC = () => {
                             href={hack.link.startsWith('http') ? hack.link : `https://${hack.link}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline max-w-full min-w-0"
                           >
-                            <span>Project Link</span>
-                            <ExternalLink size={12} />
+                            <span className="truncate max-w-[160px] sm:max-w-xs">Project Link</span>
+                            <ExternalLink size={12} className="shrink-0" />
                           </a>
                         )}
                       </div>
@@ -2614,7 +2613,7 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* 5. PROJECTS SECTION */}
-            <div className="card-base p-6 sm:p-7 space-y-4">
+            <div className="card-base p-4 sm:p-7 space-y-4 min-w-0 max-w-full overflow-hidden break-words">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
@@ -2765,7 +2764,7 @@ export const ProfilePage: React.FC = () => {
 
             {/* PROFILE COMPLETENESS (FOR OWNER) */}
             {isMe && (
-              <div className="card-base p-5 space-y-3.5">
+              <div className="card-base p-4 sm:p-5 space-y-3.5 min-w-0 max-w-full overflow-hidden break-words">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Profile Completeness
@@ -2798,7 +2797,7 @@ export const ProfilePage: React.FC = () => {
             )}
 
             {/* 6. SKILLS SECTION */}
-            <div className="card-base p-5 sm:p-6 space-y-4">
+            <div className="card-base p-4 sm:p-6 space-y-4 min-w-0 max-w-full overflow-hidden break-words">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">
@@ -2873,7 +2872,7 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* 7. SOCIAL LINKS SECTION */}
-            <div className="card-base p-5 sm:p-6 space-y-4">
+            <div className="card-base p-4 sm:p-6 space-y-4 min-w-0 max-w-full overflow-hidden break-words">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Globe size={16} className="text-brand-600" />

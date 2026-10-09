@@ -246,16 +246,16 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
           )}
 
           {/* Semi-transparent dark mask overlay with cutout guide */}
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
             {isAvatar ? (
               <div
-                className="w-56 h-56 sm:w-64 sm:h-64 rounded-full border-2 border-white/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.65)] relative"
+                className="w-56 h-56 sm:w-64 sm:h-64 rounded-full border-2 border-white/90 ring-[999px] ring-slate-950/70 relative"
               >
                 <div className="absolute inset-0 rounded-full border border-dashed border-white/40" />
               </div>
             ) : (
               <div
-                className="w-[88%] sm:w-[92%] h-44 sm:h-48 rounded-xl border-2 border-white/90 shadow-[0_0_0_9999px_rgba(15,23,42,0.65)] relative"
+                className="w-[88%] sm:w-[92%] h-44 sm:h-48 rounded-xl border-2 border-white/90 ring-[999px] ring-slate-950/70 relative"
               >
                 <div className="absolute inset-0 rounded-xl border border-dashed border-white/40" />
               </div>

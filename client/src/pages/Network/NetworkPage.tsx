@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { supabase, removeConnection } from '../../lib/supabase';
+import { supabase, removeConnection, resolveUserIdToUUID, isUUID } from '../../lib/supabase';
 import { Avatar } from '../../components/common/Avatar';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -49,15 +49,18 @@ export const NetworkPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      const userUuid = user?.id ? (isUUID(user.id) ? user.id : await resolveUserIdToUUID(user.id)) : null;
+      const lookupId = userUuid || user?.id;
+
       const [connRes, pendingRes, proposalsRes, supaConnsRes, supaPropsRes] = await Promise.all([
         api.getConnections().catch(() => ({ connections: [] })),
         api.getPendingConnections().catch(() => ({ received: [], sent: [] })),
         api.getStartupProposals().catch(() => ({ received: [], sent: [] })),
-        user?.id
-          ? supabase.from('connections').select('*').or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        lookupId && isUUID(lookupId)
+          ? supabase.from('connections').select('*').or(`sender_id.eq.${lookupId},receiver_id.eq.${lookupId}`)
           : Promise.resolve({ data: [] }),
-        user?.id
-          ? supabase.from('startup_proposals').select('*').or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        lookupId && isUUID(lookupId)
+          ? supabase.from('startup_proposals').select('*').or(`sender_id.eq.${lookupId},receiver_id.eq.${lookupId}`)
           : Promise.resolve({ data: [] }),
       ]);
 
@@ -89,19 +92,19 @@ export const NetworkPage: React.FC = () => {
         const supaAcceptedOtherIds = new Set<string>();
         const allOtherIds = new Set<string>();
         supaConns.forEach((c: any) => {
-          const oId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
+          const oId = (c.sender_id === lookupId || (userUuid && c.sender_id === userUuid)) ? c.receiver_id : c.sender_id;
           if (oId) {
             allOtherIds.add(oId);
             if (c.status === 'ACCEPTED') supaAcceptedOtherIds.add(oId);
           }
         });
-        supaProps.forEach((pr: any) => allOtherIds.add(pr.sender_id === user.id ? pr.receiver_id : pr.sender_id));
+        supaProps.forEach((pr: any) => allOtherIds.add((pr.sender_id === lookupId || (userUuid && pr.sender_id === userUuid)) ? pr.receiver_id : pr.sender_id));
 
         // When Supabase connection query succeeds, Supabase is authoritative: filter out connections not accepted in Supabase
         if (Array.isArray(supaConnsRes?.data)) {
           connList = connList.filter((item: any) => {
             const oId = item.user?.id;
-            return oId && supaAcceptedOtherIds.has(oId);
+            return oId && supaAcceptedOtherIds.has(oId) && !locallyRemoved.has(oId) && !locallyRemoved.has(item.connectionId);
           });
         }
 
@@ -115,7 +118,7 @@ export const NetworkPage: React.FC = () => {
         }
 
         for (const c of supaConns) {
-          const otherId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
+          const otherId = (c.sender_id === lookupId || (userUuid && c.sender_id === userUuid)) ? c.receiver_id : c.sender_id;
           if (locallyRemoved.has(otherId) || locallyRemoved.has(c.id)) {
             continue;
           }
@@ -282,27 +285,35 @@ export const NetworkPage: React.FC = () => {
       .subscribe();
 
     const broadcastListener = supabase
-      .channel(`global-conn-listener-${user.id}`)
+      .channel('global-connections-broadcast')
       .on('broadcast', { event: 'connection_changed' }, (payload: any) => {
         const data = payload?.payload;
-        if (data && (data.targetUserId === user.id || data.userId === user.id)) {
-          if (data.action === 'REMOVED') {
-            const partnerId = data.userId === user.id ? data.targetUserId : data.userId;
-            if (partnerId) {
-              try {
-                const raw = localStorage.getItem('startupz_removed_connections');
-                const list = raw ? JSON.parse(raw) : [];
-                if (!list.includes(partnerId)) {
-                  list.push(partnerId);
-                  localStorage.setItem('startupz_removed_connections', JSON.stringify(list));
-                }
-              } catch {}
+        if (data) {
+          const isMatch = [data.userId, data.targetUserId, data.u1, data.u2].some(
+            (id) => id && (id === user.id || id === user.email)
+          );
+          if (isMatch || data.action === 'REMOVED') {
+            if (data.action === 'REMOVED') {
+              const partnerId =
+                (data.userId === user.id || data.u1 === user.id)
+                  ? (data.targetUserId || data.u2)
+                  : (data.userId || data.u1);
+              if (partnerId) {
+                try {
+                  const raw = localStorage.getItem('startupz_removed_connections');
+                  const list = raw ? JSON.parse(raw) : [];
+                  if (!list.includes(partnerId)) {
+                    list.push(partnerId);
+                    localStorage.setItem('startupz_removed_connections', JSON.stringify(list));
+                  }
+                } catch {}
+              }
+              setConnections((prev) =>
+                prev.filter((c) => c.connectionId !== data.connectionId && c.user?.id !== partnerId)
+              );
             }
-            setConnections((prev) =>
-              prev.filter((c) => c.connectionId !== data.connectionId && c.user?.id !== partnerId)
-            );
+            fetchData();
           }
-          fetchData();
         }
       })
       .subscribe();
@@ -408,12 +419,30 @@ export const NetworkPage: React.FC = () => {
         setTimeout(() => setJustAccepted(null), 6000);
       }
 
-      // 4. Mark related notifications as read in Supabase
+      // 4. Mark related notifications as read and updated in Supabase & localStorage
+      const targetType = action === 'ACCEPT' ? 'CONNECTION_ACCEPTED' : 'CONNECTION_REJECTED';
+      const targetTitle = action === 'ACCEPT' ? 'Connected 🤝' : 'Request Declined';
+
+      try {
+        if (action === 'ACCEPT') {
+          const rawA = localStorage.getItem('startupz_accepted_notifications');
+          const setA = new Set<string>(rawA ? JSON.parse(rawA) : []);
+          setA.add(connectionId);
+          localStorage.setItem('startupz_accepted_notifications', JSON.stringify(Array.from(setA)));
+          if (resolvedSenderId) {
+            const rawS = localStorage.getItem('startupz_accepted_senders');
+            const setS = new Set<string>(rawS ? JSON.parse(rawS) : []);
+            setS.add(resolvedSenderId);
+            localStorage.setItem('startupz_accepted_senders', JSON.stringify(Array.from(setS)));
+          }
+        }
+      } catch {}
+
       if (resolvedSenderId) {
         try {
           await supabase
             .from('notifications')
-            .update({ is_read: true })
+            .update({ is_read: true, type: targetType, title: targetTitle })
             .eq('user_id', user.id)
             .eq('sender_id', resolvedSenderId)
             .eq('type', 'CONNECTION_REQUEST');
@@ -423,6 +452,11 @@ export const NetworkPage: React.FC = () => {
       // 5. Mirror to backend API
       try {
         await api.respondConnection(connectionId, action);
+        await api.markNotificationAsRead(connectionId, {
+          type: targetType,
+          title: targetTitle,
+          senderId: resolvedSenderId,
+        }).catch(() => {});
       } catch (e) {
         console.warn('Backend respondConnection notice:', e);
       }

@@ -699,14 +699,45 @@ export const isUUID = (val?: string | null): boolean =>
 
 export async function resolveUserIdToUUID(identifier?: string | null): Promise<string | null> {
   if (!identifier) return null;
-  if (isUUID(identifier)) return identifier;
   const clean = identifier.toLowerCase().trim().replace(/^@/, '');
-  if (clean === 'ruthwikpatel08' || clean === 'ruthwik' || clean.includes('ruthwik9595')) {
+
+  if (
+    clean === 'c3e1a001-8888-4444-9999-000000000001' ||
+    clean === 'b669157c-4d30-42f4-a8bf-4e27dc425e00' ||
+    clean === 'ruthwikpatel08' ||
+    clean === 'ruthwik' ||
+    clean.includes('ruthwik9595') ||
+    clean === 'ruthwikpatel08@gmail.com'
+  ) {
     return 'b669157c-4d30-42f4-a8bf-4e27dc425e00';
   }
-  if (clean === 'gokulvamshi' || clean === 'gokul' || clean.includes('gokulvamshi.workspace')) {
+
+  if (
+    clean === 'c3e1a001-8888-4444-9999-000000000002' ||
+    clean === '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba' ||
+    clean === 'gokulvamshi' ||
+    clean === 'gokul' ||
+    clean.includes('gokulvamshi.workspace') ||
+    clean === 'gokulvamshi@hookz.in' ||
+    clean === 'gokulvamshi@gmail.com'
+  ) {
     return '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba';
   }
+
+  if (clean === 'b669157c-4d30-42f4-a8bf-4e27dc425e00') return 'b669157c-4d30-42f4-a8bf-4e27dc425e00';
+  if (clean === '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba') return '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba';
+
+  if (isUUID(identifier)) {
+    try {
+      const { data: directProf } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('user_id', identifier)
+        .maybeSingle();
+      if (directProf?.user_id) return directProf.user_id;
+    } catch {}
+  }
+
   try {
     const { data: p } = await supabase
       .from('profiles')
@@ -718,6 +749,8 @@ export async function resolveUserIdToUUID(identifier?: string | null): Promise<s
       return p.user_id;
     }
   } catch {}
+
+  if (isUUID(identifier)) return identifier;
   return null;
 }
 
@@ -730,10 +763,7 @@ export async function fetchUserConnections(userId: string, forceRefresh = false)
     return { connections: [], connectedIds: new Set(), statusMap: new Map(), connInfoMap: new Map(), count: 0 };
   }
 
-  let targetUuid: string | null = userId;
-  if (!isUUID(targetUuid)) {
-    targetUuid = await resolveUserIdToUUID(userId);
-  }
+  const targetUuid = await resolveUserIdToUUID(userId);
   const lookupId = targetUuid || userId;
 
   if (!forceRefresh) {
@@ -749,12 +779,34 @@ export async function fetchUserConnections(userId: string, forceRefresh = false)
 
   const fetchPromise = (async (): Promise<UserConnectionsData> => {
     try {
-      const { data: conns, error } = await supabase
-        .from('connections')
-        .select('*')
-        .or(`sender_id.eq.${lookupId},receiver_id.eq.${lookupId}`);
+      // Read locally removed connection IDs to ensure removed connections never linger
+      const locallyRemoved = new Set<string>();
+      try {
+        const rawRem = localStorage.getItem('startupz_removed_connections');
+        if (rawRem) {
+          const arr = JSON.parse(rawRem);
+          if (Array.isArray(arr)) arr.forEach((id: string) => locallyRemoved.add(id));
+        }
+      } catch {}
 
-      const connectionList = (conns || []) as any[];
+      let connectionList: any[] = [];
+      let hadSupabaseError = false;
+
+      if (lookupId && isUUID(lookupId)) {
+        const { data: conns, error } = await supabase
+          .from('connections')
+          .select('*')
+          .or(`sender_id.eq.${lookupId},receiver_id.eq.${lookupId}`);
+
+        if (error) {
+          hadSupabaseError = true;
+        } else {
+          connectionList = (conns || []) as any[];
+        }
+      } else {
+        hadSupabaseError = true;
+      }
+
       const connectedIds = new Set<string>();
       const statusMap = new Map<string, string>();
       const connInfoMap = new Map<string, ConnectionStatusInfo>();
@@ -762,7 +814,7 @@ export async function fetchUserConnections(userId: string, forceRefresh = false)
 
       for (const c of connectionList) {
         const otherId = c.sender_id === lookupId ? c.receiver_id : c.sender_id;
-        if (otherId) {
+        if (otherId && !locallyRemoved.has(c.id) && !locallyRemoved.has(otherId)) {
           statusMap.set(otherId, c.status);
           connInfoMap.set(otherId, {
             status: c.status as any,
@@ -777,21 +829,21 @@ export async function fetchUserConnections(userId: string, forceRefresh = false)
         }
       }
 
-      // Only fallback to backend connections if Supabase request encountered an error (offline / network failure)
-      if (error && connectionList.length === 0) {
+      // Fallback to backend only if Supabase request encountered an error (offline / network failure)
+      if (hadSupabaseError && connectionList.length === 0) {
         try {
           const apiConns = await api.getConnections().catch(() => null);
           if (apiConns && Array.isArray(apiConns.connections)) {
             apiConns.connections.forEach((conn: any) => {
               const otherId = conn.userId || conn.user?.id || (conn.senderId === lookupId ? conn.receiverId : conn.senderId);
-              if (otherId && otherId !== lookupId) {
+              if (otherId && otherId !== lookupId && !locallyRemoved.has(conn.connectionId || '') && !locallyRemoved.has(otherId)) {
                 connectedIds.add(otherId);
                 statusMap.set(otherId, 'ACCEPTED');
                 connInfoMap.set(otherId, {
                   status: 'ACCEPTED',
                   isSender: conn.senderId === lookupId,
                   isReceiver: conn.receiverId === lookupId,
-                  connectionId: conn.id || null,
+                  connectionId: conn.id || conn.connectionId || null,
                 });
               }
             });
@@ -1052,19 +1104,47 @@ export async function respondConnectionRequest(
     } catch {}
   }
 
-  // Mark all related CONNECTION_REQUEST notifications as read in Supabase
+  // Mark all related CONNECTION_REQUEST notifications as read and updated in Supabase
   try {
+    const targetType = action === 'ACCEPT' ? 'CONNECTION_ACCEPTED' : 'CONNECTION_REJECTED';
+    const targetTitle = action === 'ACCEPT' ? 'Connected 🤝' : 'Request Declined';
     await supabase
       .from('notifications')
-      .update({ is_read: true })
+      .update({ is_read: true, type: targetType, title: targetTitle })
       .eq('user_id', currentUserId)
       .eq('sender_id', conn.sender_id)
       .eq('type', 'CONNECTION_REQUEST');
   } catch {}
 
+  // Local persistence sets to guarantee state survives across refresh immediately
+  try {
+    if (action === 'ACCEPT') {
+      const rawA = localStorage.getItem('startupz_accepted_notifications');
+      const setA = new Set<string>(rawA ? JSON.parse(rawA) : []);
+      setA.add(connectionId);
+      localStorage.setItem('startupz_accepted_notifications', JSON.stringify(Array.from(setA)));
+      if (conn.sender_id) {
+        const rawS = localStorage.getItem('startupz_accepted_senders');
+        const setS = new Set<string>(rawS ? JSON.parse(rawS) : []);
+        setS.add(conn.sender_id);
+        localStorage.setItem('startupz_accepted_senders', JSON.stringify(Array.from(setS)));
+      }
+    } else {
+      const rawD = localStorage.getItem('startupz_declined_notifications');
+      const setD = new Set<string>(rawD ? JSON.parse(rawD) : []);
+      setD.add(connectionId);
+      localStorage.setItem('startupz_declined_notifications', JSON.stringify(Array.from(setD)));
+    }
+  } catch {}
+
   // Mirror to backend
   try {
     api.respondConnection(connectionId, action).catch(() => {});
+    api.markNotificationAsRead(connectionId, {
+      type: action === 'ACCEPT' ? 'CONNECTION_ACCEPTED' : 'CONNECTION_REJECTED',
+      title: action === 'ACCEPT' ? 'Connected 🤝' : 'Request Declined',
+      senderId: conn.sender_id,
+    }).catch(() => {});
   } catch {}
 
   invalidateUserConnectionsCache(currentUserId);
@@ -1085,38 +1165,31 @@ export async function removeConnection(
   currentUserId: string,
   targetUserId?: string
 ): Promise<boolean> {
-  // 1. Delete in Supabase by connection ID
+  const u1 = isUUID(currentUserId) ? currentUserId : await resolveUserIdToUUID(currentUserId);
+  const u2 = targetUserId ? (isUUID(targetUserId) ? targetUserId : await resolveUserIdToUUID(targetUserId)) : null;
+
+  // 1. Delete in Supabase by connection ID (only if valid UUID)
   try {
-    if (connectionId) {
+    if (connectionId && isUUID(connectionId)) {
       await supabase.from('connections').delete().eq('id', connectionId);
     }
   } catch (err) {
     console.warn('Supabase delete connection notice:', err);
   }
 
-  // 2. Also delete in Supabase by user ID pair if targetUserId is known
-  if (targetUserId && currentUserId) {
+  // 2. Delete in Supabase by user ID pair if both are valid UUIDs
+  if (u1 && u2 && isUUID(u1) && isUUID(u2)) {
     try {
-      const u1 = isUUID(currentUserId) ? currentUserId : await resolveUserIdToUUID(currentUserId);
-      const u2 = isUUID(targetUserId) ? targetUserId : await resolveUserIdToUUID(targetUserId);
-
       await supabase
         .from('connections')
         .delete()
-        .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},receiver_id.eq.${currentUserId})`);
+        .or(`and(sender_id.eq.${u1},receiver_id.eq.${u2}),and(sender_id.eq.${u2},receiver_id.eq.${u1})`);
 
-      if (u1 && u2 && (u1 !== currentUserId || u2 !== targetUserId)) {
-        await supabase
-          .from('connections')
-          .delete()
-          .or(`and(sender_id.eq.${u1},receiver_id.eq.${u2}),and(sender_id.eq.${u2},receiver_id.eq.${u1})`);
-      }
-
-      // Also clean up any lingering notifications between these two users
+      // Clean up notifications between them
       await supabase
         .from('notifications')
         .delete()
-        .or(`and(user_id.eq.${currentUserId},sender_id.eq.${targetUserId}),and(user_id.eq.${targetUserId},sender_id.eq.${currentUserId})`)
+        .or(`and(user_id.eq.${u1},sender_id.eq.${u2}),and(user_id.eq.${u2},sender_id.eq.${u1})`)
         .in('type', ['CONNECTION_REQUEST', 'CONNECTION_ACCEPTED']);
     } catch (err) {
       console.warn('Supabase pair delete notice:', err);
@@ -1125,24 +1198,36 @@ export async function removeConnection(
 
   // 3. Mirror to backend API
   try {
-    const idToPass = connectionId || targetUserId;
+    const idToPass = connectionId || targetUserId || u2;
     if (idToPass) {
-      const q = targetUserId ? `?targetUserId=${targetUserId}` : '';
-      await api.removeConnection(`${idToPass}${q}`);
+      const q = targetUserId ? `?targetUserId=${encodeURIComponent(targetUserId)}` : (u2 ? `?targetUserId=${encodeURIComponent(u2)}` : '');
+      await api.removeConnection(`${encodeURIComponent(idToPass)}${q}`);
     }
   } catch (err) {
     console.warn('Backend API removeConnection notice:', err);
   }
 
-  // 4. Invalidate cache for BOTH users and clear all user connection caches
+  // 4. Record in localStorage removed connections set
+  try {
+    const removedKey = 'startupz_removed_connections';
+    const raw = localStorage.getItem(removedKey);
+    const set = new Set<string>(raw ? JSON.parse(raw) : []);
+    if (connectionId) set.add(connectionId);
+    if (targetUserId) set.add(targetUserId);
+    if (u1) set.add(u1);
+    if (u2) set.add(u2);
+    localStorage.setItem(removedKey, JSON.stringify(Array.from(set)));
+  } catch {}
+
+  // 5. Invalidate cache for BOTH users and clear all user connection caches
   invalidateUserConnectionsCache(currentUserId);
-  if (targetUserId) {
-    invalidateUserConnectionsCache(targetUserId);
-  }
+  if (targetUserId) invalidateUserConnectionsCache(targetUserId);
+  if (u1) invalidateUserConnectionsCache(u1);
+  if (u2) invalidateUserConnectionsCache(u2);
   userConnectionsCache.clear();
   inFlightConnectionsRequests.clear();
 
-  // 5. Broadcast removal over Supabase realtime channel so the other user's browser updates immediately
+  // 6. Broadcast removal over Supabase realtime channel so the other user's browser updates immediately
   try {
     const broadcastChannel = supabase.channel('global-connections-broadcast');
     await broadcastChannel.send({
@@ -1151,6 +1236,8 @@ export async function removeConnection(
       payload: {
         userId: currentUserId,
         targetUserId,
+        u1,
+        u2,
         connectionId,
         action: 'REMOVED',
         timestamp: new Date().toISOString(),
@@ -1158,6 +1245,9 @@ export async function removeConnection(
     });
     supabase.removeChannel(broadcastChannel);
   } catch {}
+
+  // 7. Dispatch window event
+  window.dispatchEvent(new CustomEvent('connections_updated'));
 
   return true;
 }

@@ -386,7 +386,11 @@ export const api = {
       unreadCount: typeof res?.unreadCount === 'number' ? res.unreadCount : (res?.notifications?.filter((n: any) => !n.isRead)?.length || 0),
     };
   },
-  markNotificationAsRead: (id: string) => request<any>(`/notifications/${id}/read`, { method: 'PUT' }),
+  markNotificationAsRead: (id: string, payload?: any) =>
+    request<any>(`/notifications/${id}/read`, {
+      method: 'PUT',
+      body: payload ? JSON.stringify(payload) : undefined,
+    }),
   markAllNotificationsAsRead: () => request<any>('/notifications/read-all', { method: 'PUT' }),
   deleteNotification: (id: string) => request<any>(`/notifications/${id}`, { method: 'DELETE' }),
 
