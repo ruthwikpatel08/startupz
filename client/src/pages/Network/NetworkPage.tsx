@@ -61,7 +61,21 @@ export const NetworkPage: React.FC = () => {
           : Promise.resolve({ data: [] }),
       ]);
 
-      let connList = connRes.connections || [];
+      // Filter out locally removed connections so they never resurrect from stale cache
+      let locallyRemoved = new Set<string>();
+      try {
+        const rawRem = localStorage.getItem('startupz_removed_connections');
+        if (rawRem) {
+          const arr = JSON.parse(rawRem);
+          if (Array.isArray(arr)) arr.forEach((id: string) => locallyRemoved.add(id));
+        }
+      } catch {}
+
+      let connList = (connRes.connections || []).filter((item: any) => {
+        const oId = item.user?.id;
+        return !locallyRemoved.has(item.connectionId) && (!oId || !locallyRemoved.has(oId));
+      });
+
       // Only keep PENDING items (backend may include accepted in its sent list in some versions)
       let rxList = (pendingRes.received || []).filter((r: any) => !r.status || r.status === 'PENDING');
       let txList = (pendingRes.sent || []).filter((r: any) => !r.status || r.status === 'PENDING');
@@ -72,9 +86,24 @@ export const NetworkPage: React.FC = () => {
       const supaProps = supaPropsRes?.data || [];
 
       if (user?.id && (supaConns.length > 0 || supaProps.length > 0)) {
+        const supaAcceptedOtherIds = new Set<string>();
         const allOtherIds = new Set<string>();
-        supaConns.forEach((c: any) => allOtherIds.add(c.sender_id === user.id ? c.receiver_id : c.sender_id));
+        supaConns.forEach((c: any) => {
+          const oId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
+          if (oId) {
+            allOtherIds.add(oId);
+            if (c.status === 'ACCEPTED') supaAcceptedOtherIds.add(oId);
+          }
+        });
         supaProps.forEach((pr: any) => allOtherIds.add(pr.sender_id === user.id ? pr.receiver_id : pr.sender_id));
+
+        // When Supabase has connection records, filter out backend connections not accepted in Supabase
+        if (supaConns.length > 0) {
+          connList = connList.filter((item: any) => {
+            const oId = item.user?.id;
+            return !oId || supaAcceptedOtherIds.has(oId);
+          });
+        }
 
         const profMap = new Map<string, any>();
         if (allOtherIds.size > 0) {
@@ -87,6 +116,9 @@ export const NetworkPage: React.FC = () => {
 
         for (const c of supaConns) {
           const otherId = c.sender_id === user.id ? c.receiver_id : c.sender_id;
+          if (locallyRemoved.has(otherId) || locallyRemoved.has(c.id)) {
+            continue;
+          }
           const p = profMap.get(otherId);
           const otherUserObj = {
             id: otherId,
@@ -249,9 +281,36 @@ export const NetworkPage: React.FC = () => {
       )
       .subscribe();
 
+    const broadcastListener = supabase
+      .channel(`global-conn-listener-${user.id}`)
+      .on('broadcast', { event: 'connection_changed' }, (payload: any) => {
+        const data = payload?.payload;
+        if (data && (data.targetUserId === user.id || data.userId === user.id)) {
+          if (data.action === 'REMOVED') {
+            const partnerId = data.userId === user.id ? data.targetUserId : data.userId;
+            if (partnerId) {
+              try {
+                const raw = localStorage.getItem('startupz_removed_connections');
+                const list = raw ? JSON.parse(raw) : [];
+                if (!list.includes(partnerId)) {
+                  list.push(partnerId);
+                  localStorage.setItem('startupz_removed_connections', JSON.stringify(list));
+                }
+              } catch {}
+            }
+            setConnections((prev) =>
+              prev.filter((c) => c.connectionId !== data.connectionId && c.user?.id !== partnerId)
+            );
+          }
+          fetchData();
+        }
+      })
+      .subscribe();
+
     return () => {
       window.removeEventListener('connections_updated', handleConnUpdate);
       supabase.removeChannel(channel);
+      supabase.removeChannel(broadcastListener);
     };
   }, [user?.id]);
 
@@ -405,6 +464,15 @@ export const NetworkPage: React.FC = () => {
     if (!window.confirm('Are you sure you want to remove this connection?')) return;
     setActionLoading((prev) => ({ ...prev, [connectionId]: true }));
     try {
+      // 0. Persist immediately to locally removed IDs
+      try {
+        const raw = localStorage.getItem('startupz_removed_connections');
+        const list: string[] = raw ? JSON.parse(raw) : [];
+        if (connectionId && !list.includes(connectionId)) list.push(connectionId);
+        if (otherUserId && !list.includes(otherUserId)) list.push(otherUserId);
+        localStorage.setItem('startupz_removed_connections', JSON.stringify(list));
+      } catch {}
+
       // 1. Delete in Supabase and Backend across both profiles
       await removeConnection(connectionId, user.id, otherUserId);
 

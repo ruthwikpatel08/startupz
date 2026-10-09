@@ -15,6 +15,8 @@ import {
   Sparkles,
   ChevronRight,
   Trash2,
+  Heart,
+  FolderKanban,
 } from 'lucide-react';
 
 interface NotificationItem {
@@ -605,7 +607,10 @@ export const NotificationsDropdown: React.FC = () => {
                 const isConnection = n.type === 'CONNECTION_REQUEST';
                 const isProposal = n.type === 'STARTUP_PROPOSAL';
                 const isAccepted = n.type === 'CONNECTION_ACCEPTED' || n.type === 'PROPOSAL_ACCEPTED';
-                const isMessage = n.type === 'NEW_MESSAGE' || n.type === 'MESSAGE' || n.type === 'PROJECT_MESSAGE';
+                const isProjectMsg = n.type === 'PROJECT_MESSAGE';
+                const isMessage = n.type === 'NEW_MESSAGE' || n.type === 'MESSAGE';
+                const isLike = n.type === 'POST_LIKE' || n.type === 'LIKE';
+                const isComment = n.type === 'POST_COMMENT' || n.type === 'COMMENT';
 
                 const senderName =
                   n.sender?.profile?.fullName ||
@@ -637,7 +642,13 @@ export const NotificationsDropdown: React.FC = () => {
                       />
                       <span
                         className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] ${
-                          isConnection
+                          isLike
+                            ? 'bg-rose-500'
+                            : isComment
+                            ? 'bg-indigo-600'
+                            : isProjectMsg
+                            ? 'bg-cyan-600'
+                            : isConnection
                             ? 'bg-blue-600'
                             : isProposal
                             ? 'bg-amber-600'
@@ -648,7 +659,13 @@ export const NotificationsDropdown: React.FC = () => {
                             : 'bg-brand-600'
                         }`}
                       >
-                        {isConnection ? (
+                        {isLike ? (
+                          <Heart size={9} fill="currentColor" />
+                        ) : isComment ? (
+                          <MessageSquare size={9} />
+                        ) : isProjectMsg ? (
+                          <FolderKanban size={9} />
+                        ) : isConnection ? (
                           <Users size={9} />
                         ) : isProposal ? (
                           <Rocket size={9} />

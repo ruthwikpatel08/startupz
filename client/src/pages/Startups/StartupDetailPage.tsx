@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -36,6 +36,7 @@ export const StartupDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [startup, setStartup] = useState<Startup | null>(null);
   const [loading, setLoading] = useState(true);
@@ -194,6 +195,23 @@ export const StartupDetailPage: React.FC = () => {
     }
   };
 
+  const isOwner = Boolean(
+    user && startup && (
+      user.id === startup.founderId ||
+      user.id === startup.founder?.id ||
+      user.id === (startup as any).founder_id ||
+      user.id === (startup as any).userId ||
+      (startup.founder?.email && user.email && startup.founder.email.toLowerCase() === user.email.toLowerCase()) ||
+      user.isAdmin
+    )
+  );
+
+  useEffect(() => {
+    if (startup && searchParams.get('edit') === 'true' && isOwner) {
+      handleOpenEditModal();
+    }
+  }, [startup, searchParams, isOwner]);
+
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16">
@@ -214,14 +232,6 @@ export const StartupDetailPage: React.FC = () => {
       </div>
     );
   }
-
-  const isOwner = Boolean(
-    user && (
-      user.id === startup.founderId ||
-      user.id === startup.founder?.id ||
-      user.isAdmin
-    )
-  );
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -345,17 +355,17 @@ export const StartupDetailPage: React.FC = () => {
         </div>
 
         {/* Startup Brand & One-Liner */}
-        <div className="flex flex-col sm:flex-row items-start gap-5">
+        <div className="flex flex-col sm:flex-row items-start gap-5 min-w-0">
           <img
             src={startup.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${startup.name}`}
             alt=""
             className="w-16 h-16 rounded-lg object-cover border border-slate-200 dark:border-dark-700 shrink-0"
           />
-          <div className="space-y-1.5">
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+          <div className="space-y-1.5 min-w-0 break-words flex-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight break-words">
               {startup.name}
             </h1>
-            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
+            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl break-words">
               {startup.oneLineDescription}
             </p>
             <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-1">

@@ -28,6 +28,7 @@ import {
   Rocket,
   Lightbulb,
   ArrowRight,
+  Edit2,
 } from 'lucide-react';
 
 let cachedStartupsList: Startup[] = [];
@@ -80,6 +81,7 @@ export const ExploreStartupsPage: React.FC = () => {
   // Modals & Action States
   const [connectUser, setConnectUser] = useState<any | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [expandedIdeas, setExpandedIdeas] = useState<Record<string, boolean>>({});
 
   const fetchStartups = async () => {
     if (startups.length === 0 && cachedStartupsList.length === 0) {
@@ -357,7 +359,7 @@ export const ExploreStartupsPage: React.FC = () => {
           {startups.map((startup) => (
             <div
               key={startup.id}
-              className="card-base p-5 hover:border-slate-300 dark:hover:border-dark-700 transition-colors flex flex-col justify-between"
+              className="card-base p-5 hover:border-slate-300 dark:hover:border-dark-700 transition-colors flex flex-col justify-between min-w-0 overflow-hidden break-words"
             >
               <div className="space-y-3.5">
                 {/* Header: Logo, Name, Verified, Stage */}
@@ -395,22 +397,40 @@ export const ExploreStartupsPage: React.FC = () => {
                 </div>
 
                 {/* Problem & Solution */}
-                <div className="space-y-2 text-xs">
+                <div className="space-y-2 text-xs min-w-0 break-words">
                   <div>
                     <span className="font-medium text-slate-400 uppercase text-[10px] tracking-wider block">
                       Problem
                     </span>
-                    <p className="text-slate-600 dark:text-slate-300 line-clamp-2 mt-0.5 leading-relaxed">
+                    <p className={`text-slate-600 dark:text-slate-300 ${expandedIdeas[startup.id + '-prob'] ? '' : 'line-clamp-2 sm:line-clamp-3'} mt-0.5 leading-relaxed break-words`}>
                       {startup.problem}
                     </p>
+                    {startup.problem && (startup.problem.length > 90 || startup.problem.split('\n').length > 2) && (
+                      <button
+                        type="button"
+                        onClick={() => setExpandedIdeas((prev) => ({ ...prev, [startup.id + '-prob']: !prev[startup.id + '-prob'] }))}
+                        className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline pt-0.5 cursor-pointer"
+                      >
+                        {expandedIdeas[startup.id + '-prob'] ? 'Show less' : '...more'}
+                      </button>
+                    )}
                   </div>
                   <div>
                     <span className="font-medium text-brand-600 dark:text-brand-400 uppercase text-[10px] tracking-wider block">
                       Solution
                     </span>
-                    <p className="text-slate-600 dark:text-slate-300 line-clamp-2 mt-0.5 leading-relaxed">
+                    <p className={`text-slate-600 dark:text-slate-300 ${expandedIdeas[startup.id + '-sol'] ? '' : 'line-clamp-2 sm:line-clamp-3'} mt-0.5 leading-relaxed break-words`}>
                       {startup.solution}
                     </p>
+                    {startup.solution && (startup.solution.length > 90 || startup.solution.split('\n').length > 2) && (
+                      <button
+                        type="button"
+                        onClick={() => setExpandedIdeas((prev) => ({ ...prev, [startup.id + '-sol']: !prev[startup.id + '-sol'] }))}
+                        className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline pt-0.5 cursor-pointer"
+                      >
+                        {expandedIdeas[startup.id + '-sol'] ? 'Show less' : '...more'}
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -496,7 +516,26 @@ export const ExploreStartupsPage: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {Boolean(
+                      user && (
+                        user.id === startup.founderId ||
+                        user.id === startup.founder?.id ||
+                        user.id === (startup as any).founder_id ||
+                        user.id === (startup as any).userId ||
+                        (startup.founder?.email && user.email && startup.founder.email.toLowerCase() === user.email.toLowerCase()) ||
+                        user.isAdmin
+                      )
+                    ) && (
+                      <Link
+                        to={`/startups/${startup.id}?edit=true`}
+                        className="px-2.5 py-1 text-xs rounded-md font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900/60 hover:bg-brand-100 dark:hover:bg-brand-900/40 inline-flex items-center gap-1 transition-colors"
+                        title="Edit your startup"
+                      >
+                        <Edit2 size={11} />
+                        <span>Edit</span>
+                      </Link>
+                    )}
                     <button
                       onClick={(e) => handleFollow(startup.id, e)}
                       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${

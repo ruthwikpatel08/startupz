@@ -338,6 +338,18 @@ router.post('/:id/like', requireAuth, async (req, res) => {
             link: '/feed',
           },
         }).catch(() => null);
+
+        if (supabaseAdmin) {
+          await supabaseAdmin.from('notifications').insert({
+            user_id: post.authorId,
+            sender_id: req.user.id,
+            type: 'POST_LIKE',
+            title: 'Liked your post ❤️',
+            message: `${req.user.profile?.fullName || 'Someone'} liked your update.`,
+            link: '/feed',
+            is_read: false,
+          }).catch(() => null);
+        }
       }
 
       return res.json({ liked: true, likesCount });
@@ -407,6 +419,18 @@ router.post('/:id/comments', requireAuth, async (req, res) => {
           link: '/feed',
         },
       }).catch(() => null);
+
+      if (supabaseAdmin) {
+        await supabaseAdmin.from('notifications').insert({
+          user_id: post.authorId,
+          sender_id: req.user.id,
+          type: 'POST_COMMENT',
+          title: 'New Comment on your post 💬',
+          message: `${req.user.profile?.fullName || 'Someone'} commented: "${content.slice(0, 50)}..."`,
+          link: '/feed',
+          is_read: false,
+        }).catch(() => null);
+      }
     }
 
     return res.status(201).json({ message: 'Comment posted.', comment });

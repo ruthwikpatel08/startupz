@@ -22,6 +22,7 @@ import { StartupConnectionModal } from '../../components/common/StartupConnectio
 import { ReportModal } from '../../components/common/ReportModal';
 import { Modal } from '../../components/common/Modal';
 import { SEO } from '../../components/common/SEO';
+import { ImageCropModal } from '../../components/common/ImageCropModal';
 import { searchLocations, searchColleges, resolveIndianLocation } from '../../data/indiaData';
 import {
   MapPin,
@@ -318,7 +319,8 @@ export const ProfilePage: React.FC = () => {
 
       const initialRole = normalizeRoleValue(profileUser?.role || currentP.preferredRole || currentUser?.role || 'STUDENT');
       const changeCount = currentP.roleChangeCount ?? currentP.role_change_count ?? (profileUser as any)?.roleChangeCount ?? (currentUser as any)?.roleChangeCount ?? 0;
-      const initialUsername = (currentP.username || (profileUser?.email || currentUser?.email ? (profileUser?.email || currentUser?.email)!.split('@')[0] : '')).toLowerCase().replace(/^@/, '');
+      const fallbackEmail = profileUser?.email || currentUser?.email || '';
+      const initialUsername = (currentP.username || (fallbackEmail ? fallbackEmail.split('@')[0] : '')).toLowerCase().replace(/^@/, '');
       const usernameChangedAt = currentP.usernameChangedAt || currentP.username_changed_at || (profileUser as any)?.usernameChangedAt || (profileUser as any)?.username_changed_at || null;
 
       setFormData({
@@ -484,8 +486,9 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleConfirmKeepPhoto = async () => {
-    if (!previewPhotoUrl || !currentUser?.id) return;
+  const handleConfirmKeepPhoto = async (finalDataUrl?: string) => {
+    const photoToSave = finalDataUrl || previewPhotoUrl;
+    if (!photoToSave || !currentUser?.id) return;
     setIsSavingPhoto(true);
     try {
       const fieldKey = targetImageType === 'avatar' ? 'avatar' : 'cover_image';
@@ -493,14 +496,14 @@ export const ProfilePage: React.FC = () => {
 
       // 1. Update Supabase profiles table immediately
       await upsertUserProfile(currentUser.id, {
-        [fieldKey]: previewPhotoUrl,
+        [fieldKey]: photoToSave,
         email: currentUser.email,
       });
 
       // 2. Mirror to backend if possible
       try {
         await api.updateProfile({
-          [formKey]: previewPhotoUrl,
+          [formKey]: photoToSave,
         });
       } catch {
         // Backend mirror non-critical
@@ -509,14 +512,14 @@ export const ProfilePage: React.FC = () => {
       // 3. Update local states
       setFormData((prev: any) => ({
         ...prev,
-        [formKey]: previewPhotoUrl,
+        [formKey]: photoToSave,
       }));
 
       const updatedUser: User = {
         ...(profileUser || currentUser),
         profile: {
           ...((profileUser || currentUser).profile || ({} as Profile)),
-          [formKey]: previewPhotoUrl,
+          [formKey]: photoToSave,
         },
       };
 
@@ -2698,25 +2701,37 @@ export const ProfilePage: React.FC = () => {
                   {profileUser.startups?.map((s) => (
                     <div
                       key={s.id}
-                      className="p-4 rounded-xl border border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850 hover:bg-white dark:hover:bg-dark-900 hover:border-slate-300 transition-all flex flex-col justify-between space-y-3"
+                      className="p-4 rounded-xl border border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850 hover:bg-white dark:hover:bg-dark-900 hover:border-slate-300 transition-all flex flex-col justify-between space-y-3 min-w-0 overflow-hidden break-words"
                     >
-                      <div className="space-y-1.5">
+                      <div className="space-y-1.5 min-w-0 break-words">
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-100">
                             {s.stage}
                           </span>
-                          <span className="text-xs text-slate-500">{s.industry}</span>
+                          <span className="text-xs text-slate-500 truncate">{s.industry}</span>
                         </div>
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white break-words">
                           {s.name}
                         </h3>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed">
+                        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed break-words">
                           {s.oneLineDescription || 'Student venture.'}
                         </p>
                       </div>
 
                       <div className="pt-2 border-t border-slate-200/80 dark:border-dark-700/60 flex items-center justify-between text-xs">
-                        <span className="text-slate-500 font-medium">Founder</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-500 font-medium">Founder</span>
+                          {isMe && (
+                            <Link
+                              to={`/startups/${s.id}?edit=true`}
+                              className="inline-flex items-center gap-1 font-semibold text-brand-600 hover:text-brand-700 bg-brand-50 dark:bg-brand-950/60 px-2 py-0.5 rounded text-[11px] border border-brand-200/60 dark:border-brand-900/60"
+                              title="Edit Startup"
+                            >
+                              <Edit3 size={11} />
+                              <span>Edit</span>
+                            </Link>
+                          )}
+                        </div>
                         <Link
                           to={`/startups/${s.id}`}
                           className="inline-flex items-center gap-1 font-semibold text-brand-600 hover:underline"
@@ -4132,8 +4147,8 @@ export const ProfilePage: React.FC = () => {
         </div>
       </Modal>
 
-      {/* 2. CONFIRM & KEEP PHOTO MODAL */}
-      <Modal
+      {/* 2. CONFIRM & KEEP PHOTO MODAL WITH DRAG, ZOOM & CROP CONTROLS */}
+      <ImageCropModal
         isOpen={confirmPhotoModalOpen}
         onClose={() => {
           if (!isSavingPhoto) {
@@ -4141,64 +4156,11 @@ export const ProfilePage: React.FC = () => {
             setPreviewPhotoUrl('');
           }
         }}
-        title={`Confirm & Keep ${targetImageType === 'avatar' ? 'Profile Photo' : 'Background Cover'}`}
-        maxWidth="md"
-      >
-        <div className="space-y-4 py-2 font-sans">
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Review your selected image. Only after your permission and confirmation will this photo be kept on your profile.
-          </p>
-
-          <div className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden">
-            {targetImageType === 'avatar' ? (
-              <img
-                src={previewPhotoUrl}
-                alt="Selected Avatar Preview"
-                className="w-36 h-36 rounded-full object-cover border-4 border-white dark:border-slate-900 shadow-xl"
-              />
-            ) : (
-              <img
-                src={previewPhotoUrl}
-                alt="Selected Cover Preview"
-                className="w-full h-44 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shadow-md"
-              />
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-            <button
-              type="button"
-              disabled={isSavingPhoto}
-              onClick={() => {
-                setConfirmPhotoModalOpen(false);
-                setPreviewPhotoUrl('');
-                handleRequestGalleryPermission(targetImageType);
-              }}
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
-            >
-              Choose Another
-            </button>
-            <button
-              type="button"
-              disabled={isSavingPhoto}
-              onClick={handleConfirmKeepPhoto}
-              className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 transition-all shadow-md shadow-emerald-600/20 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              {isSavingPhoto ? (
-                <>
-                  <RefreshCw size={14} className="animate-spin" />
-                  <span>Saving Photo...</span>
-                </>
-              ) : (
-                <>
-                  <Check size={15} />
-                  <span>Proceed & Keep Image</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </Modal>
+        imageSrc={previewPhotoUrl}
+        type={targetImageType}
+        onConfirm={handleConfirmKeepPhoto}
+        isSaving={isSavingPhoto}
+      />
 
       {/* ===================== CONNECTIONS LIST MODAL ===================== */}
       {connectionsModalOpen && (

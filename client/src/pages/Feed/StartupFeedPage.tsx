@@ -66,6 +66,7 @@ export const StartupFeedPage: React.FC = () => {
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
   const [submittingComment, setSubmittingComment] = useState<Record<string, boolean>>({});
+  const [expandedPostContent, setExpandedPostContent] = useState<Record<string, boolean>>({});
 
   // Modals
   const [connectUser, setConnectUser] = useState<any | null>(null);
@@ -120,9 +121,21 @@ export const StartupFeedPage: React.FC = () => {
         }
       } catch {}
 
+      let userLikedIds = new Set<string>();
+      if (user?.id) {
+        try {
+          const { data: supaLikes } = await supabase
+            .from('likes')
+            .select('post_id')
+            .eq('user_id', user.id);
+          (supaLikes || []).forEach((l: any) => userLikedIds.add(l.post_id));
+        } catch {}
+      }
+
       if (res?.posts && res.posts.length > 0) {
         setPosts(res.posts.map((p: any) => ({
           ...p,
+          isLiked: userLikedIds.has(p.id) || p.isLiked || false,
           isSaved: savedPostIds.has(p.id) || p.isSaved || false,
         })));
       } else {
@@ -154,7 +167,7 @@ export const StartupFeedPage: React.FC = () => {
               likesCount: p.likes_count || 0,
               commentsCount: p.comments_count || 0,
               createdAt: p.created_at,
-              isLiked: false,
+              isLiked: userLikedIds.has(p.id),
               isSaved: savedPostIds.has(p.id),
               author: {
                 id: p.author_id,
@@ -177,7 +190,11 @@ export const StartupFeedPage: React.FC = () => {
           });
           setPosts(formatted as any);
         } else if (res?.posts) {
-          setPosts(res.posts);
+          setPosts(res.posts.map((p: any) => ({
+            ...p,
+            isLiked: userLikedIds.has(p.id) || p.isLiked || false,
+            isSaved: savedPostIds.has(p.id) || p.isSaved || false,
+          })));
         }
       }
     } catch (err) {
@@ -370,7 +387,7 @@ export const StartupFeedPage: React.FC = () => {
     );
 
     try {
-      const res = await api.likePost(postId);
+      const res = await api.likePost(postId).catch(() => null);
       if (res && res.liked !== undefined) {
         setPosts((prev) =>
           prev.map((p) =>
@@ -380,25 +397,34 @@ export const StartupFeedPage: React.FC = () => {
           )
         );
       }
-    } catch (err) {
-      console.warn('API like failed, falling back to Supabase:', err);
-      try {
-        if (nextLiked) {
-          await supabase.from('likes').insert({ post_id: postId, user_id: user.id });
-        } else {
-          await supabase.from('likes').delete().match({ post_id: postId, user_id: user.id });
+    } catch {}
+
+    // Permanently sync with Supabase and send notifications
+    try {
+      if (nextLiked) {
+        await supabase.from('likes').upsert({ post_id: postId, user_id: user.id }, { onConflict: 'post_id,user_id' });
+        await supabase.from('posts').update({ likes_count: nextLikesCount }).eq('id', postId);
+
+        // Notify author if someone else liked their post
+        if (currentPost?.authorId && currentPost.authorId !== user.id) {
+          try {
+            await supabase.from('notifications').insert({
+              user_id: currentPost.authorId,
+              sender_id: user.id,
+              type: 'POST_LIKE',
+              title: 'Liked your post ❤️',
+              message: `${user.profile?.fullName || user.email?.split('@')[0] || 'Someone'} liked your update.`,
+              link: '/feed',
+              is_read: false,
+            });
+          } catch {}
         }
-      } catch (sErr) {
-        console.error('Failed to toggle like:', sErr);
-        // Revert on failure
-        setPosts((prev) =>
-          prev.map((p) =>
-            p.id === postId
-              ? { ...p, isLiked: currentlyLiked, likesCount: currentPost?.likesCount || 0 }
-              : p
-          )
-        );
+      } else {
+        await supabase.from('likes').delete().match({ post_id: postId, user_id: user.id });
+        await supabase.from('posts').update({ likes_count: nextLikesCount }).eq('id', postId);
       }
+    } catch (sErr) {
+      console.warn('Supabase like sync notice:', sErr);
     }
   };
 
@@ -545,6 +571,7 @@ export const StartupFeedPage: React.FC = () => {
       })
     );
 
+    // 1. Post to API
     try {
       const res = await api.addComment(postId, text);
       if (res?.comment) {
@@ -563,36 +590,38 @@ export const StartupFeedPage: React.FC = () => {
           })
         );
       }
-    } catch (err) {
-      console.warn('API addComment failed, trying Supabase insert fallback:', err);
-      try {
-        const { data: supaComment, error: supaErr } = await supabase
-          .from('comments')
-          .insert({
-            post_id: postId,
-            author_id: user.id,
-            content: text,
-          })
-          .select()
-          .single();
+    } catch {}
 
-        if (supaErr) throw supaErr;
-      } catch (sErr) {
-        console.error('Failed to add comment:', sErr);
-        // Revert optimistic comment
-        setPosts((prev) =>
-          prev.map((p) => {
-            if (p.id === postId) {
-              return {
-                ...p,
-                commentsCount: Math.max(0, (p.commentsCount || 1) - 1),
-                comments: (p.comments || []).filter((c: any) => c.id !== tempCommentId),
-              };
-            }
-            return p;
-          })
-        );
+    // 2. Permanently sync with Supabase and send comment notification
+    try {
+      const targetPost = posts.find((p) => p.id === postId);
+      const nextCommentsCount = (targetPost?.commentsCount || 0) + 1;
+
+      await supabase
+        .from('comments')
+        .insert({
+          post_id: postId,
+          author_id: user.id,
+          content: text,
+        });
+
+      await supabase.from('posts').update({ comments_count: nextCommentsCount }).eq('id', postId);
+
+      if (targetPost?.authorId && targetPost.authorId !== user.id) {
+        try {
+          await supabase.from('notifications').insert({
+            user_id: targetPost.authorId,
+            sender_id: user.id,
+            type: 'POST_COMMENT',
+            title: 'New Comment on your post 💬',
+            message: `${user.profile?.fullName || user.email?.split('@')[0] || 'Someone'} commented: "${text.slice(0, 50)}..."`,
+            link: '/feed',
+            is_read: false,
+          });
+        } catch {}
       }
+    } catch (sErr) {
+      console.warn('Supabase comment sync notice:', sErr);
     } finally {
       setSubmittingComment((prev) => ({ ...prev, [postId]: false }));
     }
@@ -996,7 +1025,7 @@ export const StartupFeedPage: React.FC = () => {
               <div
                 key={post.id}
                 id={`post-${post.id}`}
-                className="card-base p-5 sm:p-6 transition-colors space-y-4"
+                className="card-base p-5 sm:p-6 transition-colors space-y-4 min-w-0 overflow-hidden break-words"
               >
                 {/* Post Header */}
                 <div className="flex items-start justify-between gap-3">
@@ -1062,15 +1091,35 @@ export const StartupFeedPage: React.FC = () => {
                 </div>
 
                 {/* Post Body */}
-                <div className="space-y-2">
+                <div className="space-y-2 min-w-0 break-words">
                   {post.title && (
-                    <h3 className="font-semibold text-base text-slate-900 dark:text-white">
+                    <h3 className="font-semibold text-base text-slate-900 dark:text-white break-words">
                       {post.title}
                     </h3>
                   )}
-                  <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
-                    {post.content}
-                  </p>
+                  <div>
+                    <p
+                      className={`text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed break-words ${
+                        expandedPostContent[post.id] ? '' : 'line-clamp-2 sm:line-clamp-3'
+                      }`}
+                    >
+                      {post.content}
+                    </p>
+                    {post.content && (post.content.length > 120 || post.content.split('\n').length > 2) && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedPostContent((prev) => ({
+                            ...prev,
+                            [post.id]: !prev[post.id],
+                          }))
+                        }
+                        className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline pt-1 cursor-pointer inline-flex items-center gap-0.5"
+                      >
+                        {expandedPostContent[post.id] ? 'Show less' : '...more'}
+                      </button>
+                    )}
+                  </div>
 
                   {post.links && (
                     <div className="pt-1.5">

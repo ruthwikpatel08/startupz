@@ -215,6 +215,7 @@ export const ProjectsPage: React.FC = () => {
   }, []);
 
   // Saved Projects state
+  const [expandedProjectText, setExpandedProjectText] = useState<Record<string, boolean>>({});
   const [savedProjectIds, setSavedProjectIds] = useState<Set<string>>(() => {
     try {
       const mirror = localStorage.getItem('startupz_saved_items');
@@ -1135,20 +1136,20 @@ export const ProjectsPage: React.FC = () => {
             return (
               <div
                 key={project.id}
-                className="card-base p-5 flex flex-col justify-between space-y-4 hover:border-slate-300 dark:hover:border-dark-700 transition-colors"
+                className="card-base p-5 flex flex-col justify-between space-y-4 hover:border-slate-300 dark:hover:border-dark-700 transition-colors min-w-0 overflow-hidden break-words"
               >
-                <div className="space-y-3">
+                <div className="space-y-3 min-w-0">
                   
                   {/* Card Header: Stage, Visibility & Actions */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-900">
+                  <div className="flex items-center justify-between gap-2 flex-wrap min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-900 shrink-0">
                         {project.stage}
                       </span>
 
                       {/* Visibility Badge */}
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border ${
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border shrink-0 ${
                           project.visibility === 'PUBLIC'
                             ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
                             : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-dark-700'
@@ -1163,7 +1164,7 @@ export const ProjectsPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleToggleVisibility(project.id, project.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC')}
-                          className="text-[10px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 underline"
+                          className="text-[10px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 underline shrink-0 cursor-pointer"
                           title="Click to toggle visibility"
                         >
                           Switch to {project.visibility === 'PUBLIC' ? 'Private' : 'Public'}
@@ -1172,11 +1173,11 @@ export const ProjectsPage: React.FC = () => {
                     </div>
 
                     {/* Save Bookmark, Team Chat Link & Delete Action */}
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <button
                         type="button"
                         onClick={() => handleBookmarkToggle(project.id, project.title)}
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold border transition-colors cursor-pointer ${
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold border transition-colors cursor-pointer shrink-0 ${
                           savedProjectIds.has(project.id)
                             ? 'bg-brand-50 text-brand-600 border-brand-200 dark:bg-brand-950/60 dark:text-brand-400 dark:border-brand-900'
                             : 'bg-slate-50 text-slate-500 border-slate-200 dark:bg-dark-800 dark:text-slate-400 dark:border-dark-700 hover:text-slate-700'
@@ -1191,7 +1192,7 @@ export const ProjectsPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleDeleteProject(project.id)}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors cursor-pointer shrink-0"
                           title="Delete this project"
                         >
                           <Trash2 size={12} />
@@ -1200,7 +1201,7 @@ export const ProjectsPage: React.FC = () => {
                       )}
                       <Link
                         to={`/messages?projectGroupId=proj-group-${project.id}`}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900 hover:bg-brand-100 transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900 hover:bg-brand-100 transition-colors shrink-0"
                         title="Open project group team chat"
                       >
                         <MessageSquare size={12} />
@@ -1210,23 +1211,59 @@ export const ProjectsPage: React.FC = () => {
                   </div>
 
                   {/* Title & Idea */}
-                  <div>
-                    <h3 className="font-bold text-base text-slate-900 dark:text-white leading-snug">
+                  <div className="min-w-0 break-words">
+                    <h3 className="font-bold text-base text-slate-900 dark:text-white leading-snug break-words">
                       {project.title}
                     </h3>
-                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                    <p
+                      className={`text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed break-words ${
+                        expandedProjectText[project.id + '-idea'] ? '' : 'line-clamp-2 sm:line-clamp-3'
+                      }`}
+                    >
                       {project.ideaSummary}
                     </p>
+                    {project.ideaSummary && (project.ideaSummary.length > 90 || project.ideaSummary.split('\n').length > 2) && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedProjectText((prev) => ({
+                            ...prev,
+                            [project.id + '-idea']: !prev[project.id + '-idea'],
+                          }))
+                        }
+                        className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline pt-0.5 cursor-pointer inline-flex items-center gap-0.5"
+                      >
+                        {expandedProjectText[project.id + '-idea'] ? 'Show less' : '...more'}
+                      </button>
+                    )}
                   </div>
 
                   {/* Problem Addressed */}
-                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-dark-850/60 border border-slate-100 dark:border-dark-800 text-xs">
+                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-dark-850/60 border border-slate-100 dark:border-dark-800 text-xs min-w-0 break-words">
                     <span className="font-semibold text-slate-700 dark:text-slate-300 block mb-0.5">
                       Problem Solved:
                     </span>
-                    <span className="text-slate-500 dark:text-slate-400">
+                    <p
+                      className={`text-slate-500 dark:text-slate-400 break-words ${
+                        expandedProjectText[project.id + '-prob'] ? '' : 'line-clamp-2 sm:line-clamp-3'
+                      }`}
+                    >
                       {project.problemSolved}
-                    </span>
+                    </p>
+                    {project.problemSolved && (project.problemSolved.length > 90 || project.problemSolved.split('\n').length > 2) && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedProjectText((prev) => ({
+                            ...prev,
+                            [project.id + '-prob']: !prev[project.id + '-prob'],
+                          }))
+                        }
+                        className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline pt-0.5 cursor-pointer inline-flex items-center gap-0.5"
+                      >
+                        {expandedProjectText[project.id + '-prob'] ? 'Show less' : '...more'}
+                      </button>
+                    )}
                   </div>
 
                   {/* Roles Splitter Table / Cards */}
@@ -1449,11 +1486,11 @@ export const ProjectsPage: React.FC = () => {
                   </div>
 
                   {/* Tags */}
-                  <div className="flex flex-wrap gap-1 pt-1">
+                  <div className="flex flex-wrap gap-1 pt-1 min-w-0 overflow-hidden">
                     {project.tags.map((t, idx) => (
                       <span
                         key={idx}
-                        className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-dark-700/60"
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-dark-700/60 truncate max-w-full"
                       >
                         #{t}
                       </span>

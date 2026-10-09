@@ -623,6 +623,33 @@ export const MessagesPage: React.FC = () => {
           });
         } catch {}
 
+        // 2b. Insert project message notifications for other team members in Supabase
+        try {
+          const teamMembers = ((selectedConversation as any).members || []).filter((m: any) => {
+            const mId = m.userId || m.id;
+            return mId && mId !== user.id;
+          });
+          const senderName = user.profile?.fullName || user.email?.split('@')[0] || 'Team member';
+          const projTitle = (selectedConversation as any).projectTitle || 'Project Team';
+
+          for (const m of teamMembers) {
+            const targetId = m.userId || m.id;
+            try {
+              await supabase.from('notifications').insert({
+                user_id: targetId,
+                sender_id: user.id,
+                type: 'PROJECT_MESSAGE',
+                title: `New message in ${projTitle} 📁`,
+                message: `${senderName}: ${contentToSend.slice(0, 80)}`,
+                link: `/messages?projectGroupId=${pId}`,
+                is_read: false,
+              });
+            } catch {}
+          }
+        } catch (notifErr) {
+          console.warn('Project message notification notice:', notifErr);
+        }
+
         try {
           window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
           window.dispatchEvent(new CustomEvent('startupz_messages_updated'));
