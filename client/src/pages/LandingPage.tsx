@@ -23,15 +23,13 @@ import {
   Check,
   MapPin,
   Clock,
-  Crown,
-  Edit3,
 } from 'lucide-react';
 import { GoogleAccountChooserModal } from '../components/auth/GoogleAccountChooserModal';
 import { QuickLoginModal } from '../components/auth/QuickLoginModal';
 import { ConnectModal } from '../components/common/ConnectModal';
 import { StartupConnectionModal } from '../components/common/StartupConnectionModal';
 import { Avatar } from '../components/common/Avatar';
-import { RoleBadge, VerificationBadge, GoldenBadge } from '../components/common/Badge';
+import { RoleBadge, VerificationBadge } from '../components/common/Badge';
 import { supabase, fetchUserConnections } from '../lib/supabase';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -108,12 +106,11 @@ export const LandingPage: React.FC = () => {
   const [recentConnections, setRecentConnections] = useState<any[]>([]);
   const [otherProfiles, setOtherProfiles] = useState<any[]>([]);
   const [otherProfilesLoading, setOtherProfilesLoading] = useState<boolean>(true);
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'students' | 'founders' | 'cofounders' | 'others'>('all');
   const [connectUser, setConnectUser] = useState<any | null>(null);
   const [startupConnectUser, setStartupConnectUser] = useState<any | null>(null);
   const [connectionStatusMap, setConnectionStatusMap] = useState<Map<string, string>>(new Map());
 
-  // Fetch profiles across categories and listen for real-time updates
+  // Fetch community profiles excluding current user and founders/co-founders
   useEffect(() => {
     let isMounted = true;
     const fetchCommunityProfiles = async () => {
@@ -123,12 +120,12 @@ export const LandingPage: React.FC = () => {
             .from('profiles')
             .select('*')
             .order('updated_at', { ascending: false, nullsFirst: false })
-            .limit(60),
+            .limit(80),
           supabase
             .from('profiles')
             .select('*')
             .order('created_at', { ascending: false })
-            .limit(60),
+            .limit(80),
         ]);
 
         let rawList: any[] = [];
@@ -139,39 +136,44 @@ export const LandingPage: React.FC = () => {
           rawList = [...rawList, ...byCreatedRes.value.data];
         }
 
-        // Always ensure the logged-in user's profile is included with latest data
-        if (user?.id) {
-          const { data: myProf } = await supabase
-            .from('profiles')
-            .select('*')
-            .or(`user_id.eq.${user.id},id.eq.${user.id}`)
-            .maybeSingle();
-          if (myProf) {
-            rawList.unshift(myProf);
-          }
-        }
-
-        // Deduplicate profiles by user_id / id
+        // Deduplicate profiles, excluding current user and founder/co-founder roles from home showcase
         const profMap = new Map<string, any>();
         for (const p of rawList) {
           const key = p.user_id || p.id || p.email;
-          if (key && !profMap.has(key)) {
-            profMap.set(key, p);
-          }
-        }
+          if (!key || profMap.has(key)) continue;
 
-        const mapped = Array.from(profMap.values()).map((p) => {
+          // Never display the logged-in user's own profile on home; only all other users
+          const isCurrentUser = Boolean(
+            user && (
+              (p.user_id && p.user_id === user.id) ||
+              (p.id && p.id === user.id) ||
+              (p.userId && p.userId === user.id) ||
+              (p.email && user.email && p.email.toLowerCase() === user.email.toLowerCase())
+            )
+          );
+          if (isCurrentUser) continue;
+
           const { role, category } = getProfileRoleAndCategory(p);
-          return {
+
+          // Exclude founders and co-founders from home talent showcase
+          const isFounderOrCoFounder =
+            category === 'founders' ||
+            category === 'cofounders' ||
+            role.toLowerCase().includes('founder') ||
+            (p.preferred_role && p.preferred_role.toUpperCase().includes('FOUNDER')) ||
+            (p.role && p.role.toUpperCase().includes('FOUNDER'));
+          if (isFounderOrCoFounder) continue;
+
+          profMap.set(key, {
             ...p,
             role_label: role,
             category: category,
             oneLineBio: p.one_line_bio || p.headline || '',
-          };
-        });
+          });
+        }
 
         if (isMounted) {
-          setOtherProfiles(mapped);
+          setOtherProfiles(Array.from(profMap.values()));
         }
       } catch (err) {
         console.warn('Failed to load community profiles:', err);
@@ -334,235 +336,151 @@ export const LandingPage: React.FC = () => {
                 <Sparkles size={12} /> Community Talent Showcase
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                Students, Founders & Ecosystem Talent
+                Students, Specialists & Community Talent
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                Discover ambitious students, founders, co-founders & innovators across their respective roles
+                Discover ambitious students, engineers, designers & builders across the ecosystem
               </p>
-            </div>
-
-            {/* Category Filter Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
-              {[
-                { id: 'all', label: 'All Talent', count: otherProfiles.length },
-                { id: 'students', label: 'Students', count: otherProfiles.filter((p) => p.category === 'students').length },
-                { id: 'founders', label: 'Founders', count: otherProfiles.filter((p) => p.category === 'founders').length },
-                { id: 'cofounders', label: 'Co-Founders', count: otherProfiles.filter((p) => p.category === 'cofounders').length },
-                { id: 'others', label: 'Specialists & Others', count: otherProfiles.filter((p) => p.category === 'others').length },
-              ].map((tab) => {
-                const isActive = selectedCategory === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setSelectedCategory(tab.id as any)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
-                      isActive
-                        ? 'bg-brand-600 text-white shadow-xs'
-                        : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
-                    }`}
-                  >
-                    <span>{tab.label}</span>
-                    <span
-                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                        isActive
-                          ? 'bg-white/20 text-white'
-                          : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
-                      }`}
-                    >
-                      {tab.count}
-                    </span>
-                  </button>
-                );
-              })}
             </div>
 
             {otherProfilesLoading ? (
               <div className="flex items-center justify-center py-10">
                 <div className="w-7 h-7 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
               </div>
-            ) : (() => {
-              const visibleProfiles = otherProfiles.filter((p) => {
-                if (selectedCategory !== 'all' && p.category !== selectedCategory) {
-                  return false;
-                }
-                return true;
-              });
+            ) : otherProfiles.length === 0 ? (
+              <div className="text-center py-8 px-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  No community talent profiles found yet.
+                </p>
+                <Link
+                  to="/cofounders"
+                  className="inline-block mt-3 text-xs font-semibold text-brand-600 hover:text-brand-500"
+                >
+                  Browse Talent Directory &rarr;
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {otherProfiles.slice(0, 12).map((p) => {
+                  const displayName = p.full_name || 'Community Member';
+                  const displayRole = p.role_label || 'Other';
+                  const username = p.username || displayName.toLowerCase().replace(/\s+/g, '_');
+                  const profileUrl = p.user_id ? `/profile/${p.user_id}` : '/cofounders';
+                  const connStatus = p.user_id ? connectionStatusMap.get(p.user_id) : undefined;
+                  const targetUserObj = {
+                    id: p.user_id || p.id,
+                    email: p.email || '',
+                    profile: {
+                      fullName: displayName,
+                      username: username,
+                      avatar: p.avatar,
+                      headline: p.headline,
+                    },
+                  };
 
-              if (visibleProfiles.length === 0) {
-                return (
-                  <div className="text-center py-8 px-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      No members found in this category yet.
-                    </p>
-                    <Link
-                      to="/cofounders"
-                      className="inline-block mt-3 text-xs font-semibold text-brand-600 hover:text-brand-500"
+                  return (
+                    <div
+                      key={p.id}
+                      className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-subtle transition-colors flex flex-col justify-between space-y-3"
                     >
-                      Browse Talent Directory &rarr;
-                    </Link>
-                  </div>
-                );
-              }
-
-              return (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {visibleProfiles.slice(0, 12).map((p) => {
-                    const displayName = p.full_name || 'Community Member';
-                    const displayRole = p.role_label || 'Other';
-                    const username = p.username || displayName.toLowerCase().replace(/\s+/g, '_');
-                    const profileUrl = p.user_id ? `/profile/${p.user_id}` : '/cofounders';
-                    const connStatus = p.user_id ? connectionStatusMap.get(p.user_id) : undefined;
-                    const isMe = Boolean(
-                      user && (
-                        (p.user_id && p.user_id === user.id) ||
-                        (p.id && p.id === user.id) ||
-                        (p.userId && p.userId === user.id) ||
-                        (p.email && user.email && p.email.toLowerCase() === user.email.toLowerCase())
-                      )
-                    );
-                    const targetUserObj = {
-                      id: p.user_id || p.id,
-                      email: p.email || '',
-                      profile: {
-                        fullName: displayName,
-                        username: username,
-                        avatar: p.avatar,
-                        headline: p.headline,
-                      },
-                    };
-
-                    return (
-                      <div
-                        key={p.id}
-                        className={`p-4 rounded-xl bg-white dark:bg-slate-900 border ${
-                          isMe
-                            ? 'border-brand-400 dark:border-brand-600 ring-1 ring-brand-400/30'
-                            : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                        } shadow-subtle transition-colors flex flex-col justify-between space-y-3`}
-                      >
-                        <div className="space-y-2.5">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <Avatar
-                                src={p.avatar}
-                                name={displayName}
-                                size="lg"
-                              />
-                              <div>
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <Link
-                                    to={profileUrl}
-                                    className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
-                                  >
-                                    {displayName}
-                                  </Link>
-                                  <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
-                                    @{username}
-                                  </span>
-                                  <RoleBadge role={displayRole} size="sm" />
-                                  {isMe && (
-                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-100 text-brand-700 dark:bg-brand-950/80 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
-                                      You
-                                    </span>
-                                  )}
-                                  <VerificationBadge badge="Active Builder" isVerified={true} size="sm" />
-                                </div>
-                                <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{p.headline}</p>
-                                <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
-                                  <span className="flex items-center gap-1">
-                                    <MapPin size={11} /> {p.location || 'Remote'}
-                                  </span>
-                                  <span>•</span>
-                                  <span className="flex items-center gap-1">
-                                    <Clock size={11} /> Full-time
-                                  </span>
-                                </div>
+                      <div className="space-y-2.5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <Avatar
+                              src={p.avatar}
+                              name={displayName}
+                              size="lg"
+                            />
+                            <div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <Link
+                                  to={profileUrl}
+                                  className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                                >
+                                  {displayName}
+                                </Link>
+                                <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
+                                  @{username}
+                                </span>
+                                <RoleBadge role={displayRole} size="sm" />
+                                <VerificationBadge badge="Active Builder" isVerified={true} size="sm" />
+                              </div>
+                              <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{p.headline}</p>
+                              <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                                <span className="flex items-center gap-1">
+                                  <MapPin size={11} /> {p.location || 'Remote'}
+                                </span>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                  <Clock size={11} /> Full-time
+                                </span>
                               </div>
                             </div>
                           </div>
+                        </div>
 
-                          {/* One-Line Bio */}
-                          {(p.one_line_bio || p.oneLineBio) && (
-                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-2 pt-0.5">
-                              {p.one_line_bio || p.oneLineBio}
-                            </p>
+                        {/* One-Line Bio */}
+                        {(p.one_line_bio || p.oneLineBio) && (
+                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-2 pt-0.5">
+                            {p.one_line_bio || p.oneLineBio}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <RoleBadge role={displayRole} size="sm" />
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <Link
+                            to={profileUrl}
+                            className="btn-tertiary !text-xs !py-1 !px-2"
+                          >
+                            View Profile
+                          </Link>
+
+                          {/* Startup Connection (Pitch) Button */}
+                          <button
+                            onClick={() => handlePitchClick(targetUserObj)}
+                            className="btn-secondary !text-xs !py-1 !px-2.5 flex items-center gap-1"
+                            title="Propose Co-Founding a Startup"
+                          >
+                            <Rocket size={12} /> Pitch
+                          </button>
+
+                          {/* User Connection Button */}
+                          {connStatus === 'ACCEPTED' ? (
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
+                                <Check size={12} /> Connected
+                              </span>
+                              <Link
+                                to={`/messages?user=${p.user_id}`}
+                                className="btn-primary !text-xs !py-1 !px-2 flex items-center gap-1"
+                              >
+                                <MessageSquare size={12} /> Chat
+                              </Link>
+                            </div>
+                          ) : connStatus === 'PENDING' ? (
+                            <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
+                              Pending
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleConnectClick(targetUserObj)}
+                              className="btn-primary !text-xs !py-1 !px-2.5 flex items-center gap-1"
+                            >
+                              <UserPlus size={12} /> Connect
+                            </button>
                           )}
                         </div>
-
-                        <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
-                          <div className="flex items-center gap-1.5">
-                            <RoleBadge role={displayRole} size="sm" />
-                          </div>
-
-                          <div className="flex items-center gap-1.5">
-                            {isMe ? (
-                              <>
-                                <Link
-                                  to="/profile"
-                                  className="btn-primary !text-xs !py-1 !px-2.5 flex items-center gap-1"
-                                >
-                                  <Edit3 size={12} /> Edit Profile
-                                </Link>
-                                <Link
-                                  to="/profile"
-                                  className="btn-tertiary !text-xs !py-1 !px-2"
-                                >
-                                  View
-                                </Link>
-                              </>
-                            ) : (
-                              <>
-                                <Link
-                                  to={profileUrl}
-                                  className="btn-tertiary !text-xs !py-1 !px-2"
-                                >
-                                  View Profile
-                                </Link>
-
-                                {/* Startup Connection (Pitch) Button */}
-                                <button
-                                  onClick={() => handlePitchClick(targetUserObj)}
-                                  className="btn-secondary !text-xs !py-1 !px-2.5 flex items-center gap-1"
-                                  title="Propose Co-Founding a Startup"
-                                >
-                                  <Rocket size={12} /> Pitch
-                                </button>
-
-                                {/* User Connection Button */}
-                                {connStatus === 'ACCEPTED' ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
-                                      <Check size={12} /> Connected
-                                    </span>
-                                    <Link
-                                      to={`/messages?user=${p.user_id}`}
-                                      className="btn-primary !text-xs !py-1 !px-2 flex items-center gap-1"
-                                    >
-                                      <MessageSquare size={12} /> Chat
-                                    </Link>
-                                  </div>
-                                ) : connStatus === 'PENDING' ? (
-                                  <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
-                                    Pending
-                                  </span>
-                                ) : (
-                                  <button
-                                    onClick={() => handleConnectClick(targetUserObj)}
-                                    className="btn-primary !text-xs !py-1 !px-2.5 flex items-center gap-1"
-                                  >
-                                    <UserPlus size={12} /> Connect
-                                  </button>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        </div>
                       </div>
-                    );
-                  })}
-                </div>
-              );
-            })()}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* My Network Quick Panel — only shown when logged in */}
@@ -770,131 +688,7 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
-      {/* 4. HOOKZ LEADERSHIP & FOUNDERS */}
-      <section className="py-16 bg-gradient-to-b from-amber-500/5 via-slate-50/60 to-transparent dark:from-amber-950/15 dark:via-dark-950/40 dark:to-transparent border-t border-amber-200/40 dark:border-amber-900/30">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-400/20 via-yellow-400/20 to-amber-500/20 border border-amber-300 dark:border-yellow-400/50 text-amber-800 dark:text-amber-300 text-xs font-bold tracking-wide shadow-xs">
-              <Crown size={14} className="text-amber-600 dark:text-amber-400 fill-amber-500/30" />
-              <span>HookZ Leadership</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-              Meet the Founders of HookZ
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-lg mx-auto">
-              Connecting builders, technical co-founders, and investors worldwide to build real ventures.
-            </p>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-4xl mx-auto">
-            {/* Founder Card - Ruthwik Patel */}
-            <div className="group relative rounded-2xl bg-gradient-to-b from-amber-50/70 via-white to-amber-50/30 dark:from-amber-950/25 dark:via-dark-900 dark:to-amber-950/10 border-2 border-amber-300 dark:border-amber-500/50 shadow-md hover:shadow-xl hover:border-amber-400 dark:hover:border-amber-400 transition-all duration-300 p-6 flex flex-col justify-between ring-1 ring-amber-400/20">
-              <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="relative shrink-0">
-                    <img
-                      src="/images/founders/ruthwik-patel.png"
-                      alt="Ruthwik Patel - Founder of HookZ"
-                      className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl object-cover object-top ring-2 ring-amber-400 dark:ring-amber-400 shadow-md group-hover:scale-102 transition-transform duration-300"
-                    />
-                    <span className="absolute -bottom-2 -right-1">
-                      <GoldenBadge label="Founder" size="sm" />
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1 pt-0.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
-                        Ruthwik Patel
-                      </h3>
-                    </div>
-                    <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mt-0.5">
-                      Founder & Lead Architect
-                    </p>
-                    <span className="inline-flex items-center text-xs font-mono font-semibold text-brand-600 dark:text-brand-400 mt-0.5">
-                      @ruthwikpatel08
-                    </span>
-                  </div>
-                </div>
-
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed pt-1">
-                  Architected and founded HookZ with the vision to bridge ambitious student builders, technical co-founders, and early-stage capital. Passionate about full-stack systems, product scaling, and democratizing startup discovery worldwide.
-                </p>
-
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {['Full-Stack Architecture', 'Product Strategy', 'AI Systems', 'Startup Scaling'].map((skill) => (
-                    <span
-                      key={skill}
-                      className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-900 dark:text-amber-300 border border-amber-300/60 dark:border-amber-500/30"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-4 mt-3 border-t border-amber-200/60 dark:border-amber-900/40 flex items-center justify-between">
-                <GoldenBadge label="HookZ Founder" size="md" />
-                <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1">
-                  <Sparkles size={12} className="text-amber-500" /> Platform Founder
-                </span>
-              </div>
-            </div>
-
-            {/* Co-Founder Card - Gokul Vamshi */}
-            <div className="group relative rounded-2xl bg-gradient-to-b from-amber-50/70 via-white to-amber-50/30 dark:from-amber-950/25 dark:via-dark-900 dark:to-amber-950/10 border-2 border-amber-300 dark:border-amber-500/50 shadow-md hover:shadow-xl hover:border-amber-400 dark:hover:border-amber-400 transition-all duration-300 p-6 flex flex-col justify-between ring-1 ring-amber-400/20">
-              <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="relative shrink-0">
-                    <img
-                      src="/images/founders/gokul-vamshi.jpg"
-                      alt="Gokul Vamshi - Co-Founder of HookZ"
-                      className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl object-cover object-top ring-2 ring-amber-400 dark:ring-amber-400 shadow-md group-hover:scale-102 transition-transform duration-300"
-                    />
-                    <span className="absolute -bottom-2 -right-1">
-                      <GoldenBadge label="Co-Founder" size="sm" />
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1 pt-0.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
-                        Gokul Vamshi
-                      </h3>
-                    </div>
-                    <p className="text-xs font-bold text-amber-700 dark:text-amber-400 mt-0.5">
-                      Co-Founder & Operations
-                    </p>
-                    <span className="inline-flex items-center text-xs font-mono font-semibold text-brand-600 dark:text-brand-400 mt-0.5">
-                      @gokulvamshi
-                    </span>
-                  </div>
-                </div>
-
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed pt-1">
-                  Co-founded HookZ to empower student innovators and entrepreneurial ecosystems. Drives operations, strategic venture partnerships, builder relations, and collaborative project infrastructure across university and startup communities.
-                </p>
-
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {['Venture Operations', 'Strategic Partnerships', 'Community Growth', 'Product Ops'].map((skill) => (
-                    <span
-                      key={skill}
-                      className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-900 dark:text-amber-300 border border-amber-300/60 dark:border-amber-500/30"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-4 mt-3 border-t border-amber-200/60 dark:border-amber-900/40 flex items-center justify-between">
-                <GoldenBadge label="HookZ Co-Founder" size="md" />
-                <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1">
-                  <Sparkles size={12} className="text-amber-500" /> Platform Co-Founder
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* 5. CALL TO ACTION BANNER */}
       <section className="py-14">
