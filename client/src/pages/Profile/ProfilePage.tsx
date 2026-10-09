@@ -1661,6 +1661,209 @@ export const ProfilePage: React.FC = () => {
   if (profileUser.startups && profileUser.startups.length > 0) completedFields++;
   const completionPercentage = Math.round((completedFields / totalFields) * 100);
 
+  const renderPostsAndUpdatesSection = () => (
+    <div className="card-base p-4 sm:p-7 space-y-5 min-w-0 max-w-full overflow-hidden break-words">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Share2 size={18} className="text-brand-600" />
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+            Posts & Updates
+          </h2>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400">
+            {userPosts.length}
+          </span>
+        </div>
+        {isMe && (
+          <Link
+            to="/feed"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-xs transition-colors"
+          >
+            <Plus size={13} />
+            <span>Create Post</span>
+          </Link>
+        )}
+      </div>
+
+      {loadingPosts ? (
+        <div className="space-y-3">
+          {[1, 2].map((n) => (
+            <div key={n} className="h-20 bg-slate-50 dark:bg-dark-850 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : userPosts.length > 0 ? (
+        <div className="space-y-4">
+          {userPosts.map((post) => (
+            <div
+              key={post.id}
+              className="p-4 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2 relative group min-w-0 max-w-full overflow-hidden break-words"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-900/60">
+                    {post.postType || 'UPDATE'}
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    {new Date(post.createdAt).toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </div>
+
+                {(isMe || currentUser?.isAdmin) && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeletePost(post.id)}
+                    disabled={deletingPostId === post.id}
+                    title="Delete this post permanently"
+                    className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1 text-xs"
+                  >
+                    <Trash2 size={13} />
+                    <span className="text-[11px]">Delete</span>
+                  </button>
+                )}
+              </div>
+
+              {post.title && (
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white break-words">
+                  {post.title}
+                </h3>
+              )}
+
+              <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed break-words">
+                {post.content}
+              </p>
+
+              {post.links && (
+                <a
+                  href={post.links.startsWith('http') ? post.links : `https://${post.links}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline max-w-full min-w-0"
+                >
+                  <ExternalLink size={12} className="shrink-0" />
+                  <span className="truncate max-w-full">{post.links}</span>
+                </a>
+              )}
+
+              <div className="pt-2 border-t border-slate-200/60 dark:border-dark-800 flex items-center gap-4 text-xs text-slate-400">
+                <span className="flex items-center gap-1">
+                  <ThumbsUp size={12} />
+                  <span>{post.likesCount || 0} likes</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <MessageSquare size={12} />
+                  <span>{post.commentsCount || 0} comments</span>
+                </span>
+                <Link
+                  to="/feed"
+                  className="text-brand-600 hover:underline ml-auto font-medium"
+                >
+                  View in Feed →
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-7 border border-dashed border-slate-200 dark:border-dark-800 rounded-xl space-y-2">
+          <Share2 size={24} className="mx-auto text-slate-300 dark:text-slate-600" />
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {isMe
+              ? "You haven't posted any updates yet. Share your milestones, learnings, or ask for feedback on the Feed!"
+              : "No posts or updates published by this builder yet."}
+          </p>
+          {isMe && (
+            <Link
+              to="/feed"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
+            >
+              <Plus size={13} />
+              <span>Post on Feed</span>
+            </Link>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderSkillsSection = () => (
+    <div className="card-base p-4 sm:p-6 space-y-4 min-w-0 max-w-full overflow-hidden break-words">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">
+            Skills
+          </h3>
+          <span className="text-xs font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">
+            {skillsList.length}
+          </span>
+        </div>
+        {isMe && (
+          <button
+            onClick={handleOpenEdit}
+            className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
+            title="Edit Skills"
+          >
+            <Edit3 size={15} />
+          </button>
+        )}
+      </div>
+
+      {/* Quick Add Skill Input */}
+      {isMe && (
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={newSkillInput}
+            onChange={(e) => setNewSkillInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddSkill(newSkillInput);
+              }
+            }}
+            placeholder="Add skill (e.g. React, AI)..."
+            className="input-base flex-1 px-3 py-1.5 text-xs"
+          />
+          <button
+            type="button"
+            disabled={savingSkill || !newSkillInput.trim()}
+            onClick={() => handleAddSkill(newSkillInput)}
+            className="btn-primary px-3 py-1.5 text-xs font-semibold disabled:opacity-50 cursor-pointer"
+          >
+            Add
+          </button>
+        </div>
+      )}
+
+      {/* Skills Tags */}
+      {skillsList.length === 0 ? (
+        <p className="text-xs text-slate-400 py-1">No skills added yet.</p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {skillsList.map((skill, idx) => (
+            <span
+              key={idx}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 dark:bg-dark-850 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
+            >
+              <span>{skill}</span>
+              {isMe && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveSkill(skill)}
+                  className="hover:text-rose-600 transition-colors ml-0.5 cursor-pointer"
+                >
+                  <X size={11} />
+                </button>
+              )}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-dark-950 py-4 sm:py-8 px-2.5 sm:px-6 lg:px-8 font-sans transition-colors selection:bg-brand-600 selection:text-white w-full max-w-full overflow-x-hidden">
       {isMe ? (
@@ -1965,22 +2168,22 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* Profile Header Row with solid white background so details never overlap cover image */}
-          <div className="px-4 sm:px-8 pb-6 pt-3 relative bg-white dark:bg-dark-900 border-t border-slate-100 dark:border-dark-800 w-full max-w-full overflow-hidden">
+          <div className="px-4 sm:px-8 pb-6 pt-3 relative bg-white dark:bg-dark-900 border-t border-slate-100 dark:border-dark-800 w-full max-w-full overflow-visible z-10">
             <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mb-6 w-full min-w-0">
               
               {/* Profile Photo */}
               <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 w-full md:flex-1 min-w-0">
-                <div className="relative shrink-0 group -mt-16 sm:-mt-20">
+                <div className="relative shrink-0 group -mt-14 sm:-mt-20 z-20">
                   {hasCustomAvatar ? (
                     <img
                       src={avatar!}
                       alt={displayName}
                       decoding="async"
-                      className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white dark:border-dark-900 shadow-md bg-white"
+                      className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white dark:border-dark-900 shadow-md bg-white relative z-20"
                     />
                   ) : (
-                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-dark-900 shadow-md bg-brand-600 text-white flex flex-col items-center justify-center font-bold">
-                      <span className="text-2xl sm:text-3xl font-extrabold tracking-wider">{initials}</span>
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-dark-900 shadow-md bg-brand-600 text-white flex flex-col items-center justify-center font-bold relative z-20">
+                      <span className="text-xl sm:text-3xl font-extrabold tracking-wider">{initials}</span>
                     </div>
                   )}
                   {isMe && (
@@ -2240,26 +2443,8 @@ export const ProfilePage: React.FC = () => {
                   </button>
                 )}
               </div>
-              {/* MOBILE VIEW (under About only keep skills) */}
-              <div className="block sm:hidden space-y-2.5">
-                {skillsList.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic">No skills added yet.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {skillsList.map((skill, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2.5 py-1 rounded-md text-xs font-semibold bg-brand-50/80 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-800"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
 
-              {/* DESKTOP VIEW: Full bio and interests */}
-              <div className="hidden sm:block space-y-4">
+              <div className="space-y-4">
                 <p className="text-sm font-normal text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line break-words">
                   {p.bio || 'No background description shared yet. Add a short summary about your hackathon journey, interests, and what you are building!'}
                 </p>
@@ -2284,130 +2469,9 @@ export const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* POSTS & COMMUNITY UPDATES SECTION (Permanent until manually deleted) */}
-            <div className="card-base p-4 sm:p-7 space-y-5 min-w-0 max-w-full overflow-hidden break-words">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Share2 size={18} className="text-brand-600" />
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-                    Posts & Updates
-                  </h2>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400">
-                    {userPosts.length}
-                  </span>
-                </div>
-                {isMe && (
-                  <Link
-                    to="/feed"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-xs transition-colors"
-                  >
-                    <Plus size={13} />
-                    <span>Create Post</span>
-                  </Link>
-                )}
-              </div>
-
-              {loadingPosts ? (
-                <div className="space-y-3">
-                  {[1, 2].map((n) => (
-                    <div key={n} className="h-20 bg-slate-50 dark:bg-dark-850 rounded-xl animate-pulse" />
-                  ))}
-                </div>
-              ) : userPosts.length > 0 ? (
-                <div className="space-y-4">
-                  {userPosts.map((post) => (
-                    <div
-                      key={post.id}
-                      className="p-4 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2 relative group min-w-0 max-w-full overflow-hidden break-words"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-900/60">
-                            {post.postType || 'UPDATE'}
-                          </span>
-                          <span className="text-[11px] text-slate-400">
-                            {new Date(post.createdAt).toLocaleDateString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                            })}
-                          </span>
-                        </div>
-
-                        {(isMe || currentUser?.isAdmin) && (
-                          <button
-                            type="button"
-                            onClick={() => handleDeletePost(post.id)}
-                            disabled={deletingPostId === post.id}
-                            title="Delete this post permanently"
-                            className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1 text-xs"
-                          >
-                            <Trash2 size={13} />
-                            <span className="text-[11px]">Delete</span>
-                          </button>
-                        )}
-                      </div>
-
-                      {post.title && (
-                        <h3 className="font-bold text-sm text-slate-900 dark:text-white break-words">
-                          {post.title}
-                        </h3>
-                      )}
-
-                      <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed break-words">
-                        {post.content}
-                      </p>
-
-                      {post.links && (
-                        <a
-                          href={post.links.startsWith('http') ? post.links : `https://${post.links}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline max-w-full min-w-0"
-                        >
-                          <ExternalLink size={12} className="shrink-0" />
-                          <span className="truncate max-w-full">{post.links}</span>
-                        </a>
-                      )}
-
-                      <div className="pt-2 border-t border-slate-200/60 dark:border-dark-800 flex items-center gap-4 text-xs text-slate-400">
-                        <span className="flex items-center gap-1">
-                          <ThumbsUp size={12} />
-                          <span>{post.likesCount || 0} likes</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MessageSquare size={12} />
-                          <span>{post.commentsCount || 0} comments</span>
-                        </span>
-                        <Link
-                          to="/feed"
-                          className="text-brand-600 hover:underline ml-auto font-medium"
-                        >
-                          View in Feed →
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-7 border border-dashed border-slate-200 dark:border-dark-800 rounded-xl space-y-2">
-                  <Share2 size={24} className="mx-auto text-slate-300 dark:text-slate-600" />
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {isMe
-                      ? "You haven't posted any updates yet. Share your milestones, learnings, or ask for feedback on the Feed!"
-                      : "No posts or updates published by this builder yet."}
-                  </p>
-                  {isMe && (
-                    <Link
-                      to="/feed"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
-                    >
-                      <Plus size={13} />
-                      <span>Post on Feed</span>
-                    </Link>
-                  )}
-                </div>
-              )}
+            {/* MOBILE ONLY: Skills exchanges place with Posts & Updates right after About */}
+            <div className="block lg:hidden">
+              {renderSkillsSection()}
             </div>
 
             {/* 2. EXPERIENCE SECTION */}
@@ -2757,6 +2821,11 @@ export const ProfilePage: React.FC = () => {
               )}
             </div>
 
+            {/* DESKTOP ONLY: Posts & Updates placed at the very last of the profile column */}
+            <div className="hidden lg:block">
+              {renderPostsAndUpdatesSection()}
+            </div>
+
           </div>
 
           {/* RIGHT COLUMN (1/3 WIDTH) */}
@@ -2796,79 +2865,14 @@ export const ProfilePage: React.FC = () => {
               </div>
             )}
 
-            {/* 6. SKILLS SECTION */}
-            <div className="card-base p-4 sm:p-6 space-y-4 min-w-0 max-w-full overflow-hidden break-words">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                    Skills
-                  </h3>
-                  <span className="text-xs font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">
-                    {skillsList.length}
-                  </span>
-                </div>
-                {isMe && (
-                  <button
-                    onClick={handleOpenEdit}
-                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
-                    title="Edit Skills"
-                  >
-                    <Edit3 size={15} />
-                  </button>
-                )}
-              </div>
+            {/* DESKTOP ONLY: Skills in right sidebar */}
+            <div className="hidden lg:block">
+              {renderSkillsSection()}
+            </div>
 
-              {/* Quick Add Skill Input */}
-              {isMe && (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={newSkillInput}
-                    onChange={(e) => setNewSkillInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddSkill(newSkillInput);
-                      }
-                    }}
-                    placeholder="Add skill (e.g. React, AI)..."
-                    className="input-base flex-1 px-3 py-1.5 text-xs"
-                  />
-                  <button
-                    type="button"
-                    disabled={savingSkill || !newSkillInput.trim()}
-                    onClick={() => handleAddSkill(newSkillInput)}
-                    className="btn-primary px-3 py-1.5 text-xs font-semibold disabled:opacity-50 cursor-pointer"
-                  >
-                    Add
-                  </button>
-                </div>
-              )}
-
-              {/* Skills Tags */}
-              {skillsList.length === 0 ? (
-                <p className="text-xs text-slate-400 py-1">No skills added yet.</p>
-              ) : (
-                <div className="flex flex-wrap gap-1.5">
-                  {skillsList.map((skill, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 dark:bg-dark-850 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
-                    >
-                      <span>{skill}</span>
-                      {isMe && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveSkill(skill)}
-                          className="hover:text-rose-600 transition-colors ml-0.5 cursor-pointer"
-                        >
-                          <X size={11} />
-                        </button>
-                      )}
-                    </span>
-                  ))}
-                </div>
-              )}
+            {/* MOBILE ONLY: Posts & Updates exchanges places with Skills in secondary column */}
+            <div className="block lg:hidden">
+              {renderPostsAndUpdatesSection()}
             </div>
 
             {/* 7. SOCIAL LINKS SECTION */}

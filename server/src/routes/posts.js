@@ -303,6 +303,26 @@ router.post('/:id/like', requireAuth, async (req, res) => {
 
       const likesCount = Math.max(0, updated ? updated.likesCount : 0);
 
+      // Erase like notification when removed
+      const post = await prisma.post.findUnique({ where: { id } }).catch(() => null);
+      if (post && post.authorId !== req.user.id) {
+        await prisma.notification.deleteMany({
+          where: {
+            userId: post.authorId,
+            senderId: req.user.id,
+            type: { in: ['POST_LIKE', 'POST_UPVOTE'] },
+          },
+        }).catch(() => null);
+
+        if (supabaseAdmin) {
+          await supabaseAdmin.from('notifications')
+            .delete()
+            .match({ user_id: post.authorId, sender_id: req.user.id })
+            .in('type', ['POST_LIKE', 'POST_UPVOTE'])
+            .catch(() => null);
+        }
+      }
+
       if (supabaseAdmin) {
         await supabaseAdmin.from('likes').delete().match({ user_id: req.user.id, post_id: id }).catch(() => null);
         await supabaseAdmin.from('posts').update({ likes_count: likesCount }).eq('id', id).catch(() => null);
@@ -335,7 +355,7 @@ router.post('/:id/like', requireAuth, async (req, res) => {
             type: 'POST_LIKE',
             title: 'Liked your post',
             message: `${req.user.profile?.fullName || 'Someone'} liked your update.`,
-            link: '/feed',
+            link: `/feed#post-${id}`,
           },
         }).catch(() => null);
 
@@ -346,7 +366,7 @@ router.post('/:id/like', requireAuth, async (req, res) => {
             type: 'POST_LIKE',
             title: 'Liked your post ❤️',
             message: `${req.user.profile?.fullName || 'Someone'} liked your update.`,
-            link: '/feed',
+            link: `/feed#post-${id}`,
             is_read: false,
           }).catch(() => null);
         }
@@ -396,22 +416,111 @@ router.post('/:id/vote', requireAuth, async (req, res) => {
 
     const currentPost = updated || (await prisma.post.findUnique({ where: { id } }).catch(() => null));
     const score = currentPost ? currentPost.likesCount : 0;
+    const senderName = req.user.profile?.fullName || req.user.email?.split('@')[0] || 'A founder';
 
-    if (supabaseAdmin) {
-      await supabaseAdmin.from('posts').update({ likes_count: score }).eq('id', id).catch(() => null);
+    // Handle vote notifications and database synchronization
+    if (currentPost && currentPost.authorId !== req.user.id) {
       if (vote === 'up') {
-        await supabaseAdmin.from('likes').upsert({ post_id: id, user_id: req.user.id }, { onConflict: 'post_id,user_id' }).catch(() => null);
-        if (currentPost && currentPost.authorId !== req.user.id) {
+        // Remove old downvote notification
+        await prisma.notification.deleteMany({
+          where: {
+            userId: currentPost.authorId,
+            senderId: req.user.id,
+            type: 'POST_DOWNVOTE',
+          },
+        }).catch(() => null);
+
+        // Create upvote notification in Prisma
+        await prisma.notification.create({
+          data: {
+            userId: currentPost.authorId,
+            senderId: req.user.id,
+            type: 'POST_LIKE',
+            title: 'Upvoted your idea 💡',
+            message: `${senderName} upvoted your idea.`,
+            link: `/feed#post-${id}`,
+          },
+        }).catch(() => null);
+
+        if (supabaseAdmin) {
+          await supabaseAdmin.from('notifications')
+            .delete()
+            .match({ user_id: currentPost.authorId, sender_id: req.user.id, type: 'POST_DOWNVOTE' })
+            .catch(() => null);
+
           await supabaseAdmin.from('notifications').insert({
             user_id: currentPost.authorId,
             sender_id: req.user.id,
             type: 'POST_LIKE',
             title: 'Upvoted your idea 💡',
-            message: `${req.user.profile?.fullName || 'Someone'} upvoted your idea.`,
-            link: '/feed',
+            message: `${senderName} upvoted your idea.`,
+            link: `/feed#post-${id}`,
             is_read: false,
           }).catch(() => null);
         }
+      } else if (vote === 'down') {
+        // Remove old upvote notification
+        await prisma.notification.deleteMany({
+          where: {
+            userId: currentPost.authorId,
+            senderId: req.user.id,
+            type: { in: ['POST_LIKE', 'POST_UPVOTE'] },
+          },
+        }).catch(() => null);
+
+        // Create downvote notification in Prisma
+        await prisma.notification.create({
+          data: {
+            userId: currentPost.authorId,
+            senderId: req.user.id,
+            type: 'POST_DOWNVOTE',
+            title: 'Downvoted your idea 👎',
+            message: `${senderName} downvoted your idea.`,
+            link: `/feed#post-${id}`,
+          },
+        }).catch(() => null);
+
+        if (supabaseAdmin) {
+          await supabaseAdmin.from('notifications')
+            .delete()
+            .match({ user_id: currentPost.authorId, sender_id: req.user.id })
+            .in('type', ['POST_LIKE', 'POST_UPVOTE'])
+            .catch(() => null);
+
+          await supabaseAdmin.from('notifications').insert({
+            user_id: currentPost.authorId,
+            sender_id: req.user.id,
+            type: 'POST_DOWNVOTE',
+            title: 'Downvoted your idea 👎',
+            message: `${senderName} downvoted your idea.`,
+            link: `/feed#post-${id}`,
+            is_read: false,
+          }).catch(() => null);
+        }
+      } else {
+        // Vote was removed: Erase all vote notifications for this post
+        await prisma.notification.deleteMany({
+          where: {
+            userId: currentPost.authorId,
+            senderId: req.user.id,
+            type: { in: ['POST_LIKE', 'POST_UPVOTE', 'POST_DOWNVOTE'] },
+          },
+        }).catch(() => null);
+
+        if (supabaseAdmin) {
+          await supabaseAdmin.from('notifications')
+            .delete()
+            .match({ user_id: currentPost.authorId, sender_id: req.user.id })
+            .in('type', ['POST_LIKE', 'POST_UPVOTE', 'POST_DOWNVOTE'])
+            .catch(() => null);
+        }
+      }
+    }
+
+    if (supabaseAdmin) {
+      await supabaseAdmin.from('posts').update({ likes_count: score }).eq('id', id).catch(() => null);
+      if (vote === 'up') {
+        await supabaseAdmin.from('likes').upsert({ post_id: id, user_id: req.user.id }, { onConflict: 'post_id,user_id' }).catch(() => null);
       } else {
         await supabaseAdmin.from('likes').delete().match({ post_id: id, user_id: req.user.id }).catch(() => null);
       }

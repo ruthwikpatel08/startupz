@@ -116,7 +116,7 @@ export const StartupFeedPage: React.FC = () => {
     setActivePillar(pillar);
     setFilterType('ALL');
     if (pillar === 'ACHIEVEMENTS') {
-      setPostType('EXPERIENCE');
+      setPostType('LAUNCH');
     } else if (pillar === 'IDEAS') {
       setPostType('IDEA');
     }
@@ -152,11 +152,24 @@ export const StartupFeedPage: React.FC = () => {
       }
 
       if (res?.posts && res.posts.length > 0) {
-        setPosts(res.posts.map((p: any) => ({
-          ...p,
-          isLiked: userLikedIds.has(p.id) || p.isLiked || false,
-          isSaved: savedPostIds.has(p.id) || p.isSaved || false,
-        })));
+        setPosts(res.posts.map((p: any) => {
+          let score = p.likesCount || 0;
+          let comments = p.commentsCount || 0;
+          try {
+            const cachedScore = localStorage.getItem(`startupz_post_score_${p.id}`);
+            if (cachedScore !== null) score = parseInt(cachedScore, 10);
+            const cachedComments = localStorage.getItem(`startupz_post_comments_${p.id}`);
+            if (cachedComments !== null) comments = Math.max(comments, parseInt(cachedComments, 10));
+          } catch {}
+
+          return {
+            ...p,
+            likesCount: score,
+            commentsCount: comments,
+            isLiked: userLikedIds.has(p.id) || p.isLiked || false,
+            isSaved: savedPostIds.has(p.id) || p.isSaved || false,
+          };
+        }));
       } else {
         // Fallback: direct Supabase select if backend is empty
         const { data: supaPosts, error } = await supabase
@@ -246,11 +259,15 @@ export const StartupFeedPage: React.FC = () => {
 
   const filteredPosts = posts.filter((p) => {
     const rawType = (p.postType || 'UPDATE').toUpperCase();
+    const isMyPost = Boolean(user?.id) && (p.authorId === user?.id || p.author?.id === user?.id);
 
     if (activePillar === 'ACHIEVEMENTS') {
       // 1. STRICT: Exclude ALL ideas/cofounder/advice/hiring
       if (IDEA_POST_TYPES.has(rawType)) {
         return false;
+      }
+      if (filterType === 'MY_ACHIEVEMENTS') {
+        return isMyPost && (ACHIEVEMENT_POST_TYPES.has(rawType) || rawType === 'UPDATE');
       }
       if (filterType !== 'ALL') {
         return rawType === filterType;
@@ -265,6 +282,9 @@ export const StartupFeedPage: React.FC = () => {
       // 1. STRICT: Exclude ALL achievements/experiences/launches/funding
       if (ACHIEVEMENT_POST_TYPES.has(rawType)) {
         return false;
+      }
+      if (filterType === 'MY_IDEAS') {
+        return isMyPost && (IDEA_POST_TYPES.has(rawType) || rawType === 'UPDATE');
       }
       if (filterType !== 'ALL') {
         return rawType === filterType;
@@ -523,24 +543,63 @@ export const StartupFeedPage: React.FC = () => {
 
     // 4. Supabase sync & notification if author is another user
     try {
+      // Permanently cache score in localStorage
+      try {
+        localStorage.setItem(`startupz_post_score_${postId}`, String(nextScore));
+      } catch {}
+
       if (nextVote === 'up') {
         await supabase.from('likes').upsert({ post_id: postId, user_id: user.id }, { onConflict: 'post_id,user_id' });
         await supabase.from('posts').update({ likes_count: nextScore }).eq('id', postId);
 
         if (currentPost.authorId && currentPost.authorId !== user.id) {
+          // Erase previous downvote notification
+          await supabase.from('notifications')
+            .delete()
+            .match({ user_id: currentPost.authorId, sender_id: user.id, type: 'POST_DOWNVOTE' });
+
           await supabase.from('notifications').insert({
             user_id: currentPost.authorId,
             sender_id: user.id,
             type: 'POST_LIKE',
             title: 'Upvoted your idea 💡',
             message: `${user.profile?.fullName || user.email?.split('@')[0] || 'Someone'} upvoted your idea.`,
-            link: '/feed',
+            link: `/feed#post-${postId}`,
+            is_read: false,
+          });
+        }
+      } else if (nextVote === 'down') {
+        await supabase.from('likes').delete().match({ post_id: postId, user_id: user.id });
+        await supabase.from('posts').update({ likes_count: nextScore }).eq('id', postId);
+
+        if (currentPost.authorId && currentPost.authorId !== user.id) {
+          // Erase previous upvote notification
+          await supabase.from('notifications')
+            .delete()
+            .match({ user_id: currentPost.authorId, sender_id: user.id })
+            .in('type', ['POST_LIKE', 'POST_UPVOTE']);
+
+          await supabase.from('notifications').insert({
+            user_id: currentPost.authorId,
+            sender_id: user.id,
+            type: 'POST_DOWNVOTE',
+            title: 'Downvoted your idea 👎',
+            message: `${user.profile?.fullName || user.email?.split('@')[0] || 'Someone'} downvoted your idea.`,
+            link: `/feed#post-${postId}`,
             is_read: false,
           });
         }
       } else {
+        // Vote removed: erase vote notification
         await supabase.from('likes').delete().match({ post_id: postId, user_id: user.id });
         await supabase.from('posts').update({ likes_count: nextScore }).eq('id', postId);
+
+        if (currentPost.authorId && currentPost.authorId !== user.id) {
+          await supabase.from('notifications')
+            .delete()
+            .match({ user_id: currentPost.authorId, sender_id: user.id })
+            .in('type', ['POST_LIKE', 'POST_UPVOTE', 'POST_DOWNVOTE']);
+        }
       }
     } catch (sErr) {
       console.warn('Supabase vote sync notice:', sErr);
@@ -778,9 +837,25 @@ export const StartupFeedPage: React.FC = () => {
     }
   };
 
+  const myAchievementsCount = posts.filter(
+    (p) =>
+      Boolean(user?.id) &&
+      (p.authorId === user?.id || p.author?.id === user?.id) &&
+      !IDEA_POST_TYPES.has((p.postType || 'UPDATE').toUpperCase()) &&
+      (ACHIEVEMENT_POST_TYPES.has((p.postType || 'UPDATE').toUpperCase()) || (p.postType || 'UPDATE').toUpperCase() === 'UPDATE')
+  ).length;
+
+  const myIdeasCount = posts.filter(
+    (p) =>
+      Boolean(user?.id) &&
+      (p.authorId === user?.id || p.author?.id === user?.id) &&
+      !ACHIEVEMENT_POST_TYPES.has((p.postType || 'UPDATE').toUpperCase()) &&
+      (IDEA_POST_TYPES.has((p.postType || 'UPDATE').toUpperCase()) || (p.postType || 'UPDATE').toUpperCase() === 'UPDATE')
+  ).length;
+
   const achievementFilters = [
     { id: 'ALL', label: 'All Achievements' },
-    { id: 'EXPERIENCE', label: '📖 Experiences' },
+    { id: 'MY_ACHIEVEMENTS', label: user ? `🌟 My Achievements (${myAchievementsCount})` : '🌟 My Achievements' },
     { id: 'LAUNCH', label: '🎉 Launches' },
     { id: 'FUNDING', label: '💰 Funding' },
     { id: 'UPDATE', label: '🏆 Milestones' },
@@ -788,8 +863,8 @@ export const StartupFeedPage: React.FC = () => {
 
   const ideaFilters = [
     { id: 'ALL', label: 'All Ideas' },
+    { id: 'MY_IDEAS', label: user ? `💡 My Ideas (${myIdeasCount})` : '💡 My Ideas' },
     { id: 'IDEA', label: '💡 Ideas' },
-    { id: 'COFOUNDER', label: '🤝 Co-Founders' },
     { id: 'ADVICE', label: '💬 Advice' },
     { id: 'HIRING', label: '💼 Hiring' },
   ];
@@ -1123,9 +1198,21 @@ export const StartupFeedPage: React.FC = () => {
       ) : filteredPosts.length === 0 ? (
         <EmptyState
           icon={Share2}
-          title={activePillar === 'ACHIEVEMENTS' ? "No achievements published yet" : "No idea posts found"}
+          title={
+            filterType === 'MY_ACHIEVEMENTS'
+              ? "You haven't posted any achievements yet"
+              : filterType === 'MY_IDEAS'
+              ? "You haven't posted any startup ideas yet"
+              : activePillar === 'ACHIEVEMENTS'
+              ? "No achievements published yet"
+              : "No idea posts found"
+          }
           description={
-            activePillar === 'ACHIEVEMENTS'
+            filterType === 'MY_ACHIEVEMENTS'
+              ? "Share your milestones, funding rounds, or product launches with the community."
+              : filterType === 'MY_IDEAS'
+              ? "Publish a new startup concept or problem to gather feedback and find builders."
+              : activePillar === 'ACHIEVEMENTS'
               ? "Be the first to share an achievement, product launch, or funding milestone."
               : "Share an early idea, concept proposal, or seek co-founders to build together."
           }
