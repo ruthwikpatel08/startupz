@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { api, isDemoRecord } from '../../services/api';
 import { supabase, fetchUserConnections } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -23,6 +23,10 @@ import {
   BookOpen,
   UserPlus,
   ExternalLink,
+  AlertCircle,
+  RefreshCw,
+  ArrowRight,
+  Compass,
 } from 'lucide-react';
 
 export const MentorsPage: React.FC = () => {
@@ -30,6 +34,7 @@ export const MentorsPage: React.FC = () => {
   const navigate = useNavigate();
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [expertise, setExpertise] = useState('ALL');
   const [industry, setIndustry] = useState('ALL');
@@ -47,6 +52,7 @@ export const MentorsPage: React.FC = () => {
 
   const fetchMentors = async () => {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
@@ -74,8 +80,9 @@ export const MentorsPage: React.FC = () => {
         return true;
       });
       setMentors(clean);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load mentors:', err);
+      setError(err?.message || 'Unable to connect to the mentorship directory server.');
     } finally {
       setLoading(false);
     }
@@ -87,6 +94,14 @@ export const MentorsPage: React.FC = () => {
     }, 250);
     return () => clearTimeout(timer);
   }, [search, expertise, industry]);
+
+  const hasActiveFilters = Boolean(search.trim() || expertise !== 'ALL' || industry !== 'ALL');
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setExpertise('ALL');
+    setIndustry('ALL');
+  };
 
   const handleOpenRequest = (mentor: Mentor) => {
     if (!user) {
@@ -208,25 +223,74 @@ export const MentorsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Mentors Grid */}
+      {/* Mentors Grid / Loading / Error / Empty States */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((n) => (
             <div key={n} className="h-60 card-base animate-pulse bg-slate-100 dark:bg-dark-850" />
           ))}
         </div>
+      ) : error ? (
+        <div className="card-base p-8 text-center space-y-3 border-rose-200 dark:border-rose-900/60 bg-rose-50/30 dark:bg-rose-950/20">
+          <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+            <AlertCircle size={20} />
+          </div>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+            Unable to Load Mentors
+          </h3>
+          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+            {error}
+          </p>
+          <div className="pt-1">
+            <button
+              onClick={fetchMentors}
+              className="btn-primary inline-flex items-center gap-1.5 text-xs py-1.5 px-3"
+            >
+              <RefreshCw size={13} /> Retry Connection
+            </button>
+          </div>
+        </div>
       ) : mentors.length === 0 ? (
-        <EmptyState
-          icon={GraduationCap}
-          title="No mentors found"
-          description="Try broadening your search query or reset your expertise and industry filters."
-          actionLabel="Reset Filters"
-          onAction={() => {
-            setSearch('');
-            setExpertise('ALL');
-            setIndustry('ALL');
-          }}
-        />
+        hasActiveFilters ? (
+          <EmptyState
+            icon={Search}
+            title="No matching mentors found"
+            description="No registered mentors matched your current search and filter criteria. Try adjusting your search query, or select 'All Expertise' and 'All Industries'."
+            actionLabel="Reset All Filters"
+            onAction={handleResetFilters}
+          />
+        ) : (
+          <div className="card-base p-8 sm:p-10 text-center space-y-4 border-dashed border-2 border-slate-300 dark:border-dark-700 bg-slate-50/40 dark:bg-dark-850/40">
+            <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center mx-auto border border-brand-200/60 dark:border-brand-900/60">
+              <GraduationCap size={22} />
+            </div>
+            <div className="max-w-xl mx-auto space-y-2">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                Startup Mentorship Directory Open for Registration
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                There are currently no public mentor profiles listed in the directory. If you are an experienced founder, technical leader, or operator interested in advising early-stage teams, you can register your mentorship profile to connect with founders across the HookZ network. Early-stage builders can check back regularly as verified advisors join.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <Link
+                to="/profile"
+                className="btn-primary inline-flex items-center gap-1.5 text-xs py-2 px-3.5"
+              >
+                <Award size={14} /> Register as a Mentor
+              </Link>
+              <button
+                onClick={fetchMentors}
+                className="btn-secondary inline-flex items-center gap-1.5 text-xs py-2 px-3.5"
+              >
+                <RefreshCw size={13} /> Check Again
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">
+              New mentor listings appear here automatically once approved. Check back regularly.
+            </p>
+          </div>
+        )
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {mentors.map((mentor) => {
@@ -337,6 +401,130 @@ export const MentorsPage: React.FC = () => {
           })}
         </div>
       )}
+
+      {/* Permanent Directory Guide & Educational Pillars */}
+      <section className="pt-8 border-t border-slate-200/80 dark:border-dark-800 space-y-6">
+        <div className="space-y-1">
+          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+            Startup Mentorship &amp; Advisory on HookZ
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            Learn how early-stage founders connect with seasoned advisors and how operators contribute to breakout ventures.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Pillar 1: Strategic Advisory Focus Areas */}
+          <div className="card-base p-5 flex flex-col justify-between space-y-3">
+            <div className="space-y-2.5">
+              <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-100 dark:border-brand-900/40">
+                <Compass size={18} />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                What Startup Mentors Provide
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Connect for direct, 1-on-1 feedback on pitch narratives, technical architecture, product-market fit validation, and go-to-market execution. Gain perspective from operators who have navigated early-stage pivots and fundraising milestones.
+              </p>
+            </div>
+            <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                Focus Areas: Fundraising, GTM, Product MVP, Architecture
+              </span>
+            </div>
+          </div>
+
+          {/* Pillar 2: How Founders Request Guidance */}
+          <div className="card-base p-5 flex flex-col justify-between space-y-3">
+            <div className="space-y-2.5">
+              <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/40">
+                <BookOpen size={18} />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                How Founders Seek Guidance
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Browse advisors by domain expertise and industry. Review proven track records and submit structured mentorship requests outlining your venture's current stage, key bottlenecks, and the specific questions you want to discuss.
+              </p>
+            </div>
+            <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+              <Link
+                to="/startups"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
+              >
+                Explore Ventures <ArrowRight size={12} />
+              </Link>
+            </div>
+          </div>
+
+          {/* Pillar 3: How Experienced Operators Participate */}
+          <div className="card-base p-5 flex flex-col justify-between space-y-3">
+            <div className="space-y-2.5">
+              <div className="w-9 h-9 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-100 dark:border-purple-900/40">
+                <Award size={18} />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                How Operators Join as Mentors
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Founders, engineering leaders, and growth specialists can register as mentors, define their advisory availability, and select preferred industries. Mentor contributions help cultivate the next generation of student-led startups.
+              </p>
+            </div>
+            <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+              <Link
+                to="/profile"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
+              >
+                Join as Mentor <ArrowRight size={12} />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* 3-Step Mentorship Engagement Workflow */}
+        <div className="card-base p-5 sm:p-6 space-y-4 bg-slate-50/50 dark:bg-dark-850/50">
+          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            How Mentorship Engagement Works
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+                1
+              </span>
+              <div className="space-y-1">
+                <span className="font-semibold text-slate-900 dark:text-white block">Identify Domain Specialists</span>
+                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Filter advisors by specific startup needs, from technical architecture to pre-seed pitch review.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+                2
+              </span>
+              <div className="space-y-1">
+                <span className="font-semibold text-slate-900 dark:text-white block">Submit Targeted Requests</span>
+                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Provide crisp context on your product, traction, and the exact 1-2 hurdles where advisory input is critical.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+                3
+              </span>
+              <div className="space-y-1">
+                <span className="font-semibold text-slate-900 dark:text-white block">Collaborate Directly</span>
+                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Connect 1-on-1, exchange structured feedback, and build ongoing advisor relationships without platform gatekeeping.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Mentorship Request Modal */}
       {selectedMentor && (

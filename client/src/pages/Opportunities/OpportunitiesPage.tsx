@@ -23,6 +23,11 @@ import {
   Users,
   Check,
   X,
+  AlertCircle,
+  RefreshCw,
+  ArrowRight,
+  Rocket,
+  Award,
 } from 'lucide-react';
 import { Avatar } from '../../components/common/Avatar';
 
@@ -46,6 +51,7 @@ export const OpportunitiesPage: React.FC = () => {
   });
   const [myApplications, setMyApplications] = useState<OpportunityApplication[]>([]);
   const [loading, setLoading] = useState(() => opportunities.length === 0);
+  const [error, setError] = useState<string | null>(null);
 
   // Filters
   const [role, setRole] = useState('ALL');
@@ -156,6 +162,7 @@ export const OpportunitiesPage: React.FC = () => {
     if (opportunities.length === 0) {
       setLoading(true);
     }
+    setError(null);
     try {
       const params = new URLSearchParams();
       if (currentType && currentType !== 'all') params.append('type', currentType);
@@ -172,11 +179,30 @@ export const OpportunitiesPage: React.FC = () => {
           sessionStorage.setItem('startupz_cached_opportunities', JSON.stringify(clean));
         } catch {}
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Backend returned warning for opportunities:', err);
+      setError(err?.message || 'Unable to connect to the startup opportunities server.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const hasActiveFilters = Boolean(
+    search.trim() ||
+    role !== 'ALL' ||
+    workplaceType !== 'ALL' ||
+    commitment !== 'ALL' ||
+    (currentType && currentType !== 'all')
+  );
+
+  const handleResetFilters = () => {
+    setRole('ALL');
+    setWorkplaceType('ALL');
+    setCommitment('ALL');
+    setSearch('');
+    const params = new URLSearchParams(searchParams);
+    params.delete('type');
+    setSearchParams(params);
   };
 
   const fetchMyApplications = async () => {
@@ -385,26 +411,74 @@ export const OpportunitiesPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Opportunities Cards Grid */}
+          {/* Opportunities Cards Grid / Loading / Error / Empty States */}
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {[1, 2, 3, 4].map((i) => (
                 <div key={i} className="h-56 rounded-lg bg-slate-100 dark:bg-dark-850 animate-pulse border border-slate-200 dark:border-dark-800" />
               ))}
             </div>
+          ) : error ? (
+            <div className="card-base p-8 text-center space-y-3 border-rose-200 dark:border-rose-900/60 bg-rose-50/30 dark:bg-rose-950/20">
+              <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+                <AlertCircle size={20} />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                Unable to Load Opportunities
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                {error}
+              </p>
+              <div className="pt-1">
+                <button
+                  onClick={fetchOpportunities}
+                  className="btn-primary inline-flex items-center gap-1.5 text-xs py-1.5 px-3"
+                >
+                  <RefreshCw size={13} /> Retry Connection
+                </button>
+              </div>
+            </div>
           ) : opportunities.length === 0 ? (
-            <EmptyState
-              icon={Briefcase}
-              title="No opportunities found"
-              description="No open roles match your current search criteria."
-              actionLabel="Reset Search"
-              onAction={() => {
-                setRole('ALL');
-                setWorkplaceType('ALL');
-                setCommitment('ALL');
-                setSearch('');
-              }}
-            />
+            hasActiveFilters ? (
+              <EmptyState
+                icon={Briefcase}
+                title="No matching opportunities found"
+                description="No open startup roles matched your active filter criteria. Try adjusting keywords or resetting filters."
+                actionLabel="Reset All Filters"
+                onAction={handleResetFilters}
+              />
+            ) : (
+              <div className="card-base p-8 sm:p-10 text-center space-y-4 border-dashed border-2 border-slate-300 dark:border-dark-700 bg-slate-50/40 dark:bg-dark-850/40">
+                <div className="w-12 h-12 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 flex items-center justify-center mx-auto border border-cyan-200/60 dark:border-cyan-900/60">
+                  <Briefcase size={22} />
+                </div>
+                <div className="max-w-xl mx-auto space-y-2">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                    Startup Roles &amp; Opportunities Board Open for Listings
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                    There are currently no public opportunities listed on the board. Early-stage founders can post roles for technical co-founders, founding engineers, UI/UX designers, and student interns. Candidates and students can explore ventures and check back regularly as teams post openings.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                  <Link
+                    to="/startups"
+                    className="btn-primary inline-flex items-center gap-1.5 text-xs py-2 px-3.5"
+                  >
+                    <Rocket size={14} /> Explore Ventures
+                  </Link>
+                  <button
+                    onClick={fetchOpportunities}
+                    className="btn-secondary inline-flex items-center gap-1.5 text-xs py-2 px-3.5"
+                  >
+                    <RefreshCw size={13} /> Check Again
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                  New internship and job postings appear here once published by founders. Check back regularly.
+                </p>
+              </div>
+            )
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {opportunities.map((opp) => (
@@ -565,6 +639,130 @@ export const OpportunitiesPage: React.FC = () => {
               ))}
             </div>
           )}
+
+          {/* Permanent Educational Guide & Career Pillars */}
+          <section className="pt-8 border-t border-slate-200/80 dark:border-dark-800 space-y-6">
+            <div className="space-y-1">
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                Startup Roles &amp; Team Opportunities on HookZ
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                Explore how early-stage teams recruit, how students and builders join breakout ventures, and how equity roles are structured.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Pillar 1: Types of Early-Stage Roles */}
+              <div className="card-base p-5 flex flex-col justify-between space-y-3">
+                <div className="space-y-2.5">
+                  <div className="w-9 h-9 rounded-lg bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 flex items-center justify-center border border-cyan-100 dark:border-cyan-900/40">
+                    <Briefcase size={18} />
+                  </div>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                    Types of Early-Stage Roles
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    From founding full-stack engineers and AI specialists to product designers, growth marketers, and student interns. Work directly with founders on zero-to-one problem spaces.
+                  </p>
+                </div>
+                <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                    Commitments: Full-time, Part-time, Internships, Equity
+                  </span>
+                </div>
+              </div>
+
+              {/* Pillar 2: How Applicants Participate */}
+              <div className="card-base p-5 flex flex-col justify-between space-y-3">
+                <div className="space-y-2.5">
+                  <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-100 dark:border-brand-900/40">
+                    <Rocket size={18} />
+                  </div>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                    Direct Founder Applications
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Apply directly to startup founders without third-party recruitment middlemen or automated resume screening filters. Highlight portfolio links, GitHub repositories, and brief statements of intent.
+                  </p>
+                </div>
+                <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+                  <Link
+                    to="/startups"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
+                  >
+                    Explore Ventures <ArrowRight size={12} />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Pillar 3: How Founders Recruit */}
+              <div className="card-base p-5 flex flex-col justify-between space-y-3">
+                <div className="space-y-2.5">
+                  <div className="w-9 h-9 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-100 dark:border-purple-900/40">
+                    <Award size={18} />
+                  </div>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                    How Founders Hire
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Founders can publish open positions tied to their venture profile, review applicant credentials, and conduct introductory video calls to align on roadmap priorities and equity terms.
+                  </p>
+                </div>
+                <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+                  <Link
+                    to="/cofounders"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
+                  >
+                    Find Co-Founders <ArrowRight size={12} />
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {/* 3-Step Matching Process */}
+            <div className="card-base p-5 sm:p-6 space-y-4 bg-slate-50/50 dark:bg-dark-850/50">
+              <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                The Application &amp; Matching Process
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div className="flex items-start gap-3">
+                  <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+                    1
+                  </span>
+                  <div className="space-y-1">
+                    <span className="font-semibold text-slate-900 dark:text-white block">Explore Curated Roles</span>
+                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                      Filter by role specialization, workplace arrangement (remote/hybrid), and commitment level.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+                    2
+                  </span>
+                  <div className="space-y-1">
+                    <span className="font-semibold text-slate-900 dark:text-white block">Submit Direct Application</span>
+                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                      Provide a tailored note and resume or portfolio URL directly to the founding team.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+                    3
+                  </span>
+                  <div className="space-y-1">
+                    <span className="font-semibold text-slate-900 dark:text-white block">Connect &amp; Collaborate</span>
+                    <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                      Review decision notices in your dashboard and schedule introductory conversations.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
         </>
       ) : (
         /* My Applications Tab */

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { FailedStartup, RaisedSolution } from '../../types';
@@ -7,6 +7,7 @@ import { RaiseSolutionModal } from '../../components/common/RaiseSolutionModal';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { Avatar } from '../../components/common/Avatar';
 import { SEO } from '../../components/common/SEO';
+import { EmptyState } from '../../components/common/EmptyState';
 import {
   Skull,
   Lightbulb,
@@ -14,6 +15,9 @@ import {
   Calendar,
   DollarSign,
   AlertTriangle,
+  AlertCircle,
+  RefreshCw,
+  Compass,
   BookOpen,
   ThumbsUp,
   MessageSquare,
@@ -31,6 +35,7 @@ export const FailedStartupsPage: React.FC = () => {
   const navigate = useNavigate();
   const [startups, setStartups] = useState<FailedStartup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [industryFilter, setIndustryFilter] = useState('ALL');
 
@@ -48,17 +53,26 @@ export const FailedStartupsPage: React.FC = () => {
 
   const fetchFailedStartups = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await api.getFailedStartups({
         search: search.trim() || undefined,
         industry: industryFilter !== 'ALL' ? industryFilter : undefined,
       });
       setStartups(Array.isArray(data) ? data : (data as any)?.failedStartups || (data as any)?.startups || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load startup post-mortems:', err);
+      setError(err?.message || 'Unable to connect to the failed startups archive server.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const hasActiveFilters = Boolean(search.trim() || industryFilter !== 'ALL');
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setIndustryFilter('ALL');
   };
 
   useEffect(() => {
@@ -170,16 +184,67 @@ export const FailedStartupsPage: React.FC = () => {
           <div className="h-56 card-base bg-slate-100 dark:bg-dark-850" />
           <div className="h-56 card-base bg-slate-100 dark:bg-dark-850" />
         </div>
-      ) : startups.length === 0 ? (
-        <div className="card-base p-8 text-center">
-          <Skull size={32} className="mx-auto text-slate-400 mb-2" />
+      ) : error ? (
+        <div className="card-base p-8 text-center space-y-3 border-rose-200 dark:border-rose-900/60 bg-rose-50/30 dark:bg-rose-950/20">
+          <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+            <AlertCircle size={20} />
+          </div>
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-            No post-mortems match your search
+            Unable to Load Post-Mortems
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Try adjusting your search keywords or clear industry filters.
+          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+            {error}
           </p>
+          <div className="pt-1">
+            <button
+              onClick={fetchFailedStartups}
+              className="btn-primary inline-flex items-center gap-1.5 text-xs py-1.5 px-3"
+            >
+              <RefreshCw size={13} /> Retry Connection
+            </button>
+          </div>
         </div>
+      ) : startups.length === 0 ? (
+        hasActiveFilters ? (
+          <EmptyState
+            icon={Search}
+            title="No post-mortems match your search"
+            description="No archived case studies matched your current keywords or industry filter. Try clearing filters."
+            actionLabel="Reset All Filters"
+            onAction={handleResetFilters}
+          />
+        ) : (
+          <div className="card-base p-8 sm:p-10 text-center space-y-4 border-dashed border-2 border-slate-300 dark:border-dark-700 bg-slate-50/40 dark:bg-dark-850/40">
+            <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 flex items-center justify-center mx-auto border border-slate-200 dark:border-dark-700">
+              <Skull size={22} />
+            </div>
+            <div className="max-w-xl mx-auto space-y-2">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                Startup Graveyard Archive Open for Submissions
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                There are currently no public post-mortems in the archive. Founders and operators can document honest retrospectives of past ventures to highlight unresolved customer pain points, unit-economic traps, and lessons learned. Builders can study these insights to design better solutions.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <Link
+                to="/startups"
+                className="btn-primary inline-flex items-center gap-1.5 text-xs py-2 px-3.5"
+              >
+                <Rocket size={14} /> Explore Active Ventures
+              </Link>
+              <button
+                onClick={fetchFailedStartups}
+                className="btn-secondary inline-flex items-center gap-1.5 text-xs py-2 px-3.5"
+              >
+                <RefreshCw size={13} /> Check Again
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">
+              New startup failure case studies appear here once submitted. Check back regularly.
+            </p>
+          </div>
+        )
       ) : (
         <div className="space-y-6">
           {startups.map((item) => {
@@ -391,6 +456,130 @@ export const FailedStartupsPage: React.FC = () => {
           })}
         </div>
       )}
+
+      {/* Permanent Educational Guide & Post-Mortem Pillars */}
+      <section className="pt-8 border-t border-slate-200/80 dark:border-dark-800 space-y-6">
+        <div className="space-y-1">
+          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+            Learning from Startup Post-Mortems &amp; Market Lessons
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            Study historical venture failures to avoid known unit-economic traps, execution bottlenecks, and distribution pitfalls.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Pillar 1: Why Analyze Startup Failures */}
+          <div className="card-base p-5 flex flex-col justify-between space-y-3">
+            <div className="space-y-2.5">
+              <div className="w-9 h-9 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-100 dark:border-rose-900/40">
+                <ShieldAlert size={18} />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                Why Study Startup Failures?
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Most startups fail due to unit-economic imbalances (CAC exceeding LTV), premature scaling, co-founder misalignment, or lack of genuine market need. Documenting these failure modes prevents new founders from repeating avoidable missteps.
+              </p>
+            </div>
+            <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                Key Topics: Unit Economics, PMF, Go-To-Market
+              </span>
+            </div>
+          </div>
+
+          {/* Pillar 2: Validating Enduring Problems */}
+          <div className="card-base p-5 flex flex-col justify-between space-y-3">
+            <div className="space-y-2.5">
+              <div className="w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-100 dark:border-amber-900/40">
+                <Compass size={18} />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                Validating Unsolved Market Gaps
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Many defunct ventures successfully proved strong consumer or enterprise demand, even if the specific company collapsed due to timing or unit economics. Unsolved customer problems remain open territory for modern builders.
+              </p>
+            </div>
+            <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+              <Link
+                to="/problems"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
+              >
+                Browse Global Problems <ArrowRight size={12} />
+              </Link>
+            </div>
+          </div>
+
+          {/* Pillar 3: Raising Modern Solutions */}
+          <div className="card-base p-5 flex flex-col justify-between space-y-3">
+            <div className="space-y-2.5">
+              <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-100 dark:border-brand-900/40">
+                <Lightbulb size={18} />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                Proposing Modernized Solutions
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                HookZ allows builders to raise proposed solutions against archived failures. Outline how modern AI primitives, leaner infrastructure, or alternative business models can solve the friction that defeated previous teams.
+              </p>
+            </div>
+            <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+              <Link
+                to="/startups"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
+              >
+                Explore Startups <ArrowRight size={12} />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* 3-Step Analysis Framework */}
+        <div className="card-base p-5 sm:p-6 space-y-4 bg-slate-50/50 dark:bg-dark-850/50">
+          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            The Post-Mortem Learning Framework
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+                1
+              </span>
+              <div className="space-y-1">
+                <span className="font-semibold text-slate-900 dark:text-white block">Analyze Root Failure Causes</span>
+                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Isolate whether the demise was driven by distribution, burn rate, regulatory headwinds, or product friction.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+                2
+              </span>
+              <div className="space-y-1">
+                <span className="font-semibold text-slate-900 dark:text-white block">Identify Enduring Friction</span>
+                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Extract the unresolved core need that customers still struggle with today.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+                3
+              </span>
+              <div className="space-y-1">
+                <span className="font-semibold text-slate-900 dark:text-white block">Architect Resilient Ventures</span>
+                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Formulate a new venture premise that circumvents the fatal structural flaw of the predecessor.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Raise Solution Modal */}
       {selectedForSolution && (

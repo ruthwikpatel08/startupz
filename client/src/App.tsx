@@ -78,6 +78,7 @@ const ManageProblemsPage = lazyPage(() => import('./pages/Admin/ManageProblemsPa
 const ProblemFormPage = lazyPage(() => import('./pages/Admin/ProblemFormPage'), 'ProblemFormPage');
 const MembershipsPage = lazyPage(() => import('./pages/Memberships/MembershipsPage'), 'MembershipsPage');
 const OnboardingPage = lazyPage(() => import('./pages/Onboarding/OnboardingPage'), 'OnboardingPage');
+const NotFoundPage = lazyPage(() => import('./pages/NotFound/NotFoundPage'), 'NotFoundPage');
 
 const PageLoader: React.FC = () => (
   <div className="flex items-center justify-center min-h-[50vh] w-full">
@@ -290,7 +291,7 @@ const AppContent: React.FC = () => {
                 />
 
                 {/* Fallback */}
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </React.Suspense>
           </div>

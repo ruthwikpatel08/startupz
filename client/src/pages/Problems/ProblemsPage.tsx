@@ -19,6 +19,10 @@ import {
   HeartHandshake,
   Compass,
   Languages,
+  AlertCircle,
+  RefreshCw,
+  Globe2,
+  Users,
 } from 'lucide-react';
 
 // Multi-language translation dictionary for problem page UI
@@ -99,6 +103,7 @@ export const ProblemsPage: React.FC = () => {
   const [regions, setRegions] = useState<string[]>(() => cachedProblemMetaObj?.regions || []);
   const [tags, setTags] = useState<string[]>(() => cachedProblemMetaObj?.tags || []);
   const [loading, setLoading] = useState<boolean>(() => getInitialProblems().length === 0);
+  const [error, setError] = useState<string | null>(null);
 
   // Filter state synced with URL search params
   const [search, setSearch] = useState<string>(searchParams.get('q') || searchParams.get('search') || '');
@@ -143,6 +148,7 @@ export const ProblemsPage: React.FC = () => {
     if (problems.length === 0 && (!cachedProblemsList || cachedProblemsList.length === 0)) {
       setLoading(true);
     }
+    setError(null);
     try {
       const params: any = {};
       if (search.trim()) params.search = search.trim();
@@ -160,8 +166,9 @@ export const ProblemsPage: React.FC = () => {
           sessionStorage.setItem('startupz_cached_problems', JSON.stringify(list));
         } catch {}
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load problems:', err);
+      setError(err?.message || 'Unable to retrieve problem statements from the challenges server.');
     } finally {
       setLoading(false);
     }
@@ -340,7 +347,7 @@ export const ProblemsPage: React.FC = () => {
           onReset={handleResetFilters}
         />
 
-        {/* Problems Grid / Loading / Empty State */}
+        {/* Problems Grid / Loading / Error / Empty State */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((idx) => (
@@ -359,14 +366,67 @@ export const ProblemsPage: React.FC = () => {
               </div>
             ))}
           </div>
+        ) : error ? (
+          <div className="card-base p-8 text-center space-y-3 border-rose-200 dark:border-rose-900/60 bg-rose-50/30 dark:bg-rose-950/20">
+            <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+              <AlertCircle size={20} />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              Unable to Load Problem Statements
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+              {error}
+            </p>
+            <div className="pt-1">
+              <button
+                onClick={fetchProblems}
+                className="btn-primary inline-flex items-center gap-1.5 text-xs py-1.5 px-3"
+              >
+                <RefreshCw size={13} /> Retry Connection
+              </button>
+            </div>
+          </div>
         ) : problems.length === 0 ? (
-          <EmptyState
-            icon={Compass}
-            title={t.noResultsTitle}
-            description={t.noResultsDesc}
-            actionLabel={t.resetFilters}
-            onAction={handleResetFilters}
-          />
+          Boolean(search.trim() || selectedCategory || selectedRegion || selectedImpact || selectedTag) ? (
+            <EmptyState
+              icon={Compass}
+              title={t.noResultsTitle}
+              description={t.noResultsDesc}
+              actionLabel={t.resetFilters}
+              onAction={handleResetFilters}
+            />
+          ) : (
+            <div className="card-base p-8 sm:p-10 text-center space-y-4 border-dashed border-2 border-slate-300 dark:border-dark-700 bg-slate-50/40 dark:bg-dark-850/40">
+              <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center mx-auto border border-brand-200/60 dark:border-brand-900/60">
+                <Globe2 size={22} />
+              </div>
+              <div className="max-w-xl mx-auto space-y-2">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                  World Challenges Archive Open for Submissions
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                  There are currently no active problem statements listed in the archive. Founders and domain specialists can propose real-world crisis challenges aligned with SDGs to inspire builder teams on HookZ.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <Link
+                  to="/cofounders"
+                  className="btn-primary inline-flex items-center gap-1.5 text-xs py-2 px-3.5"
+                >
+                  <Users size={14} /> Find Teammates by Mission
+                </Link>
+                <button
+                  onClick={fetchProblems}
+                  className="btn-secondary inline-flex items-center gap-1.5 text-xs py-2 px-3.5"
+                >
+                  <RefreshCw size={13} /> Check Again
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                Verified global challenges appear here once published.
+              </p>
+            </div>
+          )
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {problems.map((problem) => (

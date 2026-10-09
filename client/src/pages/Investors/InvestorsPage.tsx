@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { api, isDemoRecord } from '../../services/api';
 import { supabase, fetchUserConnections } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
@@ -22,6 +22,11 @@ import {
   DollarSign,
   Layers,
   ExternalLink,
+  AlertCircle,
+  RefreshCw,
+  ArrowRight,
+  Rocket,
+  ShieldCheck,
 } from 'lucide-react';
 
 let cachedInvestorsList: Investor[] = [];
@@ -47,6 +52,7 @@ export const InvestorsPage: React.FC = () => {
   const [investors, setInvestors] = useState<Investor[]>(getInitialInvestors);
   const [userStartups, setUserStartups] = useState<Startup[]>([]);
   const [loading, setLoading] = useState(() => getInitialInvestors().length === 0);
+  const [error, setError] = useState<string | null>(null);
 
   // Filters
   const [investorType, setInvestorType] = useState('ALL');
@@ -62,6 +68,7 @@ export const InvestorsPage: React.FC = () => {
     if (investors.length === 0 && cachedInvestorsList.length === 0) {
       setLoading(true);
     }
+    setError(null);
     try {
       const params = new URLSearchParams();
       if (investorType !== 'ALL') params.append('investorType', investorType);
@@ -122,11 +129,21 @@ export const InvestorsPage: React.FC = () => {
           sessionStorage.setItem('startupz_cached_investors', JSON.stringify(cleanList));
         } catch {}
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error('Failed to load investors:', err);
+      setError(err?.message || 'Unable to connect to the investor directory server.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const hasActiveFilters = Boolean(search.trim() || investorType !== 'ALL' || stage !== 'ALL' || industry !== 'ALL');
+
+  const handleResetFilters = () => {
+    setInvestorType('ALL');
+    setStage('ALL');
+    setIndustry('ALL');
+    setSearch('');
   };
 
   useEffect(() => {
@@ -243,26 +260,74 @@ export const InvestorsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Investors Grid */}
+      {/* Investors Grid / Loading / Error / Empty States */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-56 card-base animate-pulse bg-slate-100 dark:bg-dark-850" />
           ))}
         </div>
+      ) : error ? (
+        <div className="card-base p-8 text-center space-y-3 border-rose-200 dark:border-rose-900/60 bg-rose-50/30 dark:bg-rose-950/20">
+          <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+            <AlertCircle size={20} />
+          </div>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+            Unable to Load Investors
+          </h3>
+          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+            {error}
+          </p>
+          <div className="pt-1">
+            <button
+              onClick={fetchInvestors}
+              className="btn-primary inline-flex items-center gap-1.5 text-xs py-1.5 px-3"
+            >
+              <RefreshCw size={13} /> Retry Connection
+            </button>
+          </div>
+        </div>
       ) : investors.length === 0 ? (
-        <EmptyState
-          icon={TrendingUp}
-          title="No investors match your filters"
-          description="Try broadening your stage or industry selections to explore more venture partners."
-          actionLabel="Clear Filters"
-          onAction={() => {
-            setInvestorType('ALL');
-            setStage('ALL');
-            setIndustry('ALL');
-            setSearch('');
-          }}
-        />
+        hasActiveFilters ? (
+          <EmptyState
+            icon={TrendingUp}
+            title="No investors match your filters"
+            description="Try broadening your stage or industry selections to explore more venture partners."
+            actionLabel="Reset All Filters"
+            onAction={handleResetFilters}
+          />
+        ) : (
+          <div className="card-base p-8 sm:p-10 text-center space-y-4 border-dashed border-2 border-slate-300 dark:border-dark-700 bg-slate-50/40 dark:bg-dark-850/40">
+            <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center mx-auto border border-brand-200/60 dark:border-brand-900/60">
+              <TrendingUp size={22} />
+            </div>
+            <div className="max-w-xl mx-auto space-y-2">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                Investor &amp; Venture Directory Open for Registration
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                There are currently no public investor profiles listed in the directory. If you are an angel backer, syndicate lead, or venture fund investing in early-stage teams, you can register your investment thesis to discover high-potential startups on HookZ. Founders can check back regularly as verified investment partners join.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <Link
+                to="/profile"
+                className="btn-primary inline-flex items-center gap-1.5 text-xs py-2 px-3.5"
+              >
+                <ShieldCheck size={14} /> Register as an Investor
+              </Link>
+              <button
+                onClick={fetchInvestors}
+                className="btn-secondary inline-flex items-center gap-1.5 text-xs py-2 px-3.5"
+              >
+                <RefreshCw size={13} /> Check Again
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">
+              Accredited funds and angel syndicate profiles appear here once verified. Check back regularly.
+            </p>
+          </div>
+        )
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {investors.map((inv) => (
@@ -382,6 +447,130 @@ export const InvestorsPage: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* Permanent Educational Guide & Capital Pillars */}
+      <section className="pt-8 border-t border-slate-200/80 dark:border-dark-800 space-y-6">
+        <div className="space-y-1">
+          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+            Startup Capital &amp; Venture Partnerships on HookZ
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            Understand the funding ecosystem, how early-stage teams present traction, and how check-writers evaluate founders.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Pillar 1: Types of Early-Stage Capital */}
+          <div className="card-base p-5 flex flex-col justify-between space-y-3">
+            <div className="space-y-2.5">
+              <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/40">
+                <DollarSign size={18} />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                Types of Startup Backers
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                From individual angel investors and micro-syndicates to institutional seed venture funds and university accelerators. Different stages require distinct capital partners aligned with your product maturity and growth trajectory.
+              </p>
+            </div>
+            <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                Stages: Pre-Seed, Seed, Series A, Accelerators
+              </span>
+            </div>
+          </div>
+
+          {/* Pillar 2: How Founders Pitch Traction */}
+          <div className="card-base p-5 flex flex-col justify-between space-y-3">
+            <div className="space-y-2.5">
+              <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-100 dark:border-brand-900/40">
+                <Rocket size={18} />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                How Founders Connect
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Share verifiable milestones, product prototypes, and co-founder backgrounds directly. Avoid cold generic outreach by matching your venture's domain focus directly with an investor's declared sector thesis.
+              </p>
+            </div>
+            <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+              <Link
+                to="/startups"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
+              >
+                Explore Ventures <ArrowRight size={12} />
+              </Link>
+            </div>
+          </div>
+
+          {/* Pillar 3: Information for Accredited Investors */}
+          <div className="card-base p-5 flex flex-col justify-between space-y-3">
+            <div className="space-y-2.5">
+              <div className="w-9 h-9 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-100 dark:border-purple-900/40">
+                <ShieldCheck size={18} />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                For Accredited Investors &amp; Funds
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Angel syndicates and VC partners can register verified profiles, specify check sizes, and review student and first-time founder submissions across AI, B2B SaaS, ClimateTech, and FinTech.
+              </p>
+            </div>
+            <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+              <Link
+                to="/profile"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
+              >
+                Join as Investor <ArrowRight size={12} />
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* 3-Step Matchmaking Workflow */}
+        <div className="card-base p-5 sm:p-6 space-y-4 bg-slate-50/50 dark:bg-dark-850/50">
+          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            The Venture Connection Process
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+                1
+              </span>
+              <div className="space-y-1">
+                <span className="font-semibold text-slate-900 dark:text-white block">Discover Aligned Theses</span>
+                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Filter by sector focus, typical ticket size, and investment stage to find genuine partners.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+                2
+              </span>
+              <div className="space-y-1">
+                <span className="font-semibold text-slate-900 dark:text-white block">Submit Concise Traction Overviews</span>
+                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Provide crisp metrics on customer validation, team roles, and current capital requirements.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+                3
+              </span>
+              <div className="space-y-1">
+                <span className="font-semibold text-slate-900 dark:text-white block">Direct Founder-Funder Dialogue</span>
+                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                  Engage directly without broker markups or referral fee bottlenecks.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Send Pitch Modal */}
       <SendPitchModal
