@@ -2173,23 +2173,24 @@ export const ProfilePage: React.FC = () => {
               
               {/* Profile Photo */}
               <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 w-full md:flex-1 min-w-0">
-                <div className="relative shrink-0 group -mt-14 sm:-mt-20 z-20">
+                <div className="relative shrink-0 group -mt-16 sm:-mt-20 z-20">
                   {hasCustomAvatar ? (
                     <img
                       src={avatar!}
                       alt={displayName}
                       decoding="async"
-                      className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white dark:border-dark-900 shadow-md bg-white relative z-20"
+                      className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-white dark:border-dark-900 shadow-md bg-white"
                     />
                   ) : (
-                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-dark-900 shadow-md bg-brand-600 text-white flex flex-col items-center justify-center font-bold relative z-20">
-                      <span className="text-xl sm:text-3xl font-extrabold tracking-wider">{initials}</span>
+                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-dark-900 shadow-md bg-brand-600 text-white flex flex-col items-center justify-center font-bold">
+                      <span className="text-2xl sm:text-3xl font-extrabold tracking-wider">{initials}</span>
                     </div>
                   )}
                   {isMe && (
-                    <div className="absolute -bottom-1 -right-1 flex items-center gap-1">
+                    <div className="absolute -bottom-1 -right-1 flex items-center gap-1 z-30">
                       {hasCustomAvatar && (
                         <button
+                          type="button"
                           onClick={() => handleRemovePhoto('avatar')}
                           disabled={isRemovingPhoto}
                           className="p-1.5 rounded-full bg-rose-600 text-white shadow-sm hover:bg-rose-700 transition-colors cursor-pointer disabled:opacity-50"
@@ -2199,6 +2200,7 @@ export const ProfilePage: React.FC = () => {
                         </button>
                       )}
                       <button
+                        type="button"
                         onClick={() => handleRequestGalleryPermission('avatar')}
                         className="p-1.5 rounded-full bg-brand-600 text-white shadow-sm hover:bg-brand-700 transition-colors cursor-pointer"
                         title="Change profile photo"
