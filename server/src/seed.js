@@ -99,34 +99,40 @@ export async function main() {
       userMap.set(orgEmail, startupFounder);
     }
 
-    const createdStartup = await prisma.startup.create({
-      data: {
-        founderId: startupFounder.id,
-        name: s.name,
-        logo: s.logo || null,
-        oneLineDescription: s.oneLineDescription,
-        problem: s.problem,
-        solution: s.solution,
-        targetCustomers: s.targetCustomers || null,
-        industry: s.industry,
-        businessModel: s.businessModel || null,
-        stage: s.stage || 'Growth',
-        location: s.location || null,
-        requiredSkills: s.requiredSkills || null,
-        fundingStatus: s.fundingStatus || 'Venture Backed',
-        fundingRequired: s.fundingRequired || null,
-        currentTraction: s.currentTraction || null,
-        website: s.website || null,
-        demoLink: s.website || null,
-        pitchDeckUrl: s.website || null,
-        visibility: 'PUBLIC',
-        isConfidential: false,
-        isVerified: true,
-        likesCount: Math.floor(Math.random() * 30) + 12,
-        viewsCount: Math.floor(Math.random() * 300) + 150,
-        followersCount: Math.floor(Math.random() * 80) + 25,
-      },
+    let createdStartup = await prisma.startup.findFirst({
+      where: { name: s.name },
     });
+
+    if (!createdStartup) {
+      createdStartup = await prisma.startup.create({
+        data: {
+          founderId: startupFounder.id,
+          name: s.name,
+          logo: s.logo || null,
+          oneLineDescription: s.oneLineDescription,
+          problem: s.problem,
+          solution: s.solution,
+          targetCustomers: s.targetCustomers || null,
+          industry: s.industry,
+          businessModel: s.businessModel || null,
+          stage: s.stage || 'Growth',
+          location: s.location || null,
+          requiredSkills: s.requiredSkills || null,
+          fundingStatus: s.fundingStatus || 'Venture Backed',
+          fundingRequired: s.fundingRequired || null,
+          currentTraction: s.currentTraction || null,
+          website: s.website || null,
+          demoLink: s.website || null,
+          pitchDeckUrl: s.website || null,
+          visibility: 'PUBLIC',
+          isConfidential: false,
+          isVerified: true,
+          likesCount: Math.floor(Math.random() * 30) + 12,
+          viewsCount: Math.floor(Math.random() * 300) + 150,
+          followersCount: Math.floor(Math.random() * 80) + 25,
+        },
+      });
+    }
     startupMap.set(s.name, createdStartup);
   }
   console.log(`✅ Seeded ${startupMap.size} real startups with verified products & problems.`);

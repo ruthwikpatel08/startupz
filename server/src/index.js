@@ -100,8 +100,12 @@ app.get('/api/health/db/init', async (req, res) => {
 });
 
 
-// Maintenance Endpoint: Purge all demo data from database
-app.all('/api/health/purge-demo-data', async (req, res) => {
+// Maintenance Endpoint: Purge all demo data from database (admin protected)
+app.post('/api/health/purge-demo-data', async (req, res) => {
+  const secret = req.headers['x-admin-secret'] || req.query.secret;
+  if (!secret || secret !== process.env.JWT_SECRET) {
+    return res.status(403).json({ error: 'Unauthorized maintenance operation.' });
+  }
   try {
     const result = await purgeDemoDatabase();
     res.json({
@@ -153,12 +157,25 @@ app.use((req, res) => {
 async function purgeDemoDatabase() {
   const realEmails = ['ruthwikpatel08@gmail.com', 'legacyplayer04@gmail.com', 'lavanyadav0206@gmail.com'];
 
-  // Delete all demo startups, opportunities, and interactions (preserving real user posts and connections)
+  // Delete all demo startups, opportunities, and interactions (preserving real user startups, posts, and connections)
   await prisma.opportunityApplication.deleteMany({});
   await prisma.startupOpportunity.deleteMany({});
   await prisma.startupMember.deleteMany({});
   await prisma.startupFollow.deleteMany({});
-  await prisma.startup.deleteMany({});
+  await prisma.startup.deleteMany({
+    where: {
+      founder: {
+        email: {
+          notIn: realEmails,
+          OR: [
+            { contains: 'demo' },
+            { startsWith: 'contact@' },
+            { contains: '@startupz.com' },
+          ],
+        },
+      },
+    },
+  });
   await prisma.investor.deleteMany({});
   await prisma.mentor.deleteMany({});
   await prisma.startupProposal.deleteMany({});

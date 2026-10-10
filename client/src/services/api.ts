@@ -50,6 +50,25 @@ export function isDemoRecord(item: any): boolean {
     return false;
   }
 
+  // Startups created by users must NEVER be filtered
+  if (item.founderId || (item.founder && item.founder.id)) {
+    const founderEmail = item.founder?.email?.toLowerCase() || '';
+    const seedDemoIdentifiers = [
+      'admin@startupz.com',
+      'sarah.chen@aiagri.io',
+      'marcus.dev@codeflow.dev',
+      'david.kim@hyperbuild.co',
+      'maya.design@pixelcraft.studio',
+      'priya.growth@marketscale.io',
+      'elena.investor@apexventures.vc',
+      'dr.aravind@healthventures.in',
+    ];
+    if (seedDemoIdentifiers.some((id) => founderEmail.includes(id))) {
+      return true;
+    }
+    return false;
+  }
+
   // Items created by users should never be filtered unless marked with demo banner
   const str = JSON.stringify(item).toLowerCase();
   if (str.includes('[demo account]') || str.includes('demo presentation account')) {

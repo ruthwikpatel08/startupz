@@ -91,6 +91,25 @@ router.get('/', optionalAuth, async (req, res) => {
       orderBy = { likesCount: 'desc' };
     }
 
+    // Always ensure startups from Supabase are synchronized into Prisma
+    if (supabaseAdmin) {
+      try {
+        const { data: supaList } = await supabaseAdmin
+          .from('startups')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (Array.isArray(supaList) && supaList.length > 0) {
+          for (const ss of supaList) {
+            await ensureStartupInPrisma(ss);
+          }
+        }
+      } catch (sbErr) {
+        console.warn('Supabase startup sync warning:', sbErr.message);
+      }
+    }
+
     const [total, startups] = await Promise.all([
       prisma.startup.count({ where }),
       prisma.startup.findMany({
@@ -279,6 +298,7 @@ router.post('/ai-feedback', requireAuth, async (req, res) => {
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
+    await ensureStartupInPrisma(id);
 
     const startup = await prisma.startup.findUnique({
       where: { id },
@@ -474,6 +494,41 @@ router.post('/', requireAuth, async (req, res) => {
       },
     });
 
+    // Mirror startup to Supabase for permanent persistence across restarts
+    if (supabaseAdmin) {
+      try {
+        await supabaseAdmin.from('startups').upsert({
+          id: startup.id,
+          founder_id: req.user.id,
+          name: startup.name,
+          logo: startup.logo || null,
+          one_line_description: startup.oneLineDescription,
+          problem: startup.problem,
+          solution: startup.solution,
+          target_customers: startup.targetCustomers || null,
+          industry: startup.industry,
+          business_model: startup.businessModel || null,
+          stage: startup.stage || 'Idea',
+          location: startup.location || null,
+          required_skills: startup.requiredSkills || null,
+          funding_status: startup.fundingStatus || 'Bootstrapped',
+          funding_required: startup.fundingRequired || null,
+          current_traction: startup.currentTraction || null,
+          website: startup.website || null,
+          demo_link: startup.demoLink || null,
+          pitch_deck_url: startup.pitchDeckUrl || null,
+          images: startup.images || null,
+          visibility: startup.visibility || 'PUBLIC',
+          is_confidential: Boolean(startup.isConfidential),
+          is_verified: Boolean(startup.isVerified),
+          likes_count: startup.likesCount || 0,
+          views_count: startup.viewsCount || 0,
+        }, { onConflict: 'id' });
+      } catch (sbErr) {
+        console.warn('Supabase startup mirror notice:', sbErr.message);
+      }
+    }
+
     // 1. Create Launch Post in Prisma
     await prisma.post.create({
       data: {
@@ -641,8 +696,36 @@ router.put('/:id', requireAuth, async (req, res) => {
 
     if (supabaseAdmin) {
       try {
-        await supabaseAdmin.from('startups').update(updateData).eq('id', id);
-      } catch (sbErr) {}
+        const supaUpdate = {};
+        if (updateData.name !== undefined) supaUpdate.name = updateData.name;
+        if (updateData.logo !== undefined) supaUpdate.logo = updateData.logo;
+        if (updateData.oneLineDescription !== undefined) supaUpdate.one_line_description = updateData.oneLineDescription;
+        if (updateData.problem !== undefined) supaUpdate.problem = updateData.problem;
+        if (updateData.solution !== undefined) supaUpdate.solution = updateData.solution;
+        if (updateData.targetCustomers !== undefined) supaUpdate.target_customers = updateData.targetCustomers;
+        if (updateData.industry !== undefined) supaUpdate.industry = updateData.industry;
+        if (updateData.businessModel !== undefined) supaUpdate.business_model = updateData.businessModel;
+        if (updateData.stage !== undefined) supaUpdate.stage = updateData.stage;
+        if (updateData.location !== undefined) supaUpdate.location = updateData.location;
+        if (updateData.requiredSkills !== undefined) supaUpdate.required_skills = updateData.requiredSkills;
+        if (updateData.fundingStatus !== undefined) supaUpdate.funding_status = updateData.fundingStatus;
+        if (updateData.fundingRequired !== undefined) supaUpdate.funding_required = updateData.fundingRequired;
+        if (updateData.currentTraction !== undefined) supaUpdate.current_traction = updateData.currentTraction;
+        if (updateData.website !== undefined) supaUpdate.website = updateData.website;
+        if (updateData.demoLink !== undefined) supaUpdate.demo_link = updateData.demoLink;
+        if (updateData.pitchDeckUrl !== undefined) supaUpdate.pitch_deck_url = updateData.pitchDeckUrl;
+        if (updateData.images !== undefined) supaUpdate.images = updateData.images;
+        if (updateData.visibility !== undefined) supaUpdate.visibility = updateData.visibility;
+        if (updateData.isConfidential !== undefined) supaUpdate.is_confidential = Boolean(updateData.isConfidential);
+        if (updateData.isVerified !== undefined) supaUpdate.is_verified = Boolean(updateData.isVerified);
+        supaUpdate.updated_at = new Date().toISOString();
+
+        if (Object.keys(supaUpdate).length > 0) {
+          await supabaseAdmin.from('startups').update(supaUpdate).eq('id', id);
+        }
+      } catch (sbErr) {
+        console.warn('Supabase startup update notice:', sbErr.message);
+      }
     }
 
     return res.json({ message: 'Startup updated successfully!', startup: updated });
@@ -788,5 +871,106 @@ router.post('/validate-ai', optionalAuth, async (req, res) => {
     return res.status(500).json({ error: 'Failed to evaluate startup concept.' });
   }
 });
+
+export async function ensureStartupInPrisma(startupInput) {
+  try {
+    const startupId = typeof startupInput === 'string' ? startupInput : startupInput?.id;
+    if (!startupId) return null;
+
+    let startup = await prisma.startup.findUnique({ where: { id: startupId } });
+    if (startup) return startup;
+
+    if (!supabaseAdmin) return null;
+
+    let supaStartup = null;
+    if (typeof startupInput === 'object' && startupInput !== null && startupInput.name) {
+      supaStartup = startupInput;
+    } else {
+      const { data, error } = await supabaseAdmin
+        .from('startups')
+        .select('*')
+        .eq('id', startupId)
+        .maybeSingle();
+      if (!error && data) supaStartup = data;
+    }
+
+    if (!supaStartup) return null;
+
+    // Ensure founder user exists in Prisma
+    const founderId = supaStartup.founder_id;
+    let founder = await prisma.user.findUnique({ where: { id: founderId } });
+    if (!founder) {
+      let prof = null;
+      try {
+        const { data } = await supabaseAdmin
+          .from('profiles')
+          .select('*')
+          .or(`user_id.eq.${founderId},id.eq.${founderId}`)
+          .maybeSingle();
+        prof = data;
+      } catch {}
+
+      const fullName = prof?.full_name || `${supaStartup.name} Founder`;
+      founder = await prisma.user.create({
+        data: {
+          id: founderId,
+          email: prof?.email || `${founderId}@startupz.network`,
+          password: 'SUPABASE_SYNCED',
+          role: (prof?.preferred_role || 'FOUNDER').toUpperCase(),
+          isVerified: true,
+          verificationBadge: 'Verified Member',
+          profile: {
+            create: {
+              fullName,
+              headline: prof?.headline || `Founder @ ${supaStartup.name}`,
+              location: prof?.location || supaStartup.location || 'Remote',
+              avatar: prof?.avatar || null,
+            },
+          },
+        },
+      }).catch(async () => {
+        return prisma.user.findFirst();
+      });
+    }
+
+    if (!founder) return null;
+
+    startup = await prisma.startup.create({
+      data: {
+        id: supaStartup.id,
+        founderId: founder.id,
+        name: supaStartup.name,
+        logo: supaStartup.logo || null,
+        oneLineDescription: supaStartup.one_line_description,
+        problem: supaStartup.problem,
+        solution: supaStartup.solution,
+        targetCustomers: supaStartup.target_customers || null,
+        industry: supaStartup.industry,
+        businessModel: supaStartup.business_model || null,
+        stage: supaStartup.stage || 'Idea',
+        location: supaStartup.location || null,
+        requiredSkills: supaStartup.required_skills || null,
+        fundingStatus: supaStartup.funding_status || 'Bootstrapped',
+        fundingRequired: supaStartup.funding_required || null,
+        currentTraction: supaStartup.current_traction || null,
+        website: supaStartup.website || null,
+        demoLink: supaStartup.demo_link || null,
+        pitchDeckUrl: supaStartup.pitch_deck_url || null,
+        images: supaStartup.images || null,
+        visibility: supaStartup.visibility || 'PUBLIC',
+        isConfidential: Boolean(supaStartup.is_confidential),
+        isVerified: Boolean(supaStartup.is_verified),
+        likesCount: supaStartup.likes_count || 0,
+        viewsCount: supaStartup.views_count || 0,
+        createdAt: supaStartup.created_at ? new Date(supaStartup.created_at) : new Date(),
+      },
+    });
+
+    return startup;
+  } catch (err) {
+    console.warn('ensureStartupInPrisma notice:', err?.message);
+    return null;
+  }
+}
 
 export default router;
