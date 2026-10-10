@@ -87,7 +87,7 @@ async function runTests() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      email: 'admin@startupz.com',
+      email: 'gokulvamshi@hookz.in',
       password: 'Password123!',
     }),
   });
@@ -95,18 +95,32 @@ async function runTests() {
   assert(adminAuth.token && adminAuth.user?.isAdmin, 'Admin logged in successfully with admin privileges');
   const adminToken = adminAuth.token;
 
-  // Non-admin login
+  // Non-admin login or registration
+  let userToken;
   const userLoginRes = await fetch(`${BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      email: 'sarah.chen@aiagri.io',
+      email: 'test.student.user@startupz.com',
       password: 'Password123!',
     }),
   });
-  const userAuth = await userLoginRes.json();
+  let userAuth = await userLoginRes.json();
+  if (!userAuth.token) {
+    const regRes = await fetch(`${BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'test.student.user@startupz.com',
+        password: 'Password123!',
+        fullName: 'Test Student User',
+        role: 'DEVELOPER',
+      }),
+    });
+    userAuth = await regRes.json();
+  }
   assert(userAuth.token && !userAuth.user?.isAdmin, 'Regular user logged in (non-admin)');
-  const userToken = userAuth.token;
+  userToken = userAuth.token;
 
   // 8. AI Profile Matching with Auth
   console.log('\n8. AI User-Problem Profile Match');

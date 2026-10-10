@@ -46,7 +46,12 @@ function formatProblem(prob, savedProblemIds = new Set()) {
           fullName: prob.creator.profile?.fullName || 'Administrator',
           avatar: prob.creator.profile?.avatar || null,
         }
-      : null,
+      : {
+          id: 'admin-system',
+          email: 'admin@startupz.com',
+          fullName: 'StartupZ Editorial & Research',
+          avatar: null,
+        },
   };
 }
 

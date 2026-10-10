@@ -1399,8 +1399,8 @@ export const ProfilePage: React.FC = () => {
       setSaving(false);
       return;
     }
-    if (headlineWords > 20) {
-      setSaveError('Headline cannot exceed 20 words.');
+    if (headlineWords > 50) {
+      setSaveError('Headline cannot exceed 50 words.');
       setSaving(false);
       return;
     }
@@ -2522,7 +2522,26 @@ export const ProfilePage: React.FC = () => {
                 )}
               </div>
 
-              <div className="space-y-4">
+              {/* MOBILE VIEW (under About only keep skills) */}
+              <div className="block sm:hidden space-y-2.5">
+                {skillsList.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">No skills added yet.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {skillsList.map((skill, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2.5 py-1 rounded-md text-xs font-semibold bg-brand-50/80 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-800"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* DESKTOP VIEW: Full bio and interests */}
+              <div className="hidden sm:block space-y-4">
                 <p className="text-sm font-normal text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line break-words">
                   {p.bio || 'No background description shared yet. Add a short summary about your hackathon journey, interests, and what you are building!'}
                 </p>
@@ -3380,8 +3399,8 @@ export const ProfilePage: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Headline</label>
-                    <span className={`text-[10px] font-medium ${(formData.headline?.trim().split(/\s+/).filter(Boolean).length || 0) > 20 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
-                      {formData.headline?.trim().split(/\s+/).filter(Boolean).length || 0}/20 words
+                    <span className={`text-[10px] font-medium ${(formData.headline?.trim().split(/\s+/).filter(Boolean).length || 0) > 50 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                      {formData.headline?.trim().split(/\s+/).filter(Boolean).length || 0}/50 words
                     </span>
                   </div>
                   <input
@@ -3394,8 +3413,8 @@ export const ProfilePage: React.FC = () => {
                   {formData.headline && formData.headline.trim().length > 0 && formData.headline.trim().length < 3 && (
                     <p className="text-[10px] text-rose-500 mt-1">Must be at least 3 characters</p>
                   )}
-                  {formData.headline && (formData.headline.trim().split(/\s+/).filter(Boolean).length || 0) > 20 && (
-                    <p className="text-[10px] text-rose-500 mt-1">Cannot exceed 20 words</p>
+                  {formData.headline && (formData.headline.trim().split(/\s+/).filter(Boolean).length || 0) > 50 && (
+                    <p className="text-[10px] text-rose-500 mt-1">Cannot exceed 50 words</p>
                   )}
                 </div>
                 <div>

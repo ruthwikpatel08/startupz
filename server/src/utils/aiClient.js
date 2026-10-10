@@ -59,7 +59,7 @@ export async function generateProblemSolutions(problem) {
 
   if (ai) {
     try {
-      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+      const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
       const response = await ai.models.generateContent({
         model,
         contents: prompt,
@@ -103,7 +103,7 @@ Background: ${profile.bio || profile.startupExperience || 'Experienced builder'}
 
   if (ai) {
     try {
-      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+      const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
       const response = await ai.models.generateContent({
         model,
         contents: prompt,
@@ -136,7 +136,7 @@ export async function categorizeProblemAI(title, description) {
 
   if (ai) {
     try {
-      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+      const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
       const response = await ai.models.generateContent({
         model,
         contents: prompt,
@@ -372,7 +372,7 @@ Return valid JSON with an array named "problems":
 
   if (ai) {
     try {
-      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+      const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
       const response = await ai.models.generateContent({
         model,
         contents: prompt,
