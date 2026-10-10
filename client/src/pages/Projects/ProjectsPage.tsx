@@ -141,11 +141,16 @@ export const ProjectsPage: React.FC = () => {
 
   const [projects, setProjects] = useState<BuilderProject[]>(() => {
     try {
+      const isPurged = localStorage.getItem('startupz_projects_purged_clean_v3');
+      if (!isPurged) {
+        localStorage.removeItem('startupz_builder_projects');
+        localStorage.setItem('startupz_projects_purged_clean_v3', 'true');
+        return [];
+      }
       const stored = localStorage.getItem('startupz_builder_projects');
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          // Strictly filter out any legacy fake/starter projects
           return parsed.filter(
             (p: any) =>
               p &&
@@ -253,7 +258,7 @@ export const ProjectsPage: React.FC = () => {
     } catch {}
   };
 
-  // Fetch projects from server on mount & merge with local storage
+  // Fetch projects from server on mount
   useEffect(() => {
     let isMounted = true;
     const fetchServerProjects = async () => {
@@ -261,33 +266,11 @@ export const ProjectsPage: React.FC = () => {
         const res = await api.getProjects().catch(() => null);
         const serverList: BuilderProject[] = res && Array.isArray(res.projects) ? res.projects : [];
         if (isMounted) {
-          // Strictly merge with existing local user-created projects so nothing gets automatically lost or deleted
-          const stored = (() => {
-            try {
-              const raw = localStorage.getItem('startupz_builder_projects');
-              return raw ? JSON.parse(raw) : [];
-            } catch {
-              return [];
-            }
-          })();
-          const projMap = new Map<string, BuilderProject>();
-          // 1. Keep all existing local user projects
-          (Array.isArray(stored) ? stored : []).forEach((p: any) => {
-            if (p && p.id) projMap.set(p.id, p);
-          });
-          // 2. Merge server projects
-          serverList.forEach((p) => {
-            if (p && p.id) {
-              const local = projMap.get(p.id);
-              projMap.set(p.id, local ? { ...local, ...p } : p);
-            }
-          });
-          const merged = Array.from(projMap.values());
-          setProjects(merged);
+          setProjects(serverList);
           try {
-            localStorage.setItem('startupz_builder_projects', JSON.stringify(merged));
+            localStorage.setItem('startupz_builder_projects', JSON.stringify(serverList));
           } catch {}
-          merged.forEach((p) => syncProjectGroup(p));
+          serverList.forEach((p) => syncProjectGroup(p));
         }
       } catch (err) {
         console.warn('Could not fetch server projects:', err);

@@ -76,7 +76,77 @@ export function writeProjectMessage(projectId, message) {
   }
 }
 
-// In-memory cache synced with disk
+// Helper functions for Supabase permanent persistence
+export async function saveProjectToSupabase(project) {
+  if (!supabaseAdmin || !project || !project.id) return;
+  try {
+    await supabaseAdmin.from('projects').upsert({
+      id: project.id,
+      creator_id: project.creator?.userId || project.creatorId || 'unknown',
+      title: project.title,
+      idea_summary: project.ideaSummary || project.tagline || '',
+      tagline: project.tagline || project.ideaSummary || '',
+      problem_solved: project.problemSolved || '',
+      solution_approach: project.solutionApproach || '',
+      detailed_description: project.detailedDescription || '',
+      stage: project.stage || 'Ideation',
+      visibility: project.visibility === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC',
+      creator: project.creator || {},
+      roles: Array.isArray(project.roles) ? project.roles : [],
+      tags: Array.isArray(project.tags) ? project.tags : [],
+      github_url: project.githubUrl || null,
+      demo_url: project.demoUrl || null,
+      created_at: project.createdAt && !isNaN(Date.parse(project.createdAt)) ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'id' });
+  } catch (err) {
+    console.warn('saveProjectToSupabase error:', err.message);
+  }
+}
+
+export async function deleteProjectFromSupabase(projectId) {
+  if (!supabaseAdmin || !projectId) return;
+  try {
+    await supabaseAdmin.from('projects').delete().eq('id', projectId);
+  } catch (err) {
+    console.warn('deleteProjectFromSupabase error:', err.message);
+  }
+}
+
+export async function fetchProjectsFromSupabase() {
+  if (!supabaseAdmin) return [];
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('projects')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (!error && Array.isArray(data)) {
+      return data.map((row) => ({
+        id: row.id,
+        title: row.title,
+        ideaSummary: row.idea_summary || row.tagline || '',
+        tagline: row.tagline || row.idea_summary || '',
+        problemSolved: row.problem_solved || '',
+        solutionApproach: row.solution_approach || '',
+        detailedDescription: row.detailed_description || '',
+        stage: row.stage || 'Ideation',
+        visibility: row.visibility || 'PUBLIC',
+        creator: row.creator || { userId: row.creator_id, fullName: 'Builder' },
+        roles: Array.isArray(row.roles) ? row.roles : [],
+        tags: Array.isArray(row.tags) ? row.tags : [],
+        githubUrl: row.github_url || undefined,
+        demoUrl: row.demo_url || undefined,
+        createdAt: row.created_at || new Date().toISOString(),
+        updatedAt: row.updated_at || new Date().toISOString(),
+      }));
+    }
+  } catch (err) {
+    console.warn('fetchProjectsFromSupabase error:', err.message);
+  }
+  return [];
+}
+
+// In-memory cache synced with disk and Supabase
 let cachedProjects = readProjects();
 
 // Export helper for other routes (e.g. saved.js)
@@ -87,14 +157,26 @@ export function getAllProjectsList() {
   return cachedProjects;
 }
 
-// GET /api/projects - List public projects and user's private projects
+// GET /api/projects - List public projects for all members & user's private projects
 router.get('/', optionalAuth, async (req, res) => {
   try {
     const currentUserId = req.user?.id;
-    const all = getAllProjectsList();
+    let all = [];
+
+    // Always fetch latest authoritative projects from Supabase
+    if (supabaseAdmin) {
+      all = await fetchProjectsFromSupabase();
+      cachedProjects = all;
+      writeProjects(all);
+    } else {
+      all = getAllProjectsList();
+    }
 
     const filtered = all.filter((p) => {
+      // Public projects: visible to all members and visitors across the platform
       if (p.visibility === 'PUBLIC') return true;
+
+      // Private projects: strictly visible ONLY to creator or assigned team members
       if (currentUserId) {
         const creatorId = p.creator?.userId || p.creatorId;
         const isCreator = creatorId === currentUserId;
@@ -115,8 +197,15 @@ router.get('/', optionalAuth, async (req, res) => {
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const all = getAllProjectsList();
-    const project = all.find((p) => p.id === id);
+    let all = getAllProjectsList();
+    let project = all.find((p) => p.id === id);
+
+    if (!project && supabaseAdmin) {
+      const supaList = await fetchProjectsFromSupabase();
+      cachedProjects = supaList;
+      writeProjects(supaList);
+      project = supaList.find((p) => p.id === id);
+    }
 
     if (!project) {
       return res.status(404).json({ error: 'Project not found.' });
@@ -196,6 +285,7 @@ router.post('/', requireAuth, async (req, res) => {
 
     cachedProjects = [newProject, ...cachedProjects];
     writeProjects(cachedProjects);
+    await saveProjectToSupabase(newProject);
 
     return res.status(201).json({
       message: 'Project created successfully!',
@@ -235,6 +325,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     all[idx] = updated;
     cachedProjects = all;
     writeProjects(all);
+    await saveProjectToSupabase(updated);
 
     return res.json({ message: 'Project updated.', project: updated });
   } catch (error) {
@@ -260,6 +351,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
 
     cachedProjects = all.filter((p) => p.id !== id);
     writeProjects(cachedProjects);
+    await deleteProjectFromSupabase(id);
 
     return res.json({ message: 'Project deleted successfully.' });
   } catch (error) {
@@ -340,6 +432,7 @@ router.post('/:id/roles/:roleId/apply', requireAuth, async (req, res) => {
     }
 
     writeProjects(all);
+    await saveProjectToSupabase(project);
     return res.json({ message: 'Application submitted successfully!', project });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to apply for role.' });
@@ -408,6 +501,7 @@ router.post('/:id/roles/:roleId/invite', requireAuth, async (req, res) => {
     }).catch(() => null);
 
     writeProjects(all);
+    await saveProjectToSupabase(project);
 
     return res.json({
       message: `Role invitation sent to ${targetName}! Once they accept, the role will be filled.`,
@@ -469,6 +563,7 @@ router.post('/:id/roles/:roleId/respond-invite', requireAuth, async (req, res) =
     }
 
     writeProjects(all);
+    await saveProjectToSupabase(project);
 
     return res.json({
       message: action === 'ACCEPT' ? 'Role accepted! You are now part of the team.' : 'Invitation declined.',
@@ -547,6 +642,7 @@ router.post('/:id/roles/:roleId/respond-applicant', requireAuth, async (req, res
     }
 
     writeProjects(all);
+    await saveProjectToSupabase(project);
 
     return res.json({
       message: action === 'ACCEPT' ? 'Applicant accepted! Role filled.' : 'Applicant declined.',
@@ -615,6 +711,7 @@ router.post('/:id/roles/:roleId/assign', requireAuth, async (req, res) => {
     }).catch(() => null);
 
     writeProjects(all);
+    await saveProjectToSupabase(project);
     return res.json({ message: `Role assigned to ${targetName}!`, project });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to assign role.' });
