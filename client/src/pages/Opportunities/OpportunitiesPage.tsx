@@ -16,6 +16,7 @@ import {
   DollarSign,
   Send,
   CheckCircle,
+  XCircle,
   ExternalLink,
   Building,
   GraduationCap,
@@ -251,11 +252,20 @@ export const OpportunitiesPage: React.FC = () => {
       });
 
       setApplySuccess(true);
+      setOpportunities((prev) =>
+        prev.map((o) =>
+          o.id === selectedOpp.id
+            ? { ...o, hasApplied: true, applicationStatus: 'PENDING' }
+            : o
+        )
+      );
+      setSelectedOpp((prev) =>
+        prev ? { ...prev, hasApplied: true, applicationStatus: 'PENDING' } : null
+      );
       fetchOpportunities();
       fetchMyApplications();
       setTimeout(() => {
         setApplySuccess(false);
-        setSelectedOpp(null);
         setCoverLetter('');
         setResumeUrl('');
       }, 1500);
@@ -612,11 +622,52 @@ export const OpportunitiesPage: React.FC = () => {
                           );
                         }
 
-                        if (opp.hasApplied) {
+                        const matchingApp = myApplications.find((a) => a.opportunityId === opp.id);
+                        const appStatus = (opp.applicationStatus || matchingApp?.status || (opp.hasApplied ? 'PENDING' : null))?.toUpperCase();
+
+                        if (opp.hasApplied || appStatus) {
+                          if (appStatus === 'REJECTED' || appStatus === 'DECLINED' || appStatus === 'DENIED') {
+                            return (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedOpp(opp);
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors"
+                                title="Your application was denied. Click to view status."
+                              >
+                                <XCircle size={13} /> Denied
+                              </button>
+                            );
+                          }
+                          if (appStatus === 'ACCEPTED') {
+                            return (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedOpp(opp);
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
+                                title="Your application was accepted! Click to view details."
+                              >
+                                <CheckCircle size={13} /> Accepted
+                              </button>
+                            );
+                          }
                           return (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800">
-                              <CheckCircle size={13} /> Applied
-                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedOpp(opp);
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                              title="Application pending founder review. Click to view status."
+                            >
+                              <Clock size={13} /> Applied
+                            </button>
                           );
                         }
 
@@ -804,12 +855,12 @@ export const OpportunitiesPage: React.FC = () => {
                       className={`text-xs font-semibold px-2.5 py-0.5 rounded-md uppercase tracking-wider ${
                         app.status === 'ACCEPTED'
                           ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                          : app.status === 'REJECTED'
+                          : (app.status === 'REJECTED' || app.status === 'DECLINED' || app.status === 'DENIED')
                           ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
                           : 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
                       }`}
                     >
-                      {app.status}
+                      {(app.status === 'REJECTED' || app.status === 'DECLINED' || app.status === 'DENIED') ? 'DENIED' : app.status}
                     </span>
                   </div>
                 </div>
@@ -946,16 +997,71 @@ export const OpportunitiesPage: React.FC = () => {
                     <Users size={13} /> Review Profiles
                   </button>
                 </div>
-              ) : applySuccess ? (
-                <div className="text-center py-6 space-y-2">
-                  <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-                    <CheckCircle size={22} />
-                  </div>
-                  <h4 className="font-semibold text-slate-900 dark:text-white text-sm">Application Submitted</h4>
-                  <p className="text-xs text-slate-500">
-                    The founder at {selectedOpp.startup?.name} has been notified of your candidacy.
-                  </p>
-                </div>
+              ) : (selectedOpp.hasApplied || myApplications.some((a) => a.opportunityId === selectedOpp.id) || applySuccess) ? (
+                (() => {
+                  const matchingApp = myApplications.find((a) => a.opportunityId === selectedOpp.id);
+                  const rawStatus = (selectedOpp.applicationStatus || matchingApp?.status || (applySuccess ? 'PENDING' : null) || 'PENDING').toUpperCase();
+                  const isDenied = rawStatus === 'REJECTED' || rawStatus === 'DECLINED' || rawStatus === 'DENIED';
+                  const isAccepted = rawStatus === 'ACCEPTED';
+
+                  return (
+                    <div className={`p-4 sm:p-5 rounded-xl border space-y-3.5 ${
+                      isDenied
+                        ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/60'
+                        : isAccepted
+                        ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/60'
+                        : 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/60'
+                    }`}>
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          {isDenied ? (
+                            <XCircle size={18} className="text-rose-600 dark:text-rose-400 shrink-0" />
+                          ) : isAccepted ? (
+                            <CheckCircle size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          ) : (
+                            <Clock size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                          )}
+                          <h5 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
+                            Application Status: {isDenied ? 'Denied' : isAccepted ? 'Accepted' : 'Pending Review'}
+                          </h5>
+                        </div>
+                        <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider ${
+                          isDenied
+                            ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                            : isAccepted
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                            : 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                        }`}>
+                          {isDenied ? 'Denied' : isAccepted ? 'Accepted' : 'Pending'}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                        {isDenied
+                          ? 'Your application for this opportunity was reviewed and declined by the startup founder. You have already applied for this opening.'
+                          : isAccepted
+                          ? 'Congratulations! The startup founder has accepted your application for this position. Welcome to the team!'
+                          : 'Your application has been received and is currently under review by the startup founder. You will receive a notification as soon as a decision is made.'}
+                      </p>
+
+                      {(selectedOpp.appliedAt || matchingApp?.createdAt) && (
+                        <div className="text-[11px] text-slate-400 pt-1 border-t border-slate-200/50 dark:border-dark-700/50">
+                          Submitted on: {new Date(selectedOpp.appliedAt || matchingApp?.createdAt || '').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedOpp(null)}
+                          className="btn-secondary px-4 py-1.5 text-xs font-semibold"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()
               ) : !user ? (
                 <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="space-y-0.5">

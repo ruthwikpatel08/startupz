@@ -12,6 +12,10 @@ export const PublicLandingPage: React.FC = () => {
         background: '#ffffff',
         color: '#1a1a2e',
         fontFamily: 'Inter, system-ui, sans-serif',
+        width: '100%',
+        maxWidth: '100vw',
+        overflowX: 'hidden',
+        boxSizing: 'border-box',
       }}
     >
       <SEO
@@ -25,12 +29,14 @@ export const PublicLandingPage: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '16px 32px',
+          padding: '14px 16px',
           borderBottom: '1px solid #e5e7eb',
           background: '#ffffff',
           position: 'sticky',
           top: 0,
           zIndex: 50,
+          boxSizing: 'border-box',
+          width: '100%',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -238,8 +244,10 @@ export const PublicLandingPage: React.FC = () => {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: 24,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+            gap: 20,
+            width: '100%',
+            boxSizing: 'border-box',
           }}
         >
           {/* Ruthwik Patel */}

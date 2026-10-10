@@ -380,6 +380,8 @@ router.post('/:id/roles/:roleId/apply', requireAuth, async (req, res) => {
     }
 
     const applicantName = req.user.profile?.fullName || req.user.email?.split('@')[0] || 'Builder';
+    const applicantUsername = req.user.profile?.username ? `@${req.user.profile.username}` : '';
+    const applicantLabel = applicantUsername ? `${applicantName} (${applicantUsername})` : applicantName;
     const applicantHeadline = req.user.profile?.headline || 'Team Collaborator';
     const creatorId = project.creator?.userId || project.creatorId;
 
@@ -389,6 +391,7 @@ router.post('/:id/roles/:roleId/apply', requireAuth, async (req, res) => {
       role.assignedTo = {
         userId: req.user.id,
         fullName: applicantName,
+        username: req.user.profile?.username || '',
         avatar: req.user.profile?.avatar || null,
       };
       role.pendingApplicant = null;
@@ -408,6 +411,7 @@ router.post('/:id/roles/:roleId/apply', requireAuth, async (req, res) => {
       const newApplicant = {
         userId: req.user.id,
         fullName: applicantName,
+        username: req.user.profile?.username || '',
         avatar: req.user.profile?.avatar || null,
         roleDescription: applicantHeadline,
         appliedAt: new Date().toISOString(),
@@ -425,10 +429,22 @@ router.post('/:id/roles/:roleId/apply', requireAuth, async (req, res) => {
           senderId: req.user.id,
           type: 'PROJECT_APPLICATION',
           title: `Role Application: ${role.roleName}`,
-          message: `${applicantName} applied for the "${role.roleName}" role on "${project.title}". Review and accept to add them to your team.`,
+          message: `${applicantLabel} applied for the "${role.roleName}" role on "${project.title}". Review and accept to add them to your team.`,
           link: `/projects`,
         },
       }).catch(() => null);
+
+      if (supabaseAdmin) {
+        await supabaseAdmin.from('notifications').insert({
+          user_id: creatorId,
+          sender_id: req.user.id,
+          type: 'PROJECT_APPLICATION',
+          title: `Role Application: ${role.roleName}`,
+          message: `${applicantLabel} applied for the "${role.roleName}" role on "${project.title}". Review and accept to add them to your team.`,
+          link: `/projects`,
+          is_read: false,
+        }).catch(() => null);
+      }
     }
 
     writeProjects(all);

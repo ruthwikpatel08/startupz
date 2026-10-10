@@ -80,7 +80,7 @@ export const NotificationsDropdown: React.FC = () => {
         console.warn('Backend notifications polling notice:', err);
       }
 
-      // Check Supabase notifications
+      // Check Supabase notifications and enrich sender profiles for all items
       if (user.id) {
         try {
           const userUuid = await resolveUserIdToUUID(user.id);
@@ -91,20 +91,28 @@ export const NotificationsDropdown: React.FC = () => {
             .eq('user_id', lookupUserUuid)
             .order('created_at', { ascending: false });
 
+          // Gather all sender IDs from both backend notifications and supaNotifs
+          const allSenderIds = [
+            ...list.map((n) => n.senderId || n.sender?.id).filter(Boolean),
+            ...(supaNotifs || []).map((n) => n.sender_id).filter(Boolean),
+          ] as string[];
+
+          const uncachedSenderIds = Array.from(new Set(allSenderIds)).filter(
+            (id) => id && !senderProfilesCacheRef.current.has(id)
+          );
+
+          if (uncachedSenderIds.length > 0) {
+            const { data: senders } = await supabase
+              .from('profiles')
+              .select('*')
+              .in('user_id', uncachedSenderIds);
+            (senders || []).forEach((s) => {
+              if (s.user_id) senderProfilesCacheRef.current.set(s.user_id, s);
+              if (s.username) senderProfilesCacheRef.current.set(s.username, s);
+            });
+          }
+
           if (supaNotifs && supaNotifs.length > 0) {
-            const allSenderIds = supaNotifs.map((n) => n.sender_id).filter(Boolean);
-            const uncachedSenderIds = allSenderIds.filter(
-              (id) => !senderProfilesCacheRef.current.has(id)
-            );
-
-            if (uncachedSenderIds.length > 0) {
-              const { data: senders } = await supabase
-                .from('profiles')
-                .select('*')
-                .in('user_id', uncachedSenderIds);
-              (senders || []).forEach((s) => senderProfilesCacheRef.current.set(s.user_id, s));
-            }
-
             for (const sn of supaNotifs) {
               const alreadyInList = list.some(
                 (item) =>
@@ -140,6 +148,29 @@ export const NotificationsDropdown: React.FC = () => {
               }
             }
           }
+
+          // Hydrate/enrich all notifications in list with latest cached sender profile details
+          list.forEach((item) => {
+            const sid = item.senderId || item.sender?.id;
+            if (sid && senderProfilesCacheRef.current.has(sid)) {
+              const sProf = senderProfilesCacheRef.current.get(sid);
+              if (!item.sender) {
+                item.sender = {
+                  id: sid,
+                  email: sProf?.email || '',
+                  role: sProf?.preferred_role || 'FOUNDER',
+                  isVerified: true,
+                  profile: {},
+                };
+              }
+              if (!item.sender.profile) {
+                item.sender.profile = {};
+              }
+              if (sProf?.avatar) item.sender.profile.avatar = sProf.avatar;
+              if (sProf?.full_name) item.sender.profile.fullName = sProf.full_name;
+              if (sProf?.headline) item.sender.profile.headline = sProf.headline;
+            }
+          });
         } catch (supaErr) {
           console.warn('Supabase notifications load notice:', supaErr);
         }

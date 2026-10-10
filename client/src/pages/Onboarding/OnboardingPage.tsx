@@ -121,15 +121,20 @@ export const OnboardingPage: React.FC = () => {
     alignItems: 'center',
     justifyContent: 'center',
     fontFamily: 'Inter, system-ui, sans-serif',
-    padding: '24px',
+    padding: '24px 16px',
+    boxSizing: 'border-box',
+    width: '100%',
+    maxWidth: '100vw',
+    overflowX: 'hidden',
   };
 
   const cardStyle: React.CSSProperties = {
     background: '#ffffff',
     borderRadius: 16,
-    padding: '40px 36px',
+    padding: '32px 20px',
     maxWidth: 560,
     width: '100%',
+    boxSizing: 'border-box',
     boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
   };
 

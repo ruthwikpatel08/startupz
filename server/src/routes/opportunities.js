@@ -1,6 +1,7 @@
 import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
+import { supabaseAdmin } from '../supabase.js';
 
 const router = express.Router();
 
@@ -124,14 +125,14 @@ router.get('/', optionalAuth, async (req, res) => {
       }),
     ]);
 
-    let appliedOppIds = new Set();
+    let applicationsMap = new Map();
     let savedOppIds = new Set();
 
     if (req.user) {
       const [applications, saves] = await Promise.all([
         prisma.opportunityApplication.findMany({
           where: { applicantId: req.user.id },
-          select: { opportunityId: true },
+          select: { opportunityId: true, status: true, createdAt: true },
         }),
         prisma.savedItem.findMany({
           where: { userId: req.user.id, itemType: 'OPPORTUNITY' },
@@ -139,15 +140,20 @@ router.get('/', optionalAuth, async (req, res) => {
         }),
       ]);
 
-      applications.forEach((a) => appliedOppIds.add(a.opportunityId));
+      applications.forEach((a) => applicationsMap.set(a.opportunityId, { status: a.status, createdAt: a.createdAt }));
       saves.forEach((s) => savedOppIds.add(s.itemId));
     }
 
-    const formatted = opportunities.map((opp) => ({
-      ...opp,
-      hasApplied: appliedOppIds.has(opp.id),
-      isSaved: savedOppIds.has(opp.id),
-    }));
+    const formatted = opportunities.map((opp) => {
+      const app = applicationsMap.get(opp.id);
+      return {
+        ...opp,
+        hasApplied: Boolean(app),
+        applicationStatus: app ? app.status : null,
+        appliedAt: app ? app.createdAt : null,
+        isSaved: savedOppIds.has(opp.id),
+      };
+    });
 
     return res.json({
       opportunities: formatted,
@@ -253,18 +259,39 @@ router.post('/:id/apply', requireAuth, async (req, res) => {
       },
     });
 
+    const applicantDisplayName = req.user.profile?.fullName || req.user.email?.split('@')[0] || 'A candidate';
+    const applicantUsername = req.user.profile?.username ? `@${req.user.profile.username}` : '';
+    const applicantLabel = applicantUsername ? `${applicantDisplayName} (${applicantUsername})` : applicantDisplayName;
+
     await prisma.notification.create({
       data: {
         userId: opportunity.startup.founderId,
         senderId: req.user.id,
         type: 'OPPORTUNITY_APPLICATION',
         title: `New Application for ${opportunity.role}`,
-        message: `${req.user.profile?.fullName || 'A candidate'} applied for ${opportunity.role} at ${opportunity.startup.name}.`,
+        message: `${applicantLabel} applied for ${opportunity.role} at ${opportunity.startup.name}.`,
         link: `/opportunities`,
       },
     });
 
-    return res.status(201).json({ message: 'Application submitted successfully!', application });
+    if (supabaseAdmin) {
+      await supabaseAdmin.from('notifications').insert({
+        user_id: opportunity.startup.founderId,
+        sender_id: req.user.id,
+        type: 'OPPORTUNITY_APPLICATION',
+        title: `New Application for ${opportunity.role}`,
+        message: `${applicantLabel} applied for ${opportunity.role} at ${opportunity.startup.name}.`,
+        link: `/opportunities`,
+        is_read: false,
+      }).catch(() => null);
+    }
+
+    return res.status(201).json({
+      message: 'Application submitted successfully!',
+      application,
+      hasApplied: true,
+      applicationStatus: 'PENDING',
+    });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to submit application.' });
   }
@@ -331,6 +358,40 @@ router.get('/:id/applications', requireAuth, async (req, res) => {
       orderBy: { createdAt: 'desc' },
     });
 
+    // Hydrate candidate profiles with fresh Supabase profiles data (avatars, username, etc.)
+    if (supabaseAdmin && applications.length > 0) {
+      const applicantIds = Array.from(new Set(applications.map((a) => a.applicantId).filter(Boolean)));
+      if (applicantIds.length > 0) {
+        try {
+          const { data: supaProfiles } = await supabaseAdmin
+            .from('profiles')
+            .select('*')
+            .in('user_id', applicantIds);
+
+          if (supaProfiles && supaProfiles.length > 0) {
+            const pMap = new Map();
+            supaProfiles.forEach((p) => {
+              if (p.user_id) pMap.set(p.user_id, p);
+              if (p.id) pMap.set(p.id, p);
+            });
+
+            applications.forEach((app) => {
+              const sp = pMap.get(app.applicantId);
+              if (sp && app.applicant) {
+                if (!app.applicant.profile) app.applicant.profile = {};
+                if (sp.full_name) app.applicant.profile.fullName = sp.full_name;
+                if (sp.avatar) app.applicant.profile.avatar = sp.avatar;
+                if (sp.username) app.applicant.profile.username = sp.username;
+                if (sp.headline) app.applicant.profile.headline = sp.headline;
+              }
+            });
+          }
+        } catch (enrichErr) {
+          console.warn('Applicant profiles hydration notice:', enrichErr?.message);
+        }
+      }
+    }
+
     return res.json({ applications });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to fetch applicants.' });
@@ -352,12 +413,14 @@ router.put('/applications/:applicationId/status', requireAuth, async (req, res) 
       return res.status(403).json({ error: 'Unauthorized to review this application.' });
     }
 
+    const normalizedStatus = (status === 'REJECTED' || status === 'DECLINED') ? 'DENIED' : status;
+
     const updated = await prisma.opportunityApplication.update({
       where: { id: applicationId },
-      data: { status },
+      data: { status: normalizedStatus },
     });
 
-    if (status === 'ACCEPTED') {
+    if (normalizedStatus === 'ACCEPTED') {
       await prisma.startupMember.upsert({
         where: {
           startupId_userId: {
@@ -374,21 +437,38 @@ router.put('/applications/:applicationId/status', requireAuth, async (req, res) 
       });
     }
 
+    const statusWord = normalizedStatus === 'DENIED' ? 'denied' : normalizedStatus.toLowerCase();
+    const notifTitle = normalizedStatus === 'DENIED' ? 'Application Denied' : `Application ${statusWord}!`;
+    const notifMsg = `Your application for ${app.opportunity.role} at ${app.opportunity.startup.name} was ${statusWord}.`;
+
     await prisma.notification.create({
       data: {
         userId: app.applicantId,
         senderId: req.user.id,
         type: 'OPPORTUNITY_APPLICATION',
-        title: `Application ${status.toLowerCase()}!`,
-        message: `Your application for ${app.opportunity.role} at ${app.opportunity.startup.name} was ${status.toLowerCase()}.`,
-        link: `/startups/${app.opportunity.startupId}`,
+        title: notifTitle,
+        message: notifMsg,
+        link: `/opportunities`,
       },
     });
 
-    return res.json({ message: `Application ${status.toLowerCase()}.`, application: updated });
+    if (supabaseAdmin) {
+      await supabaseAdmin.from('notifications').insert({
+        user_id: app.applicantId,
+        sender_id: req.user.id,
+        type: 'OPPORTUNITY_APPLICATION',
+        title: notifTitle,
+        message: notifMsg,
+        link: `/opportunities`,
+        is_read: false,
+      }).catch(() => null);
+    }
+
+    return res.json({ message: `Application ${statusWord}.`, application: updated, status: normalizedStatus });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to update application status.' });
   }
 });
 
 export default router;
+

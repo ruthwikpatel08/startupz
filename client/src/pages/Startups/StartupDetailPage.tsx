@@ -255,11 +255,48 @@ export const StartupDetailPage: React.FC = () => {
       />
       
       {/* 1. HERO HEADER */}
-      <div className="card-base p-6 sm:p-7 space-y-6">
+      <div className="card-base p-4 sm:p-7 space-y-5 sm:space-y-6 overflow-hidden">
         
+        {/* Founder Controls Banner for Mobile & Desktop */}
+        {isOwner && (
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl bg-brand-50/80 dark:bg-brand-950/50 border border-brand-200 dark:border-brand-900/60">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-brand-600 dark:text-brand-400 shrink-0" />
+              <div>
+                <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                  Founder Controls
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                  You are the founder of this startup venture.
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleOpenEditModal}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 shadow-xs transition-colors cursor-pointer"
+                title="Edit this startup"
+              >
+                <Edit2 size={13} />
+                <span>Edit Startup</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteStartup}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/80 hover:bg-rose-200 dark:hover:bg-rose-900 border border-rose-300 dark:border-rose-800 transition-colors cursor-pointer"
+                title="Delete this startup"
+              >
+                <Trash2 size={13} />
+                <span>Delete</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Top Badges & Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-900/60 uppercase tracking-wider">
               {startup.stage} STAGE
             </span>
@@ -274,7 +311,7 @@ export const StartupDetailPage: React.FC = () => {
             <VerificationBadge type={startup.isVerified ? 'Verified Startup' : null} />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleFollow}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${

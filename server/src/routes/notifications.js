@@ -1,6 +1,7 @@
 import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { supabaseAdmin } from '../supabase.js';
 
 const router = express.Router();
 
@@ -26,12 +27,64 @@ router.get('/', requireAuth, async (req, res) => {
                 headline: true,
                 location: true,
                 preferredRole: true,
+                username: true,
               },
             },
           },
         },
       },
     });
+
+    // Hydrate senders with latest Supabase profiles so edited logos and usernames always show
+    if (supabaseAdmin && notifications.length > 0) {
+      const senderIds = Array.from(
+        new Set(
+          notifications
+            .map((n) => n.senderId || n.sender?.id)
+            .filter((id) => Boolean(id) && typeof id === 'string')
+        )
+      );
+
+      if (senderIds.length > 0) {
+        try {
+          const { data: supaProfiles } = await supabaseAdmin
+            .from('profiles')
+            .select('*')
+            .in('user_id', senderIds);
+
+          if (supaProfiles && supaProfiles.length > 0) {
+            const profileMap = new Map();
+            supaProfiles.forEach((p) => {
+              if (p.user_id) profileMap.set(p.user_id, p);
+              if (p.id) profileMap.set(p.id, p);
+              if (p.email) profileMap.set(p.email.toLowerCase(), p);
+            });
+
+            notifications.forEach((n) => {
+              const sid = n.senderId || n.sender?.id;
+              const sp = sid ? profileMap.get(sid) : null;
+              if (sp) {
+                if (!n.sender) {
+                  n.sender = {
+                    id: sid,
+                    email: sp.email || '',
+                    role: sp.preferred_role || 'STUDENT',
+                    profile: {},
+                  };
+                }
+                if (!n.sender.profile) n.sender.profile = {};
+                if (sp.full_name) n.sender.profile.fullName = sp.full_name;
+                if (sp.avatar) n.sender.profile.avatar = sp.avatar;
+                if (sp.username) n.sender.profile.username = sp.username;
+                if (sp.headline) n.sender.profile.headline = sp.headline;
+              }
+            });
+          }
+        } catch (enrichErr) {
+          console.warn('Notifications profile enrichment notice:', enrichErr?.message);
+        }
+      }
+    }
 
     const unreadCount = await prisma.notification.count({
       where: { userId: req.user.id, isRead: false },

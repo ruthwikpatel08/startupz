@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, isDemoRecord } from '../../services/api';
+import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
@@ -29,6 +30,7 @@ import {
   Lightbulb,
   ArrowRight,
   Edit2,
+  Trash2,
 } from 'lucide-react';
 
 let cachedStartupsList: Startup[] = [];
@@ -188,6 +190,32 @@ export const ExploreStartupsPage: React.FC = () => {
     navigator.clipboard.writeText(`${window.location.origin}/startups/${id}`);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleDeleteStartup = async (id: string, name: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      await api.deleteStartup(id).catch(() => null);
+      try {
+        await supabase.from('posts').delete().eq('startup_id', id);
+        await supabase.from('posts').delete().ilike('title', `%${name}%`);
+        await supabase.from('startup_opportunities').delete().eq('startup_id', id);
+        await supabase.from('startups').delete().eq('id', id);
+      } catch (cleanErr) {
+        console.warn('Supabase cleanup on delete:', cleanErr);
+      }
+      setStartups((prev) => prev.filter((s) => s.id !== id));
+      cachedStartupsList = cachedStartupsList.filter((s) => s.id !== id);
+      try {
+        sessionStorage.setItem('startupz_cached_startups', JSON.stringify(cachedStartupsList));
+      } catch {}
+    } catch (err: any) {
+      alert(err?.message || 'Failed to delete startup.');
+    }
   };
 
   const industries = ['ALL', 'AgriTech', 'CleanTech', 'HealthTech', 'FinTech', 'EdTech', 'AI', 'Logistics', 'Accessibility', 'CyberSecurity', 'B2B SaaS', 'Consumer'];
@@ -476,7 +504,7 @@ export const ExploreStartupsPage: React.FC = () => {
                 </div>
 
                 {/* Action Buttons Row */}
-                <div className="flex items-center justify-between text-xs pt-1">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-1">
                   <div className="flex items-center gap-1">
                     <button
                       onClick={(e) => handleLike(startup.id, e)}
@@ -527,14 +555,25 @@ export const ExploreStartupsPage: React.FC = () => {
                         user.isAdmin
                       )
                     ) && (
-                      <Link
-                        to={`/startups/${startup.id}?edit=true`}
-                        className="px-2.5 py-1 text-xs rounded-md font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900/60 hover:bg-brand-100 dark:hover:bg-brand-900/40 inline-flex items-center gap-1 transition-colors"
-                        title="Edit your startup"
-                      >
-                        <Edit2 size={11} />
-                        <span>Edit</span>
-                      </Link>
+                      <>
+                        <Link
+                          to={`/startups/${startup.id}?edit=true`}
+                          className="px-2 py-1 text-xs rounded-md font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900/60 hover:bg-brand-100 dark:hover:bg-brand-900/40 inline-flex items-center gap-1 transition-colors"
+                          title="Edit your startup"
+                        >
+                          <Edit2 size={11} />
+                          <span>Edit</span>
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteStartup(startup.id, startup.name, e)}
+                          className="px-2 py-1 text-xs rounded-md font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/40 inline-flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Delete your startup"
+                        >
+                          <Trash2 size={11} />
+                          <span>Delete</span>
+                        </button>
+                      </>
                     )}
                     <button
                       onClick={(e) => handleFollow(startup.id, e)}

@@ -318,3 +318,41 @@ export async function upsertSupabaseProfile(userId, userEmail, profileData) {
   }
 }
 
+/**
+ * Fetches a user's latest authoritative profile record from Supabase.
+ *
+ * @param {string} userId - UUID or user id
+ * @param {string} userEmail - User's email
+ * @returns {Promise<Object|null>}
+ */
+export async function fetchSupabaseProfile(userId, userEmail) {
+  if (!supabaseAdmin) return null;
+  try {
+    const isUuid = (str) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str.trim());
+    const cleanEmail = (userEmail || '').trim().toLowerCase();
+
+    if (userId && isUuid(userId)) {
+      const { data } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .or(`user_id.eq.${userId},id.eq.${userId}`)
+        .maybeSingle();
+      if (data) return data;
+    }
+
+    if (cleanEmail) {
+      const { data } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .ilike('email', cleanEmail)
+        .maybeSingle();
+      if (data) return data;
+    }
+
+    return null;
+  } catch (err) {
+    console.warn('fetchSupabaseProfile notice:', err?.message);
+    return null;
+  }
+}
+

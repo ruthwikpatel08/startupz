@@ -130,6 +130,8 @@ export interface StartupOpportunity {
   createdAt: string;
   updatedAt?: string;
   hasApplied?: boolean;
+  applicationStatus?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'DECLINED' | 'DENIED' | string;
+  appliedAt?: string;
   isSaved?: boolean;
   applications?: OpportunityApplication[];
   _count?: {

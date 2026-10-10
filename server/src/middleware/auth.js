@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { prisma } from '../db.js';
+import { fetchSupabaseProfile } from '../supabase.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'startupz_super_secret_jwt_key_2026_modern_startup_network';
 
@@ -9,6 +10,28 @@ function enrichAdminFlag(user) {
   if (['ruthwikpatel08@gmail.com', 'gokulvamshi@hookz.in', 'gokulvamshi@gmail.com', 'admin@startupz.com'].includes(email)) {
     user.isAdmin = true;
   }
+  return user;
+}
+
+async function enrichWithSupabaseProfile(user) {
+  if (!user) return user;
+  enrichAdminFlag(user);
+  try {
+    const supaProfile = await fetchSupabaseProfile(user.id, user.email);
+    if (supaProfile) {
+      if (!user.profile) user.profile = {};
+      if (supaProfile.full_name) user.profile.fullName = supaProfile.full_name;
+      if (supaProfile.avatar) user.profile.avatar = supaProfile.avatar;
+      if (supaProfile.username) user.profile.username = supaProfile.username;
+      if (supaProfile.headline) user.profile.headline = supaProfile.headline;
+      if (supaProfile.location) user.profile.location = supaProfile.location;
+      if (supaProfile.bio) user.profile.bio = supaProfile.bio;
+      if (supaProfile.preferred_role) {
+        user.profile.preferredRole = supaProfile.preferred_role;
+        user.role = supaProfile.preferred_role;
+      }
+    }
+  } catch {}
   return user;
 }
 
@@ -23,7 +46,7 @@ async function resolveUserFromToken(token, req) {
         where: { id: decoded.userId },
         include: { profile: true },
       });
-      if (user && !user.isSuspended) return enrichAdminFlag(user);
+      if (user && !user.isSuspended) return enrichWithSupabaseProfile(user);
     }
   } catch (err) {
     // Fall through to decode check
@@ -77,7 +100,7 @@ async function resolveUserFromToken(token, req) {
           });
         }
 
-        if (user && !user.isSuspended) return enrichAdminFlag(user);
+        if (user && !user.isSuspended) return enrichWithSupabaseProfile(user);
       }
     }
   } catch (err) {
@@ -97,7 +120,7 @@ async function resolveUserFromToken(token, req) {
       },
       include: { profile: true },
     });
-    if (user && !user.isSuspended) return enrichAdminFlag(user);
+    if (user && !user.isSuspended) return enrichWithSupabaseProfile(user);
   }
 
   return null;
