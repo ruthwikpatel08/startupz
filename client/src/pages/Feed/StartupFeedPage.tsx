@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { api, clearApiCache } from '../../services/api';
-import { supabase, fetchUserConnections } from '../../lib/supabase';
+import { supabase, fetchUserConnections, broadcastEntityDeleted } from '../../lib/supabase';
 import { Post, Startup, Problem } from '../../types';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -835,6 +835,7 @@ export const StartupFeedPage: React.FC = () => {
         await supabase.from('posts').delete().eq('id', postId);
       }
       setPosts((prev) => prev.filter((p) => p.id !== postId));
+      broadcastEntityDeleted('POST', postId);
     } catch (err: any) {
       alert(err.message || 'Failed to delete post.');
     }
@@ -845,10 +846,58 @@ export const StartupFeedPage: React.FC = () => {
     try {
       await api.deleteProblem(problemId);
       setProblems((prev) => prev.filter((p) => p.id !== problemId));
+      broadcastEntityDeleted('PROBLEM', problemId);
     } catch (err: any) {
       alert(err.message || 'Failed to delete idea.');
     }
   };
+
+  // Cross-device sync & auto-refresh on focus
+  useEffect(() => {
+    const syncChannel = supabase.channel('global-feed-sync-channel');
+    syncChannel
+      .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => {
+        if (payload?.entityType === 'POST' && payload?.id) {
+          setPosts((prev) => prev.filter((p) => p.id !== payload.id));
+        } else if (payload?.entityType === 'PROBLEM' && payload?.id) {
+          setProblems((prev) => prev.filter((p) => p.id !== payload.id));
+        }
+      })
+      .subscribe();
+
+    const dbChannel = supabase
+      .channel('feed-posts-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => {
+        fetchPosts();
+      })
+      .subscribe();
+
+    const handleLocalDelete = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.entityType === 'POST' && detail?.id) {
+        setPosts((prev) => prev.filter((p) => p.id !== detail.id));
+      } else if (detail?.entityType === 'PROBLEM' && detail?.id) {
+        setProblems((prev) => prev.filter((p) => p.id !== detail.id));
+      }
+    };
+    window.addEventListener('global_entity_deleted', handleLocalDelete);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchPosts();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleVisibility);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleVisibility);
+      window.removeEventListener('global_entity_deleted', handleLocalDelete);
+      supabase.removeChannel(syncChannel);
+      supabase.removeChannel(dbChannel);
+    };
+  }, []);
 
   const myAchievementsCount = posts.filter(
     (p) =>

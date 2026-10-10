@@ -1740,3 +1740,34 @@ export async function editSupabaseMessage(
   return true;
 }
 
+/**
+ * Cross-device deletion broadcast helper.
+ * Emits an event on Supabase Realtime channel so all active tabs/devices (laptop, mobile)
+ * remove the deleted item immediately without waiting for a manual refresh.
+ */
+export function broadcastEntityDeleted(
+  entityType: 'PROJECT' | 'STARTUP' | 'OPPORTUNITY' | 'POST' | 'PROBLEM',
+  id: string
+): void {
+  try {
+    const channel = supabase.channel('global-data-sync-broadcast');
+    channel.send({
+      type: 'broadcast',
+      event: 'entity_deleted',
+      payload: {
+        entityType,
+        id,
+        timestamp: new Date().toISOString(),
+      },
+    }).catch(() => null);
+  } catch {}
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('global_entity_deleted', {
+        detail: { entityType, id },
+      })
+    );
+  }
+}
+

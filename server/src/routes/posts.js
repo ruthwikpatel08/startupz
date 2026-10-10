@@ -713,15 +713,22 @@ router.get('/:id/comments', optionalAuth, async (req, res) => {
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const post = await prisma.post.findUnique({ where: { id } });
+    let post = await prisma.post.findUnique({ where: { id } }).catch(() => null);
+    if (!post && supabaseAdmin) {
+      const { data } = await supabaseAdmin.from('posts').select('*').eq('id', id).maybeSingle();
+      if (data) {
+        post = { id: data.id, authorId: data.author_id };
+      }
+    }
 
     if (!post) return res.status(404).json({ error: 'Post not found.' });
 
-    if (post.authorId !== req.user.id && !req.user.isAdmin) {
+    const authorId = post.authorId || post.author_id;
+    if (authorId && authorId !== req.user.id && !req.user.isAdmin) {
       return res.status(403).json({ error: 'Unauthorized to delete this post.' });
     }
 
-    await prisma.post.delete({ where: { id } });
+    await prisma.post.delete({ where: { id } }).catch(() => null);
 
     // Clean up any saved items referencing this post
     await prisma.savedItem.deleteMany({

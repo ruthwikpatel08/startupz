@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Problem } from '../../types';
 import { api } from '../../services/api';
+import { supabase, broadcastEntityDeleted } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { ProblemCard } from '../../components/problems/ProblemCard';
 import { ProblemFilters } from '../../components/problems/ProblemFilters';
@@ -219,10 +220,46 @@ export const ProblemsPage: React.FC = () => {
     try {
       await api.deleteProblem(problemId);
       setProblems((prev) => prev.filter((p) => p.id !== problemId));
+      broadcastEntityDeleted('PROBLEM', problemId);
     } catch (err: any) {
       alert(err.message || 'Failed to delete problem statement.');
     }
   };
+
+  // Cross-device sync & auto-refresh on focus
+  useEffect(() => {
+    const syncChannel = supabase.channel('global-problems-sync-channel');
+    syncChannel
+      .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => {
+        if (payload?.entityType === 'PROBLEM' && payload?.id) {
+          setProblems((prev) => prev.filter((p) => p.id !== payload.id));
+        }
+      })
+      .subscribe();
+
+    const handleLocalDelete = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.entityType === 'PROBLEM' && detail?.id) {
+        setProblems((prev) => prev.filter((p) => p.id !== detail.id));
+      }
+    };
+    window.addEventListener('global_entity_deleted', handleLocalDelete);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchProblems();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleVisibility);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleVisibility);
+      window.removeEventListener('global_entity_deleted', handleLocalDelete);
+      supabase.removeChannel(syncChannel);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen py-8 sm:py-12 space-y-8">

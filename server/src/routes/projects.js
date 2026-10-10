@@ -352,13 +352,11 @@ router.delete('/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
     const { all, project } = await getOrFetchProject(id);
 
-    if (!project) {
-      return res.status(404).json({ error: 'Project not found.' });
-    }
-
-    const creatorId = project.creator?.userId || project.creatorId;
-    if (creatorId !== req.user.id && !req.user.isAdmin) {
-      return res.status(403).json({ error: 'Only the project creator can delete this project.' });
+    if (project) {
+      const creatorId = project.creator?.userId || project.creator?.id || project.creatorId || project.creator_id;
+      if (creatorId && creatorId !== req.user.id && !req.user.isAdmin) {
+        return res.status(403).json({ error: 'Only the project creator can delete this project.' });
+      }
     }
 
     cachedProjects = all.filter((p) => p.id !== id);

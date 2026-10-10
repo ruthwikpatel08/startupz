@@ -755,10 +755,21 @@ router.put('/:id', requireAuth, async (req, res) => {
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const existing = await prisma.startup.findUnique({ where: { id } });
+    let existing = await prisma.startup.findUnique({ where: { id } }).catch(() => null);
+    if (!existing && supabaseAdmin) {
+      const { data } = await supabaseAdmin.from('startups').select('*').eq('id', id).maybeSingle();
+      if (data) {
+        existing = {
+          id: data.id,
+          founderId: data.founder_id || data.founderId,
+          name: data.name,
+        };
+      }
+    }
     if (!existing) return res.status(404).json({ error: 'Startup not found.' });
 
-    if (existing.founderId !== req.user.id && !req.user.isAdmin) {
+    const founderId = existing.founderId || existing.founder_id;
+    if (founderId && founderId !== req.user.id && !req.user.isAdmin) {
       return res.status(403).json({ error: 'Unauthorized to delete this startup.' });
     }
 

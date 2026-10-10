@@ -33,7 +33,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { Avatar } from '../../components/common/Avatar';
-import { supabase } from '../../lib/supabase';
+import { supabase, broadcastEntityDeleted } from '../../lib/supabase';
 
 export const OpportunitiesPage: React.FC = () => {
   const { user } = useAuth();
@@ -142,6 +142,9 @@ export const OpportunitiesPage: React.FC = () => {
         } catch {}
         return next;
       });
+
+      // 4. Broadcast deletion to other devices (mobile <-> laptop)
+      broadcastEntityDeleted('OPPORTUNITY', oppId);
 
       if (selectedOpp?.id === oppId) {
         setSelectedOpp(null);
@@ -414,11 +417,9 @@ export const OpportunitiesPage: React.FC = () => {
       const merged = Array.from(combinedMap.values());
       setOpportunities(merged);
 
-      if (merged.length > 0) {
-        try {
-          localStorage.setItem('startupz_cached_opportunities_v2', JSON.stringify(merged));
-        } catch {}
-      }
+      try {
+        localStorage.setItem('startupz_cached_opportunities_v2', JSON.stringify(merged));
+      } catch {}
     } catch (err: any) {
       console.warn('Backend returned warning for opportunities:', err);
       setError(err?.message || 'Unable to connect to the startup opportunities server.');
@@ -472,6 +473,61 @@ export const OpportunitiesPage: React.FC = () => {
     }, 250);
     return () => clearTimeout(timer);
   }, [currentType, role, workplaceType, commitment, search]);
+
+  // Cross-device sync & auto-refresh on focus
+  useEffect(() => {
+    const syncChannel = supabase.channel('global-opps-sync-channel');
+    syncChannel
+      .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => {
+        if (payload?.entityType === 'OPPORTUNITY' && payload?.id) {
+          setOpportunities((prev) => {
+            const next = prev.filter((o) => o.id !== payload.id);
+            try {
+              localStorage.setItem('startupz_cached_opportunities_v2', JSON.stringify(next));
+            } catch {}
+            return next;
+          });
+        }
+      })
+      .subscribe();
+
+    const dbChannel = supabase
+      .channel('opps-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'startup_opportunities' }, () => {
+        fetchOpportunities();
+      })
+      .subscribe();
+
+    const handleLocalDelete = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.entityType === 'OPPORTUNITY' && detail?.id) {
+        setOpportunities((prev) => {
+          const next = prev.filter((o) => o.id !== detail.id);
+          try {
+            localStorage.setItem('startupz_cached_opportunities_v2', JSON.stringify(next));
+          } catch {}
+          return next;
+        });
+      }
+    };
+    window.addEventListener('global_entity_deleted', handleLocalDelete);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchOpportunities();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleVisibility);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleVisibility);
+      window.removeEventListener('global_entity_deleted', handleLocalDelete);
+      supabase.removeChannel(syncChannel);
+      supabase.removeChannel(dbChannel);
+    };
+  }, []);
 
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();

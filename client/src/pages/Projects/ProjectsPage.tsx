@@ -27,7 +27,7 @@ import {
 import { SEO } from '../../components/common/SEO';
 import { Avatar } from '../../components/common/Avatar';
 import { api } from '../../services/api';
-import { supabase, fetchUserConnections } from '../../lib/supabase';
+import { supabase, fetchUserConnections, broadcastEntityDeleted } from '../../lib/supabase';
 
 export interface PendingApplicant {
   userId: string;
@@ -287,20 +287,20 @@ export const ProjectsPage: React.FC = () => {
     }
   }, [user?.id]);
 
-  // Fetch projects from server on mount
+  // Fetch projects from server on mount with cross-device synchronization
   useEffect(() => {
     let isMounted = true;
     const fetchServerProjects = async () => {
       try {
-        let serverList: BuilderProject[] = [];
+        let serverList: BuilderProject[] | null = null;
         const res = await api.getProjects().catch(() => null);
-        if (res && Array.isArray(res.projects) && res.projects.length > 0) {
+        if (res && Array.isArray(res.projects)) {
           serverList = res.projects;
         } else {
           // Direct Supabase fallback if server is waking up or offline
           try {
             const { data } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
-            if (Array.isArray(data) && data.length > 0) {
+            if (Array.isArray(data)) {
               serverList = data.map((row: any) => ({
                 id: row.id,
                 title: row.title,
@@ -322,7 +322,7 @@ export const ProjectsPage: React.FC = () => {
           } catch {}
         }
 
-        if (isMounted && serverList.length > 0) {
+        if (isMounted && serverList !== null) {
           // Guarantee that applied roles for current user are preserved and declined roles are purged
           const currentUid = user?.id || (localStorage.getItem('startupz_user') ? JSON.parse(localStorage.getItem('startupz_user')!).id : null);
           let appliedKeys: string[] = [];
@@ -395,8 +395,62 @@ export const ProjectsPage: React.FC = () => {
     };
 
     fetchServerProjects();
+
+    // Cross-device broadcast listener (mobile <-> laptop)
+    const syncChannel = supabase.channel('global-projects-sync-channel');
+    syncChannel
+      .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => {
+        if (payload?.entityType === 'PROJECT' && payload?.id) {
+          setProjects((prev) => {
+            const next = prev.filter((p) => p.id !== payload.id);
+            try {
+              localStorage.setItem('startupz_builder_projects', JSON.stringify(next));
+            } catch {}
+            return next;
+          });
+        }
+      })
+      .subscribe();
+
+    // Direct database change listener
+    const dbChannel = supabase
+      .channel('projects-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
+        fetchServerProjects();
+      })
+      .subscribe();
+
+    // Local custom event listener
+    const handleLocalDelete = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.entityType === 'PROJECT' && detail?.id) {
+        setProjects((prev) => {
+          const next = prev.filter((p) => p.id !== detail.id);
+          try {
+            localStorage.setItem('startupz_builder_projects', JSON.stringify(next));
+          } catch {}
+          return next;
+        });
+      }
+    };
+    window.addEventListener('global_entity_deleted', handleLocalDelete);
+
+    // Auto-refresh when switching back to this tab or mobile device wakes up
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchServerProjects();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleVisibility);
+
     return () => {
       isMounted = false;
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleVisibility);
+      window.removeEventListener('global_entity_deleted', handleLocalDelete);
+      supabase.removeChannel(syncChannel);
+      supabase.removeChannel(dbChannel);
     };
   }, [user?.id]);
 
@@ -762,11 +816,11 @@ export const ProjectsPage: React.FC = () => {
     if (!window.confirm('Are you sure you want to delete this project idea?')) {
       return;
     }
-    try {
-      await api.deleteProject(projectId).catch(() => null);
-    } catch {}
+    // 1. Optimistically update local state & localStorage
     const updated = projects.filter((p) => p.id !== projectId);
+    setProjects(updated);
     saveProjects(updated);
+
     try {
       const raw = localStorage.getItem('startupz_project_groups');
       if (raw) {
@@ -777,6 +831,22 @@ export const ProjectsPage: React.FC = () => {
         localStorage.setItem('startupz_project_groups', JSON.stringify(filteredGroups));
       }
     } catch {}
+
+    // 2. Direct Supabase delete for cloud permanence
+    try {
+      await supabase.from('projects').delete().eq('id', projectId);
+    } catch (sbErr) {
+      console.warn('Supabase direct project delete notice:', sbErr);
+    }
+
+    // 3. Server API delete
+    try {
+      await api.deleteProject(projectId).catch(() => null);
+    } catch {}
+
+    // 4. Broadcast deletion to all other connected devices & tabs (mobile <-> laptop)
+    broadcastEntityDeleted('PROJECT', projectId);
+
     showToast('Project deleted successfully.');
   };
 

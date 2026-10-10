@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, isDemoRecord } from '../../services/api';
-import { supabase } from '../../lib/supabase';
+import { supabase, broadcastEntityDeleted } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
@@ -127,6 +127,63 @@ export const ExploreStartupsPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [search, industry, stage, fundingStatus, location]);
 
+  // Cross-device sync & auto-refresh on focus
+  useEffect(() => {
+    const syncChannel = supabase.channel('global-startups-sync-channel');
+    syncChannel
+      .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => {
+        if (payload?.entityType === 'STARTUP' && payload?.id) {
+          setStartups((prev) => {
+            const next = prev.filter((s) => s.id !== payload.id);
+            cachedStartupsList = cachedStartupsList.filter((s) => s.id !== payload.id);
+            try {
+              sessionStorage.setItem('startupz_cached_startups', JSON.stringify(cachedStartupsList));
+            } catch {}
+            return next;
+          });
+        }
+      })
+      .subscribe();
+
+    const dbChannel = supabase
+      .channel('startups-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'startups' }, () => {
+        fetchStartups();
+      })
+      .subscribe();
+
+    const handleLocalDelete = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.entityType === 'STARTUP' && detail?.id) {
+        setStartups((prev) => {
+          const next = prev.filter((s) => s.id !== detail.id);
+          cachedStartupsList = cachedStartupsList.filter((s) => s.id !== detail.id);
+          try {
+            sessionStorage.setItem('startupz_cached_startups', JSON.stringify(cachedStartupsList));
+          } catch {}
+          return next;
+        });
+      }
+    };
+    window.addEventListener('global_entity_deleted', handleLocalDelete);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchStartups();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleVisibility);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleVisibility);
+      window.removeEventListener('global_entity_deleted', handleLocalDelete);
+      supabase.removeChannel(syncChannel);
+      supabase.removeChannel(dbChannel);
+    };
+  }, []);
+
   const handleLike = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -213,6 +270,8 @@ export const ExploreStartupsPage: React.FC = () => {
       try {
         sessionStorage.setItem('startupz_cached_startups', JSON.stringify(cachedStartupsList));
       } catch {}
+      // Broadcast deletion across all connected devices
+      broadcastEntityDeleted('STARTUP', id);
     } catch (err: any) {
       alert(err?.message || 'Failed to delete startup.');
     }

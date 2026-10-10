@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api';
-import { supabase } from '../../lib/supabase';
+import { supabase, broadcastEntityDeleted } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
@@ -128,6 +128,7 @@ export const StartupDetailPage: React.FC = () => {
       } catch (err) {
         console.warn('Supabase cleanup notice on startup delete:', err);
       }
+      broadcastEntityDeleted('STARTUP', startup.id);
       navigate('/startups');
     } catch (err: any) {
       alert(err.message || 'Failed to delete startup.');
