@@ -22,6 +22,7 @@ import {
   Trash2,
   Bookmark,
   UserPlus,
+  XCircle,
 } from 'lucide-react';
 import { SEO } from '../../components/common/SEO';
 import { Avatar } from '../../components/common/Avatar';
@@ -54,6 +55,7 @@ export interface ProjectRole {
   } | null;
   pendingApplicant?: PendingApplicant | null;
   pendingApplicants?: PendingApplicant[];
+  declinedApplicantIds?: string[];
   invitedUser?: InvitedUser | null;
   status: 'OPEN' | 'PENDING' | 'INVITED' | 'ASSIGNED';
 }
@@ -321,43 +323,66 @@ export const ProjectsPage: React.FC = () => {
         }
 
         if (isMounted && serverList.length > 0) {
-          // Guarantee that applied roles for current user are preserved
+          // Guarantee that applied roles for current user are preserved and declined roles are purged
           const currentUid = user?.id || (localStorage.getItem('startupz_user') ? JSON.parse(localStorage.getItem('startupz_user')!).id : null);
+          let appliedKeys: string[] = [];
           if (currentUid) {
             try {
               const stored = localStorage.getItem(`startupz_applied_roles_${currentUid}`);
-              const appliedKeys: string[] = stored ? JSON.parse(stored) : [];
-              if (appliedKeys.length > 0) {
-                const aSet = new Set(appliedKeys);
-                serverList = serverList.map((p) => ({
-                  ...p,
-                  roles: p.roles.map((r) => {
-                    if (aSet.has(`${p.id}:${r.id}`) && r.status === 'OPEN') {
-                      const prevList = Array.isArray(r.pendingApplicants) ? r.pendingApplicants : (r.pendingApplicant ? [r.pendingApplicant] : []);
-                      const exists = prevList.some((a) => a.userId === currentUid);
-                      if (!exists) {
-                        const newApp: PendingApplicant = {
-                          userId: currentUid,
-                          fullName: user?.profile?.fullName || user?.email?.split('@')[0] || 'Builder',
-                          avatar: user?.profile?.avatar || null,
-                          roleDescription: user?.profile?.headline || 'Team Collaborator',
-                          appliedAt: 'Applied',
-                        };
-                        const nextList = [...prevList, newApp];
-                        return {
-                          ...r,
-                          pendingApplicant: nextList[0],
-                          pendingApplicants: nextList,
-                        };
-                      }
-                    }
-                    return r;
-                  }),
-                }));
-              }
+              appliedKeys = stored ? JSON.parse(stored) : [];
             } catch {}
           }
+          const aSet = new Set(appliedKeys);
 
+          serverList = serverList.map((p) => ({
+            ...p,
+            roles: p.roles.map((r) => {
+              const declined = Array.isArray(r.declinedApplicantIds) ? r.declinedApplicantIds : [];
+              if (declined.length > 0) {
+                const prevList = Array.isArray(r.pendingApplicants) ? r.pendingApplicants : (r.pendingApplicant ? [r.pendingApplicant] : []);
+                const cleanedList = prevList.filter((a) => !declined.includes(a.userId));
+                r = {
+                  ...r,
+                  pendingApplicants: cleanedList,
+                  pendingApplicant: cleanedList[0] || null,
+                };
+              }
+
+              if (currentUid && declined.includes(currentUid)) {
+                if (aSet.has(`${p.id}:${r.id}`)) {
+                  aSet.delete(`${p.id}:${r.id}`);
+                  appliedKeys = appliedKeys.filter((k) => k !== `${p.id}:${r.id}`);
+                  try {
+                    localStorage.setItem(`startupz_applied_roles_${currentUid}`, JSON.stringify(appliedKeys));
+                  } catch {}
+                }
+                return r;
+              }
+
+              if (currentUid && aSet.has(`${p.id}:${r.id}`) && r.status === 'OPEN') {
+                const prevList = Array.isArray(r.pendingApplicants) ? r.pendingApplicants : (r.pendingApplicant ? [r.pendingApplicant] : []);
+                const exists = prevList.some((a) => a.userId === currentUid);
+                if (!exists) {
+                  const newApp: PendingApplicant = {
+                    userId: currentUid,
+                    fullName: user?.profile?.fullName || user?.email?.split('@')[0] || 'Builder',
+                    avatar: user?.profile?.avatar || null,
+                    roleDescription: user?.profile?.headline || 'Team Collaborator',
+                    appliedAt: 'Applied',
+                  };
+                  const nextList = [...prevList, newApp];
+                  return {
+                    ...r,
+                    pendingApplicant: nextList[0],
+                    pendingApplicants: nextList,
+                  };
+                }
+              }
+              return r;
+            }),
+          }));
+
+          setAppliedRolesSet(new Set(aSet));
           setProjects(serverList);
           try {
             localStorage.setItem('startupz_builder_projects', JSON.stringify(serverList));
@@ -898,12 +923,16 @@ export const ProjectsPage: React.FC = () => {
               const exists = prevList.some((a) => a.userId === user.id);
               const nextList = exists ? prevList : [...prevList, newApplicant];
 
+              const currentDeclined = Array.isArray(r.declinedApplicantIds) ? r.declinedApplicantIds : [];
+              const nextDeclined = currentDeclined.filter((id) => id !== user.id);
+
               return {
                 ...r,
                 // Status remains OPEN so any number of builders can also apply!
                 status: 'OPEN' as const,
                 pendingApplicant: nextList[0] || null,
                 pendingApplicants: nextList,
+                declinedApplicantIds: nextDeclined,
               };
             }
             return r;
@@ -1021,10 +1050,6 @@ export const ProjectsPage: React.FC = () => {
   };
 
   const handleDeclineApplicant = async (projectId: string, roleId: string, applicantUserId?: string) => {
-    try {
-      await api.respondProjectApplicant(projectId, roleId, 'DECLINE', applicantUserId).catch(() => null);
-    } catch {}
-
     const updated = projects.map((p) => {
       if (p.id === projectId) {
         return {
@@ -1040,11 +1065,17 @@ export const ProjectsPage: React.FC = () => {
                 ? list.filter((a) => a.userId !== applicantUserId)
                 : list.slice(1);
 
+              const currentDeclined = Array.isArray(r.declinedApplicantIds) ? r.declinedApplicantIds : [];
+              const nextDeclined = applicantUserId && !currentDeclined.includes(applicantUserId)
+                ? [...currentDeclined, applicantUserId]
+                : currentDeclined;
+
               return {
                 ...r,
                 status: 'OPEN' as const,
                 pendingApplicant: nextList[0] || null,
                 pendingApplicants: nextList,
+                declinedApplicantIds: nextDeclined,
               };
             }
             return r;
@@ -1056,24 +1087,35 @@ export const ProjectsPage: React.FC = () => {
 
     saveProjects(updated);
 
-    if (applicantUserId === user?.id) {
-      const roleKey = `${projectId}:${roleId}`;
+    const roleKey = `${projectId}:${roleId}`;
+    if (applicantUserId) {
+      try {
+        const stored = localStorage.getItem(`startupz_applied_roles_${applicantUserId}`);
+        if (stored) {
+          const list: string[] = JSON.parse(stored);
+          const filtered = list.filter((k) => k !== roleKey);
+          localStorage.setItem(`startupz_applied_roles_${applicantUserId}`, JSON.stringify(filtered));
+        }
+      } catch {}
+    }
+
+    if (user?.id && (applicantUserId === user.id || !applicantUserId || appliedRolesSet.has(roleKey))) {
       setAppliedRolesSet((prev) => {
         const next = new Set(prev);
         next.delete(roleKey);
         return next;
       });
       try {
-        const stored = localStorage.getItem(`startupz_applied_roles_${user?.id}`);
+        const stored = localStorage.getItem(`startupz_applied_roles_${user.id}`);
         if (stored) {
           const list: string[] = JSON.parse(stored);
           const filtered = list.filter((k) => k !== roleKey);
-          localStorage.setItem(`startupz_applied_roles_${user?.id}`, JSON.stringify(filtered));
+          localStorage.setItem(`startupz_applied_roles_${user.id}`, JSON.stringify(filtered));
         }
       } catch {}
     }
 
-    // Direct Supabase sync
+    // Direct Supabase sync so cloud database reflects decline immediately
     try {
       const projToSync = updated.find((p) => p.id === projectId);
       if (projToSync) {
@@ -1081,6 +1123,17 @@ export const ProjectsPage: React.FC = () => {
           roles: projToSync.roles,
           updated_at: new Date().toISOString(),
         }).eq('id', projectId);
+      }
+    } catch (sbErr) {
+      console.warn('Supabase decline sync notice:', sbErr);
+    }
+
+    // Server API call
+    try {
+      const res = await api.respondProjectApplicant(projectId, roleId, 'DECLINE', applicantUserId).catch(() => null);
+      if (res && res.project) {
+        setProjects((prev) => prev.map((p) => (p.id === projectId ? res.project : p)));
+        saveProjects(projects.map((p) => (p.id === projectId ? res.project : p)));
       }
     } catch {}
 
@@ -1418,10 +1471,13 @@ export const ProjectsPage: React.FC = () => {
                         const isMyAssignedRole = isAssigned && role.assignedTo?.userId === user?.id;
                         const isMyInvitedRole = isInvited && role.invitedUser?.userId === user?.id;
 
-                        const applicantsList = Array.isArray(role.pendingApplicants) && role.pendingApplicants.length > 0
+                        const declinedList = Array.isArray(role.declinedApplicantIds) ? role.declinedApplicantIds : [];
+                        const rawApplicants = Array.isArray(role.pendingApplicants) && role.pendingApplicants.length > 0
                           ? role.pendingApplicants
                           : (role.pendingApplicant ? [role.pendingApplicant] : []);
-                        const isMyPendingRole = Boolean(
+                        const applicantsList = rawApplicants.filter((a) => !declinedList.includes(a.userId));
+                        const isDeclined = Boolean(user?.id && declinedList.includes(user.id));
+                        const isMyPendingRole = !isDeclined && Boolean(
                           (user?.id && applicantsList.some((a) => a.userId === user.id)) ||
                           appliedRolesSet.has(`${project.id}:${role.id}`)
                         );
@@ -1593,7 +1649,11 @@ export const ProjectsPage: React.FC = () => {
                               ) : (
                                 /* Role is unassigned - Non-creator perspective */
                                 <div className="flex items-center gap-1.5">
-                                  {isMyPendingRole ? (
+                                  {isDeclined ? (
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40">
+                                      <XCircle size={11} /> Application Declined
+                                    </span>
+                                  ) : isMyPendingRole ? (
                                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40">
                                       <Clock size={11} /> Applied (Pending Review)
                                     </span>

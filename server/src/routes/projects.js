@@ -322,7 +322,6 @@ router.put('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Project not found.' });
     }
 
-    const existing = all[idx];
     const creatorId = existing.creator?.userId || existing.creatorId;
     if (creatorId !== req.user.id && !req.user.isAdmin) {
       return res.status(403).json({ error: 'Only the project creator can edit this project.' });
@@ -428,6 +427,10 @@ router.post('/:id/roles/:roleId/apply', requireAuth, async (req, res) => {
         roleDescription: applicantHeadline,
         appliedAt: new Date().toISOString(),
       };
+
+      if (Array.isArray(role.declinedApplicantIds)) {
+        role.declinedApplicantIds = role.declinedApplicantIds.filter((id) => id !== req.user.id);
+      }
 
       role.pendingApplicants.push(newApplicant);
       role.pendingApplicant = role.pendingApplicants[0]; // backward compatibility
@@ -612,9 +615,9 @@ router.post('/:id/roles/:roleId/respond-applicant', requireAuth, async (req, res
       return res.status(404).json({ error: 'Project not found.' });
     }
 
-    const creatorId = project.creator?.userId || project.creatorId;
+    const creatorId = project.creator?.userId || project.creator?.id || project.creatorId || project.creator_id;
     if (creatorId !== req.user.id && !req.user.isAdmin) {
-      return res.status(403).json({ error: 'Only the project lead can accept applicants.' });
+      return res.status(403).json({ error: 'Only the project lead can accept or decline applicants.' });
     }
 
     const role = project.roles.find((r) => r.id === roleId);
@@ -645,6 +648,9 @@ router.post('/:id/roles/:roleId/respond-applicant', requireAuth, async (req, res
       role.pendingApplicant = null;
       role.pendingApplicants = [];
       role.invitedUser = null;
+      if (Array.isArray(role.declinedApplicantIds)) {
+        role.declinedApplicantIds = role.declinedApplicantIds.filter((id) => id !== applicant.userId);
+      }
 
       // Notify applicant
       await prisma.notification.create({
@@ -657,12 +663,57 @@ router.post('/:id/roles/:roleId/respond-applicant', requireAuth, async (req, res
           link: `/projects`,
         },
       }).catch(() => null);
+
+      if (supabaseAdmin) {
+        await supabaseAdmin.from('notifications').insert({
+          user_id: applicant.userId,
+          sender_id: req.user.id,
+          type: 'PROJECT_APPLICATION_ACCEPTED',
+          title: `Application Accepted! 🎉`,
+          message: `Congratulations! You have been accepted as ${role.roleName} on "${project.title}".`,
+          link: `/projects`,
+          is_read: false,
+        }).catch(() => null);
+      }
     } else {
-      // Decline: remove only this applicant from pending list
-      role.pendingApplicants = role.pendingApplicants.filter((a) => a.userId !== applicant.userId);
+      // Decline: record declined user ID and remove only this applicant from pending list
+      if (!Array.isArray(role.declinedApplicantIds)) {
+        role.declinedApplicantIds = [];
+      }
+      const targetUid = applicantUserId || applicant.userId;
+      if (targetUid && !role.declinedApplicantIds.includes(targetUid)) {
+        role.declinedApplicantIds.push(targetUid);
+      }
+
+      role.pendingApplicants = role.pendingApplicants.filter((a) => a.userId !== targetUid);
       role.pendingApplicant = role.pendingApplicants[0] || null;
       if (role.pendingApplicants.length === 0) {
         role.status = 'OPEN';
+      }
+
+      if (targetUid) {
+        await prisma.notification.create({
+          data: {
+            userId: targetUid,
+            senderId: req.user.id,
+            type: 'PROJECT_APPLICATION_DECLINED',
+            title: `Application Update`,
+            message: `Your application for ${role.roleName} on "${project.title}" was declined by the project lead.`,
+            link: `/projects`,
+          },
+        }).catch(() => null);
+
+        if (supabaseAdmin) {
+          await supabaseAdmin.from('notifications').insert({
+            user_id: targetUid,
+            sender_id: req.user.id,
+            type: 'PROJECT_APPLICATION_DECLINED',
+            title: `Application Update`,
+            message: `Your application for ${role.roleName} on "${project.title}" was declined by the project lead.`,
+            link: `/projects`,
+            is_read: false,
+          }).catch(() => null);
+        }
       }
     }
 
