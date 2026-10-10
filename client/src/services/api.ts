@@ -1,6 +1,7 @@
 const getApiBase = (): string => {
-  const envUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+  let envUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
   if (envUrl) {
+    envUrl = envUrl.split(/\s+/)[0];
     const cleanUrl = envUrl.replace(/\/+$/, '');
     return cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
   }
@@ -236,6 +237,7 @@ export const api = {
   getOpportunity: (id: string) => request<any>(`/opportunities/${id}`),
   getOpportunityById: (id: string) => request<any>(`/opportunities/${id}`),
   createOpportunity: (payload: any) => request<any>('/opportunities', { method: 'POST', body: JSON.stringify(payload) }),
+  deleteOpportunity: (id: string) => request<any>(`/opportunities/${id}`, { method: 'DELETE' }),
   applyOpportunity: (id: string, payload: any) => request<any>(`/opportunities/${id}/apply`, { method: 'POST', body: JSON.stringify(payload) }),
   getMyApplications: () => request<any>('/opportunities/my-applications'),
   getOpportunityApplications: (oppId: string) => request<any>(`/opportunities/${oppId}/applications`),

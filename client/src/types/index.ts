@@ -118,7 +118,7 @@ export interface Startup {
 export interface StartupOpportunity {
   id: string;
   startupId: string;
-  startup?: Startup;
+  startup?: (Partial<Startup> & { founder_id?: string }) | any;
   role: string;
   requiredSkills: string;
   commitment: string;

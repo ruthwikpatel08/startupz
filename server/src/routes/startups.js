@@ -2,6 +2,7 @@ import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { supabaseAdmin } from '../supabase.js';
+import { saveOpportunityToSupabase } from './opportunities.js';
 
 const router = express.Router();
 
@@ -550,7 +551,7 @@ router.post('/', requireAuth, async (req, res) => {
       const internWorkplace = internshipData.workplaceType || 'Remote';
       const internDesc = (internshipData.description || `Internship opportunity at ${startup.name} (${startup.industry}). Allotted Stipend: ${internComp}. Duration: ${durStr}. Work on building real products.`).trim();
 
-      await prisma.startupOpportunity.create({
+      const oppObj = await prisma.startupOpportunity.create({
         data: {
           startupId: startup.id,
           role: internRole.toLowerCase().includes('intern') ? internRole : `${internRole} (Internship)`,
@@ -561,7 +562,11 @@ router.post('/', requireAuth, async (req, res) => {
           workplaceType: internWorkplace,
           description: internDesc,
         },
-      }).catch((e) => console.warn('Prisma internship creation notice:', e.message));
+      }).catch((e) => {
+        console.warn('Prisma internship creation notice:', e.message);
+        return null;
+      });
+      if (oppObj) await saveOpportunityToSupabase(oppObj);
     }
 
     // 3. Separate Job Opening Form Creation
@@ -574,7 +579,7 @@ router.post('/', requireAuth, async (req, res) => {
       const jobWorkplace = jobData.workplaceType || 'Remote';
       const jobDesc = (jobData.description || `Job opening at ${startup.name} (${startup.industry}). Allotted Compensation: ${jobComp}. Commitment: ${durStr}. Join as a key team member.`).trim();
 
-      await prisma.startupOpportunity.create({
+      const jobOppObj = await prisma.startupOpportunity.create({
         data: {
           startupId: startup.id,
           role: jobRoleTitle,
@@ -585,7 +590,11 @@ router.post('/', requireAuth, async (req, res) => {
           workplaceType: jobWorkplace,
           description: jobDesc,
         },
-      }).catch((e) => console.warn('Prisma job creation notice:', e.message));
+      }).catch((e) => {
+        console.warn('Prisma job creation notice:', e.message);
+        return null;
+      });
+      if (jobOppObj) await saveOpportunityToSupabase(jobOppObj);
     }
 
     // 4. Backwards compatibility for single hiringType if separate forms were not passed
@@ -597,7 +606,7 @@ router.post('/', requireAuth, async (req, res) => {
 
       if (hiringType === 'INTERNSHIP' || hiringType === 'BOTH') {
         const internTitle = oppRoleName.toLowerCase().includes('intern') ? oppRoleName : `${oppRoleName} (Internship)`;
-        await prisma.startupOpportunity.create({
+        const autoIntern = await prisma.startupOpportunity.create({
           data: {
             startupId: startup.id,
             role: internTitle,
@@ -608,12 +617,16 @@ router.post('/', requireAuth, async (req, res) => {
             workplaceType: oppWorkplace,
             description: `[Internship Wanted] ${oppDesc}`,
           },
-        }).catch((e) => console.warn('Prisma auto internship opportunity notice:', e.message));
+        }).catch((e) => {
+          console.warn('Prisma auto internship opportunity notice:', e.message);
+          return null;
+        });
+        if (autoIntern) await saveOpportunityToSupabase(autoIntern);
       }
 
       if (hiringType === 'JOB' || hiringType === 'BOTH') {
         const jobTitle = oppRoleName.replace(/\bintern(ship)?\b/gi, '').trim() || `${startup.name} Team Lead`;
-        await prisma.startupOpportunity.create({
+        const autoJob = await prisma.startupOpportunity.create({
           data: {
             startupId: startup.id,
             role: jobTitle,
@@ -624,7 +637,11 @@ router.post('/', requireAuth, async (req, res) => {
             workplaceType: oppWorkplace,
             description: `[Job Opening] ${oppDesc}`,
           },
-        }).catch((e) => console.warn('Prisma auto job opportunity notice:', e.message));
+        }).catch((e) => {
+          console.warn('Prisma auto job opportunity notice:', e.message);
+          return null;
+        });
+        if (autoJob) await saveOpportunityToSupabase(autoJob);
       }
     }
 

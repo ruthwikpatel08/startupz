@@ -258,14 +258,106 @@ export const ProjectsPage: React.FC = () => {
     } catch {}
   };
 
+  // Applied roles tracker for current user to guarantee state persistence on refresh
+  const [appliedRolesSet, setAppliedRolesSet] = useState<Set<string>>(() => {
+    try {
+      const uid = user?.id || (localStorage.getItem('startupz_user') ? JSON.parse(localStorage.getItem('startupz_user')!).id : null);
+      if (uid) {
+        const stored = localStorage.getItem(`startupz_applied_roles_${uid}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) return new Set(parsed);
+        }
+      }
+    } catch {}
+    return new Set();
+  });
+
+  useEffect(() => {
+    if (user?.id) {
+      try {
+        const stored = localStorage.getItem(`startupz_applied_roles_${user.id}`);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) setAppliedRolesSet(new Set(parsed));
+        }
+      } catch {}
+    }
+  }, [user?.id]);
+
   // Fetch projects from server on mount
   useEffect(() => {
     let isMounted = true;
     const fetchServerProjects = async () => {
       try {
+        let serverList: BuilderProject[] = [];
         const res = await api.getProjects().catch(() => null);
-        const serverList: BuilderProject[] = res && Array.isArray(res.projects) ? res.projects : [];
-        if (isMounted) {
+        if (res && Array.isArray(res.projects) && res.projects.length > 0) {
+          serverList = res.projects;
+        } else {
+          // Direct Supabase fallback if server is waking up or offline
+          try {
+            const { data } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+            if (Array.isArray(data) && data.length > 0) {
+              serverList = data.map((row: any) => ({
+                id: row.id,
+                title: row.title,
+                ideaSummary: row.idea_summary || row.tagline || '',
+                tagline: row.tagline || row.idea_summary || '',
+                problemSolved: row.problem_solved || '',
+                solutionApproach: row.solution_approach || '',
+                detailedDescription: row.detailed_description || '',
+                stage: row.stage || 'Ideation',
+                visibility: row.visibility || 'PUBLIC',
+                creator: row.creator || { userId: row.creator_id, fullName: 'Builder' },
+                roles: Array.isArray(row.roles) ? row.roles : [],
+                tags: Array.isArray(row.tags) ? row.tags : [],
+                githubUrl: row.github_url || undefined,
+                demoUrl: row.demo_url || undefined,
+                createdAt: row.created_at || new Date().toISOString(),
+              }));
+            }
+          } catch {}
+        }
+
+        if (isMounted && serverList.length > 0) {
+          // Guarantee that applied roles for current user are preserved
+          const currentUid = user?.id || (localStorage.getItem('startupz_user') ? JSON.parse(localStorage.getItem('startupz_user')!).id : null);
+          if (currentUid) {
+            try {
+              const stored = localStorage.getItem(`startupz_applied_roles_${currentUid}`);
+              const appliedKeys: string[] = stored ? JSON.parse(stored) : [];
+              if (appliedKeys.length > 0) {
+                const aSet = new Set(appliedKeys);
+                serverList = serverList.map((p) => ({
+                  ...p,
+                  roles: p.roles.map((r) => {
+                    if (aSet.has(`${p.id}:${r.id}`) && r.status === 'OPEN') {
+                      const prevList = Array.isArray(r.pendingApplicants) ? r.pendingApplicants : (r.pendingApplicant ? [r.pendingApplicant] : []);
+                      const exists = prevList.some((a) => a.userId === currentUid);
+                      if (!exists) {
+                        const newApp: PendingApplicant = {
+                          userId: currentUid,
+                          fullName: user?.profile?.fullName || user?.email?.split('@')[0] || 'Builder',
+                          avatar: user?.profile?.avatar || null,
+                          roleDescription: user?.profile?.headline || 'Team Collaborator',
+                          appliedAt: 'Applied',
+                        };
+                        const nextList = [...prevList, newApp];
+                        return {
+                          ...r,
+                          pendingApplicant: nextList[0],
+                          pendingApplicants: nextList,
+                        };
+                      }
+                    }
+                    return r;
+                  }),
+                }));
+              }
+            } catch {}
+          }
+
           setProjects(serverList);
           try {
             localStorage.setItem('startupz_builder_projects', JSON.stringify(serverList));
@@ -762,10 +854,6 @@ export const ProjectsPage: React.FC = () => {
       return;
     }
 
-    try {
-      await api.applyProjectRole(projectId, roleId).catch(() => null);
-    } catch {}
-
     const userName = user.profile?.fullName || user.email?.split('@')[0] || 'Builder';
     const userHeadline = user.profile?.headline || 'Team Collaborator';
 
@@ -826,6 +914,40 @@ export const ProjectsPage: React.FC = () => {
     });
 
     saveProjects(updated);
+
+    // Track user's applied roles persistently in localStorage and state
+    if (!isCreator && user?.id) {
+      const roleKey = `${projectId}:${roleId}`;
+      setAppliedRolesSet((prev) => new Set([...Array.from(prev), roleKey]));
+      try {
+        const storedRoles = localStorage.getItem(`startupz_applied_roles_${user.id}`);
+        const list: string[] = storedRoles ? JSON.parse(storedRoles) : [];
+        if (!list.includes(roleKey)) {
+          list.push(roleKey);
+          localStorage.setItem(`startupz_applied_roles_${user.id}`, JSON.stringify(list));
+        }
+      } catch {}
+    }
+
+    // Direct Supabase sync so cloud database reflects the application immediately
+    try {
+      const projToSync = updated.find((p) => p.id === projectId);
+      if (projToSync) {
+        await supabase.from('projects').update({
+          roles: projToSync.roles,
+          updated_at: new Date().toISOString(),
+        }).eq('id', projectId);
+      }
+    } catch {}
+
+    // Call server endpoint and adopt authoritative project response
+    try {
+      const res = await api.applyProjectRole(projectId, roleId).catch(() => null);
+      if (res && res.project) {
+        const merged = projects.map((p) => (p.id === projectId ? res.project : p));
+        saveProjects(merged);
+      }
+    } catch {}
 
     if (isCreator) {
       const proj = updated.find((p) => p.id === projectId);
@@ -933,6 +1055,35 @@ export const ProjectsPage: React.FC = () => {
     });
 
     saveProjects(updated);
+
+    if (applicantUserId === user?.id) {
+      const roleKey = `${projectId}:${roleId}`;
+      setAppliedRolesSet((prev) => {
+        const next = new Set(prev);
+        next.delete(roleKey);
+        return next;
+      });
+      try {
+        const stored = localStorage.getItem(`startupz_applied_roles_${user?.id}`);
+        if (stored) {
+          const list: string[] = JSON.parse(stored);
+          const filtered = list.filter((k) => k !== roleKey);
+          localStorage.setItem(`startupz_applied_roles_${user?.id}`, JSON.stringify(filtered));
+        }
+      } catch {}
+    }
+
+    // Direct Supabase sync
+    try {
+      const projToSync = updated.find((p) => p.id === projectId);
+      if (projToSync) {
+        await supabase.from('projects').update({
+          roles: projToSync.roles,
+          updated_at: new Date().toISOString(),
+        }).eq('id', projectId);
+      }
+    } catch {}
+
     showToast('Application declined.');
   };
 
@@ -1270,7 +1421,10 @@ export const ProjectsPage: React.FC = () => {
                         const applicantsList = Array.isArray(role.pendingApplicants) && role.pendingApplicants.length > 0
                           ? role.pendingApplicants
                           : (role.pendingApplicant ? [role.pendingApplicant] : []);
-                        const isMyPendingRole = applicantsList.some((a) => a.userId === user?.id);
+                        const isMyPendingRole = Boolean(
+                          (user?.id && applicantsList.some((a) => a.userId === user.id)) ||
+                          appliedRolesSet.has(`${project.id}:${role.id}`)
+                        );
                         const hasApplicants = applicantsList.length > 0;
 
                         return (

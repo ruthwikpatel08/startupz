@@ -111,7 +111,7 @@ async function resolveUserFromToken(token, req) {
   const headerEmail = req.headers['x-user-email'] || req.headers['x-user-id'];
   if (headerEmail) {
     const clean = String(headerEmail).toLowerCase().trim();
-    const user = await prisma.user.findFirst({
+    let user = await prisma.user.findFirst({
       where: {
         OR: [
           { id: clean },
@@ -120,6 +120,45 @@ async function resolveUserFromToken(token, req) {
       },
       include: { profile: true },
     });
+
+    if (!user && clean) {
+      let supaProfile = null;
+      try {
+        supaProfile = await fetchSupabaseProfile(clean.includes('@') ? '' : clean, clean.includes('@') ? clean : undefined);
+      } catch {}
+
+      const userEmail = clean.includes('@') ? clean : (supaProfile?.email || `${clean}@startupz.network`);
+      const fullName = supaProfile?.full_name || userEmail.split('@')[0];
+      const role = (supaProfile?.preferred_role || 'FOUNDER').toUpperCase();
+
+      user = await prisma.user.create({
+        data: {
+          id: clean.includes('@') ? undefined : clean,
+          email: userEmail,
+          password: 'SUPABASE_MANAGED_AUTH',
+          role,
+          isVerified: true,
+          verificationBadge: 'Verified Member',
+          profile: {
+            create: {
+              fullName,
+              headline: supaProfile?.headline || `${role} | Startup Builder`,
+              location: supaProfile?.location || 'Remote',
+              avatar: supaProfile?.avatar || null,
+              openTo: 'Co-Founder,Startup Team,Investment',
+              profileCompletion: 80,
+            },
+          },
+        },
+        include: { profile: true },
+      }).catch(async () => {
+        return prisma.user.findFirst({
+          where: { OR: [{ id: clean }, { email: userEmail }] },
+          include: { profile: true },
+        });
+      });
+    }
+
     if (user && !user.isSuspended) return enrichWithSupabaseProfile(user);
   }
 
@@ -129,15 +168,20 @@ async function resolveUserFromToken(token, req) {
 export const requireAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Authentication required. Please log in.' });
+    let token = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
     }
 
-    const token = authHeader.split(' ')[1];
-    const user = await resolveUserFromToken(token, req);
+    let user = token && token !== 'anon' ? await resolveUserFromToken(token, req) : null;
+
+    // Fallback: check headers if token verification was empty or anon
+    if (!user) {
+      user = await resolveUserFromToken(null, req);
+    }
 
     if (!user) {
-      return res.status(401).json({ error: 'Authentication failed. Please log in.' });
+      return res.status(401).json({ error: 'Authentication required. Please log in.' });
     }
 
     if (user.isSuspended) {

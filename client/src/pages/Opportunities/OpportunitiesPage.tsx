@@ -29,8 +29,11 @@ import {
   ArrowRight,
   Rocket,
   Award,
+  Trash2,
+  Plus,
 } from 'lucide-react';
 import { Avatar } from '../../components/common/Avatar';
+import { supabase } from '../../lib/supabase';
 
 export const OpportunitiesPage: React.FC = () => {
   const { user } = useAuth();
@@ -42,7 +45,9 @@ export const OpportunitiesPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'EXPLORE' | 'MY_APPLICATIONS'>('EXPLORE');
   const [opportunities, setOpportunities] = useState<StartupOpportunity[]>(() => {
     try {
-      const raw = sessionStorage.getItem('startupz_cached_opportunities');
+      const raw =
+        localStorage.getItem('startupz_cached_opportunities_v2') ||
+        sessionStorage.getItem('startupz_cached_opportunities');
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -113,6 +118,192 @@ export const OpportunitiesPage: React.FC = () => {
     }
   };
 
+  const handleDeleteOpportunity = async (oppId: string) => {
+    if (!window.confirm('Are you sure you want to permanently delete this opportunity listing? This action cannot be undone.')) {
+      return;
+    }
+    try {
+      // 1. Delete via Express API
+      await api.deleteOpportunity(oppId).catch(() => null);
+
+      // 2. Delete directly in Supabase for cloud permanence
+      try {
+        await supabase.from('opportunity_applications').delete().eq('opportunity_id', oppId);
+        await supabase.from('startup_opportunities').delete().eq('id', oppId);
+      } catch (sbErr) {
+        console.warn('Supabase direct delete opportunity notice:', sbErr);
+      }
+
+      // 3. Update local state and persistent storage
+      setOpportunities((prev) => {
+        const next = prev.filter((o) => o.id !== oppId);
+        try {
+          localStorage.setItem('startupz_cached_opportunities_v2', JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+
+      if (selectedOpp?.id === oppId) {
+        setSelectedOpp(null);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete opportunity');
+    }
+  };
+
+  // Post Opportunity Modal State & Handlers
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [userStartups, setUserStartups] = useState<any[]>([]);
+  const [loadingStartups, setLoadingStartups] = useState(false);
+  const [postStartupId, setPostStartupId] = useState('');
+  const [postRole, setPostRole] = useState('');
+  const [postWorkplaceType, setPostWorkplaceType] = useState('Remote');
+  const [postCommitment, setPostCommitment] = useState('Internship');
+  const [postCompensation, setPostCompensation] = useState('Paid');
+  const [postLocation, setPostLocation] = useState('Remote');
+  const [postSkills, setPostSkills] = useState('');
+  const [postDescription, setPostDescription] = useState('');
+  const [postingOpp, setPostingOpp] = useState(false);
+  const [postError, setPostError] = useState<string | null>(null);
+
+  const handleOpenCreateModal = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setCreateModalOpen(true);
+    setPostError(null);
+    setLoadingStartups(true);
+    try {
+      let sups: any[] = [];
+      if (Array.isArray(user.startups) && user.startups.length > 0) {
+        sups = [...user.startups];
+      }
+      try {
+        const { data } = await supabase.from('startups').select('*').eq('founder_id', user.id);
+        if (Array.isArray(data) && data.length > 0) {
+          const map = new Map();
+          sups.forEach((s) => map.set(s.id, s));
+          data.forEach((s) => map.set(s.id, { ...s, founderId: s.founder_id }));
+          sups = Array.from(map.values());
+        }
+      } catch {}
+      if (sups.length === 0) {
+        try {
+          const res = await api.getStartups().catch(() => null);
+          if (res && Array.isArray(res.startups)) {
+            const mine = res.startups.filter((s: any) => s.founderId === user.id || s.founder_id === user.id);
+            if (mine.length > 0) sups = mine;
+          }
+        } catch {}
+      }
+
+      setUserStartups(sups);
+      if (sups.length > 0) {
+        setPostStartupId(sups[0].id);
+      }
+    } catch {
+      setUserStartups([]);
+    } finally {
+      setLoadingStartups(false);
+    }
+  };
+
+  const handleCreateOpportunitySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (!postStartupId || !postRole.trim() || !postSkills.trim() || !postDescription.trim()) {
+      setPostError('Please fill out all required fields.');
+      return;
+    }
+
+    setPostingOpp(true);
+    setPostError(null);
+
+    try {
+      const payload = {
+        startupId: postStartupId,
+        role: postRole.trim(),
+        workplaceType: postWorkplaceType,
+        commitment: postCommitment,
+        compensation: postCompensation.trim() || 'Paid',
+        location: postLocation.trim() || 'Remote',
+        requiredSkills: postSkills.trim(),
+        description: postDescription.trim(),
+      };
+
+      const res = await api.createOpportunity(payload).catch((err) => {
+        console.warn('Server createOpportunity warning:', err);
+        return null;
+      });
+
+      const selectedStartup = userStartups.find((s) => s.id === postStartupId);
+      const newOppId = res?.opportunity?.id || crypto.randomUUID();
+
+      const newOppObj: StartupOpportunity = {
+        id: newOppId,
+        startupId: postStartupId,
+        role: postRole.trim(),
+        workplaceType: postWorkplaceType,
+        commitment: postCommitment,
+        compensation: postCompensation.trim() || 'Paid',
+        location: postLocation.trim() || 'Remote',
+        requiredSkills: postSkills.trim(),
+        description: postDescription.trim(),
+        status: 'OPEN',
+        createdAt: new Date().toISOString(),
+        startup: selectedStartup ? ({
+          id: selectedStartup.id,
+          name: selectedStartup.name,
+          logo: selectedStartup.logo,
+          stage: selectedStartup.stage,
+          industry: selectedStartup.industry,
+          founderId: user.id,
+        } as any) : undefined,
+      };
+
+      try {
+        await supabase.from('startup_opportunities').upsert({
+          id: newOppId,
+          startup_id: postStartupId,
+          role: postRole.trim(),
+          workplace_type: postWorkplaceType,
+          commitment: postCommitment,
+          compensation: postCompensation.trim() || 'Paid',
+          location: postLocation.trim() || 'Remote',
+          required_skills: postSkills.trim(),
+          description: postDescription.trim(),
+          status: 'OPEN',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+      } catch (sbErr) {
+        console.warn('Supabase opportunity direct sync notice:', sbErr);
+      }
+
+      setOpportunities((prev) => {
+        const next = [newOppObj, ...prev.filter((o) => o.id !== newOppId)];
+        try {
+          localStorage.setItem('startupz_cached_opportunities_v2', JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+
+      setCreateModalOpen(false);
+      setPostRole('');
+      setPostSkills('');
+      setPostDescription('');
+      fetchOpportunities();
+    } catch (err: any) {
+      setPostError(err.message || 'Failed to post opportunity.');
+    } finally {
+      setPostingOpp(false);
+    }
+  };
+
   const filterFallbackOpportunities = (
     typeFilter: string,
     roleFilter: string,
@@ -172,12 +363,60 @@ export const OpportunitiesPage: React.FC = () => {
       if (commitment !== 'ALL') params.append('commitment', commitment);
       if (search) params.append('search', search);
 
-      const res = await api.getOpportunities(params.toString());
-      const clean = (res.opportunities || []).filter((o: any) => !isDemoRecord(o));
-      setOpportunities(clean);
-      if (currentType === 'all' && role === 'ALL' && workplaceType === 'ALL' && commitment === 'ALL' && !search && clean.length > 0) {
+      const res = await api.getOpportunities(params.toString()).catch(() => ({ opportunities: [] }));
+      const serverClean = (res?.opportunities || []).filter((o: any) => !isDemoRecord(o));
+
+      // Direct Supabase query to guarantee open opportunities stay permanent even across server restarts
+      let supaMapped: StartupOpportunity[] = [];
+      try {
+        const { data: supaData } = await supabase
+          .from('startup_opportunities')
+          .select('*, startup:startups(*)')
+          .eq('status', 'OPEN')
+          .order('created_at', { ascending: false });
+
+        if (Array.isArray(supaData) && supaData.length > 0) {
+          supaMapped = supaData.map((so: any) => ({
+            id: so.id,
+            startupId: so.startup_id,
+            role: so.role,
+            description: so.description,
+            requiredSkills: so.required_skills,
+            commitment: so.commitment,
+            compensation: so.compensation,
+            location: so.location,
+            workplaceType: so.workplace_type,
+            status: so.status,
+            createdAt: so.created_at,
+            startup: so.startup ? ({
+              id: so.startup.id,
+              name: so.startup.name,
+              logo: so.startup.logo,
+              stage: so.startup.stage,
+              industry: so.startup.industry,
+              founderId: so.startup.founder_id || so.startup.founderId,
+            } as any) : undefined,
+          }));
+        }
+      } catch (sbErr) {
+        console.warn('Supabase opportunities direct fetch warning:', sbErr);
+      }
+
+      // Merge server & Supabase opportunities by id
+      const combinedMap = new Map<string, StartupOpportunity>();
+      serverClean.forEach((o: any) => combinedMap.set(o.id, o));
+      supaMapped.forEach((o) => {
+        if (!combinedMap.has(o.id)) {
+          combinedMap.set(o.id, o);
+        }
+      });
+
+      const merged = Array.from(combinedMap.values());
+      setOpportunities(merged);
+
+      if (merged.length > 0) {
         try {
-          sessionStorage.setItem('startupz_cached_opportunities', JSON.stringify(clean));
+          localStorage.setItem('startupz_cached_opportunities_v2', JSON.stringify(merged));
         } catch {}
       }
     } catch (err: any) {
@@ -300,26 +539,36 @@ export const OpportunitiesPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-dark-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-dark-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <button
+              onClick={() => setActiveTab('EXPLORE')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'EXPLORE'
+                  ? 'bg-white dark:bg-dark-800 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Explore Openings ({opportunities.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('MY_APPLICATIONS')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === 'MY_APPLICATIONS'
+                  ? 'bg-white dark:bg-dark-800 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              My Applications ({myApplications.length})
+            </button>
+          </div>
+
           <button
-            onClick={() => setActiveTab('EXPLORE')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'EXPLORE'
-                ? 'bg-white dark:bg-dark-800 text-slate-900 dark:text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-            }`}
+            type="button"
+            onClick={handleOpenCreateModal}
+            className="btn-primary inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl shadow-xs cursor-pointer"
           >
-            Explore Openings ({opportunities.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('MY_APPLICATIONS')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'MY_APPLICATIONS'
-                ? 'bg-white dark:bg-dark-800 text-slate-900 dark:text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            My Applications ({myApplications.length})
+            <Plus size={14} /> Post Opportunity
           </button>
         </div>
       </div>
@@ -602,23 +851,38 @@ export const OpportunitiesPage: React.FC = () => {
                         const isFounder = Boolean(
                           user &&
                           (opp.startup?.founderId === user.id ||
+                           (opp.startup as any)?.founder_id === user.id ||
                            (opp.startup as any)?.founder?.id === user.id ||
-                           (opp as any).startupFounderId === user.id)
+                           (opp as any).startupFounderId === user.id ||
+                           user.isAdmin)
                         );
 
                         if (isFounder) {
                           return (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenReviewModal(opp);
-                              }}
-                              className="btn-primary inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white cursor-pointer shadow-xs"
-                              title="Review applicant profiles for this role"
-                            >
-                              <Users size={12} /> Review Profiles {opp._count?.applications !== undefined ? `(${opp._count.applications})` : ''}
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenReviewModal(opp);
+                                }}
+                                className="btn-primary inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white cursor-pointer shadow-xs"
+                                title="Review applicant profiles for this role"
+                              >
+                                <Users size={12} /> Review Profiles {opp._count?.applications !== undefined ? `(${opp._count.applications})` : ''}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteOpportunity(opp.id);
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/80 rounded-md cursor-pointer transition-colors"
+                                title="Permanently delete this opportunity"
+                              >
+                                <Trash2 size={12} /> Delete
+                              </button>
+                            </div>
                           );
                         }
 
@@ -972,8 +1236,10 @@ export const OpportunitiesPage: React.FC = () => {
               {Boolean(
                 user &&
                 (selectedOpp.startup?.founderId === user.id ||
+                 (selectedOpp.startup as any)?.founder_id === user.id ||
                  (selectedOpp.startup as any)?.founder?.id === user.id ||
-                 (selectedOpp as any).startupFounderId === user.id)
+                 (selectedOpp as any).startupFounderId === user.id ||
+                 user.isAdmin)
               ) ? (
                 <div className="p-4 rounded-xl bg-brand-50/50 dark:bg-brand-950/20 border border-brand-200 dark:border-brand-900/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div>
@@ -982,20 +1248,32 @@ export const OpportunitiesPage: React.FC = () => {
                       You are the Founder of this Opportunity
                     </h5>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Review candidate profiles who applied for this opening, inspect their qualifications, and decide whether to accept or decline.
+                      Review candidate profiles who applied for this opening, or delete this listing when the role is filled.
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const target = selectedOpp;
-                      setSelectedOpp(null);
-                      handleOpenReviewModal(target);
-                    }}
-                    className="btn-primary px-3.5 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 cursor-pointer shadow-xs"
-                  >
-                    <Users size={13} /> Review Profiles
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = selectedOpp;
+                        setSelectedOpp(null);
+                        handleOpenReviewModal(target);
+                      }}
+                      className="btn-primary px-3.5 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Users size={13} /> Review Profiles
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleDeleteOpportunity(selectedOpp.id);
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/80 rounded-lg cursor-pointer transition-colors"
+                      title="Permanently delete this opportunity"
+                    >
+                      <Trash2 size={13} /> Delete Role
+                    </button>
+                  </div>
                 </div>
               ) : (selectedOpp.hasApplied || myApplications.some((a) => a.opportunityId === selectedOpp.id) || applySuccess) ? (
                 (() => {
@@ -1355,6 +1633,206 @@ export const OpportunitiesPage: React.FC = () => {
               </button>
             </div>
           </div>
+        )}
+      </Modal>
+
+      {/* Post Opportunity Modal */}
+      <Modal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        title="Post Startup Opportunity"
+      >
+        {loadingStartups ? (
+          <div className="py-8 flex flex-col items-center justify-center gap-2">
+            <RefreshCw className="animate-spin text-brand-600" size={24} />
+            <p className="text-xs text-slate-500">Checking your registered startups...</p>
+          </div>
+        ) : userStartups.length === 0 ? (
+          <div className="py-6 space-y-4 text-center">
+            <div className="w-12 h-12 mx-auto rounded-full bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center">
+              <Building size={24} />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                Startup Registration Required
+              </h4>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                You need a registered startup to publish opportunities, internships, or builder roles. Register your startup first to begin hiring.
+              </p>
+            </div>
+            <div className="flex justify-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setCreateModalOpen(false)}
+                className="btn-secondary px-4 py-2 text-xs font-semibold"
+              >
+                Cancel
+              </button>
+              <Link
+                to="/startups/create"
+                onClick={() => setCreateModalOpen(false)}
+                className="btn-primary px-4 py-2 text-xs font-semibold inline-flex items-center gap-1.5"
+              >
+                <Plus size={14} /> Register Startup
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleCreateOpportunitySubmit} className="space-y-4">
+            {postError && (
+              <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2 border border-rose-200 dark:border-rose-900/60">
+                <AlertCircle size={14} className="shrink-0" />
+                <span>{postError}</span>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Select Startup *
+              </label>
+              <select
+                value={postStartupId}
+                onChange={(e) => setPostStartupId(e.target.value)}
+                className="input-field text-xs w-full"
+                required
+              >
+                {userStartups.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} ({s.stage || 'Startup'})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Role Title *
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Founding Frontend Engineer, AI Intern, Growth Marketer"
+                value={postRole}
+                onChange={(e) => setPostRole(e.target.value)}
+                className="input-field text-xs w-full"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Workplace Type
+                </label>
+                <select
+                  value={postWorkplaceType}
+                  onChange={(e) => setPostWorkplaceType(e.target.value)}
+                  className="input-field text-xs w-full"
+                >
+                  <option value="Remote">Remote</option>
+                  <option value="Hybrid">Hybrid</option>
+                  <option value="On-site">On-site</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Commitment
+                </label>
+                <select
+                  value={postCommitment}
+                  onChange={(e) => setPostCommitment(e.target.value)}
+                  className="input-field text-xs w-full"
+                >
+                  <option value="Internship">Internship</option>
+                  <option value="Full-time">Full-time</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Contract">Contract</option>
+                  <option value="Co-Founder">Co-Founder</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Compensation
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Paid ($3,000/mo), Stipend, Equity only"
+                  value={postCompensation}
+                  onChange={(e) => setPostCompensation(e.target.value)}
+                  className="input-field text-xs w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Remote, San Francisco, CA"
+                  value={postLocation}
+                  onChange={(e) => setPostLocation(e.target.value)}
+                  className="input-field text-xs w-full"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Required Skills (Comma separated) *
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. React, TypeScript, Tailwind, Node.js"
+                value={postSkills}
+                onChange={(e) => setPostSkills(e.target.value)}
+                className="input-field text-xs w-full"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                Description & Responsibilities *
+              </label>
+              <textarea
+                rows={4}
+                placeholder="Describe the responsibilities, what you're building, and candidate expectations..."
+                value={postDescription}
+                onChange={(e) => setPostDescription(e.target.value)}
+                className="input-field text-xs w-full"
+                required
+              />
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 dark:border-dark-800 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCreateModalOpen(false)}
+                className="btn-secondary px-4 py-2 text-xs font-semibold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={postingOpp}
+                className="btn-primary px-4 py-2 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {postingOpp ? (
+                  <>
+                    <RefreshCw className="animate-spin" size={13} /> Publishing...
+                  </>
+                ) : (
+                  <>
+                    <Plus size={13} /> Publish Opportunity
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         )}
       </Modal>
 

@@ -2,8 +2,65 @@ import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { supabaseAdmin } from '../supabase.js';
+import { ensureStartupInPrisma } from './startups.js';
 
 const router = express.Router();
+
+export async function saveOpportunityToSupabase(opp) {
+  if (!supabaseAdmin || !opp || !opp.id) return;
+  try {
+    await supabaseAdmin.from('startup_opportunities').upsert({
+      id: opp.id,
+      startup_id: opp.startupId || opp.startup_id,
+      role: opp.role,
+      required_skills: opp.requiredSkills || opp.required_skills || '',
+      commitment: opp.commitment || 'Full-time',
+      compensation: opp.compensation || 'Paid',
+      location: opp.location || 'Remote',
+      workplace_type: opp.workplaceType || opp.workplace_type || 'Remote',
+      description: opp.description || '',
+      status: opp.status || 'OPEN',
+      created_at: opp.createdAt ? new Date(opp.createdAt).toISOString() : new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'id' });
+  } catch (err) {
+    console.warn('saveOpportunityToSupabase notice:', err.message);
+  }
+}
+
+export async function ensureOpportunityInPrisma(so) {
+  try {
+    if (!so || !so.id) return null;
+    const existing = await prisma.startupOpportunity.findUnique({ where: { id: so.id } });
+    if (existing) return existing;
+
+    const startupId = so.startup_id || so.startupId;
+    if (startupId) {
+      await ensureStartupInPrisma(so.startup || startupId);
+    }
+
+    const created = await prisma.startupOpportunity.create({
+      data: {
+        id: so.id,
+        startupId: startupId,
+        role: so.role,
+        requiredSkills: so.required_skills || so.requiredSkills || 'Problem Solving, Teamwork',
+        commitment: so.commitment || 'Full-time',
+        compensation: so.compensation || 'Paid',
+        location: so.location || 'Remote',
+        workplaceType: so.workplace_type || so.workplaceType || 'Remote',
+        description: so.description || 'Startup opportunity',
+        status: so.status || 'OPEN',
+        createdAt: so.created_at ? new Date(so.created_at) : new Date(),
+        updatedAt: so.updated_at ? new Date(so.updated_at) : new Date(),
+      },
+    });
+    return created;
+  } catch (err) {
+    console.warn('ensureOpportunityInPrisma notice:', err?.message);
+    return null;
+  }
+}
 
 // GET /api/opportunities
 router.get('/', optionalAuth, async (req, res) => {
@@ -12,6 +69,27 @@ router.get('/', optionalAuth, async (req, res) => {
     const pageNum = parseInt(page, 10);
     const limitNum = parseInt(limit, 10);
     const skip = (pageNum - 1) * limitNum;
+
+    // Always synchronize authoritative opportunities from Supabase to keep them permanent
+    if (supabaseAdmin) {
+      try {
+        const { data: supaOpps } = await supabaseAdmin
+          .from('startup_opportunities')
+          .select('*, startup:startups(*)')
+          .eq('status', 'OPEN')
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (Array.isArray(supaOpps) && supaOpps.length > 0) {
+          for (const so of supaOpps) {
+            if (so.startup) await ensureStartupInPrisma(so.startup);
+            await ensureOpportunityInPrisma(so);
+          }
+        }
+      } catch (sbErr) {
+        console.warn('Supabase opportunities sync warning:', sbErr.message);
+      }
+    }
 
     const where = { status: 'OPEN' };
 
@@ -184,7 +262,10 @@ router.post('/', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Please provide startup, role title, required skills, and description.' });
     }
 
-    const startup = await prisma.startup.findUnique({ where: { id: startupId } });
+    let startup = await prisma.startup.findUnique({ where: { id: startupId } });
+    if (!startup && supabaseAdmin) {
+      startup = await ensureStartupInPrisma(startupId);
+    }
     if (!startup || startup.founderId !== req.user.id) {
       return res.status(403).json({ error: 'You can only post opportunities for your own startups.' });
     }
@@ -201,6 +282,8 @@ router.post('/', requireAuth, async (req, res) => {
         description: description.trim(),
       },
     });
+
+    await saveOpportunityToSupabase(opportunity);
 
     await prisma.post.create({
       data: {
@@ -467,6 +550,56 @@ router.put('/applications/:applicationId/status', requireAuth, async (req, res) 
     return res.json({ message: `Application ${statusWord}.`, application: updated, status: normalizedStatus });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to update application status.' });
+  }
+});
+
+// DELETE /api/opportunities/:id - Delete opportunity listing (Founder or Admin only)
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    let opp = await prisma.startupOpportunity.findUnique({
+      where: { id },
+      include: { startup: true },
+    });
+
+    if (!opp && supabaseAdmin) {
+      const { data } = await supabaseAdmin
+        .from('startup_opportunities')
+        .select('*, startup:startups(*)')
+        .eq('id', id)
+        .maybeSingle();
+      if (data) {
+        opp = {
+          ...data,
+          startup: data.startup ? {
+            id: data.startup.id,
+            founderId: data.startup.founder_id,
+          } : null,
+        };
+      }
+    }
+
+    if (!opp) {
+      return res.status(404).json({ error: 'Opportunity not found.' });
+    }
+
+    const founderId = opp.startup?.founderId || opp.startup?.founder_id || opp.founderId;
+    if (founderId !== req.user.id && !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Only the startup founder can delete this opportunity.' });
+    }
+
+    await prisma.opportunityApplication.deleteMany({ where: { opportunityId: id } }).catch(() => null);
+    await prisma.startupOpportunity.delete({ where: { id } }).catch(() => null);
+
+    if (supabaseAdmin) {
+      await supabaseAdmin.from('opportunity_applications').delete().eq('opportunity_id', id).catch(() => null);
+      await supabaseAdmin.from('startup_opportunities').delete().eq('id', id).catch(() => null);
+    }
+
+    return res.json({ message: 'Opportunity permanently deleted successfully.' });
+  } catch (error) {
+    console.error('Delete opportunity error:', error);
+    return res.status(500).json({ error: 'Failed to delete opportunity.' });
   }
 });
 

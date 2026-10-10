@@ -149,12 +149,34 @@ export async function fetchProjectsFromSupabase() {
 // In-memory cache synced with disk and Supabase
 let cachedProjects = readProjects();
 
+if (supabaseAdmin) {
+  fetchProjectsFromSupabase().then((supaList) => {
+    if (Array.isArray(supaList) && supaList.length > 0) {
+      cachedProjects = supaList;
+      writeProjects(supaList);
+    }
+  }).catch(() => {});
+}
+
 // Export helper for other routes (e.g. saved.js)
 export function getAllProjectsList() {
   if (cachedProjects.length === 0) {
     cachedProjects = readProjects();
   }
   return cachedProjects;
+}
+
+export async function getOrFetchProject(id) {
+  let all = getAllProjectsList();
+  let project = all.find((p) => p.id === id);
+  if (!project && supabaseAdmin) {
+    const supaList = await fetchProjectsFromSupabase();
+    cachedProjects = supaList;
+    writeProjects(supaList);
+    all = supaList;
+    project = all.find((p) => p.id === id);
+  }
+  return { all, project };
 }
 
 // GET /api/projects - List public projects for all members & user's private projects
@@ -197,15 +219,7 @@ router.get('/', optionalAuth, async (req, res) => {
 router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    let all = getAllProjectsList();
-    let project = all.find((p) => p.id === id);
-
-    if (!project && supabaseAdmin) {
-      const supaList = await fetchProjectsFromSupabase();
-      cachedProjects = supaList;
-      writeProjects(supaList);
-      project = supaList.find((p) => p.id === id);
-    }
+    const { project } = await getOrFetchProject(id);
 
     if (!project) {
       return res.status(404).json({ error: 'Project not found.' });
@@ -301,10 +315,10 @@ router.post('/', requireAuth, async (req, res) => {
 router.put('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const all = getAllProjectsList();
+    const { all, project: existing } = await getOrFetchProject(id);
     const idx = all.findIndex((p) => p.id === id);
 
-    if (idx === -1) {
+    if (!existing || idx === -1) {
       return res.status(404).json({ error: 'Project not found.' });
     }
 
@@ -337,8 +351,7 @@ router.put('/:id', requireAuth, async (req, res) => {
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const all = getAllProjectsList();
-    const project = all.find((p) => p.id === id);
+    const { all, project } = await getOrFetchProject(id);
 
     if (!project) {
       return res.status(404).json({ error: 'Project not found.' });
@@ -363,8 +376,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
 router.post('/:id/roles/:roleId/apply', requireAuth, async (req, res) => {
   try {
     const { id, roleId } = req.params;
-    const all = getAllProjectsList();
-    const project = all.find((p) => p.id === id);
+    const { all, project } = await getOrFetchProject(id);
 
     if (!project) {
       return res.status(404).json({ error: 'Project not found.' });
@@ -465,8 +477,7 @@ router.post('/:id/roles/:roleId/invite', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Target connection user ID is required.' });
     }
 
-    const all = getAllProjectsList();
-    const project = all.find((p) => p.id === id);
+    const { all, project } = await getOrFetchProject(id);
 
     if (!project) {
       return res.status(404).json({ error: 'Project not found.' });
@@ -535,8 +546,7 @@ router.post('/:id/roles/:roleId/respond-invite', requireAuth, async (req, res) =
     const { id, roleId } = req.params;
     const { action } = req.body; // 'ACCEPT' or 'DECLINE'
 
-    const all = getAllProjectsList();
-    const project = all.find((p) => p.id === id);
+    const { all, project } = await getOrFetchProject(id);
 
     if (!project) {
       return res.status(404).json({ error: 'Project not found.' });
@@ -596,8 +606,7 @@ router.post('/:id/roles/:roleId/respond-applicant', requireAuth, async (req, res
     const { id, roleId } = req.params;
     const { action, applicantUserId } = req.body; // 'ACCEPT' or 'DECLINE'
 
-    const all = getAllProjectsList();
-    const project = all.find((p) => p.id === id);
+    const { all, project } = await getOrFetchProject(id);
 
     if (!project) {
       return res.status(404).json({ error: 'Project not found.' });
@@ -679,8 +688,7 @@ router.post('/:id/roles/:roleId/assign', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Target user ID is required.' });
     }
 
-    const all = getAllProjectsList();
-    const project = all.find((p) => p.id === id);
+    const { all, project } = await getOrFetchProject(id);
 
     if (!project) {
       return res.status(404).json({ error: 'Project not found.' });
