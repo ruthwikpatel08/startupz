@@ -58,13 +58,14 @@ router.get('/', optionalAuth, async (req, res) => {
       }),
     ]);
 
-    if (total === 0 && supabaseAdmin) {
+    // Always ensure fresh posts from Supabase are synchronized into Prisma
+    if (supabaseAdmin) {
       try {
         const { data: supaList } = await supabaseAdmin
           .from('posts')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(30);
+          .limit(50);
 
         if (Array.isArray(supaList) && supaList.length > 0) {
           for (const sp of supaList) {
@@ -111,18 +112,19 @@ router.get('/', optionalAuth, async (req, res) => {
           ]);
         }
       } catch (syncErr) {
-        console.warn('Initial posts sync notice:', syncErr?.message);
+        console.warn('Posts sync notice:', syncErr?.message);
       }
     }
 
     let userLikes = new Set();
+    let userVotesMap = new Map();
     let userSaves = new Set();
 
     if (req.user) {
       const [likes, saves] = await Promise.all([
         prisma.like.findMany({
           where: { userId: req.user.id, postId: { not: null } },
-          select: { postId: true },
+          select: { postId: true, voteType: true },
         }),
         prisma.savedItem.findMany({
           where: { userId: req.user.id, itemType: 'POST' },
@@ -130,13 +132,21 @@ router.get('/', optionalAuth, async (req, res) => {
         }),
       ]);
 
-      likes.forEach((l) => userLikes.add(l.postId));
+      likes.forEach((l) => {
+        if (l.voteType === 'DOWN') {
+          userVotesMap.set(l.postId, 'down');
+        } else {
+          userLikes.add(l.postId);
+          userVotesMap.set(l.postId, 'up');
+        }
+      });
       saves.forEach((s) => userSaves.add(s.itemId));
     }
 
     const formatted = posts.map((p) => ({
       ...p,
       isLiked: userLikes.has(p.id),
+      userVote: userVotesMap.get(p.id) || null,
       isSaved: userSaves.has(p.id),
     }));
 
@@ -187,7 +197,7 @@ router.post('/', requireAuth, async (req, res) => {
 
     if (supabaseAdmin) {
       try {
-        await supabaseAdmin.from('posts').insert({
+        await supabaseAdmin.from('posts').upsert({
           id: post.id,
           author_id: req.user.id,
           startup_id: startupId || null,
@@ -196,7 +206,9 @@ router.post('/', requireAuth, async (req, res) => {
           content: content.trim(),
           images: images || null,
           links: links || null,
-        });
+          likes_count: 0,
+          comments_count: 0,
+        }, { onConflict: 'id' });
       } catch (sErr) {
         console.warn('Supabase post mirror notice:', sErr.message);
       }
@@ -216,7 +228,27 @@ router.post('/', requireAuth, async (req, res) => {
 async function ensurePostInPrisma(postId) {
   try {
     let post = await prisma.post.findUnique({ where: { id: postId } });
-    if (post) return post;
+    if (post) {
+      if (supabaseAdmin) {
+        try {
+          const { data: supaCounts } = await supabaseAdmin
+            .from('posts')
+            .select('likes_count, comments_count')
+            .eq('id', postId)
+            .maybeSingle();
+          if (supaCounts && (supaCounts.likes_count !== post.likesCount || supaCounts.comments_count !== post.commentsCount)) {
+            post = await prisma.post.update({
+              where: { id: postId },
+              data: {
+                likesCount: supaCounts.likes_count ?? post.likesCount,
+                commentsCount: supaCounts.comments_count ?? post.commentsCount,
+              },
+            }).catch(() => post);
+          }
+        } catch {}
+      }
+      return post;
+    }
 
     if (!supabaseAdmin) return null;
 
@@ -294,14 +326,10 @@ router.post('/:id/like', requireAuth, async (req, res) => {
       where: { userId: req.user.id, postId: id },
     });
 
+    let liked = false;
     if (existing) {
-      await prisma.like.delete({ where: { id: existing.id } });
-      const updated = await prisma.post.update({
-        where: { id },
-        data: { likesCount: { decrement: 1 } },
-      }).catch(() => null);
-
-      const likesCount = Math.max(0, updated ? updated.likesCount : 0);
+      await prisma.like.delete({ where: { id: existing.id } }).catch(() => null);
+      liked = false;
 
       // Erase like notification when removed
       const post = await prisma.post.findUnique({ where: { id } }).catch(() => null);
@@ -325,25 +353,24 @@ router.post('/:id/like', requireAuth, async (req, res) => {
 
       if (supabaseAdmin) {
         await supabaseAdmin.from('likes').delete().match({ user_id: req.user.id, post_id: id }).catch(() => null);
-        await supabaseAdmin.from('posts').update({ likes_count: likesCount }).eq('id', id).catch(() => null);
       }
-
-      return res.json({ liked: false, likesCount });
     } else {
       await prisma.like.create({
-        data: { userId: req.user.id, postId: id },
-      }).catch(() => null);
-
-      const updated = await prisma.post.update({
-        where: { id },
-        data: { likesCount: { increment: 1 } },
-      }).catch(() => null);
-
-      const likesCount = updated ? updated.likesCount : 1;
+        data: { userId: req.user.id, postId: id, voteType: 'UP' },
+      }).catch(async () => {
+        await prisma.like.updateMany({
+          where: { userId: req.user.id, postId: id },
+          data: { voteType: 'UP' },
+        });
+      });
+      liked = true;
 
       if (supabaseAdmin) {
-        await supabaseAdmin.from('likes').insert({ user_id: req.user.id, post_id: id }).catch(() => null);
-        await supabaseAdmin.from('posts').update({ likes_count: likesCount }).eq('id', id).catch(() => null);
+        await supabaseAdmin.from('likes').upsert({
+          user_id: req.user.id,
+          post_id: id,
+          vote_type: 'UP',
+        }, { onConflict: 'user_id,post_id' }).catch(() => null);
       }
 
       const post = await prisma.post.findUnique({ where: { id } }).catch(() => null);
@@ -371,9 +398,22 @@ router.post('/:id/like', requireAuth, async (req, res) => {
           }).catch(() => null);
         }
       }
-
-      return res.json({ liked: true, likesCount });
     }
+
+    const upCount = await prisma.like.count({ where: { postId: id, voteType: { not: 'DOWN' } } });
+    const downCount = await prisma.like.count({ where: { postId: id, voteType: 'DOWN' } });
+    const score = Math.max(0, upCount - downCount);
+
+    await prisma.post.update({
+      where: { id },
+      data: { likesCount: score },
+    }).catch(() => null);
+
+    if (supabaseAdmin) {
+      await supabaseAdmin.from('posts').update({ likes_count: score }).eq('id', id).catch(() => null);
+    }
+
+    return res.json({ liked, likesCount: score });
   } catch (error) {
     console.error('Like post error:', error);
     return res.status(500).json({ error: 'Failed to like post.' });
@@ -384,53 +424,70 @@ router.post('/:id/like', requireAuth, async (req, res) => {
 router.post('/:id/vote', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { vote, previousVote } = req.body;
+    const { vote } = req.body; // 'up', 'down', or null
     await ensurePostInPrisma(id);
 
-    let delta = 0;
-    if (previousVote === 'up') {
-      if (vote === 'down') delta = -2;
-      else if (!vote) delta = -1;
-    } else if (previousVote === 'down') {
-      if (vote === 'up') delta = 2;
-      else if (!vote) delta = 1;
-    } else {
-      if (vote === 'up') delta = 1;
-      else if (vote === 'down') delta = -1;
-    }
-
-    let updated = null;
-    if (delta !== 0) {
-      if (delta > 0) {
-        updated = await prisma.post.update({
-          where: { id },
-          data: { likesCount: { increment: delta } },
-        }).catch(() => null);
+    if (vote === 'up') {
+      const existing = await prisma.like.findFirst({ where: { userId: req.user.id, postId: id } });
+      if (existing) {
+        await prisma.like.update({ where: { id: existing.id }, data: { voteType: 'UP' } }).catch(() => null);
       } else {
-        updated = await prisma.post.update({
-          where: { id },
-          data: { likesCount: { decrement: Math.abs(delta) } },
-        }).catch(() => null);
+        await prisma.like.create({ data: { userId: req.user.id, postId: id, voteType: 'UP' } }).catch(() => null);
+      }
+
+      if (supabaseAdmin) {
+        await supabaseAdmin.from('likes').upsert({
+          user_id: req.user.id,
+          post_id: id,
+          vote_type: 'UP',
+        }, { onConflict: 'user_id,post_id' }).catch(() => null);
+      }
+    } else if (vote === 'down') {
+      const existing = await prisma.like.findFirst({ where: { userId: req.user.id, postId: id } });
+      if (existing) {
+        await prisma.like.update({ where: { id: existing.id }, data: { voteType: 'DOWN' } }).catch(() => null);
+      } else {
+        await prisma.like.create({ data: { userId: req.user.id, postId: id, voteType: 'DOWN' } }).catch(() => null);
+      }
+
+      if (supabaseAdmin) {
+        await supabaseAdmin.from('likes').upsert({
+          user_id: req.user.id,
+          post_id: id,
+          vote_type: 'DOWN',
+        }, { onConflict: 'user_id,post_id' }).catch(() => null);
+      }
+    } else {
+      // Toggle off / remove vote
+      await prisma.like.deleteMany({ where: { userId: req.user.id, postId: id } }).catch(() => null);
+      if (supabaseAdmin) {
+        await supabaseAdmin.from('likes').delete().match({ user_id: req.user.id, post_id: id }).catch(() => null);
       }
     }
 
-    const currentPost = updated || (await prisma.post.findUnique({ where: { id } }).catch(() => null));
-    const score = currentPost ? currentPost.likesCount : 0;
+    const upCount = await prisma.like.count({ where: { postId: id, voteType: 'UP' } });
+    const downCount = await prisma.like.count({ where: { postId: id, voteType: 'DOWN' } });
+    const score = upCount - downCount;
+
+    await prisma.post.update({
+      where: { id },
+      data: { likesCount: score },
+    }).catch(() => null);
+
+    if (supabaseAdmin) {
+      await supabaseAdmin.from('posts').update({ likes_count: score }).eq('id', id).catch(() => null);
+    }
+
+    const currentPost = await prisma.post.findUnique({ where: { id } }).catch(() => null);
     const senderName = req.user.profile?.fullName || req.user.email?.split('@')[0] || 'A founder';
 
-    // Handle vote notifications and database synchronization
+    // Handle vote notifications
     if (currentPost && currentPost.authorId !== req.user.id) {
       if (vote === 'up') {
-        // Remove old downvote notification
         await prisma.notification.deleteMany({
-          where: {
-            userId: currentPost.authorId,
-            senderId: req.user.id,
-            type: 'POST_DOWNVOTE',
-          },
+          where: { userId: currentPost.authorId, senderId: req.user.id, type: 'POST_DOWNVOTE' },
         }).catch(() => null);
 
-        // Create upvote notification in Prisma
         await prisma.notification.create({
           data: {
             userId: currentPost.authorId,
@@ -459,16 +516,10 @@ router.post('/:id/vote', requireAuth, async (req, res) => {
           }).catch(() => null);
         }
       } else if (vote === 'down') {
-        // Remove old upvote notification
         await prisma.notification.deleteMany({
-          where: {
-            userId: currentPost.authorId,
-            senderId: req.user.id,
-            type: { in: ['POST_LIKE', 'POST_UPVOTE'] },
-          },
+          where: { userId: currentPost.authorId, senderId: req.user.id, type: { in: ['POST_LIKE', 'POST_UPVOTE'] } },
         }).catch(() => null);
 
-        // Create downvote notification in Prisma
         await prisma.notification.create({
           data: {
             userId: currentPost.authorId,
@@ -498,13 +549,8 @@ router.post('/:id/vote', requireAuth, async (req, res) => {
           }).catch(() => null);
         }
       } else {
-        // Vote was removed: Erase all vote notifications for this post
         await prisma.notification.deleteMany({
-          where: {
-            userId: currentPost.authorId,
-            senderId: req.user.id,
-            type: { in: ['POST_LIKE', 'POST_UPVOTE', 'POST_DOWNVOTE'] },
-          },
+          where: { userId: currentPost.authorId, senderId: req.user.id, type: { in: ['POST_LIKE', 'POST_UPVOTE', 'POST_DOWNVOTE'] } },
         }).catch(() => null);
 
         if (supabaseAdmin) {
@@ -514,15 +560,6 @@ router.post('/:id/vote', requireAuth, async (req, res) => {
             .in('type', ['POST_LIKE', 'POST_UPVOTE', 'POST_DOWNVOTE'])
             .catch(() => null);
         }
-      }
-    }
-
-    if (supabaseAdmin) {
-      await supabaseAdmin.from('posts').update({ likes_count: score }).eq('id', id).catch(() => null);
-      if (vote === 'up') {
-        await supabaseAdmin.from('likes').upsert({ post_id: id, user_id: req.user.id }, { onConflict: 'post_id,user_id' }).catch(() => null);
-      } else {
-        await supabaseAdmin.from('likes').delete().match({ post_id: id, user_id: req.user.id }).catch(() => null);
       }
     }
 

@@ -11,79 +11,56 @@ import { demoAccounts } from './realData/demoAccounts.js';
 export async function main() {
   console.log('🌱 Starting verified HookZ real data & ecosystem seed...');
 
-  // 1. CLEANUP IN SAFE FOREIGN-KEY ORDER
-  console.log('🧹 Clearing previous database state for clean, idempotent rebuild...');
-  await prisma.problemTag.deleteMany({});
-  await prisma.problemCategory.deleteMany({});
-  await prisma.problemRegion.deleteMany({});
-  await prisma.problem.deleteMany({});
-  await prisma.tag.deleteMany({});
-  await prisma.category.deleteMany({});
-  await prisma.region.deleteMany({});
-  await prisma.raisedSolution.deleteMany({});
-  await prisma.failedStartup.deleteMany({});
-  await prisma.videoMeeting.deleteMany({});
-  await prisma.startupProposal.deleteMany({});
-  await prisma.startupFollow.deleteMany({});
-  await prisma.comment.deleteMany({});
-  await prisma.like.deleteMany({});
-  await prisma.post.deleteMany({});
-  await prisma.message.deleteMany({});
-  await prisma.conversation.deleteMany({});
-  await prisma.savedItem.deleteMany({});
-  await prisma.notification.deleteMany({});
-  await prisma.report.deleteMany({});
-  await prisma.verificationRequest.deleteMany({});
-  await prisma.opportunityApplication.deleteMany({});
-  await prisma.startupOpportunity.deleteMany({});
-  await prisma.startupMember.deleteMany({});
-  await prisma.mentorshipRequest.deleteMany({});
-  await prisma.mentor.deleteMany({});
-  await prisma.investor.deleteMany({});
-  await prisma.startup.deleteMany({});
-  await prisma.connection.deleteMany({});
-  await prisma.profile.deleteMany({});
-  await prisma.user.deleteMany({});
+  // 1. SAFE SEEDING - NEVER WIPE USER POSTS, LIKES, COMMENTS, OR ACCOUNTS
+  console.log('🌱 Checking database state for idempotent seed without data loss...');
 
   const defaultPassword = await bcrypt.hash('Password123!', 10);
 
-  // 2. SEED DEMO PRESENTATION ACCOUNTS (Strictly separated per Section 13)
-  console.log('👤 Seeding clearly marked demo presentation accounts...');
-  const userMap = new Map(); // email -> created User
+  // 2. SEED DEMO PRESENTATION ACCOUNTS (Preserving existing users and posts)
+  console.log('👤 Ensuring demo presentation accounts exist without overwriting user data...');
+  const userMap = new Map();
 
   for (const acc of demoAccounts) {
-    const createdUser = await prisma.user.create({
-      data: {
-        email: acc.email,
-        password: defaultPassword,
-        role: acc.role || 'FOUNDER',
-        isAdmin: acc.isAdmin || false,
-        isVerified: acc.isVerified !== undefined ? acc.isVerified : true,
-        verificationBadge: acc.verificationBadge || 'Verified Member',
-        profile: {
-          create: {
-            fullName: acc.profile.fullName,
-            headline: acc.profile.headline || null,
-            location: acc.profile.location || null,
-            bio: acc.profile.bio || null,
-            avatar: acc.profile.avatar || null,
-            education: acc.profile.education || null,
-            skills: acc.profile.skills || null,
-            startupInterests: acc.profile.startupInterests || null,
-            industries: acc.profile.industries || null,
-            preferredRole: acc.profile.preferredRole || null,
-            availability: acc.profile.availability || 'Full-time',
-            startupExperience: acc.profile.startupExperience || null,
-            achievements: acc.profile.achievements || null,
-            openTo: acc.profile.openTo || null,
-            profileCompletion: acc.profile.profileCompletion || 90,
+    let createdUser = await prisma.user.findUnique({
+      where: { email: acc.email },
+      include: { profile: true },
+    });
+
+    if (!createdUser) {
+      createdUser = await prisma.user.create({
+        data: {
+          email: acc.email,
+          password: defaultPassword,
+          role: acc.role || 'FOUNDER',
+          isAdmin: acc.isAdmin || false,
+          isVerified: acc.isVerified !== undefined ? acc.isVerified : true,
+          verificationBadge: acc.verificationBadge || 'Verified Member',
+          profile: {
+            create: {
+              fullName: acc.profile.fullName,
+              headline: acc.profile.headline || null,
+              location: acc.profile.location || null,
+              bio: acc.profile.bio || null,
+              avatar: acc.profile.avatar || null,
+              education: acc.profile.education || null,
+              skills: acc.profile.skills || null,
+              startupInterests: acc.profile.startupInterests || null,
+              industries: acc.profile.industries || null,
+              preferredRole: acc.profile.preferredRole || null,
+              availability: acc.profile.availability || 'Full-time',
+              startupExperience: acc.profile.startupExperience || null,
+              achievements: acc.profile.achievements || null,
+              openTo: acc.profile.openTo || null,
+              profileCompletion: acc.profile.profileCompletion || 90,
+            },
           },
         },
-      },
-    });
+        include: { profile: true },
+      });
+    }
     userMap.set(acc.email, createdUser);
   }
-  console.log(`✅ Seeded ${userMap.size} presentation demo accounts.`);
+  console.log(`✅ Verified ${userMap.size} presentation demo accounts.`);
 
   const adminUser = userMap.get('admin@startupz.com');
   const demoFounder = userMap.get('sarah.chen@aiagri.io') || Array.from(userMap.values())[0];

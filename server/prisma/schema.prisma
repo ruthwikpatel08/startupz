@@ -219,7 +219,10 @@ model Like {
   post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
   startupId String?
   startup   Startup? @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  voteType  String   @default("UP")
   createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
 }
 
 model SavedItem {

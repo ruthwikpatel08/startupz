@@ -141,42 +141,49 @@ export const StartupFeedPage: React.FC = () => {
       } catch {}
 
       let userLikedIds = new Set<string>();
+      let userVoteMap: Record<string, 'up' | 'down' | null> = {};
       if (user?.id) {
         try {
           const { data: supaLikes } = await supabase
             .from('likes')
-            .select('post_id')
+            .select('post_id, vote_type')
             .eq('user_id', user.id);
-          (supaLikes || []).forEach((l: any) => userLikedIds.add(l.post_id));
+          (supaLikes || []).forEach((l: any) => {
+            const vType = (l.vote_type || 'UP').toUpperCase();
+            if (vType === 'DOWN') {
+              userVoteMap[l.post_id] = 'down';
+            } else {
+              userVoteMap[l.post_id] = 'up';
+              userLikedIds.add(l.post_id);
+            }
+          });
         } catch {}
       }
 
       if (res?.posts && res.posts.length > 0) {
         setPosts(res.posts.map((p: any) => {
-          let score = p.likesCount || 0;
-          let comments = p.commentsCount || 0;
-          try {
-            const cachedScore = localStorage.getItem(`startupz_post_score_${p.id}`);
-            if (cachedScore !== null) score = parseInt(cachedScore, 10);
-            const cachedComments = localStorage.getItem(`startupz_post_comments_${p.id}`);
-            if (cachedComments !== null) comments = Math.max(comments, parseInt(cachedComments, 10));
-          } catch {}
+          const isLiked = p.isLiked ?? userLikedIds.has(p.id);
+          const uVote = p.userVote || userVoteMap[p.id] || (isLiked ? 'up' : null);
+          if (uVote) {
+            userVoteMap[p.id] = uVote;
+          }
 
           return {
             ...p,
-            likesCount: score,
-            commentsCount: comments,
-            isLiked: userLikedIds.has(p.id) || p.isLiked || false,
+            likesCount: p.likesCount ?? 0,
+            commentsCount: p.commentsCount ?? 0,
+            isLiked: Boolean(isLiked),
             isSaved: savedPostIds.has(p.id) || p.isSaved || false,
           };
         }));
+        setUserVotes((prev) => ({ ...prev, ...userVoteMap }));
       } else {
         // Fallback: direct Supabase select if backend is empty
         const { data: supaPosts, error } = await supabase
           .from('posts')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(30);
+          .limit(50);
 
         if (!error && supaPosts && supaPosts.length > 0) {
           const authorIds = [...new Set(supaPosts.map((p) => p.author_id))];
@@ -188,6 +195,12 @@ export const StartupFeedPage: React.FC = () => {
 
           const formatted = supaPosts.map((p) => {
             const pr = profMap.get(p.author_id);
+            const isLiked = userLikedIds.has(p.id);
+            const uVote = userVoteMap[p.id] || (isLiked ? 'up' : null);
+            if (uVote) {
+              userVoteMap[p.id] = uVote;
+            }
+
             return {
               id: p.id,
               authorId: p.author_id,
@@ -199,7 +212,7 @@ export const StartupFeedPage: React.FC = () => {
               likesCount: p.likes_count || 0,
               commentsCount: p.comments_count || 0,
               createdAt: p.created_at,
-              isLiked: userLikedIds.has(p.id),
+              isLiked,
               isSaved: savedPostIds.has(p.id),
               author: {
                 id: p.author_id,
@@ -221,6 +234,7 @@ export const StartupFeedPage: React.FC = () => {
             };
           });
           setPosts(formatted as any);
+          setUserVotes((prev) => ({ ...prev, ...userVoteMap }));
         } else if (res?.posts) {
           setPosts(res.posts.map((p: any) => ({
             ...p,
@@ -441,7 +455,7 @@ export const StartupFeedPage: React.FC = () => {
     // Permanently sync with Supabase and send notifications
     try {
       if (nextLiked) {
-        await supabase.from('likes').upsert({ post_id: postId, user_id: user.id }, { onConflict: 'post_id,user_id' });
+        await supabase.from('likes').upsert({ post_id: postId, user_id: user.id, vote_type: 'UP' }, { onConflict: 'user_id,post_id' });
         await supabase.from('posts').update({ likes_count: nextLikesCount }).eq('id', postId);
 
         // Notify author if someone else liked their post
@@ -543,13 +557,8 @@ export const StartupFeedPage: React.FC = () => {
 
     // 4. Supabase sync & notification if author is another user
     try {
-      // Permanently cache score in localStorage
-      try {
-        localStorage.setItem(`startupz_post_score_${postId}`, String(nextScore));
-      } catch {}
-
       if (nextVote === 'up') {
-        await supabase.from('likes').upsert({ post_id: postId, user_id: user.id }, { onConflict: 'post_id,user_id' });
+        await supabase.from('likes').upsert({ post_id: postId, user_id: user.id, vote_type: 'UP' }, { onConflict: 'user_id,post_id' });
         await supabase.from('posts').update({ likes_count: nextScore }).eq('id', postId);
 
         if (currentPost.authorId && currentPost.authorId !== user.id) {
@@ -569,7 +578,7 @@ export const StartupFeedPage: React.FC = () => {
           });
         }
       } else if (nextVote === 'down') {
-        await supabase.from('likes').delete().match({ post_id: postId, user_id: user.id });
+        await supabase.from('likes').upsert({ post_id: postId, user_id: user.id, vote_type: 'DOWN' }, { onConflict: 'user_id,post_id' });
         await supabase.from('posts').update({ likes_count: nextScore }).eq('id', postId);
 
         if (currentPost.authorId && currentPost.authorId !== user.id) {
@@ -750,9 +759,11 @@ export const StartupFeedPage: React.FC = () => {
     );
 
     // 1. Post to API
+    let apiSuccess = false;
     try {
       const res = await api.addComment(postId, text);
       if (res?.comment) {
+        apiSuccess = true;
         setPosts((prev) =>
           prev.map((p) => {
             if (p.id === postId) {
@@ -770,20 +781,22 @@ export const StartupFeedPage: React.FC = () => {
       }
     } catch {}
 
-    // 2. Permanently sync with Supabase and send comment notification
+    // 2. Direct Supabase insert fallback only if backend API failed
     try {
       const targetPost = posts.find((p) => p.id === postId);
       const nextCommentsCount = (targetPost?.commentsCount || 0) + 1;
 
-      await supabase
-        .from('comments')
-        .insert({
-          post_id: postId,
-          author_id: user.id,
-          content: text,
-        });
+      if (!apiSuccess) {
+        await supabase
+          .from('comments')
+          .insert({
+            post_id: postId,
+            author_id: user.id,
+            content: text,
+          });
 
-      await supabase.from('posts').update({ comments_count: nextCommentsCount }).eq('id', postId);
+        await supabase.from('posts').update({ comments_count: nextCommentsCount }).eq('id', postId);
+      }
 
       if (targetPost?.authorId && targetPost.authorId !== user.id) {
         try {
@@ -856,6 +869,7 @@ export const StartupFeedPage: React.FC = () => {
   const achievementFilters = [
     { id: 'ALL', label: 'All Achievements' },
     { id: 'MY_ACHIEVEMENTS', label: user ? `🌟 My Achievements (${myAchievementsCount})` : '🌟 My Achievements' },
+    { id: 'ACHIEVEMENT', label: '🌟 Achievements' },
     { id: 'LAUNCH', label: '🎉 Launches' },
     { id: 'FUNDING', label: '💰 Funding' },
     { id: 'UPDATE', label: '🏆 Milestones' },
@@ -870,6 +884,7 @@ export const StartupFeedPage: React.FC = () => {
   ];
 
   const achievementComposerTypes = [
+    { id: 'ACHIEVEMENT', label: '🌟 Achievement' },
     { id: 'EXPERIENCE', label: '📖 Experience' },
     { id: 'LAUNCH', label: '🎉 Product Launch' },
     { id: 'FUNDING', label: '💰 Funding Round' },
@@ -885,6 +900,7 @@ export const StartupFeedPage: React.FC = () => {
 
   const postTypes = [
     { key: 'ALL', label: 'All Updates' },
+    { key: 'ACHIEVEMENT', label: '🌟 Achievements' },
     { key: 'IDEA', label: '💡 Ideas' },
     { key: 'EXPERIENCE', label: '📖 Experiences' },
     { key: 'UPDATE', label: '🚀 Updates' },
@@ -897,6 +913,8 @@ export const StartupFeedPage: React.FC = () => {
 
   const getPostTypeBadge = (type: string) => {
     switch (type) {
+      case 'ACHIEVEMENT':
+        return 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800';
       case 'IDEA':
         return 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800';
       case 'EXPERIENCE':

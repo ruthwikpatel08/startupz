@@ -662,21 +662,15 @@ router.delete('/:id', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized to delete this startup.' });
     }
 
-    // 1. Purge all posts linked to this startup so they don't linger in profile posts & updates
+    // 1. Clean up only posts directly linked to this startup ID
     await prisma.post.deleteMany({
-      where: {
-        OR: [
-          { startupId: id },
-          { title: { contains: existing.name } },
-          { content: { contains: existing.name } },
-        ],
-      },
+      where: { startupId: id },
     }).catch((e) => console.warn('Prisma post cleanup warning:', e.message));
 
     // 2. Clean up from Supabase posts and startups if available
     try {
       if (supabaseAdmin) {
-        await supabaseAdmin.from('posts').delete().or(`startup_id.eq.${id},content.ilike.%${existing.name}%`);
+        await supabaseAdmin.from('posts').delete().eq('startup_id', id);
         await supabaseAdmin.from('startups').delete().eq('id', id);
       }
     } catch (sbErr) {

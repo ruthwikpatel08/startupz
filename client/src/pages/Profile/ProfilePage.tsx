@@ -275,6 +275,7 @@ export const ProfilePage: React.FC = () => {
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+  const [postFilterTab, setPostFilterTab] = useState<'ALL' | 'ACHIEVEMENTS' | 'IDEAS' | 'UPDATES'>('ALL');
 
   // User Safety & Block Feature
   const [isBlocked, setIsBlocked] = useState(false);
@@ -307,15 +308,22 @@ export const ProfilePage: React.FC = () => {
       const exps = parseWorkExperiences(currentP.startupExperience);
       let parsedHackathons: any[] = [];
       let parsedProjects: any[] = [];
+      let rawAchievements = '';
       try {
         if (currentP.achievements) {
           const achObj = JSON.parse(currentP.achievements);
           if (achObj && typeof achObj === 'object') {
             if (Array.isArray(achObj.hackathons)) parsedHackathons = achObj.hackathons;
             if (Array.isArray(achObj.projects)) parsedProjects = achObj.projects;
+            if (typeof achObj.raw === 'string') rawAchievements = achObj.raw;
           }
         }
-      } catch {}
+      } catch {
+        rawAchievements = typeof currentP.achievements === 'string' ? currentP.achievements : '';
+      }
+      if (!rawAchievements && typeof currentP.achievements === 'string' && !currentP.achievements.startsWith('{')) {
+        rawAchievements = currentP.achievements;
+      }
 
       const initialRole = normalizeRoleValue(profileUser?.role || currentP.preferredRole || currentUser?.role || 'STUDENT');
       const changeCount = currentP.roleChangeCount ?? currentP.role_change_count ?? (profileUser as any)?.roleChangeCount ?? (currentUser as any)?.roleChangeCount ?? 0;
@@ -353,7 +361,7 @@ export const ProfilePage: React.FC = () => {
         ],
         hackathons: parsedHackathons,
         projects: parsedProjects,
-        achievements: currentP.achievements || '',
+        achievements: rawAchievements,
         education: currentP.education || '',
         githubUrl: currentP.githubUrl || '',
         linkedinUrl: currentP.linkedinUrl || '',
@@ -760,9 +768,10 @@ export const ProfilePage: React.FC = () => {
           .order('created_at', { ascending: false });
 
         if (Array.isArray(supaPosts) && supaPosts.length > 0) {
-          const existingIds = new Set(postsList.map((p: any) => p.id));
+          const postMap = new Map(postsList.map((p: any) => [p.id, p]));
           supaPosts.forEach((sp: any) => {
-            if (!existingIds.has(sp.id)) {
+            const existing = postMap.get(sp.id);
+            if (!existing) {
               postsList.push({
                 id: sp.id,
                 authorId: sp.author_id,
@@ -770,10 +779,17 @@ export const ProfilePage: React.FC = () => {
                 title: sp.title,
                 content: sp.content,
                 links: sp.links,
-                likesCount: sp.likes_count || 0,
-                commentsCount: sp.comments_count || 0,
+                likesCount: sp.likes_count ?? 0,
+                commentsCount: sp.comments_count ?? 0,
                 createdAt: sp.created_at,
               });
+            } else {
+              if (sp.likes_count !== undefined && sp.likes_count !== null) {
+                existing.likesCount = sp.likes_count;
+              }
+              if (sp.comments_count !== undefined && sp.comments_count !== null) {
+                existing.commentsCount = sp.comments_count;
+              }
             }
           });
         }
@@ -782,34 +798,6 @@ export const ProfilePage: React.FC = () => {
       }
 
       postsList.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-      // Filter out any orphaned LAUNCH posts whose startup has been deleted
-      try {
-        const { data: activeStartups } = await supabase
-          .from('startups')
-          .select('id, name')
-          .eq('founder_id', authorId);
-
-        const activeNames = new Set((activeStartups || []).map((s: any) => s.name?.toLowerCase()));
-        const activeIds = new Set((activeStartups || []).map((s: any) => s.id));
-
-        postsList = postsList.filter((p: any) => {
-          if (p.postType === 'LAUNCH' || p.title?.startsWith('Announcing ')) {
-            if (p.startupId && !activeIds.has(p.startupId)) return false;
-            if (p.title) {
-              const match = p.title.match(/Announcing (.+) on HookZ/i);
-              if (match && match[1]) {
-                const sName = match[1].trim().toLowerCase();
-                if (!activeNames.has(sName)) return false;
-              }
-            }
-          }
-          return true;
-        });
-      } catch (err) {
-        console.warn('Startup check notice for user posts:', err);
-      }
-
       setUserPosts(postsList);
     } catch (err) {
       console.error('Failed to load profile posts:', err);
@@ -1430,13 +1418,13 @@ export const ProfilePage: React.FC = () => {
       return;
     }
 
-    const serializedAchievements = (formData.hackathons?.length > 0 || formData.projects?.length > 0)
+    const serializedAchievements = (formData.hackathons?.length > 0 || formData.projects?.length > 0 || (typeof formData.achievements === 'string' && formData.achievements.trim()))
       ? JSON.stringify({
           hackathons: formData.hackathons || [],
           projects: formData.projects || [],
-          raw: typeof formData.achievements === 'string' && !formData.achievements.startsWith('{') ? formData.achievements : '',
+          raw: typeof formData.achievements === 'string' ? formData.achievements.trim() : '',
         })
-      : (formData.achievements || '');
+      : '';
 
     try {
       if (!currentUser?.id) {
@@ -1484,6 +1472,7 @@ export const ProfilePage: React.FC = () => {
           username: cleanUsername,
           usernameChangedAt: newUsernameChangedAt,
           startupExperience: serializedExp,
+          achievements: serializedAchievements,
           preferredRole: selectedRole,
           role: selectedRole,
           roleChangeCount: newRoleChangeCount,
@@ -1529,7 +1518,7 @@ export const ProfilePage: React.FC = () => {
           role_change_count: savedProfileRow?.role_change_count ?? newRoleChangeCount,
           availability: savedProfileRow?.availability || formData.availability,
           startupExperience: savedProfileRow?.startup_experience || serializedExp,
-          achievements: savedProfileRow?.achievements || formData.achievements,
+          achievements: savedProfileRow?.achievements || serializedAchievements,
           education: savedProfileRow?.education || formData.education,
           githubUrl: savedProfileRow?.github_url || formData.githubUrl,
           linkedinUrl: savedProfileRow?.linkedin_url || formData.linkedinUrl,
@@ -1640,15 +1629,22 @@ export const ProfilePage: React.FC = () => {
   const parsedExperiences = parseWorkExperiences(p.startupExperience);
   let parsedHackathons: any[] = [];
   let parsedProjects: any[] = [];
+  let rawAchievements = '';
   try {
     if (p.achievements) {
       const achObj = JSON.parse(p.achievements);
       if (achObj && typeof achObj === 'object') {
         if (Array.isArray(achObj.hackathons)) parsedHackathons = achObj.hackathons;
         if (Array.isArray(achObj.projects)) parsedProjects = achObj.projects;
+        if (typeof achObj.raw === 'string') rawAchievements = achObj.raw;
       }
     }
-  } catch {}
+  } catch {
+    rawAchievements = typeof p.achievements === 'string' ? p.achievements : '';
+  }
+  if (!rawAchievements && typeof p.achievements === 'string' && !p.achievements.startsWith('{')) {
+    rawAchievements = p.achievements;
+  }
 
   // Calculate profile completion percentage
   let completedFields = 0;
@@ -1661,132 +1657,212 @@ export const ProfilePage: React.FC = () => {
   if (profileUser.startups && profileUser.startups.length > 0) completedFields++;
   const completionPercentage = Math.round((completedFields / totalFields) * 100);
 
-  const renderPostsAndUpdatesSection = () => (
-    <div className="card-base p-4 sm:p-7 space-y-5 min-w-0 max-w-full overflow-hidden break-words">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Share2 size={18} className="text-brand-600" />
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-            Posts & Updates
-          </h2>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400">
-            {userPosts.length}
-          </span>
-        </div>
-        {isMe && (
-          <Link
-            to="/feed"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-xs transition-colors"
-          >
-            <Plus size={13} />
-            <span>Create Post</span>
-          </Link>
-        )}
-      </div>
+  const renderPostsAndUpdatesSection = () => {
+    const ACHIEVEMENT_SET = new Set(['ACHIEVEMENT', 'EXPERIENCE', 'LAUNCH', 'FUNDING', 'MILESTONE']);
+    const IDEA_SET = new Set(['IDEA', 'COFOUNDER', 'ADVICE', 'HIRING']);
 
-      {loadingPosts ? (
-        <div className="space-y-3">
-          {[1, 2].map((n) => (
-            <div key={n} className="h-20 bg-slate-50 dark:bg-dark-850 rounded-xl animate-pulse" />
-          ))}
-        </div>
-      ) : userPosts.length > 0 ? (
-        <div className="space-y-4">
-          {userPosts.map((post) => (
-            <div
-              key={post.id}
-              className="p-4 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2 relative group min-w-0 max-w-full overflow-hidden break-words"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-900/60">
-                    {post.postType || 'UPDATE'}
-                  </span>
-                  <span className="text-[11px] text-slate-400">
-                    {new Date(post.createdAt).toLocaleDateString(undefined, {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </span>
-                </div>
+    const achievementsCount = userPosts.filter((post) => ACHIEVEMENT_SET.has((post.postType || '').toUpperCase())).length;
+    const ideasCount = userPosts.filter((post) => IDEA_SET.has((post.postType || '').toUpperCase())).length;
+    const updatesCount = userPosts.filter((post) => (post.postType || 'UPDATE').toUpperCase() === 'UPDATE').length;
 
-                {(isMe || currentUser?.isAdmin) && (
-                  <button
-                    type="button"
-                    onClick={() => handleDeletePost(post.id)}
-                    disabled={deletingPostId === post.id}
-                    title="Delete this post permanently"
-                    className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1 text-xs"
-                  >
-                    <Trash2 size={13} />
-                    <span className="text-[11px]">Delete</span>
-                  </button>
-                )}
-              </div>
+    const displayPosts = userPosts.filter((post) => {
+      const pType = (post.postType || 'UPDATE').toUpperCase();
+      if (postFilterTab === 'ACHIEVEMENTS') return ACHIEVEMENT_SET.has(pType);
+      if (postFilterTab === 'IDEAS') return IDEA_SET.has(pType);
+      if (postFilterTab === 'UPDATES') return pType === 'UPDATE';
+      return true;
+    });
 
-              {post.title && (
-                <h3 className="font-bold text-sm text-slate-900 dark:text-white break-words">
-                  {post.title}
-                </h3>
-              )}
-
-              <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed break-words">
-                {post.content}
-              </p>
-
-              {post.links && (
-                <a
-                  href={post.links.startsWith('http') ? post.links : `https://${post.links}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline max-w-full min-w-0"
-                >
-                  <ExternalLink size={12} className="shrink-0" />
-                  <span className="truncate max-w-full">{post.links}</span>
-                </a>
-              )}
-
-              <div className="pt-2 border-t border-slate-200/60 dark:border-dark-800 flex items-center gap-4 text-xs text-slate-400">
-                <span className="flex items-center gap-1">
-                  <ThumbsUp size={12} />
-                  <span>{post.likesCount || 0} likes</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <MessageSquare size={12} />
-                  <span>{post.commentsCount || 0} comments</span>
-                </span>
-                <Link
-                  to="/feed"
-                  className="text-brand-600 hover:underline ml-auto font-medium"
-                >
-                  View in Feed →
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-7 border border-dashed border-slate-200 dark:border-dark-800 rounded-xl space-y-2">
-          <Share2 size={24} className="mx-auto text-slate-300 dark:text-slate-600" />
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {isMe
-              ? "You haven't posted any updates yet. Share your milestones, learnings, or ask for feedback on the Feed!"
-              : "No posts or updates published by this builder yet."}
-          </p>
+    return (
+      <div className="card-base p-4 sm:p-7 space-y-5 min-w-0 max-w-full overflow-hidden break-words">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Share2 size={18} className="text-brand-600" />
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+              Posts & Updates
+            </h2>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400">
+              {userPosts.length}
+            </span>
+          </div>
           {isMe && (
             <Link
               to="/feed"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-xs transition-colors"
             >
               <Plus size={13} />
-              <span>Post on Feed</span>
+              <span>Create Post</span>
             </Link>
           )}
         </div>
-      )}
-    </div>
-  );
+
+        {/* Filter Pills */}
+        {userPosts.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap border-b border-slate-100 dark:border-dark-800 pb-3">
+            <button
+              type="button"
+              onClick={() => setPostFilterTab('ALL')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                postFilterTab === 'ALL'
+                  ? 'bg-brand-600 text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-700'
+              }`}
+            >
+              All Posts ({userPosts.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setPostFilterTab('ACHIEVEMENTS')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                postFilterTab === 'ACHIEVEMENTS'
+                  ? 'bg-brand-600 text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-700'
+              }`}
+            >
+              🌟 Achievements ({achievementsCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setPostFilterTab('IDEAS')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                postFilterTab === 'IDEAS'
+                  ? 'bg-brand-600 text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-700'
+              }`}
+            >
+              💡 Ideas ({ideasCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setPostFilterTab('UPDATES')}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                postFilterTab === 'UPDATES'
+                  ? 'bg-brand-600 text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-700'
+              }`}
+            >
+              📢 Updates ({updatesCount})
+            </button>
+          </div>
+        )}
+
+        {loadingPosts ? (
+          <div className="space-y-3">
+            {[1, 2].map((n) => (
+              <div key={n} className="h-20 bg-slate-50 dark:bg-dark-850 rounded-xl animate-pulse" />
+            ))}
+          </div>
+        ) : displayPosts.length > 0 ? (
+          <div className="space-y-4">
+            {displayPosts.map((post) => {
+              const pType = (post.postType || 'UPDATE').toUpperCase();
+              const isAch = ACHIEVEMENT_SET.has(pType);
+
+              return (
+                <div
+                  key={post.id}
+                  className="p-4 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2 relative group min-w-0 max-w-full overflow-hidden break-words"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                        pType === 'ACHIEVEMENT'
+                          ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                          : isAch
+                          ? 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/60'
+                          : 'bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-900/60'
+                      }`}>
+                        {post.postType || 'UPDATE'}
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        {new Date(post.createdAt).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </span>
+                    </div>
+
+                    {(isMe || currentUser?.isAdmin) && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePost(post.id)}
+                        disabled={deletingPostId === post.id}
+                        title="Delete this post permanently"
+                        className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1 text-xs"
+                      >
+                        <Trash2 size={13} />
+                        <span className="text-[11px]">Delete</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {post.title && (
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white break-words">
+                      {post.title}
+                    </h3>
+                  )}
+
+                  <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed break-words">
+                    {post.content}
+                  </p>
+
+                  {post.links && (
+                    <a
+                      href={post.links.startsWith('http') ? post.links : `https://${post.links}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline max-w-full min-w-0"
+                    >
+                      <ExternalLink size={12} className="shrink-0" />
+                      <span className="truncate max-w-full">{post.links}</span>
+                    </a>
+                  )}
+
+                  <div className="pt-2 border-t border-slate-200/60 dark:border-dark-800 flex items-center gap-4 text-xs text-slate-400">
+                    <span className="flex items-center gap-1">
+                      <ThumbsUp size={12} />
+                      <span>{post.likesCount || 0} likes</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <MessageSquare size={12} />
+                      <span>{post.commentsCount || 0} comments</span>
+                    </span>
+                    <Link
+                      to="/feed"
+                      className="text-brand-600 hover:underline ml-auto font-medium"
+                    >
+                      View in Feed →
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-7 border border-dashed border-slate-200 dark:border-dark-800 rounded-xl space-y-2">
+            <Share2 size={24} className="mx-auto text-slate-300 dark:text-slate-600" />
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {postFilterTab !== 'ALL'
+                ? `No posts found under "${postFilterTab}".`
+                : isMe
+                ? "You haven't posted any updates yet. Share your milestones, learnings, or ask for feedback on the Feed!"
+                : "No posts or updates published by this builder yet."}
+            </p>
+            {isMe && (
+              <Link
+                to="/feed"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
+              >
+                <Plus size={13} />
+                <span>Post on Feed</span>
+              </Link>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderSkillsSection = () => (
     <div className="card-base p-4 sm:p-6 space-y-4 min-w-0 max-w-full overflow-hidden break-words">
@@ -2634,10 +2710,10 @@ export const ProfilePage: React.FC = () => {
                             <h3 className="text-sm font-bold text-slate-900 dark:text-white break-words">
                               {hack.name || 'Hackathon Event'}
                             </h3>
-                            {hack.award && (
+                            {(hack.award || hack.result) && (
                               <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
                                 <Award size={12} className="text-amber-500" />
-                                {hack.award}
+                                {hack.award || hack.result}
                               </span>
                             )}
                           </div>
@@ -2661,17 +2737,37 @@ export const ProfilePage: React.FC = () => {
                       </div>
                     </div>
                   ))}
+
+                  {rawAchievements && (
+                    <div className="p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20 text-xs text-slate-800 dark:text-slate-200 space-y-1">
+                      <div className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                        <Award size={14} className="text-amber-600" />
+                        <span>Key Achievements & Recognitions</span>
+                      </div>
+                      <p className="whitespace-pre-line leading-relaxed">{rawAchievements}</p>
+                    </div>
+                  )}
+                </div>
+              ) : rawAchievements ? (
+                <div className="space-y-3">
+                  <div className="p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20 text-xs text-slate-800 dark:text-slate-200 space-y-1">
+                    <div className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                      <Award size={14} className="text-amber-600" />
+                      <span>Key Achievements & Recognitions</span>
+                    </div>
+                    <p className="whitespace-pre-line leading-relaxed">{rawAchievements}</p>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-xl">
                   <Award size={24} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
-                  <p className="text-xs text-slate-500 dark:text-slate-400">No hackathon history listed yet.</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">No hackathon history or achievements listed yet.</p>
                   {isMe && (
                     <button
                       onClick={handleOpenEdit}
                       className="mt-2 text-xs font-semibold text-brand-600 hover:underline cursor-pointer"
                     >
-                      + Add Hackathon
+                      + Add Hackathon / Achievement
                     </button>
                   )}
                 </div>
@@ -3693,10 +3789,10 @@ export const ProfilePage: React.FC = () => {
                           </label>
                           <input
                             type="text"
-                            value={hack.result || ''}
+                            value={hack.result || hack.award || ''}
                             onChange={(e) => {
                               const list = [...(formData.hackathons || [])];
-                              list[idx] = { ...list[idx], result: e.target.value };
+                              list[idx] = { ...list[idx], result: e.target.value, award: e.target.value };
                               setFormData({ ...formData, hackathons: list });
                             }}
                             placeholder="e.g. 1st Place Winner, Top 10 Finalist"
@@ -3743,6 +3839,19 @@ export const ProfilePage: React.FC = () => {
                   ))}
                 </div>
               )}
+
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
+                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Key Achievements & Recognitions
+                </label>
+                <textarea
+                  rows={2}
+                  value={formData.achievements || ''}
+                  onChange={(e) => setFormData({ ...formData, achievements: e.target.value })}
+                  placeholder="e.g. Winner at Smart India Hackathon, Top 50 Global Founder, Published research on LLMs..."
+                  className="input-base w-full px-2.5 py-1.5 text-xs"
+                />
+              </div>
             </div>
 
             {/* --- SECTION 7: PROJECTS --- */}
