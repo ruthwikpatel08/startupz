@@ -27,6 +27,16 @@ import {
   ArrowRight,
   Bot,
   Sparkles,
+  Paperclip,
+  Image as ImageIcon,
+  Link2,
+  Download,
+  FileText,
+  FileCode,
+  FileArchive,
+  Music,
+  Video,
+  Loader2,
 } from 'lucide-react';
 import { ProjectAiScoutControl } from '../../components/ai/ProjectAiScoutControl';
 import {
@@ -180,15 +190,26 @@ function renderTextWithMarkdown(
   });
 }
 
+function getFileIcon(name: string) {
+  const lower = (name || '').toLowerCase();
+  if (lower.endsWith('.pdf')) return <FileText size={18} className="text-rose-500" />;
+  if (/\.(zip|rar|7z|tar|gz)$/i.test(lower)) return <FileArchive size={18} className="text-amber-500" />;
+  if (/\.(mp3|wav|ogg|m4a|flac)$/i.test(lower)) return <Music size={18} className="text-purple-500" />;
+  if (/\.(mp4|mov|webm|avi|mkv)$/i.test(lower)) return <Video size={18} className="text-cyan-500" />;
+  if (/\.(js|jsx|ts|tsx|py|html|css|json|java|cpp|c|go|rs)$/i.test(lower)) return <FileCode size={18} className="text-emerald-500" />;
+  return <FileText size={18} className="text-blue-500" />;
+}
+
 const RenderMessageContent: React.FC<{
   content: string;
   isMine: boolean;
   onNavigate: (targetPath: string, fullUrl: string) => void;
-}> = ({ content, isMine, onNavigate }) => {
+  onOpenImage?: (url: string, name: string) => void;
+}> = ({ content, isMine, onNavigate, onOpenImage }) => {
   if (!content) return null;
   const trimmed = content.trim();
 
-  // Pattern for shared HookZ item
+  // 1. Pattern for shared HookZ item
   const sharePattern = /^(?:([\s\S]*?)\n\n)?Check this out on HookZ:\s*(?:\*\*|")?([^\n\r*"]+?)(?:\*\*|")?\s*\n\s*(https?:\/\/[^\s]+|\/[^\s]+)$/i;
   const shareMatch = trimmed.match(sharePattern);
 
@@ -288,6 +309,151 @@ const RenderMessageContent: React.FC<{
     );
   }
 
+  // 2. Attachment tokens: [attachment:image|URL|NAME|SIZE] or [attachment:file|URL|NAME|SIZE]
+  const attachmentRegex = /\[attachment:(image|file)\|([^|\]]+)\|([^|\]]+)(?:\|([^|\]]*))?\]/g;
+  if (attachmentRegex.test(trimmed)) {
+    attachmentRegex.lastIndex = 0;
+    const parts: React.ReactNode[] = [];
+    let lastIdx = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = attachmentRegex.exec(trimmed)) !== null) {
+      const matchStart = match.index;
+      const textBefore = trimmed.slice(lastIdx, matchStart).trim();
+      if (textBefore) {
+        parts.push(
+          <div key={`text-${lastIdx}`} className="whitespace-pre-line leading-relaxed mb-2">
+            {renderTextWithMarkdown(textBefore, isMine, onNavigate)}
+          </div>
+        );
+      }
+
+      const attachType = match[1];
+      const attachUrl = match[2];
+      const attachName = match[3];
+      const attachSize = match[4] || '';
+
+      if (attachType === 'image') {
+        parts.push(
+          <div
+            key={`img-${matchStart}`}
+            className="my-1.5 max-w-sm rounded-xl overflow-hidden border border-slate-200/80 dark:border-dark-700 shadow-sm bg-slate-900/10 dark:bg-black/20 group relative"
+          >
+            <img
+              src={attachUrl}
+              alt={attachName}
+              loading="lazy"
+              className="w-full max-h-72 object-cover cursor-pointer hover:opacity-95 transition-opacity"
+              onClick={() => (onOpenImage ? onOpenImage(attachUrl, attachName) : window.open(attachUrl, '_blank'))}
+            />
+            <div className="p-2 bg-white/95 dark:bg-dark-850/95 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-dark-750 text-xs">
+              <span className="font-semibold text-slate-800 dark:text-slate-200 truncate text-[11px]" title={attachName}>
+                {attachName}
+              </span>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {attachSize && <span className="text-[10px] text-slate-400">{attachSize}</span>}
+                <a
+                  href={attachUrl}
+                  download={attachName}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1 rounded hover:bg-slate-100 dark:hover:bg-dark-750 text-slate-500 hover:text-brand-600 transition-colors"
+                  title="Download image"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Download size={13} />
+                </a>
+              </div>
+            </div>
+          </div>
+        );
+      } else {
+        parts.push(
+          <div
+            key={`file-${matchStart}`}
+            className={`my-1.5 p-3 rounded-xl border flex items-center justify-between gap-3 max-w-sm transition-all shadow-2xs hover:shadow-sm ${
+              isMine
+                ? 'bg-white/15 border-white/30 text-white'
+                : 'bg-slate-50 dark:bg-dark-800 border-slate-200 dark:border-dark-700 text-slate-900 dark:text-white'
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div
+                className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                  isMine
+                    ? 'bg-white/20 text-white'
+                    : 'bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-900'
+                }`}
+              >
+                {getFileIcon(attachName)}
+              </div>
+              <div className="min-w-0">
+                <p className="font-bold text-xs truncate" title={attachName}>
+                  {attachName}
+                </p>
+                <p className={`text-[10px] ${isMine ? 'text-white/75' : 'text-slate-400'}`}>
+                  {attachSize || 'File attachment'}
+                </p>
+              </div>
+            </div>
+            <a
+              href={attachUrl}
+              download={attachName}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`p-1.5 rounded-lg shrink-0 transition-colors ${
+                isMine
+                  ? 'bg-white/25 hover:bg-white/35 text-white'
+                  : 'bg-brand-600 hover:bg-brand-700 text-white shadow-xs'
+              }`}
+              title={`Download ${attachName}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Download size={14} />
+            </a>
+          </div>
+        );
+      }
+
+      lastIdx = match.index + match[0].length;
+    }
+
+    const trailingText = trimmed.slice(lastIdx).trim();
+    if (trailingText) {
+      parts.push(
+        <div key="text-end" className="whitespace-pre-line leading-relaxed mt-2">
+          {renderTextWithMarkdown(trailingText, isMine, onNavigate)}
+        </div>
+      );
+    }
+
+    return <div className="space-y-1">{parts}</div>;
+  }
+
+  // 3. Standalone Link check: if entire message is a single URL
+  if (/^https?:\/\/[^\s]+$/i.test(trimmed)) {
+    return (
+      <div className="space-y-1">
+        <a
+          href={trimmed}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 max-w-sm transition-all hover:opacity-95 ${
+            isMine
+              ? 'bg-white/15 border-white/30 text-white'
+              : 'bg-slate-50 dark:bg-dark-800 border-slate-200 dark:border-dark-700 text-slate-900 dark:text-white'
+          }`}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <Link2 size={15} className={isMine ? 'text-white' : 'text-brand-500'} />
+            <span className="font-bold text-xs truncate">{trimmed}</span>
+          </div>
+          <ExternalLink size={13} className="shrink-0 opacity-80" />
+        </a>
+      </div>
+    );
+  }
+
   return (
     <div className="whitespace-pre-line leading-relaxed">
       {renderTextWithMarkdown(content, isMine, onNavigate)}
@@ -345,9 +511,73 @@ export const MessagesPage: React.FC = () => {
   const [editingSaving, setEditingSaving] = useState(false);
   const [isScoutAnalyzing, setIsScoutAnalyzing] = useState(false);
 
+  // File, Photo, and Link Attachment States
+  const [selectedAttachment, setSelectedAttachment] = useState<{
+    file: File;
+    name: string;
+    size: string;
+    isImage: boolean;
+    previewUrl?: string;
+  } | null>(null);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<{ url: string; name: string } | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const formatBytes = (bytes: number) => {
+    if (!bytes || bytes <= 0) return '0 B';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const handleFileSelect = (file: File) => {
+    if (!file) return;
+    const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(file.name);
+    let previewUrl = '';
+    if (isImage) {
+      previewUrl = URL.createObjectURL(file);
+    }
+    setSelectedAttachment({
+      file,
+      name: file.name,
+      size: formatBytes(file.size),
+      isImage,
+      previewUrl,
+    });
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    if (e.clipboardData.files && e.clipboardData.files.length > 0) {
+      const file = e.clipboardData.files[0];
+      handleFileSelect(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      handleFileSelect(file);
+    }
+  };
+
+  const handleInsertLink = () => {
+    const url = window.prompt('Enter link URL (e.g. https://github.com):');
+    if (!url || !url.trim()) return;
+    const clean = url.trim();
+    const full = clean.startsWith('http://') || clean.startsWith('https://') ? clean : `https://${clean}`;
+    const label = window.prompt('Enter link title (optional):');
+    const formatted = label?.trim() ? `[${label.trim()}](${full})` : full;
+    setNewMessage((prev) => (prev ? `${prev} ${formatted}` : formatted));
+    setTimeout(() => inputRef.current?.focus(), 40);
+  };
 
   const handleTriggerScoutMention = () => {
     setNewMessage((prev) => {
@@ -861,7 +1091,7 @@ export const MessagesPage: React.FC = () => {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedConversation || !user?.id || sending) return;
+    if ((!newMessage.trim() && !selectedAttachment) || !selectedConversation || !user?.id || sending || isUploadingAttachment) return;
 
     const receiverId =
       selectedConversation.participant?.id ||
@@ -872,7 +1102,44 @@ export const MessagesPage: React.FC = () => {
     if (!receiverId) return;
 
     setSending(true);
-    const contentToSend = newMessage.trim();
+    let contentToSend = newMessage.trim();
+
+    // Process attachment if selected
+    if (selectedAttachment) {
+      try {
+        setIsUploadingAttachment(true);
+        let fileUrl = '';
+        try {
+          const uploadRes = await api.uploadFile(selectedAttachment.file);
+          if (uploadRes && uploadRes.url) {
+            fileUrl = uploadRes.url;
+          }
+        } catch (uploadErr) {
+          console.warn('Backend file upload fallback:', uploadErr);
+        }
+
+        // Safe client-side fallback if server upload is unreachable
+        if (!fileUrl) {
+          fileUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve((reader.result as string) || '');
+            reader.onerror = () => resolve(selectedAttachment.previewUrl || '');
+            reader.readAsDataURL(selectedAttachment.file);
+          });
+        }
+
+        if (fileUrl) {
+          const tagType = selectedAttachment.isImage ? 'image' : 'file';
+          const token = `[attachment:${tagType}|${fileUrl}|${selectedAttachment.name}|${selectedAttachment.size}]`;
+          contentToSend = contentToSend ? `${contentToSend}\n\n${token}` : token;
+        }
+        setSelectedAttachment(null);
+      } catch (attachErr) {
+        console.error('File attach notice:', attachErr);
+      } finally {
+        setIsUploadingAttachment(false);
+      }
+    }
 
     // Handle sending message in Project Group Chat
     if ((selectedConversation as any)?.isProjectGroup) {
@@ -1371,10 +1638,24 @@ export const MessagesPage: React.FC = () => {
         {/* On mobile: Visible when selectedConversation != null. On desktop: Always visible */}
         <div
           ref={chatContainerRef}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDraggingOver(true);
+          }}
+          onDragLeave={() => setIsDraggingOver(false)}
+          onDrop={handleDrop}
           className={`${
             !selectedConversation ? 'hidden md:flex' : 'flex'
           } flex-1 flex-col h-full bg-white dark:bg-dark-900 relative overflow-hidden`}
         >
+          {isDraggingOver && (
+            <div className="absolute inset-0 z-40 bg-brand-600/10 border-2 border-dashed border-brand-500 backdrop-blur-2xs flex items-center justify-center pointer-events-none animate-in fade-in">
+              <div className="bg-brand-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                <Paperclip size={16} />
+                <span>Drop photo or file to attach to chat</span>
+              </div>
+            </div>
+          )}
           {selectedConversation ? (
             <>
               {/* Instagram-style Chat Header on Top */}
@@ -1605,7 +1886,12 @@ export const MessagesPage: React.FC = () => {
                               ) : (
                                 <>
                                   <div className="bg-brand-600 text-white rounded-2xl rounded-tr-xs px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-xs break-words relative">
-                                    <RenderMessageContent content={m.content} isMine={true} onNavigate={handleNavigateShared} />
+                                    <RenderMessageContent
+                                      content={m.content}
+                                      isMine={true}
+                                      onNavigate={handleNavigateShared}
+                                      onOpenImage={(url, name) => setLightboxImage({ url, name })}
+                                    />
                                     {m.isEdited && (
                                       <span className="text-[10px] text-brand-200 ml-1.5 italic">
                                         (edited)
@@ -1674,7 +1960,12 @@ export const MessagesPage: React.FC = () => {
                                         </span>
                                       </div>
                                       <div className="bg-white dark:bg-dark-850 text-slate-900 dark:text-slate-100 border border-brand-500/25 dark:border-brand-500/30 rounded-2xl rounded-tl-xs p-3.5 sm:p-4 text-xs sm:text-sm leading-relaxed shadow-xs break-words w-full space-y-1">
-                                        <RenderMessageContent content={m.content} isMine={false} onNavigate={handleNavigateShared} />
+                                        <RenderMessageContent
+                                          content={m.content}
+                                          isMine={false}
+                                          onNavigate={handleNavigateShared}
+                                          onOpenImage={(url, name) => setLightboxImage({ url, name })}
+                                        />
                                       </div>
                                       <div className="text-[10px] text-slate-400 mt-1 ml-1 flex items-center gap-1.5">
                                         <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -1699,7 +1990,12 @@ export const MessagesPage: React.FC = () => {
                                   />
                                   <div className="flex flex-col items-start">
                                     <div className="bg-white dark:bg-dark-850 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-dark-750 rounded-2xl rounded-tl-xs px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-2xs break-words">
-                                      <RenderMessageContent content={m.content} isMine={false} onNavigate={handleNavigateShared} />
+                                      <RenderMessageContent
+                                        content={m.content}
+                                        isMine={false}
+                                        onNavigate={handleNavigateShared}
+                                        onOpenImage={(url, name) => setLightboxImage({ url, name })}
+                                      />
                                       {m.isEdited && (
                                         <span className="text-[10px] text-slate-400 ml-1.5 italic">
                                           (edited)
@@ -1756,27 +2052,126 @@ export const MessagesPage: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <form
-                  onSubmit={handleSendMessage}
-                  className="p-2.5 sm:p-3 pb-[max(0.625rem,env(safe-area-inset-bottom))] border-t border-slate-200 dark:border-dark-800 bg-white dark:bg-dark-900 flex items-center gap-2 shrink-0 sticky bottom-0 z-10"
-                >
+                <div className="border-t border-slate-200 dark:border-dark-800 bg-white dark:bg-dark-900 shrink-0 sticky bottom-0 z-10">
+                  {/* Hidden file pickers */}
                   <input
-                    ref={inputRef}
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Message..."
-                    className="input-base py-2 px-3.5 text-xs sm:text-sm flex-1 rounded-full bg-slate-50 dark:bg-dark-850 border-slate-200 dark:border-dark-750 focus:bg-white dark:focus:bg-dark-900"
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) handleFileSelect(e.target.files[0]);
+                      e.target.value = '';
+                    }}
                   />
-                  <button
-                    type="submit"
-                    disabled={sending || !newMessage.trim()}
-                    className="w-9 h-9 rounded-full bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 active:scale-95 disabled:opacity-40 transition-all cursor-pointer shadow-xs shrink-0"
-                    aria-label="Send message"
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="*/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) handleFileSelect(e.target.files[0]);
+                      e.target.value = '';
+                    }}
+                  />
+
+                  {/* Attachment Preview Chip */}
+                  {selectedAttachment && (
+                    <div className="px-3 pt-2 pb-1.5 flex items-center justify-between bg-slate-50 dark:bg-dark-850 border-b border-slate-100 dark:border-dark-800 animate-in fade-in slide-in-from-bottom-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {selectedAttachment.isImage && selectedAttachment.previewUrl ? (
+                          <img
+                            src={selectedAttachment.previewUrl}
+                            alt="Attachment preview"
+                            className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-dark-750 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0 border border-brand-200 dark:border-brand-800/40">
+                            {getFileIcon(selectedAttachment.name)}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[220px] sm:max-w-xs">
+                            {selectedAttachment.name}
+                          </p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            {selectedAttachment.size} {isUploadingAttachment ? '• Uploading...' : '• Ready to send'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAttachment(null)}
+                        className="p-1 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                        title="Remove attachment"
+                      >
+                        <X size={15} />
+                      </button>
+                    </div>
+                  )}
+
+                  <form
+                    onSubmit={handleSendMessage}
+                    className="p-2 sm:p-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] flex items-center gap-1.5 sm:gap-2"
                   >
-                    <Send size={15} />
-                  </button>
-                </form>
+                    {/* Attachment Action Buttons */}
+                    <div className="flex items-center gap-0.5 text-slate-500 dark:text-slate-400 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => photoInputRef.current?.click()}
+                        disabled={sending || isUploadingAttachment}
+                        title="Share Photo"
+                        className="p-1.5 sm:p-2 rounded-full hover:bg-slate-100 dark:hover:bg-dark-800 hover:text-brand-600 transition-colors cursor-pointer"
+                        aria-label="Upload photo"
+                      >
+                        <ImageIcon size={18} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={sending || isUploadingAttachment}
+                        title="Share File / Document"
+                        className="p-1.5 sm:p-2 rounded-full hover:bg-slate-100 dark:hover:bg-dark-800 hover:text-brand-600 transition-colors cursor-pointer"
+                        aria-label="Upload file"
+                      >
+                        <Paperclip size={18} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleInsertLink}
+                        disabled={sending || isUploadingAttachment}
+                        title="Share Link"
+                        className="p-1.5 sm:p-2 rounded-full hover:bg-slate-100 dark:hover:bg-dark-800 hover:text-brand-600 transition-colors cursor-pointer"
+                        aria-label="Insert link"
+                      >
+                        <Link2 size={18} />
+                      </button>
+                    </div>
+
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onPaste={handlePaste}
+                      placeholder={selectedAttachment ? 'Add a caption (optional)...' : 'Type a message, drop files, paste links...'}
+                      className="input-base py-2 px-3 text-xs sm:text-sm flex-1 rounded-full bg-slate-50 dark:bg-dark-850 border-slate-200 dark:border-dark-750 focus:bg-white dark:focus:bg-dark-900"
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={sending || isUploadingAttachment || (!newMessage.trim() && !selectedAttachment)}
+                      className="w-9 h-9 rounded-full bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 active:scale-95 disabled:opacity-40 transition-all cursor-pointer shadow-xs shrink-0"
+                      aria-label="Send message"
+                    >
+                      {sending || isUploadingAttachment ? (
+                        <Loader2 size={15} className="animate-spin" />
+                      ) : (
+                        <Send size={15} />
+                      )}
+                    </button>
+                  </form>
+                </div>
               )}
 
               {/* Movable AI Scout Control strictly inside Project Group Chats */}
@@ -1848,6 +2243,50 @@ export const MessagesPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Lightbox Image Preview Modal */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute top-2 right-2 flex items-center gap-2 z-10">
+              <a
+                href={lightboxImage.url}
+                download={lightboxImage.name}
+                target="_blank"
+                rel="noreferrer"
+                className="p-2 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors cursor-pointer"
+                title="Download full image"
+              >
+                <Download size={18} />
+              </a>
+              <button
+                type="button"
+                onClick={() => setLightboxImage(null)}
+                className="p-2 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <img
+              src={lightboxImage.url}
+              alt={lightboxImage.name}
+              className="max-h-[85vh] max-w-full rounded-xl object-contain shadow-2xl"
+            />
+            {lightboxImage.name && (
+              <p className="mt-2 text-xs text-white/80 font-medium truncate max-w-md">
+                {lightboxImage.name}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

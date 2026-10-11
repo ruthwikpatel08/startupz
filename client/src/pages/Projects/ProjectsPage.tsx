@@ -674,6 +674,29 @@ export const ProjectsPage: React.FC = () => {
       }).catch(() => null);
     } catch (err) {}
 
+    const project = projects.find((p) => p.id === projectId);
+    const role = project?.roles.find((r) => r.id === roleId);
+    const roleName = role?.roleName || assignModalRole?.roleName || 'Role';
+    const projTitle = project?.title || 'Project';
+    const leadName = user?.profile?.fullName || 'Project Lead';
+
+    // Insert real-time notification into Supabase for target connection
+    try {
+      await supabase.from('notifications').insert({
+        user_id: targetUserId,
+        sender_id: user?.id,
+        type: 'PROJECT_ROLE_INVITE',
+        title: `Role Assignment: ${roleName} in ${projTitle} 🎯`,
+        message: `${leadName} assigned you the role "${roleName}" in project "${projTitle}". Accept or decline to join the team!`,
+        link: `/projects?roleInvite=${roleId}&projectId=${projectId}`,
+        is_read: false,
+      });
+    } catch {}
+
+    try {
+      window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
+    } catch {}
+
     const updated = projects.map((p) => {
       if (p.id === projectId) {
         return {
@@ -682,15 +705,16 @@ export const ProjectsPage: React.FC = () => {
             if (r.id === roleId) {
               return {
                 ...r,
-                status: 'ASSIGNED' as const,
-                assignedTo: {
+                status: 'INVITED' as const,
+                invitedUser: {
                   userId: targetUserId,
                   fullName: targetName,
                   avatar: targetAvatar || null,
+                  invitedAt: 'Just now',
                 },
+                assignedTo: null,
                 pendingApplicant: null,
                 pendingApplicants: [],
-                invitedUser: null,
               };
             }
             return r;
@@ -702,13 +726,35 @@ export const ProjectsPage: React.FC = () => {
 
     saveProjects(updated);
     setAssignModalRole(null);
-    showToast(`Role "${assignModalRole?.roleName || 'Role'}" directly assigned to ${targetName}!`);
+    showToast(`Role assignment sent to ${targetName}! Once they accept, the role will be filled.`);
   };
 
   const handleSendRoleInvite = async (projectId: string, roleId: string, targetUserId: string, targetName: string) => {
     try {
       await api.inviteProjectRole(projectId, roleId, targetUserId).catch(() => null);
     } catch (err) {}
+
+    const project = projects.find((p) => p.id === projectId);
+    const role = project?.roles.find((r) => r.id === roleId);
+    const roleName = role?.roleName || 'Role';
+    const projTitle = project?.title || 'Project';
+    const leadName = user?.profile?.fullName || 'Project Lead';
+
+    try {
+      await supabase.from('notifications').insert({
+        user_id: targetUserId,
+        sender_id: user?.id,
+        type: 'PROJECT_ROLE_INVITE',
+        title: `Role Invitation: ${roleName} in ${projTitle} 🎯`,
+        message: `${leadName} invited you to join "${projTitle}" as ${roleName}. Accept or decline to join the team!`,
+        link: `/projects?roleInvite=${roleId}&projectId=${projectId}`,
+        is_read: false,
+      });
+    } catch {}
+
+    try {
+      window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
+    } catch {}
 
     const updated = projects.map((p) => {
       if (p.id === projectId) {
@@ -725,6 +771,7 @@ export const ProjectsPage: React.FC = () => {
                   avatar: null,
                   invitedAt: 'Just now',
                 },
+                assignedTo: null,
                 pendingApplicant: null,
                 pendingApplicants: [],
               };
@@ -751,6 +798,31 @@ export const ProjectsPage: React.FC = () => {
     let triggeredCompletion = false;
     let completedProject: BuilderProject | null = null;
 
+    const targetProj = projects.find((p) => p.id === projectId);
+    const targetRole = targetProj?.roles.find((r) => r.id === roleId);
+    const leadId = targetProj?.creator?.userId || (targetProj as any)?.creatorId;
+
+    // Notify project lead via Supabase
+    try {
+      if (leadId && leadId !== user.id) {
+        await supabase.from('notifications').insert({
+          user_id: leadId,
+          sender_id: user.id,
+          type: action === 'ACCEPT' ? 'PROJECT_INVITE_ACCEPTED' : 'PROJECT_INVITE_DECLINED',
+          title: action === 'ACCEPT' ? 'Role Accepted! 🎉' : 'Role Declined',
+          message: action === 'ACCEPT'
+            ? `${userName} accepted your invitation to join "${targetProj?.title || 'Project'}" as ${targetRole?.roleName || 'team member'}!`
+            : `${userName} declined the invitation to join "${targetProj?.title || 'Project'}" as ${targetRole?.roleName || 'team member'}.`,
+          link: `/projects`,
+          is_read: false,
+        });
+      }
+    } catch {}
+
+    try {
+      window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
+    } catch {}
+
     const updated = projects.map((p) => {
       if (p.id === projectId) {
         const nextRoles = p.roles.map((r) => {
@@ -770,6 +842,7 @@ export const ProjectsPage: React.FC = () => {
               return {
                 ...r,
                 status: 'OPEN' as const,
+                assignedTo: null,
                 invitedUser: null,
               };
             }

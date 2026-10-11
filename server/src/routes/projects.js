@@ -575,19 +575,60 @@ router.post('/:id/roles/:roleId/respond-invite', requireAuth, async (req, res) =
       role.invitedUser = null;
 
       // Notify project lead
-      await prisma.notification.create({
-        data: {
-          userId: project.creator.userId,
-          senderId: req.user.id,
-          type: 'PROJECT_INVITE_ACCEPTED',
-          title: `Role Invitation Accepted! 🎉`,
-          message: `${responderName} accepted your invitation to join "${project.title}" as ${role.roleName}!`,
-          link: `/projects`,
-        },
-      }).catch(() => null);
+      const creatorId = project.creator?.userId || project.creatorId;
+      if (creatorId) {
+        await prisma.notification.create({
+          data: {
+            userId: creatorId,
+            senderId: req.user.id,
+            type: 'PROJECT_INVITE_ACCEPTED',
+            title: `Role Invitation Accepted! 🎉`,
+            message: `${responderName} accepted your invitation to join "${project.title}" as ${role.roleName}!`,
+            link: `/projects`,
+          },
+        }).catch(() => null);
+
+        if (supabaseAdmin) {
+          await supabaseAdmin.from('notifications').insert({
+            user_id: creatorId,
+            sender_id: req.user.id,
+            type: 'PROJECT_INVITE_ACCEPTED',
+            title: `Role Invitation Accepted! 🎉`,
+            message: `${responderName} accepted your invitation to join "${project.title}" as ${role.roleName}!`,
+            link: `/projects`,
+            is_read: false,
+          }).catch(() => null);
+        }
+      }
     } else {
       role.status = 'OPEN';
       role.invitedUser = null;
+
+      const creatorId = project.creator?.userId || project.creatorId;
+      if (creatorId) {
+        await prisma.notification.create({
+          data: {
+            userId: creatorId,
+            senderId: req.user.id,
+            type: 'PROJECT_INVITE_DECLINED',
+            title: `Role Invitation Declined`,
+            message: `${responderName} declined your invitation to join "${project.title}" as ${role.roleName}.`,
+            link: `/projects`,
+          },
+        }).catch(() => null);
+
+        if (supabaseAdmin) {
+          await supabaseAdmin.from('notifications').insert({
+            user_id: creatorId,
+            sender_id: req.user.id,
+            type: 'PROJECT_INVITE_DECLINED',
+            title: `Role Invitation Declined`,
+            message: `${responderName} declined your invitation to join "${project.title}" as ${role.roleName}.`,
+            link: `/projects`,
+            is_read: false,
+          }).catch(() => null);
+        }
+      }
     }
 
     writeProjects(all);
@@ -762,31 +803,48 @@ router.post('/:id/roles/:roleId/assign', requireAuth, async (req, res) => {
     const targetName = targetUser?.profile?.fullName || targetUser?.email?.split('@')[0] || targetFullName || 'Connection';
     const avatar = targetUser?.profile?.avatar || targetAvatar || null;
 
-    role.status = 'ASSIGNED';
-    role.assignedTo = {
+    // Do NOT auto-assign: Put in INVITED state pending user's accept or decline
+    role.status = 'INVITED';
+    role.invitedUser = {
       userId: targetUserId,
       fullName: targetName,
       avatar,
+      invitedAt: new Date().toISOString(),
     };
+    role.assignedTo = null;
     role.pendingApplicant = null;
     role.pendingApplicants = [];
-    role.invitedUser = null;
 
-    // Send notification
+    // Send notification to connection with Accept / Decline invitation
     await prisma.notification.create({
       data: {
         userId: targetUserId,
         senderId: req.user.id,
-        type: 'PROJECT_ROLE_ASSIGNED',
-        title: `Role Assigned: ${role.roleName} 🎉`,
-        message: `${req.user.profile?.fullName || 'Project Lead'} assigned you as "${role.roleName}" on "${project.title}".`,
-        link: `/projects`,
+        type: 'PROJECT_ROLE_INVITE',
+        title: `Role Assignment: ${role.roleName} in ${project.title} 🎯`,
+        message: `${req.user.profile?.fullName || 'Project Lead'} assigned you the role "${role.roleName}" in project "${project.title}". Accept or decline to join the team!`,
+        link: `/projects?roleInvite=${role.id}&projectId=${project.id}`,
       },
     }).catch(() => null);
 
+    if (supabaseAdmin) {
+      await supabaseAdmin.from('notifications').insert({
+        user_id: targetUserId,
+        sender_id: req.user.id,
+        type: 'PROJECT_ROLE_INVITE',
+        title: `Role Assignment: ${role.roleName} in ${project.title} 🎯`,
+        message: `${req.user.profile?.fullName || 'Project Lead'} assigned you the role "${role.roleName}" in project "${project.title}". Accept or decline to join the team!`,
+        link: `/projects?roleInvite=${role.id}&projectId=${project.id}`,
+        is_read: false,
+      }).catch(() => null);
+    }
+
     writeProjects(all);
     await saveProjectToSupabase(project);
-    return res.json({ message: `Role assigned to ${targetName}!`, project });
+    return res.json({
+      message: `Role assignment sent to ${targetName}! Once they accept, the role will be filled.`,
+      project,
+    });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to assign role.' });
   }

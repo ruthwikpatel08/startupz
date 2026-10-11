@@ -44,6 +44,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use('/uploads', express.static(path.resolve(__dirname, '../public/uploads')));
+app.use('/uploads', express.static(path.resolve('public/uploads')));
 
 // Health Check / Keep-Alive (Optimized for cron pings & minimal response size)
 app.all(['/api/health', '/health'], (req, res) => {

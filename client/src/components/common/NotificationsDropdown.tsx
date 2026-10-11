@@ -579,6 +579,167 @@ export const NotificationsDropdown: React.FC = () => {
     }
   };
 
+  // One-click respond to project role assignment / invitation directly from notification
+  const handleQuickRespondRoleInvite = async (
+    e: React.MouseEvent,
+    notif: NotificationItem,
+    action: 'ACCEPT' | 'DECLINE'
+  ) => {
+    e.stopPropagation();
+    setActionLoading((prev) => ({ ...prev, [notif.id]: true }));
+    try {
+      // 1. Parse projectId and roleId from notif.link
+      let projectId: string | null = null;
+      let roleId: string | null = null;
+      if (notif.link && notif.link.includes('?')) {
+        const queryPart = notif.link.split('?')[1];
+        const params = new URLSearchParams(queryPart);
+        projectId = params.get('projectId');
+        roleId = params.get('roleInvite');
+      }
+
+      // Fallback: look through stored projects for a role invited to current user
+      const rawProjects = localStorage.getItem('startupz_projects');
+      let projectsList: any[] = rawProjects ? JSON.parse(rawProjects) : [];
+      if (!projectId || !roleId) {
+        for (const p of projectsList) {
+          const matchingRole = (p.roles || []).find(
+            (r: any) =>
+              r.invitedUser?.userId === user?.id ||
+              (r.status === 'INVITED' && r.invitedUser?.fullName === user?.profile?.fullName)
+          );
+          if (matchingRole) {
+            projectId = p.id;
+            roleId = matchingRole.id;
+            break;
+          }
+        }
+      }
+
+      // 2. Call backend respondProjectInvite
+      if (projectId && roleId) {
+        await api.respondProjectInvite(projectId, roleId, action).catch(() => null);
+      }
+
+      // 3. Update local project storage
+      const userName = user?.profile?.fullName || user?.email?.split('@')[0] || 'Builder';
+      let targetProjectTitle = 'Project';
+      let targetRoleName = 'Role';
+      let creatorId: string | null = null;
+
+      if (projectId && roleId) {
+        projectsList = projectsList.map((p) => {
+          if (p.id === projectId) {
+            targetProjectTitle = p.title || 'Project';
+            creatorId = p.creator?.userId || p.creatorId;
+            const updatedRoles = (p.roles || []).map((r: any) => {
+              if (r.id === roleId) {
+                targetRoleName = r.roleName;
+                if (action === 'ACCEPT') {
+                  return {
+                    ...r,
+                    status: 'ASSIGNED',
+                    assignedTo: {
+                      userId: user?.id,
+                      fullName: userName,
+                      avatar: user?.profile?.avatar || null,
+                    },
+                    invitedUser: null,
+                  };
+                } else {
+                  return {
+                    ...r,
+                    status: 'OPEN',
+                    assignedTo: null,
+                    invitedUser: null,
+                  };
+                }
+              }
+              return r;
+            });
+            const updatedProj = { ...p, roles: updatedRoles };
+            if (action === 'ACCEPT') {
+              // Add user to project group chat in localStorage
+              try {
+                const rawGroups = localStorage.getItem('startupz_project_groups');
+                const groups: any[] = rawGroups ? JSON.parse(rawGroups) : [];
+                const grpIdx = groups.findIndex(
+                  (g) => g.projectId === projectId || g.id === `proj-group-${projectId}`
+                );
+                if (grpIdx >= 0) {
+                  const grp = groups[grpIdx];
+                  if (!grp.members.some((m: any) => (m.userId || m.id) === user?.id)) {
+                    grp.members.push({
+                      id: user?.id,
+                      userId: user?.id,
+                      fullName: userName,
+                      avatar: user?.profile?.avatar || null,
+                      role: targetRoleName,
+                    });
+                    localStorage.setItem('startupz_project_groups', JSON.stringify(groups));
+                  }
+                }
+              } catch {}
+            }
+            return updatedProj;
+          }
+          return p;
+        });
+        localStorage.setItem('startupz_projects', JSON.stringify(projectsList));
+      }
+
+      // 4. Mark this notification as read in Supabase and backend
+      try {
+        await api.markNotificationAsRead(notif.id);
+      } catch {}
+      try {
+        await supabase.from('notifications').update({ is_read: true }).eq('id', notif.id);
+      } catch {}
+
+      // 5. Notify the project lead about accept / decline
+      const finalLeadId = creatorId || notif.senderId || notif.sender?.id;
+      if (finalLeadId && user?.id && finalLeadId !== user.id) {
+        try {
+          await supabase.from('notifications').insert({
+            user_id: finalLeadId,
+            sender_id: user.id,
+            type: action === 'ACCEPT' ? 'PROJECT_INVITE_ACCEPTED' : 'PROJECT_INVITE_DECLINED',
+            title: action === 'ACCEPT' ? 'Role Accepted! 🎉' : 'Role Declined',
+            message: action === 'ACCEPT'
+              ? `${userName} accepted your invitation to join "${targetProjectTitle}" as ${targetRoleName}!`
+              : `${userName} declined the invitation to join "${targetProjectTitle}" as ${targetRoleName}.`,
+            link: `/projects`,
+            is_read: false,
+          });
+        } catch {}
+      }
+
+      // 6. Update UI notification state
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notif.id
+            ? {
+                ...n,
+                isRead: true,
+                _actionStatus: action === 'ACCEPT' ? 'ACCEPTED' : 'DECLINED',
+                title: action === 'ACCEPT' ? 'Role Accepted! 🎯' : 'Role Declined',
+              }
+            : n
+        )
+      );
+      setUnreadCount((c) => Math.max(0, c - 1));
+
+      try {
+        window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
+        window.dispatchEvent(new CustomEvent('startupz_projects_updated'));
+      } catch {}
+    } catch (err) {
+      console.error('Quick respond role invite error:', err);
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [notif.id]: false }));
+    }
+  };
+
   const filteredNotifications =
     activeTab === 'unread' ? notifications.filter((n) => !n.isRead) : notifications;
 
@@ -709,7 +870,8 @@ export const NotificationsDropdown: React.FC = () => {
               filteredNotifications.map((n) => {
                 const isConnection = n.type === 'CONNECTION_REQUEST';
                 const isProposal = n.type === 'STARTUP_PROPOSAL';
-                const isAccepted = n.type === 'CONNECTION_ACCEPTED' || n.type === 'PROPOSAL_ACCEPTED';
+                const isRoleInvite = n.type === 'PROJECT_ROLE_INVITE' || n.type === 'PROJECT_INVITE';
+                const isAccepted = n.type === 'CONNECTION_ACCEPTED' || n.type === 'PROPOSAL_ACCEPTED' || n.type === 'PROJECT_INVITE_ACCEPTED';
                 const isProjectMsg = n.type === 'PROJECT_MESSAGE';
                 const isMessage = n.type === 'NEW_MESSAGE' || n.type === 'MESSAGE';
                 const isLike = n.type === 'POST_LIKE' || n.type === 'LIKE';
@@ -751,6 +913,8 @@ export const NotificationsDropdown: React.FC = () => {
                             ? 'bg-indigo-600'
                             : isProjectMsg
                             ? 'bg-cyan-600'
+                            : isRoleInvite
+                            ? 'bg-indigo-600'
                             : isConnection
                             ? 'bg-blue-600'
                             : isProposal
@@ -766,7 +930,7 @@ export const NotificationsDropdown: React.FC = () => {
                           <Heart size={9} fill="currentColor" />
                         ) : isComment ? (
                           <MessageSquare size={9} />
-                        ) : isProjectMsg ? (
+                        ) : isProjectMsg || isRoleInvite ? (
                           <FolderKanban size={9} />
                         ) : isConnection ? (
                           <Users size={9} />
@@ -885,6 +1049,53 @@ export const NotificationsDropdown: React.FC = () => {
                                 type="button"
                                 disabled={actionLoading[n.id]}
                                 onClick={(e) => handleQuickRespondProposal(e, n, 'DECLINED')}
+                                className="px-2 py-1 rounded text-[11px] font-medium bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-700 text-slate-700 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
+                              >
+                                <X size={11} />
+                                <span>Decline</span>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Interactive Role Assignment / Invitation Actions */}
+                      {isRoleInvite && (
+                        <div className="pt-1.5 flex items-center gap-1.5 flex-wrap">
+                          {n._actionStatus === 'ACCEPTED' || n.title?.includes('Accepted') ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                <Check size={11} /> Role Accepted!
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIsOpen(false);
+                                  navigate('/projects');
+                                }}
+                                className="btn-primary !py-0.5 !px-2 !text-[10px] font-semibold inline-flex items-center gap-1"
+                              >
+                                <FolderKanban size={10} /> View Project
+                              </button>
+                            </div>
+                          ) : n._actionStatus === 'DECLINED' || n.title?.includes('Declined') ? (
+                            <span className="text-[10px] text-slate-400">Role Declined</span>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                disabled={actionLoading[n.id]}
+                                onClick={(e) => handleQuickRespondRoleInvite(e, n, 'ACCEPT')}
+                                className="px-2.5 py-1 rounded text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs inline-flex items-center gap-1 cursor-pointer transition-colors"
+                              >
+                                <Check size={11} />
+                                <span>{actionLoading[n.id] ? 'Accepting...' : 'Accept Role'}</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={actionLoading[n.id]}
+                                onClick={(e) => handleQuickRespondRoleInvite(e, n, 'DECLINE')}
                                 className="px-2 py-1 rounded text-[11px] font-medium bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-700 text-slate-700 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
                               >
                                 <X size={11} />

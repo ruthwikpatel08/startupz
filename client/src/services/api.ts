@@ -148,10 +148,11 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   }
 
   const executeRequest = async (): Promise<T> => {
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
       ...getAuthHeader(),
-      ...(options.headers as Record<string, string> || {}),
+      ...((options.headers as Record<string, string>) || {}),
     };
 
     try {
@@ -375,6 +376,16 @@ export const api = {
     request<{ message: any }>(`/projects/${projectId}/messages`, { method: 'POST', body: JSON.stringify({ content }) }),
   askProjectAiScout: (projectId: string, prompt: string) =>
     request<{ message: any }>(`/projects/${projectId}/ai-scout`, { method: 'POST', body: JSON.stringify({ prompt }) }),
+
+  // UPLOAD
+  uploadFile: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return request<{ url: string; filename: string; size: number; mimetype: string }>('/upload', {
+      method: 'POST',
+      body: formData,
+    });
+  },
 
   // SAVED
   getSavedItems: async (itemType?: string) => {
