@@ -5,6 +5,7 @@ import { supabase, broadcastEntityDeleted } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
+import { ShareModal, ShareItemData } from '../../components/common/ShareModal';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { Avatar } from '../../components/common/Avatar';
@@ -56,6 +57,7 @@ export const ExploreStartupsPage: React.FC = () => {
   const [startups, setStartups] = useState<Startup[]>(getInitialStartups);
   const [loading, setLoading] = useState(() => getInitialStartups().length === 0);
   const [error, setError] = useState<string | null>(null);
+  const [shareModalItem, setShareModalItem] = useState<ShareItemData | null>(null);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -241,12 +243,15 @@ export const ExploreStartupsPage: React.FC = () => {
     }
   };
 
-  const handleShare = (id: string, e: React.MouseEvent) => {
+  const handleShare = (targetStartup: Startup, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    navigator.clipboard.writeText(`${window.location.origin}/startups/${id}`);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    setShareModalItem({
+      title: targetStartup.name,
+      url: `/startups/${targetStartup.id}`,
+      description: targetStartup.oneLineDescription || targetStartup.solution || 'Startup on HookZ',
+      type: 'startup',
+    });
   };
 
   const handleDeleteStartup = async (id: string, name: string, e: React.MouseEvent) => {
@@ -591,15 +596,11 @@ export const ExploreStartupsPage: React.FC = () => {
                     </button>
 
                     <button
-                      onClick={(e) => handleShare(startup.id, e)}
-                      className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-dark-800"
-                      title="Share Link"
+                      onClick={(e) => handleShare(startup, e)}
+                      className="p-1.5 rounded-md text-slate-400 hover:text-brand-600 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors"
+                      title="Share with connections"
                     >
-                      {copiedId === startup.id ? (
-                        <Check size={14} className="text-emerald-600" />
-                      ) : (
-                        <Share2 size={14} />
-                      )}
+                      <Share2 size={14} />
                     </button>
                   </div>
 
@@ -795,6 +796,13 @@ export const ExploreStartupsPage: React.FC = () => {
         isOpen={!!connectUser}
         onClose={() => setConnectUser(null)}
         targetUser={connectUser}
+      />
+
+      {/* Share with Connections Modal */}
+      <ShareModal
+        isOpen={Boolean(shareModalItem)}
+        onClose={() => setShareModalItem(null)}
+        item={shareModalItem}
       />
     </div>
   );

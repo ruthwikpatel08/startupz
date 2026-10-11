@@ -23,6 +23,7 @@ import { ReportModal } from '../../components/common/ReportModal';
 import { Modal } from '../../components/common/Modal';
 import { SEO } from '../../components/common/SEO';
 import { ImageCropModal } from '../../components/common/ImageCropModal';
+import { ShareModal, ShareItemData } from '../../components/common/ShareModal';
 import { searchLocations, searchColleges, resolveIndianLocation } from '../../data/indiaData';
 import {
   MapPin,
@@ -284,6 +285,7 @@ export const ProfilePage: React.FC = () => {
 
   // Connections list modal
   const [connectionsModalOpen, setConnectionsModalOpen] = useState(false);
+  const [shareModalItem, setShareModalItem] = useState<ShareItemData | null>(null);
   const [connectionsList, setConnectionsList] = useState<any[]>([]);
   const [connectionsListLoading, setConnectionsListLoading] = useState(false);
   const [removingConnId, setRemovingConnId] = useState<string | null>(null);
@@ -1828,6 +1830,22 @@ export const ProfilePage: React.FC = () => {
                       <MessageSquare size={12} />
                       <span>{post.commentsCount || 0} comments</span>
                     </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShareModalItem({
+                          title: post.title || `${displayName}'s Post`,
+                          url: `/feed#post-${post.id}`,
+                          description: post.content,
+                          type: 'post',
+                        })
+                      }
+                      className="flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer text-xs text-slate-400 hover:text-brand-600"
+                      title="Share post with connections"
+                    >
+                      <Share2 size={12} />
+                      <span>Share</span>
+                    </button>
                     <Link
                       to="/feed"
                       className="text-brand-600 hover:underline ml-auto font-medium"
@@ -2304,7 +2322,7 @@ export const ProfilePage: React.FC = () => {
                         <span>Official HookZ Leadership</span>
                       </span>
                     )}
-                    <RoleBadge role={profileUser.role || p.preferredRole || 'STUDENT'} />
+                    {isMe && <RoleBadge role={profileUser.role || p.preferredRole || 'STUDENT'} />}
                   </div>
 
                   <p className="text-sm sm:text-base font-normal text-slate-600 dark:text-slate-300 break-words">
@@ -2420,6 +2438,22 @@ export const ProfilePage: React.FC = () => {
                           <span>Pitch</span>
                         </button>
                         <button
+                          type="button"
+                          onClick={() =>
+                            setShareModalItem({
+                              title: `${displayName}'s Profile on HookZ`,
+                              url: window.location.pathname,
+                              description: p.headline || p.oneLineBio || `${displayName}'s Profile`,
+                              type: 'profile',
+                            })
+                          }
+                          className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium cursor-pointer"
+                          title="Share Profile with Connections"
+                        >
+                          <Share2 size={15} className="text-brand-600" />
+                          <span>Share</span>
+                        </button>
+                        <button
                           onClick={() => setBlockModalOpen(true)}
                           className="flex-1 sm:flex-none p-2 rounded-xl border border-slate-200 dark:border-dark-800 text-slate-400 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer"
                           title="Block this user"
@@ -2432,13 +2466,31 @@ export const ProfilePage: React.FC = () => {
                 )}
 
                 {isMe && (
-                  <button
-                    onClick={handleOpenEdit}
-                    className="flex-1 sm:flex-none btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold cursor-pointer"
-                  >
-                    <Edit3 size={15} />
-                    <span>Edit Profile</span>
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShareModalItem({
+                          title: `${displayName}'s Profile on HookZ`,
+                          url: `/profile/${profileUser.id || ''}`,
+                          description: p.headline || p.oneLineBio || 'My profile on HookZ',
+                          type: 'profile',
+                        })
+                      }
+                      className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium cursor-pointer"
+                      title="Share your profile with connections"
+                    >
+                      <Share2 size={15} className="text-brand-600" />
+                      <span>Share</span>
+                    </button>
+                    <button
+                      onClick={handleOpenEdit}
+                      className="flex-1 sm:flex-none btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold cursor-pointer"
+                    >
+                      <Edit3 size={15} />
+                      <span>Edit Profile</span>
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -4475,6 +4527,13 @@ export const ProfilePage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Share with Connections Modal */}
+      <ShareModal
+        isOpen={Boolean(shareModalItem)}
+        onClose={() => setShareModalItem(null)}
+        item={shareModalItem}
+      />
     </div>
   );
 };

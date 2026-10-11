@@ -5,6 +5,7 @@ import { supabase, broadcastEntityDeleted } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
+import { ShareModal, ShareItemData } from '../../components/common/ShareModal';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { IdeaFeedbackModal } from '../../components/common/IdeaFeedbackModal';
 import { Avatar } from '../../components/common/Avatar';
@@ -43,6 +44,7 @@ export const StartupDetailPage: React.FC = () => {
   const [connectUser, setConnectUser] = useState<any | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [shareModalItem, setShareModalItem] = useState<ShareItemData | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -106,9 +108,13 @@ export const StartupDetailPage: React.FC = () => {
   };
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (!startup) return;
+    setShareModalItem({
+      title: startup.name,
+      url: `/startups/${startup.id}`,
+      description: startup.oneLineDescription || startup.solution || 'Startup on HookZ',
+      type: 'startup',
+    });
   };
 
   const handleDeleteStartup = async () => {
@@ -919,6 +925,13 @@ export const StartupDetailPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Share with Connections Modal */}
+      <ShareModal
+        isOpen={Boolean(shareModalItem)}
+        onClose={() => setShareModalItem(null)}
+        item={shareModalItem}
+      />
     </div>
   );
 };

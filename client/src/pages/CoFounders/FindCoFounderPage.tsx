@@ -964,7 +964,6 @@ export const FindCoFounderPage: React.FC = () => {
                           <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
                             @{username}
                           </span>
-                          <RoleBadge role={categoryRole} size="sm" />
                           {cand.isMe && (
                             <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-100 text-brand-700 dark:bg-brand-950/80 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
                               You

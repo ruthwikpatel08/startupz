@@ -10,6 +10,7 @@ import { ReportModal } from '../../components/common/ReportModal';
 import { Avatar } from '../../components/common/Avatar';
 import { ProblemCard } from '../../components/problems/ProblemCard';
 import { SEO } from '../../components/common/SEO';
+import { ShareModal, ShareItemData } from '../../components/common/ShareModal';
 import {
   Share2,
   Heart,
@@ -37,6 +38,7 @@ import {
   Trash2,
   CheckCircle2,
   AlertCircle,
+  Users,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -74,6 +76,8 @@ export const StartupFeedPage: React.FC = () => {
   const [connectUser, setConnectUser] = useState<any | null>(null);
   const [reportTarget, setReportTarget] = useState<{ id: string; title: string } | null>(null);
   const [copiedPostId, setCopiedPostId] = useState<string | null>(null);
+  const [shareModalItem, setShareModalItem] = useState<ShareItemData | null>(null);
+  const [postVisibility, setPostVisibility] = useState<'PUBLIC' | 'CONNECTIONS'>('PUBLIC');
 
   // Connection tracking to ensure connect button is hidden once connected
   const [connectedUserIds, setConnectedUserIds] = useState<Set<string>>(new Set());
@@ -275,6 +279,13 @@ export const StartupFeedPage: React.FC = () => {
     const rawType = (p.postType || 'UPDATE').toUpperCase();
     const isMyPost = Boolean(user?.id) && (p.authorId === user?.id || p.author?.id === user?.id);
 
+    // If post is marked for connections only, ensure only author or connections can see it
+    const isConnectionsOnly = (p as any).visibility === 'CONNECTIONS' || p.title?.includes('[Connections Only]');
+    if (isConnectionsOnly) {
+      const isConnection = connectedUserIds.has(p.authorId) || (p.author?.id && connectedUserIds.has(p.author.id));
+      if (!isMyPost && !isConnection) return false;
+    }
+
     if (activePillar === 'ACHIEVEMENTS') {
       // 1. STRICT: Exclude ALL ideas/cofounder/advice/hiring
       if (IDEA_POST_TYPES.has(rawType)) {
@@ -334,12 +345,17 @@ export const StartupFeedPage: React.FC = () => {
 
       // 1. Primary: Server API
       try {
+        const postTitleFormatted = postVisibility === 'CONNECTIONS'
+          ? (postTitle.trim() ? `[Connections Only] ${postTitle.trim()}` : '[Connections Only]')
+          : (postTitle.trim() || undefined);
+
         const res = await api.createPost({
           postType: finalPostType,
-          title: postTitle.trim() || undefined,
+          title: postTitleFormatted,
           content: postContent.trim(),
           links: postLinks.trim() || undefined,
-        });
+          visibility: postVisibility,
+        } as any);
         createdPost = res?.post || res;
       } catch (apiErr) {
         console.warn('Backend API createPost failed, attempting direct Supabase insert:', apiErr);
@@ -347,12 +363,16 @@ export const StartupFeedPage: React.FC = () => {
 
       // 2. Direct Supabase insert fallback if backend API failed
       if (!createdPost || !createdPost.id) {
+        const postTitleFormatted = postVisibility === 'CONNECTIONS'
+          ? (postTitle.trim() ? `[Connections Only] ${postTitle.trim()}` : '[Connections Only]')
+          : (postTitle.trim() || null);
+
         const { data, error } = await supabase
           .from('posts')
           .insert({
             author_id: user.id,
             post_type: finalPostType,
-            title: postTitle.trim() || null,
+            title: postTitleFormatted,
             content: postContent.trim(),
             links: postLinks.trim() || null,
           })
@@ -367,6 +387,7 @@ export const StartupFeedPage: React.FC = () => {
           title: data.title,
           content: data.content,
           links: data.links,
+          visibility: postVisibility,
           createdAt: data.created_at || new Date().toISOString(),
           likesCount: 0,
           commentsCount: 0,
@@ -406,6 +427,7 @@ export const StartupFeedPage: React.FC = () => {
       setPostTitle('');
       setPostContent('');
       setPostLinks('');
+      setPostVisibility('PUBLIC');
       setComposerOpen(false);
       setSuccessToast('Post published successfully!');
       setTimeout(() => setSuccessToast(null), 4000);
@@ -818,11 +840,14 @@ export const StartupFeedPage: React.FC = () => {
     }
   };
 
-  const handleSharePost = (postId: string) => {
-    const url = `${window.location.origin}/feed#post-${postId}`;
-    navigator.clipboard.writeText(url);
-    setCopiedPostId(postId);
-    setTimeout(() => setCopiedPostId(null), 2000);
+  const handleSharePost = (targetPost: any) => {
+    const rawTitle = targetPost.title ? targetPost.title.replace('[Connections Only] ', '') : 'Feed Post on HookZ';
+    setShareModalItem({
+      title: rawTitle,
+      url: `/feed#post-${targetPost.id}`,
+      description: targetPost.content,
+      type: 'post',
+    });
   };
 
   const handleDeletePost = async (postId: string) => {
@@ -1170,22 +1195,54 @@ export const StartupFeedPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setComposerOpen(false)}
-                  className="btn-secondary px-3 py-1.5 text-xs font-medium cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingPost}
-                  className="btn-primary px-4 py-1.5 text-xs font-medium disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Send size={13} />
-                  <span>{submittingPost ? 'Publishing...' : 'Publish'}</span>
-                </button>
+              <div className="flex items-center justify-between gap-2 pt-2 flex-wrap">
+                <div className="flex items-center gap-1.5 text-xs">
+                  <span className="text-slate-500 font-medium text-[11px]">Audience:</span>
+                  <div className="inline-flex rounded-lg p-0.5 bg-slate-100 dark:bg-dark-800 border border-slate-200 dark:border-dark-700">
+                    <button
+                      type="button"
+                      onClick={() => setPostVisibility('PUBLIC')}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        postVisibility === 'PUBLIC'
+                          ? 'bg-white dark:bg-dark-900 text-brand-600 shadow-xs'
+                          : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Globe size={11} />
+                      <span>Public</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPostVisibility('CONNECTIONS')}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        postVisibility === 'CONNECTIONS'
+                          ? 'bg-white dark:bg-dark-900 text-purple-600 dark:text-purple-400 shadow-xs'
+                          : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Users size={11} />
+                      <span>Connections Only</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 ml-auto">
+                  <button
+                    type="button"
+                    onClick={() => setComposerOpen(false)}
+                    className="btn-secondary px-3 py-1.5 text-xs font-medium cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingPost}
+                    className="btn-primary px-4 py-1.5 text-xs font-medium disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Send size={13} />
+                    <span>{submittingPost ? 'Publishing...' : 'Publish'}</span>
+                  </button>
+                </div>
               </div>
             </form>
           )}
@@ -1352,7 +1409,13 @@ export const StartupFeedPage: React.FC = () => {
                   </div>
 
                   {/* Post Type Badge & Report / Delete Dropdown */}
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {(post.visibility === 'CONNECTIONS' || post.title?.includes('[Connections Only]')) && (
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800 inline-flex items-center gap-1">
+                        <Users size={11} />
+                        <span>Connections</span>
+                      </span>
+                    )}
                     <span
                       className={`text-[11px] font-medium px-2 py-0.5 rounded-md border ${getPostTypeBadge(
                         post.postType
@@ -1526,19 +1589,13 @@ export const StartupFeedPage: React.FC = () => {
                   <div className="flex items-center gap-2">
                     {/* Share Button */}
                     <button
-                      onClick={() => handleSharePost(post.id)}
-                      className="flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition-colors"
+                      type="button"
+                      onClick={() => handleSharePost(post)}
+                      className="flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer text-xs"
+                      title="Share post with connections"
                     >
-                      {copiedPostId === post.id ? (
-                        <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
-                          <Check size={14} /> Copied!
-                        </span>
-                      ) : (
-                        <>
-                          <Share2 size={14} />
-                          <span className="hidden sm:inline">Share</span>
-                        </>
-                      )}
+                      <Share2 size={14} />
+                      <span className="hidden sm:inline">Share</span>
                     </button>
 
                     {/* Connect with author - hidden if already connected */}
@@ -1637,6 +1694,13 @@ export const StartupFeedPage: React.FC = () => {
           targetTitle={reportTarget.title}
         />
       )}
+
+      {/* Share with Connections Modal */}
+      <ShareModal
+        isOpen={Boolean(shareModalItem)}
+        onClose={() => setShareModalItem(null)}
+        item={shareModalItem}
+      />
     </div>
   );
 };

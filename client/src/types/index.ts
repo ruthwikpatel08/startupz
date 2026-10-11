@@ -238,6 +238,7 @@ export interface Post {
   content: string;
   images?: string | null;
   links?: string | null;
+  visibility?: 'PUBLIC' | 'CONNECTIONS' | string;
   likesCount: number;
   commentsCount: number;
   isLiked?: boolean;

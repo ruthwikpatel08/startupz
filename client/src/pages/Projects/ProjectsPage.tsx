@@ -23,9 +23,11 @@ import {
   Bookmark,
   UserPlus,
   XCircle,
+  Share2,
 } from 'lucide-react';
 import { SEO } from '../../components/common/SEO';
 import { Avatar } from '../../components/common/Avatar';
+import { ShareModal, ShareItemData } from '../../components/common/ShareModal';
 import { api } from '../../services/api';
 import { supabase, fetchUserConnections, broadcastEntityDeleted } from '../../lib/supabase';
 
@@ -242,6 +244,7 @@ export const ProjectsPage: React.FC = () => {
 
   // Assign Connection Modal State
   const [assignModalRole, setAssignModalRole] = useState<{ projectId: string; roleId: string; roleName: string } | null>(null);
+  const [shareModalItem, setShareModalItem] = useState<ShareItemData | null>(null);
   const [connectionsList, setConnectionsList] = useState<Array<{ id: string; fullName: string; avatar?: string | null; headline?: string }>>([]);
   const [loadingConnections, setLoadingConnections] = useState(false);
   const [connectionSearchQuery, setConnectionSearchQuery] = useState('');
@@ -1445,6 +1448,23 @@ export const ProjectsPage: React.FC = () => {
                         <span>{savedProjectIds.has(project.id) ? 'Saved' : 'Save'}</span>
                       </button>
 
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShareModalItem({
+                            title: project.title,
+                            url: `/projects#project-${project.id}`,
+                            description: project.ideaSummary || project.problemSolved || 'Collaboration project on HookZ',
+                            type: 'project',
+                          })
+                        }
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 dark:border-dark-700 bg-slate-50 dark:bg-dark-800 text-slate-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors cursor-pointer shrink-0"
+                        title="Share project with connections"
+                      >
+                        <Share2 size={12} />
+                        <span>Share</span>
+                      </button>
+
                       {isCreator && (
                         <button
                           type="button"
@@ -2323,6 +2343,12 @@ export const ProjectsPage: React.FC = () => {
         </div>
       )}
 
+      {/* Share with Connections Modal */}
+      <ShareModal
+        isOpen={Boolean(shareModalItem)}
+        onClose={() => setShareModalItem(null)}
+        item={shareModalItem}
+      />
     </div>
   );
 };
