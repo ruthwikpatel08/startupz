@@ -42,13 +42,11 @@ function formatProblem(prob, savedProblemIds = new Set()) {
     creator: prob.creator
       ? {
           id: prob.creator.id,
-          email: prob.creator.email,
           fullName: prob.creator.profile?.fullName || 'Administrator',
           avatar: prob.creator.profile?.avatar || null,
         }
       : {
           id: 'admin-system',
-          email: 'admin@startupz.com',
           fullName: 'StartupZ Editorial & Research',
           avatar: null,
         },
@@ -66,6 +64,72 @@ export function invalidateProblemsCache() {
   cachedProblemsDefault = null;
   cachedProblemsDefaultExpiresAt = 0;
 }
+
+/**
+ * In-memory sliding window rate limiter
+ * ponytail: In-memory store is local to this Node process. If horizontally scaling across multiple Render instances, upgrade to Redis.
+ */
+function createRateLimiter({ windowMs, max, message }) {
+  const store = new Map();
+
+  const cleanup = setInterval(() => {
+    const now = Date.now();
+    for (const [key, timestamps] of store.entries()) {
+      const valid = timestamps.filter((t) => now - t < windowMs);
+      if (valid.length === 0) {
+        store.delete(key);
+      } else {
+        store.set(key, valid);
+      }
+    }
+  }, 5 * 60 * 1000);
+  // Ensure the background cleanup timer does not prevent graceful server shutdown
+  cleanup.unref();
+
+  return (req, res, next) => {
+    const clientKey = req.user?.id
+      ? `user:${req.user.id}`
+      : `ip:${req.ip || req.socket?.remoteAddress || 'unknown'}`;
+
+    const now = Date.now();
+    const timestamps = store.get(clientKey) || [];
+    const validTimestamps = timestamps.filter((t) => now - t < windowMs);
+
+    if (validTimestamps.length >= max) {
+      const oldestValid = validTimestamps[0];
+      const retryAfterMs = Math.max(1000, oldestValid + windowMs - now);
+      const retryAfterSec = Math.ceil(retryAfterMs / 1000);
+
+      res.setHeader('Retry-After', retryAfterSec);
+      return res.status(429).json({
+        error: message || 'Too many requests. Please slow down and try again later.',
+        retryAfter: retryAfterSec,
+      });
+    }
+
+    validTimestamps.push(now);
+    store.set(clientKey, validTimestamps);
+    next();
+  };
+}
+
+const analyzeLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: 'Too many analysis requests. Please wait a few minutes before analyzing more problems.',
+});
+
+const categorizeAiLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: 'Too many categorization requests. Please wait a few minutes before trying again.',
+});
+
+const discoverAiLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  message: 'Too many discovery requests. Please wait a few minutes before generating more problem statements.',
+});
 
 /**
  * GET /api/problems/meta
@@ -110,7 +174,7 @@ router.get('/meta', async (req, res) => {
  * POST /api/problems/categorize-ai
  * Suggests categories and tags using GenAI for a given title & description
  */
-router.post('/categorize-ai', optionalAuth, async (req, res) => {
+router.post('/categorize-ai', optionalAuth, categorizeAiLimiter, async (req, res) => {
   try {
     const { title, description } = req.body;
     if (!description || description.trim().length < 10) {
@@ -238,7 +302,6 @@ router.get('/', optionalAuth, async (req, res) => {
           creator: {
             select: {
               id: true,
-              email: true,
               profile: { select: { fullName: true, avatar: true } },
             },
           },
@@ -314,7 +377,6 @@ router.get('/:id', optionalAuth, async (req, res) => {
         creator: {
           select: {
             id: true,
-            email: true,
             profile: { select: { fullName: true, avatar: true } },
           },
         },
@@ -688,7 +750,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
  * POST /api/problems/:id/analyze
  * AI-powered Problem Insights (Solutions or User Matching) using Gemini GenAI
  */
-router.post('/:id/analyze', optionalAuth, async (req, res) => {
+router.post('/:id/analyze', optionalAuth, analyzeLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const type = req.query.type || req.body.type || 'solutions';
@@ -746,7 +808,7 @@ router.post('/:id/analyze', optionalAuth, async (req, res) => {
  * POST /api/problems/discover-ai
  * Discover new authoritative problem statements using Google Gemini AI
  */
-router.post('/discover-ai', optionalAuth, async (req, res) => {
+router.post('/discover-ai', optionalAuth, discoverAiLimiter, async (req, res) => {
   try {
     const { topic } = req.body;
     const problems = await discoverProblemsFromAI(topic || 'business, agriculture, and global challenges');
@@ -761,7 +823,7 @@ router.post('/discover-ai', optionalAuth, async (req, res) => {
  * POST /api/problems/refresh-weekly
  * Trigger weekly refresh check manually
  */
-router.post('/refresh-weekly', optionalAuth, async (req, res) => {
+router.post('/refresh-weekly', requireAuth, requireAdmin, async (req, res) => {
   try {
     const result = await checkAndRefreshWeeklyProblems(true);
     res.json(result);

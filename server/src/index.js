@@ -34,6 +34,9 @@ import { prisma } from './db.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust immediate reverse proxy (Render load balancer) for safe req.ip resolution
+app.set('trust proxy', 1);
+
 app.use(cors({
   origin: true,
   credentials: true,
