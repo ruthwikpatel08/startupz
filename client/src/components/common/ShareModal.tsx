@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Share2,
   X,
@@ -184,9 +185,19 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
     };
   }, [isOpen, user?.id]);
 
-  // Reset transient state when closing
+  // Reset transient state and handle body scroll lock when modal open/closed
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') onClose();
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = 'unset';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    } else {
       setSearchQuery('');
       setCustomNote('');
       setSentUserIds(new Set());
@@ -194,7 +205,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
       setCopied(false);
       setSendError(null);
     }
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   const filteredConnections = useMemo(() => {
     if (!searchQuery.trim()) return connections;
@@ -269,10 +280,16 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
   const encodedUrl = encodeURIComponent(shareUrl);
   const encodedSummary = encodeURIComponent(`${shareTitle} - ${shareDescription}`);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+  const modalContent = (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 overflow-y-auto font-sans">
+      {/* Full-viewport transparent backdrop */}
       <div
-        className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col"
+        className="fixed inset-0 w-full h-full bg-slate-900/60 backdrop-blur-xs transition-opacity"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        className="relative z-10 w-full max-w-lg rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -604,4 +621,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined'
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 };

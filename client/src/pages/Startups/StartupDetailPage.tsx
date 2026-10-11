@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api';
 import { supabase, broadcastEntityDeleted } from '../../lib/supabase';
@@ -257,6 +258,21 @@ export const StartupDetailPage: React.FC = () => {
     setEditError(null);
     setEditModalOpen(true);
   };
+
+  // Prevent background scrolling and enable Escape key when edit modal is open
+  useEffect(() => {
+    if (editModalOpen) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') setEditModalOpen(false);
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = 'unset';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [editModalOpen]);
 
   const handleDeleteOpportunity = async (oppId: string) => {
     if (!window.confirm('Are you sure you want to remove this opportunity?')) return;
@@ -856,9 +872,18 @@ export const StartupDetailPage: React.FC = () => {
       />
 
       {/* Edit Startup Modal */}
-      {editModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="card-base max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-dark-700 overflow-hidden">
+      {editModalOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto font-sans">
+          {/* Full-viewport transparent backdrop */}
+          <div
+            className="fixed inset-0 w-full h-full bg-slate-900/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setEditModalOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 card-base max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-dark-700 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-dark-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-dark-850/50">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400">
@@ -1530,7 +1555,8 @@ export const StartupDetailPage: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Share with Connections Modal */}

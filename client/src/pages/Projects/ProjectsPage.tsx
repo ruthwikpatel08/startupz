@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
@@ -283,6 +284,26 @@ export const ProjectsPage: React.FC = () => {
   const [connectionsList, setConnectionsList] = useState<Array<{ id: string; fullName: string; avatar?: string | null; headline?: string }>>([]);
   const [loadingConnections, setLoadingConnections] = useState(false);
   const [connectionSearchQuery, setConnectionSearchQuery] = useState('');
+
+  // Prevent background scrolling and enable Escape key when any modal is open
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(createModalOpen || roleCompletionModal || assignModalRole);
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          if (createModalOpen) setCreateModalOpen(false);
+          if (roleCompletionModal) setRoleCompletionModal(null);
+          if (assignModalRole) setAssignModalRole(null);
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = 'unset';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [createModalOpen, roleCompletionModal, assignModalRole]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -1855,9 +1876,17 @@ export const ProjectsPage: React.FC = () => {
       )}
 
       {/* Leader Post-Completion Prompt Modal */}
-      {roleCompletionModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="max-w-md w-full bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-6 shadow-modal space-y-4 animate-in fade-in zoom-in-95">
+      {roleCompletionModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto font-sans">
+          <div
+            className="fixed inset-0 w-full h-full bg-slate-900/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setRoleCompletionModal(null)}
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 max-w-md w-full bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-6 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center mx-auto">
               <CheckCircle2 size={24} />
             </div>
@@ -1890,13 +1919,23 @@ export const ProjectsPage: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Create Project Modal */}
-      {createModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto font-sans">
-          <div className="max-w-xl w-full max-h-[90vh] overflow-y-auto bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-6 sm:p-7 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-8">
+      {createModalOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto font-sans">
+          {/* Full-viewport transparent backdrop covering 100% of entire page */}
+          <div
+            className="fixed inset-0 w-full h-full bg-slate-900/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setCreateModalOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 max-w-xl w-full max-h-[90vh] overflow-y-auto bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-6 sm:p-7 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-dark-800">
               <div className="flex items-center gap-2.5">
                 <span className="p-2 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400">
@@ -2239,13 +2278,22 @@ export const ProjectsPage: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Assign Connection to Role Modal */}
-      {assignModalRole && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto font-sans">
-          <div className="max-w-md w-full bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-6 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-8">
+      {assignModalRole && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto font-sans">
+          <div
+            className="fixed inset-0 w-full h-full bg-slate-900/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setAssignModalRole(null)}
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 max-w-md w-full bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-6 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-dark-800">
               <div className="flex items-center gap-2.5">
                 <span className="p-2 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400">
@@ -2380,7 +2428,8 @@ export const ProjectsPage: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Share with Connections Modal */}
