@@ -730,20 +730,6 @@ export const Navbar: React.FC = () => {
         isOpen={googleChooserOpen}
         onClose={() => setGoogleChooserOpen(false)}
       />
-
-      {/* Floating AI Scout Button for Mobile View */}
-      {user && !isAuthPage && (
-        <button
-          type="button"
-          onClick={() => setAiScoutOpen(true)}
-          className="lg:hidden fixed bottom-16 right-3.5 z-40 flex items-center gap-1.5 px-3 py-2 rounded-full bg-slate-900/90 dark:bg-brand-600 text-white text-xs font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all border border-slate-700/60 dark:border-brand-400/50 backdrop-blur-xs cursor-pointer select-none"
-          title="AI Scout People Finder"
-          aria-label="Open AI Scout People Finder"
-        >
-          <Sparkles size={14} className="text-amber-400 shrink-0" />
-          <span>AI Scout</span>
-        </button>
-      )}
     </>
   );
 };
