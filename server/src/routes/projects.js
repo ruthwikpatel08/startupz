@@ -850,12 +850,49 @@ router.post('/:id/roles/:roleId/assign', requireAuth, async (req, res) => {
   }
 });
 
+/**
+ * Helper to check if a user is a project creator, assigned team member, or admin
+ */
+function isProjectMemberOrCreator(project, user) {
+  if (!user || !user.id || !project) return false;
+  if (user.isAdmin) return true;
+  const creatorId = project.creator?.userId || project.creatorId;
+  if (creatorId && creatorId === user.id) return true;
+  if (Array.isArray(project.roles) && project.roles.some((r) => r.assignedTo?.userId === user.id)) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Helper to sanitize message sender objects (strips email and private account fields)
+ */
+function sanitizeProjectMessage(m) {
+  if (!m || typeof m !== 'object') return m;
+  const sanitized = { ...m };
+  if (sanitized.sender && typeof sanitized.sender === 'object') {
+    const { email, password, isAdmin, isSuspended, ...safeSender } = sanitized.sender;
+    sanitized.sender = safeSender;
+  }
+  return sanitized;
+}
+
 // GET /api/projects/:id/messages - Retrieve all messages for project group chat
-router.get('/:id/messages', optionalAuth, async (req, res) => {
+router.get('/:id/messages', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
+    const { project } = await getOrFetchProject(id);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found.' });
+    }
+
+    // Private projects strictly allow only creator, assigned team members, or admin
+    if (project.visibility === 'PRIVATE' && !isProjectMemberOrCreator(project, req.user)) {
+      return res.status(403).json({ error: 'You are not authorized to view messages in this private project.' });
+    }
+
     const msgs = readProjectMessages(id);
-    return res.json({ messages: msgs });
+    return res.json({ messages: msgs.map(sanitizeProjectMessage) });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to retrieve project messages.' });
   }
@@ -870,6 +907,16 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Message content cannot be empty.' });
     }
 
+    const { all, project } = await getOrFetchProject(id);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found.' });
+    }
+
+    // Only project creator or assigned team members (or admin) can post to project chat
+    if (!isProjectMemberOrCreator(project, req.user)) {
+      return res.status(403).json({ error: 'You are not authorized to post in this project workspace.' });
+    }
+
     const senderName = req.user.profile?.fullName || req.user.email?.split('@')[0] || 'Member';
     const newMsg = {
       id: `pmsg-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
@@ -880,7 +927,6 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
       createdAt: new Date().toISOString(),
       sender: {
         id: req.user.id,
-        email: req.user.email,
         role: req.user.role || 'BUILDER',
         isVerified: req.user.isVerified || false,
         profile: {
@@ -896,12 +942,12 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     writeProjectMessage(id, newMsg);
 
     // Update project lastMessage
-    const all = getAllProjectsList();
-    const proj = all.find((p) => p.id === id);
+    const allProjects = getAllProjectsList();
+    const proj = allProjects.find((p) => p.id === id);
     if (proj) {
       proj.lastMessage = `${senderName.split(' ')[0]}: ${content.trim()}`;
       proj.lastMessageAt = new Date().toISOString();
-      writeProjects(all);
+      writeProjects(allProjects);
 
       // Notify all other team members about the new project group message
       const memberIds = new Set();
@@ -950,7 +996,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
       }
     }
 
-    return res.status(201).json({ message: 'Project message sent successfully!', data: newMsg });
+    return res.status(201).json({ message: 'Project message sent successfully!', data: sanitizeProjectMessage(newMsg) });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to send project message.' });
   }
@@ -973,9 +1019,8 @@ router.post('/:id/ai-scout', requireAuth, async (req, res) => {
     }
 
     // 2. Authorize user: creator, assigned role member, or public project participant
-    const isCreator = req.user.id && (project.creator?.userId === req.user.id || project.creatorId === req.user.id);
-    const isMember = req.user.id && Array.isArray(project.roles) && project.roles.some((r) => r.assignedTo?.userId === req.user.id);
-    if (!isCreator && !isMember && project.visibility === 'PRIVATE') {
+    const isMemberOrCreator = isProjectMemberOrCreator(project, req.user);
+    if (!isMemberOrCreator && project.visibility === 'PRIVATE') {
       return res.status(403).json({ error: 'You are not authorized to use AI Scout in this private project workspace.' });
     }
 

@@ -4,8 +4,61 @@ import { optionalAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
+/**
+ * In-memory sliding window rate limiter
+ * ponytail: In-memory store is local to this Node process. If horizontally scaling across multiple Render instances, upgrade to Redis.
+ */
+function createRateLimiter({ windowMs, max, message }) {
+  const store = new Map();
+
+  const cleanup = setInterval(() => {
+    const now = Date.now();
+    for (const [key, timestamps] of store.entries()) {
+      const valid = timestamps.filter((t) => now - t < windowMs);
+      if (valid.length === 0) {
+        store.delete(key);
+      } else {
+        store.set(key, valid);
+      }
+    }
+  }, 5 * 60 * 1000);
+  cleanup.unref();
+
+  return (req, res, next) => {
+    const clientKey = req.user?.id
+      ? `user:${req.user.id}`
+      : `ip:${req.ip || req.socket?.remoteAddress || 'unknown'}`;
+
+    const now = Date.now();
+    const timestamps = store.get(clientKey) || [];
+    const validTimestamps = timestamps.filter((t) => now - t < windowMs);
+
+    if (validTimestamps.length >= max) {
+      const oldestValid = validTimestamps[0];
+      const retryAfterMs = Math.max(1000, oldestValid + windowMs - now);
+      const retryAfterSec = Math.ceil(retryAfterMs / 1000);
+
+      res.setHeader('Retry-After', retryAfterSec);
+      return res.status(429).json({
+        error: message || 'Too many requests. Please slow down and try again later.',
+        retryAfter: retryAfterSec,
+      });
+    }
+
+    validTimestamps.push(now);
+    store.set(clientKey, validTimestamps);
+    next();
+  };
+}
+
+const findPeopleLimiter = createRateLimiter({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: 'Too many talent search requests. Please wait a few minutes before trying again.',
+});
+
 // POST /api/ai/find-people - AI People Finder Bot (NLP query to candidate matcher)
-router.post('/find-people', optionalAuth, async (req, res) => {
+router.post('/find-people', optionalAuth, findPeopleLimiter, async (req, res) => {
   try {
     const rawPrompt = req.body.prompt || req.body.query || '';
     const { targetRole, industry } = req.body;
@@ -39,14 +92,42 @@ router.post('/find-people', optionalAuth, async (req, res) => {
       }
     }
 
-    // Fetch all active users
+    // Fetch active users with strictly allowlisted public profile fields (never select password, email, or internal flags)
     const allUsers = await prisma.user.findMany({
       where: {
         id: currentUserId ? { not: currentUserId } : undefined,
         isSuspended: false,
       },
-      include: {
-        profile: true,
+      select: {
+        id: true,
+        role: true,
+        isVerified: true,
+        verificationBadge: true,
+        profile: {
+          select: {
+            id: true,
+            userId: true,
+            fullName: true,
+            username: true,
+            headline: true,
+            location: true,
+            bio: true,
+            avatar: true,
+            education: true,
+            portfolioUrl: true,
+            githubUrl: true,
+            linkedinUrl: true,
+            websiteUrl: true,
+            skills: true,
+            startupInterests: true,
+            industries: true,
+            preferredRole: true,
+            availability: true,
+            startupExperience: true,
+            achievements: true,
+            openTo: true,
+          },
+        },
         startups: {
           select: { id: true, name: true, stage: true, industry: true },
         },
@@ -95,7 +176,12 @@ router.post('/find-people', optionalAuth, async (req, res) => {
       const matchPercentage = Math.min(99, Math.max(65, score));
 
       return {
-        ...u,
+        id: u.id,
+        role: u.role,
+        isVerified: u.isVerified,
+        verificationBadge: u.verificationBadge || null,
+        profile: u.profile || null,
+        startups: u.startups || [],
         matchPercentage,
         aiExplanation: reasons.slice(0, 3).join(' • '),
         keySynergies: reasons,
