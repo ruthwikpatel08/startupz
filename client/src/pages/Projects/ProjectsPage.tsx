@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   FolderKanban,
   Plus,
@@ -142,6 +142,9 @@ export const syncProjectGroup = (project: BuilderProject) => {
 export const ProjectsPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const [highlightedProjectId, setHighlightedProjectId] = useState<string | null>(null);
 
   const [projects, setProjects] = useState<BuilderProject[]>(() => {
     try {
@@ -222,6 +225,38 @@ export const ProjectsPage: React.FC = () => {
   useEffect(() => {
     projects.forEach((p) => syncProjectGroup(p));
   }, []);
+
+  // Handle direct redirection to a shared project (?projectId=xyz or #project-xyz)
+  useEffect(() => {
+    const rawTarget =
+      searchParams.get('projectId') ||
+      (location.hash.startsWith('#project-') ? location.hash.replace('#project-', '') : null);
+    if (!rawTarget) return;
+
+    const scrollToTarget = () => {
+      const el = document.getElementById(`project-${rawTarget}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setHighlightedProjectId(rawTarget);
+        setTimeout(() => setHighlightedProjectId(null), 4500);
+        return true;
+      }
+      return false;
+    };
+
+    if (projects.length > 0) {
+      if (!scrollToTarget()) {
+        const t1 = setTimeout(scrollToTarget, 150);
+        const t2 = setTimeout(scrollToTarget, 500);
+        const t3 = setTimeout(scrollToTarget, 1200);
+        return () => {
+          clearTimeout(t1);
+          clearTimeout(t2);
+          clearTimeout(t3);
+        };
+      }
+    }
+  }, [projects, location.hash, searchParams]);
 
   // Saved Projects state
   const [expandedProjectText, setExpandedProjectText] = useState<Record<string, boolean>>({});
@@ -1396,7 +1431,12 @@ export const ProjectsPage: React.FC = () => {
             return (
               <div
                 key={project.id}
-                className="card-base p-5 flex flex-col justify-between space-y-4 hover:border-slate-300 dark:hover:border-dark-700 transition-colors min-w-0 overflow-hidden break-words"
+                id={`project-${project.id}`}
+                className={`card-base p-5 flex flex-col justify-between space-y-4 hover:border-slate-300 dark:hover:border-dark-700 transition-all duration-500 min-w-0 overflow-hidden break-words ${
+                  highlightedProjectId === project.id
+                    ? 'ring-4 ring-brand-500 ring-offset-2 dark:ring-offset-dark-900 shadow-2xl scale-[1.01] bg-brand-50/25 dark:bg-brand-950/25'
+                    : ''
+                }`}
               >
                 <div className="space-y-3 min-w-0">
                   
@@ -1453,7 +1493,7 @@ export const ProjectsPage: React.FC = () => {
                         onClick={() =>
                           setShareModalItem({
                             title: project.title,
-                            url: `/projects#project-${project.id}`,
+                            url: `/projects?projectId=${project.id}#project-${project.id}`,
                             description: project.ideaSummary || project.problemSolved || 'Collaboration project on HookZ',
                             type: 'project',
                           })

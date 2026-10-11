@@ -228,7 +228,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
 
     try {
       const notePart = customNote.trim() ? `${customNote.trim()}\n\n` : '';
-      const messageContent = `${notePart}Check this out on HookZ: "${shareTitle}"\n${shareUrl}`;
+      const messageContent = `${notePart}Check this out on HookZ: **${shareTitle}**\n${shareUrl}`;
 
       // 1. Direct message via Supabase
       try {

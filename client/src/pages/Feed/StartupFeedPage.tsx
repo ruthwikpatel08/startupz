@@ -40,11 +40,14 @@ import {
   AlertCircle,
   Users,
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 
 export const StartupFeedPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
 
   const [activePillar, setActivePillar] = useState<'ACHIEVEMENTS' | 'IDEAS' | 'PROBLEMS'>('ACHIEVEMENTS');
   const [posts, setPosts] = useState<Post[]>([]);
@@ -274,6 +277,49 @@ export const StartupFeedPage: React.FC = () => {
       fetchProblems();
     }
   }, [activePillar, problems.length]);
+
+  // Handle direct redirection to a shared post (?postId=xyz or #post-xyz)
+  useEffect(() => {
+    const rawTarget =
+      searchParams.get('postId') ||
+      (location.hash.startsWith('#post-') ? location.hash.replace('#post-', '') : null);
+    if (!rawTarget) return;
+
+    if (posts.length > 0) {
+      const targetPost = posts.find((p) => p.id === rawTarget);
+      if (targetPost) {
+        const rawType = (targetPost.postType || 'UPDATE').toUpperCase();
+        if (IDEA_POST_TYPES.has(rawType)) {
+          setActivePillar('IDEAS');
+        } else {
+          setActivePillar('ACHIEVEMENTS');
+        }
+        setFilterType('ALL');
+      }
+
+      const scrollToTarget = () => {
+        const el = document.getElementById(`post-${rawTarget}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setHighlightedPostId(rawTarget);
+          setTimeout(() => setHighlightedPostId(null), 4500);
+          return true;
+        }
+        return false;
+      };
+
+      if (!scrollToTarget()) {
+        const t1 = setTimeout(scrollToTarget, 150);
+        const t2 = setTimeout(scrollToTarget, 500);
+        const t3 = setTimeout(scrollToTarget, 1200);
+        return () => {
+          clearTimeout(t1);
+          clearTimeout(t2);
+          clearTimeout(t3);
+        };
+      }
+    }
+  }, [posts, location.hash, searchParams]);
 
   const filteredPosts = posts.filter((p) => {
     const rawType = (p.postType || 'UPDATE').toUpperCase();
@@ -844,7 +890,7 @@ export const StartupFeedPage: React.FC = () => {
     const rawTitle = targetPost.title ? targetPost.title.replace('[Connections Only] ', '') : 'Feed Post on HookZ';
     setShareModalItem({
       title: rawTitle,
-      url: `/feed#post-${targetPost.id}`,
+      url: `/feed?postId=${targetPost.id}#post-${targetPost.id}`,
       description: targetPost.content,
       type: 'post',
     });
@@ -1373,7 +1419,11 @@ export const StartupFeedPage: React.FC = () => {
               <div
                 key={post.id}
                 id={`post-${post.id}`}
-                className="card-base p-5 sm:p-6 transition-colors space-y-4 min-w-0 overflow-hidden break-words"
+                className={`card-base p-5 sm:p-6 transition-all duration-500 space-y-4 min-w-0 overflow-hidden break-words ${
+                  highlightedPostId === post.id
+                    ? 'ring-4 ring-brand-500 ring-offset-2 dark:ring-offset-dark-900 shadow-2xl scale-[1.01] bg-brand-50/25 dark:bg-brand-950/25'
+                    : ''
+                }`}
               >
                 {/* Post Header */}
                 <div className="flex items-start justify-between gap-3">

@@ -23,6 +23,8 @@ import {
   UserX,
   Check,
   X,
+  ExternalLink,
+  ArrowRight,
 } from 'lucide-react';
 import {
   supabase,
@@ -38,6 +40,183 @@ import {
   markMessagesAsRead,
 } from '../../lib/supabase';
 
+function renderTextWithMarkdown(
+  text: string,
+  isMine: boolean,
+  onNavigate?: (targetPath: string, fullUrl: string) => void
+): React.ReactNode {
+  if (!text) return null;
+  const tokenRegex = /(https?:\/\/[^\s]+|\*\*[^*]+\*\*)/g;
+  const parts = text.split(tokenRegex);
+
+  return parts.map((part, idx) => {
+    if (!part) return null;
+
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+      const boldText = part.slice(2, -2);
+      return (
+        <strong key={idx} className="font-extrabold font-bold tracking-tight">
+          {boldText}
+        </strong>
+      );
+    }
+
+    if (part.startsWith('http://') || part.startsWith('https://')) {
+      let internalPath: string | null = null;
+      try {
+        const u = new URL(part);
+        if (
+          u.origin === window.location.origin ||
+          u.hostname === 'hookz.in' ||
+          u.hostname.includes('localhost')
+        ) {
+          internalPath = u.pathname + u.search + u.hash;
+        }
+      } catch {}
+
+      return (
+        <a
+          key={idx}
+          href={internalPath || part}
+          onClick={(e) => {
+            if (internalPath && onNavigate) {
+              e.preventDefault();
+              e.stopPropagation();
+              onNavigate(internalPath, part);
+            }
+          }}
+          target={internalPath ? undefined : '_blank'}
+          rel="noopener noreferrer"
+          className={`font-bold underline underline-offset-2 break-all ${
+            isMine
+              ? 'text-white hover:text-brand-100'
+              : 'text-brand-600 dark:text-brand-400 hover:text-brand-700'
+          }`}
+        >
+          {part}
+        </a>
+      );
+    }
+
+    return part;
+  });
+}
+
+const RenderMessageContent: React.FC<{
+  content: string;
+  isMine: boolean;
+  onNavigate: (targetPath: string, fullUrl: string) => void;
+}> = ({ content, isMine, onNavigate }) => {
+  if (!content) return null;
+  const trimmed = content.trim();
+
+  // Pattern for shared HookZ item
+  const sharePattern = /^(?:([\s\S]*?)\n\n)?Check this out on HookZ:\s*(?:\*\*|")?([^\n\r*"]+?)(?:\*\*|")?\s*\n\s*(https?:\/\/[^\s]+|\/[^\s]+)$/i;
+  const shareMatch = trimmed.match(sharePattern);
+
+  if (shareMatch) {
+    const note = shareMatch[1]?.trim();
+    const sharedTitle = shareMatch[2]?.trim();
+    const sharedUrl = shareMatch[3]?.trim();
+
+    let internalPath: string = sharedUrl;
+    try {
+      if (sharedUrl.startsWith('http')) {
+        const parsed = new URL(sharedUrl);
+        internalPath = parsed.pathname + parsed.search + parsed.hash;
+      }
+    } catch {}
+
+    let typeBadge = 'Shared Item';
+    let ctaText = 'View on HookZ';
+    if (sharedUrl.includes('/feed')) {
+      typeBadge = 'Feed Post';
+      ctaText = 'View Post';
+    } else if (sharedUrl.includes('/startups/')) {
+      typeBadge = 'Startup';
+      ctaText = 'View Startup';
+    } else if (sharedUrl.includes('/profile/')) {
+      typeBadge = 'Builder Profile';
+      ctaText = 'View Profile';
+    } else if (sharedUrl.includes('/projects')) {
+      typeBadge = 'Project';
+      ctaText = 'View Project';
+    } else if (sharedUrl.includes('/problems/')) {
+      typeBadge = 'Challenge';
+      ctaText = 'View Challenge';
+    }
+
+    return (
+      <div className="space-y-2">
+        {note && (
+          <p className="whitespace-pre-line leading-relaxed">
+            {renderTextWithMarkdown(note, isMine, onNavigate)}
+          </p>
+        )}
+
+        <div className="text-[11px] font-medium opacity-90">
+          Check this out on HookZ:
+        </div>
+
+        {/* BOLD letters for shared things, clickable and redirects to post */}
+        <div
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onNavigate(internalPath, sharedUrl);
+          }}
+          className={`rounded-xl p-3 border transition-all cursor-pointer select-none text-left block shadow-xs hover:shadow-md ${
+            isMine
+              ? 'bg-white/15 hover:bg-white/20 border-white/30 text-white'
+              : 'bg-slate-50 dark:bg-dark-800 hover:bg-slate-100 dark:hover:bg-dark-750 border-slate-200 dark:border-dark-700 text-slate-900 dark:text-white'
+          }`}
+          role="button"
+          tabIndex={0}
+          title={`Click to open ${sharedTitle}`}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span
+              className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                isMine
+                  ? 'bg-white/25 text-white'
+                  : 'bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400 border border-brand-200 dark:border-brand-900'
+              }`}
+            >
+              {typeBadge}
+            </span>
+            <ExternalLink size={12} className={isMine ? 'text-white/80' : 'text-slate-400'} />
+          </div>
+
+          {/* BOLD LETTERS */}
+          <div className="font-extrabold text-sm sm:text-base leading-snug mt-2 tracking-tight break-words">
+            {sharedTitle}
+          </div>
+
+          <div className="mt-2.5 pt-2 border-t border-white/20 dark:border-dark-700/60 flex items-center justify-between gap-2">
+            <span
+              className={`text-[11px] font-bold flex items-center gap-1 ${
+                isMine ? 'text-white' : 'text-brand-600 dark:text-brand-400'
+              }`}
+            >
+              <span>{ctaText}</span>
+              <ArrowRight size={12} />
+            </span>
+            <span className={`text-[10px] truncate max-w-[140px] opacity-70 ${isMine ? 'text-white/70' : 'text-slate-400'}`}>
+              {sharedUrl.replace(/^https?:\/\/[^\/]+/, '') || sharedUrl}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="whitespace-pre-line leading-relaxed">
+      {renderTextWithMarkdown(content, isMine, onNavigate)}
+    </div>
+  );
+};
+
 export const MessagesPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -45,6 +224,27 @@ export const MessagesPage: React.FC = () => {
   const targetUserId = searchParams.get('user');
   const targetConvId = searchParams.get('conversationId');
   const targetProjectGroupId = searchParams.get('projectGroupId');
+
+  const handleNavigateShared = (targetPath: string, fullUrl: string) => {
+    if (targetPath.startsWith('/')) {
+      navigate(targetPath);
+    } else {
+      try {
+        const u = new URL(fullUrl);
+        if (
+          u.origin === window.location.origin ||
+          u.hostname === 'hookz.in' ||
+          u.hostname.includes('localhost')
+        ) {
+          navigate(u.pathname + u.search + u.hash);
+        } else {
+          window.open(fullUrl, '_blank', 'noopener,noreferrer');
+        }
+      } catch {
+        window.open(fullUrl, '_blank', 'noopener,noreferrer');
+      }
+    }
+  };
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -1257,7 +1457,7 @@ export const MessagesPage: React.FC = () => {
                               ) : (
                                 <>
                                   <div className="bg-brand-600 text-white rounded-2xl rounded-tr-xs px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-xs break-words relative">
-                                    {m.content}
+                                    <RenderMessageContent content={m.content} isMine={true} onNavigate={handleNavigateShared} />
                                     {m.isEdited && (
                                       <span className="text-[10px] text-brand-200 ml-1.5 italic">
                                         (edited)
@@ -1319,7 +1519,7 @@ export const MessagesPage: React.FC = () => {
                               />
                               <div className="flex flex-col items-start">
                                 <div className="bg-white dark:bg-dark-850 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-dark-750 rounded-2xl rounded-tl-xs px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-2xs break-words">
-                                  {m.content}
+                                  <RenderMessageContent content={m.content} isMine={false} onNavigate={handleNavigateShared} />
                                   {m.isEdited && (
                                     <span className="text-[10px] text-slate-400 ml-1.5 italic">
                                       (edited)

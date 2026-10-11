@@ -1835,7 +1835,7 @@ export const ProfilePage: React.FC = () => {
                       onClick={() =>
                         setShareModalItem({
                           title: post.title || `${displayName}'s Post`,
-                          url: `/feed#post-${post.id}`,
+                          url: `/feed?postId=${post.id}#post-${post.id}`,
                           description: post.content,
                           type: 'post',
                         })
