@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { prisma } from '../db.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
 import { supabaseAdmin } from '../supabase.js';
+import { generateProjectScoutAnalysis } from '../utils/aiClient.js';
 
 const router = express.Router();
 
@@ -894,6 +895,95 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     return res.status(201).json({ message: 'Project message sent successfully!', data: newMsg });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to send project message.' });
+  }
+});
+
+// POST /api/projects/:id/ai-scout - HookZ AI Scout Project Chat Assistant
+router.post('/:id/ai-scout', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { prompt } = req.body;
+
+    if (!prompt || !prompt.trim()) {
+      return res.status(400).json({ error: 'Please enter a question or request for AI Scout.' });
+    }
+
+    // 1. Verify project exists (if deleted, AI Scout must not be accessible)
+    const { project } = await getOrFetchProject(id);
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found or has been deleted.' });
+    }
+
+    // 2. Authorize user: creator, assigned role member, or public project participant
+    const isCreator = req.user.id && (project.creator?.userId === req.user.id || project.creatorId === req.user.id);
+    const isMember = req.user.id && Array.isArray(project.roles) && project.roles.some((r) => r.assignedTo?.userId === req.user.id);
+    if (!isCreator && !isMember && project.visibility === 'PRIVATE') {
+      return res.status(403).json({ error: 'You are not authorized to use AI Scout in this private project workspace.' });
+    }
+
+    // 3. Gather relevant recent project chat messages (only from this project)
+    const allMsgs = readProjectMessages(id);
+    const recentMessages = allMsgs.slice(-25).map((m) => ({
+      sender: m.sender?.profile?.fullName || (m.senderId === 'ai-scout' ? 'AI Scout' : 'Team Member'),
+      role: m.sender?.role || '',
+      content: m.content,
+      time: m.createdAt,
+    }));
+
+    // 4. Generate AI Scout response using Gemini
+    const cleanPrompt = prompt.replace(/@AI\s*Scout/i, '').trim() || prompt.trim();
+    const scoutResponseText = await generateProjectScoutAnalysis({
+      project,
+      recentMessages,
+      userQuery: cleanPrompt,
+      askingUser: req.user,
+    });
+
+    // 5. Construct clearly identifiable AI Scout message
+    const scoutMsg = {
+      id: `scout-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      projectId: id,
+      conversationId: `proj-group-${id}`,
+      senderId: 'ai-scout',
+      content: scoutResponseText,
+      createdAt: new Date().toISOString(),
+      isAiScout: true,
+      sender: {
+        id: 'ai-scout',
+        email: 'scout@hookz.build',
+        role: 'AI_SCOUT',
+        isVerified: true,
+        profile: {
+          id: 'ai-scout',
+          userId: 'ai-scout',
+          fullName: 'AI Scout',
+          avatar: null,
+          headline: 'HookZ Project Chat Assistant',
+        },
+      },
+    };
+
+    // 6. Persist AI Scout response in project messages
+    writeProjectMessage(id, scoutMsg);
+
+    // 7. Realtime broadcast to all active project members
+    if (supabaseAdmin) {
+      try {
+        const channel = supabaseAdmin.channel(`proj_room_${id}`);
+        channel.send({
+          type: 'broadcast',
+          event: 'new_project_msg',
+          payload: scoutMsg,
+        });
+      } catch (sbErr) {
+        console.warn('Realtime Scout broadcast notice:', sbErr.message);
+      }
+    }
+
+    return res.status(200).json({ message: scoutMsg });
+  } catch (error) {
+    console.error('AI Scout endpoint error:', error);
+    return res.status(500).json({ error: 'Failed to process AI Scout analysis request.' });
   }
 });
 

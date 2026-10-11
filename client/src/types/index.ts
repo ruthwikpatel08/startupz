@@ -300,6 +300,8 @@ export interface Message {
   content: string;
   isRead: boolean;
   isEdited?: boolean;
+  isAiScout?: boolean;
+  role?: string;
   createdAt: string;
 }
 

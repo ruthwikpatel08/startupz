@@ -25,7 +25,10 @@ import {
   X,
   ExternalLink,
   ArrowRight,
+  Bot,
+  Sparkles,
 } from 'lucide-react';
+import { ProjectAiScoutControl } from '../../components/ai/ProjectAiScoutControl';
 import {
   supabase,
   fetchUserProfile,
@@ -40,17 +43,38 @@ import {
   markMessagesAsRead,
 } from '../../lib/supabase';
 
-function renderTextWithMarkdown(
+function renderLineTokens(
   text: string,
   isMine: boolean,
   onNavigate?: (targetPath: string, fullUrl: string) => void
 ): React.ReactNode {
   if (!text) return null;
-  const tokenRegex = /(https?:\/\/[^\s]+|\*\*[^*]+\*\*)/g;
+  const tokenRegex = /(\[[^\]]+\]\(https?:\/\/[^\s)]+\)|https?:\/\/[^\s]+|\*\*[^*]+\*\*)/g;
   const parts = text.split(tokenRegex);
 
   return parts.map((part, idx) => {
     if (!part) return null;
+
+    if (part.startsWith('[') && part.includes('](') && part.endsWith(')')) {
+      const match = part.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
+      if (match) {
+        const linkLabel = match[1];
+        const linkUrl = match[2];
+        return (
+          <a
+            key={idx}
+            href={linkUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`font-bold underline underline-offset-2 ${
+              isMine ? 'text-white' : 'text-brand-600 dark:text-brand-400 hover:text-brand-700'
+            }`}
+          >
+            {linkLabel}
+          </a>
+        );
+      }
+    }
 
     if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
       const boldText = part.slice(2, -2);
@@ -99,6 +123,60 @@ function renderTextWithMarkdown(
     }
 
     return part;
+  });
+}
+
+function renderTextWithMarkdown(
+  text: string,
+  isMine: boolean,
+  onNavigate?: (targetPath: string, fullUrl: string) => void
+): React.ReactNode {
+  if (!text) return null;
+  const lines = text.split('\n');
+
+  return lines.map((line, lineIdx) => {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith('#### ')) {
+      return (
+        <div key={lineIdx} className="font-bold text-xs text-brand-600 dark:text-brand-400 mt-2 mb-0.5">
+          {renderLineTokens(trimmed.replace(/^####\s+/, ''), isMine, onNavigate)}
+        </div>
+      );
+    }
+
+    if (trimmed.startsWith('### ')) {
+      return (
+        <div key={lineIdx} className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white mt-2.5 mb-1">
+          {renderLineTokens(trimmed.replace(/^###\s+/, ''), isMine, onNavigate)}
+        </div>
+      );
+    }
+
+    if (trimmed.startsWith('## ')) {
+      return (
+        <div key={lineIdx} className="font-extrabold text-sm text-slate-900 dark:text-white mt-3 mb-1">
+          {renderLineTokens(trimmed.replace(/^##\s+/, ''), isMine, onNavigate)}
+        </div>
+      );
+    }
+
+    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+      return (
+        <div key={lineIdx} className="flex items-start gap-1.5 ml-1 my-0.5">
+          <span className="text-brand-500 font-bold shrink-0 mt-0.5">•</span>
+          <div className="flex-1">
+            {renderLineTokens(trimmed.replace(/^[-*]\s+/, ''), isMine, onNavigate)}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div key={lineIdx} className={trimmed === '' ? 'h-1.5' : 'my-0.5'}>
+        {renderLineTokens(line, isMine, onNavigate)}
+      </div>
+    );
   });
 }
 
@@ -265,9 +343,27 @@ export const MessagesPage: React.FC = () => {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
   const [editingSaving, setEditingSaving] = useState(false);
+  const [isScoutAnalyzing, setIsScoutAnalyzing] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleTriggerScoutMention = () => {
+    setNewMessage((prev) => {
+      const trimmed = prev.trim();
+      if (!trimmed) return '@AI Scout ';
+      if (/@AI\s*Scout\b/i.test(trimmed)) return prev;
+      return `@AI Scout ${trimmed}`;
+    });
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        const len = inputRef.current.value.length;
+        inputRef.current.setSelectionRange(len, len);
+      }
+    }, 40);
+  };
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
     messagesEndRef.current?.scrollIntoView({ behavior });
@@ -876,6 +972,57 @@ export const MessagesPage: React.FC = () => {
             localStorage.setItem('startupz_project_groups', JSON.stringify(groups));
           }
         }
+
+        // 4. Trigger AI Scout analysis if message mentions @AI Scout
+        const isScoutMention = /@AI\s*Scout\b/i.test(contentToSend);
+        if (isScoutMention) {
+          (async () => {
+            try {
+              setIsScoutAnalyzing(true);
+              const scoutRes = await api.askProjectAiScout(pId, contentToSend);
+              if (scoutRes && scoutRes.message) {
+                const sMsg = scoutRes.message;
+                setMessages((prev) => {
+                  if (prev.some((m) => m.id === sMsg.id)) return prev;
+                  return [...prev, sMsg];
+                });
+                const latestRaw = localStorage.getItem(storageKey);
+                const latestList: any[] = latestRaw ? JSON.parse(latestRaw) : [];
+                if (!latestList.some((m) => m.id === sMsg.id)) {
+                  localStorage.setItem(storageKey, JSON.stringify([...latestList, sMsg]));
+                }
+              }
+            } catch (scoutErr) {
+              console.error('AI Scout analysis call notice:', scoutErr);
+              const fallbackMsg: any = {
+                id: `scout-fallback-${Date.now()}`,
+                projectId: pId,
+                conversationId: selectedConversation.id,
+                senderId: 'ai-scout',
+                content: "AI Scout's available requests for today have been used. Please try again tomorrow when the quota becomes available.",
+                createdAt: new Date().toISOString(),
+                isAiScout: true,
+                sender: {
+                  id: 'ai-scout',
+                  email: 'scout@hookz.build',
+                  role: 'AI_SCOUT',
+                  isVerified: true,
+                  profile: {
+                    id: 'ai-scout',
+                    userId: 'ai-scout',
+                    fullName: 'AI Scout',
+                    avatar: null,
+                    headline: 'HookZ Project Chat Assistant',
+                  },
+                },
+              };
+              setMessages((prev) => [...prev, fallbackMsg]);
+            } finally {
+              setIsScoutAnalyzing(false);
+              setTimeout(() => scrollToBottom('smooth'), 120);
+            }
+          })();
+        }
       } catch (err) {
         console.error('Failed to save project message:', err);
       } finally {
@@ -1223,9 +1370,10 @@ export const MessagesPage: React.FC = () => {
         {/* Right Side: Instagram-style Chat Window */}
         {/* On mobile: Visible when selectedConversation != null. On desktop: Always visible */}
         <div
+          ref={chatContainerRef}
           className={`${
             !selectedConversation ? 'hidden md:flex' : 'flex'
-          } flex-1 flex-col h-full bg-white dark:bg-dark-900`}
+          } flex-1 flex-col h-full bg-white dark:bg-dark-900 relative overflow-hidden`}
         >
           {selectedConversation ? (
             <>
@@ -1507,40 +1655,90 @@ export const MessagesPage: React.FC = () => {
                             </div>
                           ) : (
                             /* RECEIVER BUBBLE (Left Side) */
-                            <div className="flex items-end justify-start gap-2 max-w-[85%] sm:max-w-md mr-auto">
-                              <Avatar
-                                src={
-                                  (m as any).sender?.profile?.avatar ||
-                                  selectedConversation.participant?.profile?.avatar
-                                }
-                                name={receiverName}
-                                size="sm"
-                                className="!w-7 !h-7 rounded-full mb-4 shrink-0 shadow-2xs"
-                              />
-                              <div className="flex flex-col items-start">
-                                <div className="bg-white dark:bg-dark-850 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-dark-750 rounded-2xl rounded-tl-xs px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-2xs break-words">
-                                  <RenderMessageContent content={m.content} isMine={false} onNavigate={handleNavigateShared} />
-                                  {m.isEdited && (
-                                    <span className="text-[10px] text-slate-400 ml-1.5 italic">
-                                      (edited)
-                                    </span>
-                                  )}
+                            (() => {
+                              const isScout = m.isAiScout || m.senderId === 'ai-scout' || (m as any).sender?.role === 'AI_SCOUT';
+
+                              if (isScout) {
+                                return (
+                                  <div className="flex items-start justify-start gap-2.5 max-w-[95%] sm:max-w-xl mr-auto my-1.5 animate-in fade-in">
+                                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 via-brand-600 to-purple-700 text-white flex items-center justify-center shrink-0 shadow-sm border border-brand-400/40 mt-1">
+                                      <Bot size={16} />
+                                    </div>
+                                    <div className="flex flex-col items-start min-w-0 flex-1">
+                                      <div className="flex items-center gap-1.5 mb-1 ml-1">
+                                        <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                                          HookZ AI Scout
+                                        </span>
+                                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-brand-100 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+                                          Project Assistant
+                                        </span>
+                                      </div>
+                                      <div className="bg-white dark:bg-dark-850 text-slate-900 dark:text-slate-100 border border-brand-500/25 dark:border-brand-500/30 rounded-2xl rounded-tl-xs p-3.5 sm:p-4 text-xs sm:text-sm leading-relaxed shadow-xs break-words w-full space-y-1">
+                                        <RenderMessageContent content={m.content} isMine={false} onNavigate={handleNavigateShared} />
+                                      </div>
+                                      <div className="text-[10px] text-slate-400 mt-1 ml-1 flex items-center gap-1.5">
+                                        <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        <span>•</span>
+                                        <span className="text-brand-600 dark:text-brand-400 font-medium">Verified Team Analysis</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <div className="flex items-end justify-start gap-2 max-w-[85%] sm:max-w-md mr-auto">
+                                  <Avatar
+                                    src={
+                                      (m as any).sender?.profile?.avatar ||
+                                      selectedConversation.participant?.profile?.avatar
+                                    }
+                                    name={receiverName}
+                                    size="sm"
+                                    className="!w-7 !h-7 rounded-full mb-4 shrink-0 shadow-2xs"
+                                  />
+                                  <div className="flex flex-col items-start">
+                                    <div className="bg-white dark:bg-dark-850 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-dark-750 rounded-2xl rounded-tl-xs px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-2xs break-words">
+                                      <RenderMessageContent content={m.content} isMine={false} onNavigate={handleNavigateShared} />
+                                      {m.isEdited && (
+                                        <span className="text-[10px] text-slate-400 ml-1.5 italic">
+                                          (edited)
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 mt-1 ml-1">
+                                      <span>
+                                        {new Date(m.createdAt).toLocaleTimeString([], {
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                        })}
+                                      </span>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="text-[10px] text-slate-400 mt-1 ml-1">
-                                  <span>
-                                    {new Date(m.createdAt).toLocaleTimeString([], {
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                    })}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
+                              );
+                            })()
                           )}
                         </div>
                       </React.Fragment>
                     );
                   })
+                )}
+                {isScoutAnalyzing && (
+                  <div className="flex items-start gap-2.5 max-w-[85%] sm:max-w-md mr-auto my-2 animate-in fade-in">
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-600 to-indigo-600 text-white flex items-center justify-center shadow-xs shrink-0 mt-0.5">
+                      <Sparkles size={14} className="animate-spin" />
+                    </div>
+                    <div className="bg-white dark:bg-dark-850 border border-brand-500/30 rounded-2xl rounded-tl-xs px-3.5 py-2.5 text-xs text-slate-600 dark:text-slate-300 shadow-2xs flex items-center gap-2">
+                      <Bot size={14} className="text-brand-600 animate-pulse" />
+                      <span className="font-medium">AI Scout is analyzing your team discussion...</span>
+                      <div className="flex gap-1 ml-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
+                  </div>
                 )}
                 <div ref={messagesEndRef} />
               </div>
@@ -1579,6 +1777,16 @@ export const MessagesPage: React.FC = () => {
                     <Send size={15} />
                   </button>
                 </form>
+              )}
+
+              {/* Movable AI Scout Control strictly inside Project Group Chats */}
+              {(selectedConversation as any).isProjectGroup && (
+                <ProjectAiScoutControl
+                  onTriggerMention={handleTriggerScoutMention}
+                  containerRef={chatContainerRef}
+                  userId={user?.id}
+                  isAnalyzing={isScoutAnalyzing}
+                />
               )}
             </>
           ) : (

@@ -373,6 +373,8 @@ export const api = {
     request<{ messages: any[] }>(`/projects/${projectId}/messages`),
   sendProjectMessage: (projectId: string, content: string) =>
     request<{ message: any }>(`/projects/${projectId}/messages`, { method: 'POST', body: JSON.stringify({ content }) }),
+  askProjectAiScout: (projectId: string, prompt: string) =>
+    request<{ message: any }>(`/projects/${projectId}/ai-scout`, { method: 'POST', body: JSON.stringify({ prompt }) }),
 
   // SAVED
   getSavedItems: async (itemType?: string) => {
