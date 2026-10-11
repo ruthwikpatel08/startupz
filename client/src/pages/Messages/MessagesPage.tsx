@@ -37,6 +37,8 @@ import {
   Music,
   Video,
   Loader2,
+  MoreHorizontal,
+  Copy,
 } from 'lucide-react';
 import { ProjectAiScoutControl } from '../../components/ai/ProjectAiScoutControl';
 import {
@@ -51,6 +53,9 @@ import {
   unsendSupabaseMessage,
   editSupabaseMessage,
   markMessagesAsRead,
+  deleteSupabaseMessageForMe,
+  getDeletedMessageIds,
+  recordDeletedMessage,
 } from '../../lib/supabase';
 
 function renderLineTokens(
@@ -511,6 +516,19 @@ export const MessagesPage: React.FC = () => {
   const [editingSaving, setEditingSaving] = useState(false);
   const [isScoutAnalyzing, setIsScoutAnalyzing] = useState(false);
 
+  // Conversation deletion modal state (syncs across desktop and mobile)
+  const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null);
+
+  // Active message actions menu (Edit, Unsend, Delete for you)
+  const [activeMessageMenuId, setActiveMessageMenuId] = useState<string | null>(null);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage((curr) => (curr === msg ? null : curr)), 2500);
+  };
+
   // File, Photo, and Link Attachment States
   const [selectedAttachment, setSelectedAttachment] = useState<{
     file: File;
@@ -611,6 +629,23 @@ export const MessagesPage: React.FC = () => {
 
   const fetchConversations = async () => {
     try {
+      // Sync deleted conversations from server so desktop & mobile are identical!
+      if (user?.id) {
+        try {
+          const delRes = await api.getDeletedChatItems().catch(() => null);
+          if (delRes?.deletedConversationIds) {
+            delRes.deletedConversationIds.forEach((id: string) => {
+              recordDeletedConversation(user.id, id);
+            });
+          }
+          if (delRes?.deletedMessageIds) {
+            delRes.deletedMessageIds.forEach((id: string) => {
+              recordDeletedMessage(user.id, id);
+            });
+          }
+        } catch {}
+      }
+
       // Fetch from Supabase and backend API in parallel
       const [supaList, apiRes] = await Promise.all([
         user?.id ? getSupabaseConversations(user.id) : Promise.resolve([]),
@@ -623,16 +658,22 @@ export const MessagesPage: React.FC = () => {
       const deletedIds = getDeletedConversationIds(user?.id);
 
       supaList.forEach((c) => {
-        if (deletedIds.has(c.id)) return;
         const key = getParticipantKey(c);
+        const otherId =
+          c.participant?.id ||
+          (c.participant1Id === user?.id ? c.participant2Id : c.participant1Id);
+        if (deletedIds.has(c.id) || (otherId && deletedIds.has(otherId)) || deletedIds.has(key)) return;
         if (!convMap.has(key)) {
           convMap.set(key, c);
         }
       });
 
       apiList.forEach((c: any) => {
-        if (deletedIds.has(c.id)) return;
         const key = getParticipantKey(c);
+        const otherId =
+          c.participant?.id ||
+          (c.participant1Id === user?.id ? c.participant2Id : c.participant1Id);
+        if (deletedIds.has(c.id) || (otherId && deletedIds.has(otherId)) || deletedIds.has(key)) return;
         if (!convMap.has(key)) {
           convMap.set(key, c);
         }
@@ -821,6 +862,41 @@ export const MessagesPage: React.FC = () => {
     };
   }, [user?.id]);
 
+  // Realtime subscription for cross-device conversation deletion & sync (laptop <-> mobile)
+  useEffect(() => {
+    if (!user?.id) return;
+    const syncChannel = supabase
+      .channel(`user_chat_sync_${user.id}`)
+      .on('broadcast', { event: 'chat_deleted' }, ({ payload }) => {
+        if (payload?.userId === user.id && payload?.conversationId) {
+          const cId = payload.conversationId;
+          recordDeletedConversation(user.id, cId);
+          setConversations((prev) => prev.filter((c) => c.id !== cId && (c as any).projectId !== cId));
+          setSelectedConversation((curr: any) => {
+            if (curr && (curr.id === cId || curr.projectId === cId)) {
+              setMessages([]);
+              return null;
+            }
+            return curr;
+          });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(syncChannel);
+    };
+  }, [user?.id]);
+
+  // Close message options menu on outside click
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      setActiveMessageMenuId(null);
+    };
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
+  }, []);
+
   // Load blocked users
   useEffect(() => {
     if (!user?.id) return;
@@ -897,21 +973,24 @@ export const MessagesPage: React.FC = () => {
               },
             ];
           }
-          setMessages(msgs);
+          const deletedMsgs = getDeletedMessageIds(user?.id);
+          setMessages(msgs.filter((m) => !deletedMsgs.has(m.id)));
           setTimeout(() => scrollToBottom('auto'), 50);
           return;
         }
 
+        const deletedMsgs = getDeletedMessageIds(user?.id);
+
         // 1. Fetch persistent messages from Supabase
-        const supaMsgs = await getSupabaseMessages(selectedConversation.id);
+        const supaMsgs = await getSupabaseMessages(selectedConversation.id, user?.id);
 
         if (supaMsgs.length > 0) {
-          setMessages(supaMsgs);
+          setMessages(supaMsgs.filter((m) => !deletedMsgs.has(m.id)));
         } else {
           // Fallback to backend API
           const res = await api.getMessages(selectedConversation.id).catch(() => []);
           const list = Array.isArray(res) ? res : res?.messages || res?.data || [];
-          setMessages(list);
+          setMessages(list.filter((m: any) => !deletedMsgs.has(m.id)));
         }
 
         // 2. Mark unread messages in this conversation as read
@@ -1392,6 +1471,19 @@ export const MessagesPage: React.FC = () => {
     }
   };
 
+  const handleDeleteMessageForMe = async (msgId: string) => {
+    if (!user?.id) return;
+    try {
+      await deleteSupabaseMessageForMe(msgId, user.id);
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+      setActiveMessageMenuId(null);
+      showToast('Message deleted for you.');
+    } catch (err: any) {
+      console.error('Delete message for me error:', err);
+      alert('Unable to delete message for you.');
+    }
+  };
+
   const handleUnsend = async (msgId: string) => {
     if (!user?.id) return;
     if (
@@ -1404,31 +1496,43 @@ export const MessagesPage: React.FC = () => {
     try {
       await unsendSupabaseMessage(msgId, user.id);
       setMessages((prev) => prev.filter((m) => m.id !== msgId));
+      setActiveMessageMenuId(null);
+      showToast('Message unsent for everyone.');
     } catch (err: any) {
       console.error('Failed to unsend message:', err);
       alert(err.message || 'Failed to unsend message.');
     }
   };
 
-  const handleDeleteConversation = async () => {
-    if (!selectedConversation || selectedConversation.id === 'draft' || !user?.id || deletingConv) return;
-    if (
-      !window.confirm(
-        'Delete this conversation from your account? This chat will be removed permanently for you, while remaining visible for the other person until they delete it.'
-      )
-    )
-      return;
+  const handleCopyMessage = (msg: Message) => {
+    if (!msg?.content) return;
+    navigator.clipboard.writeText(msg.content);
+    setCopiedMessageId(msg.id);
+    setActiveMessageMenuId(null);
+    showToast('Copied to clipboard');
+    setTimeout(() => setCopiedMessageId(null), 2000);
+  };
 
+  const handleConfirmDeleteConversation = async () => {
+    if (!conversationToDelete || !user?.id || deletingConv) return;
     setDeletingConv(true);
     try {
-      const convId = selectedConversation.id;
-      const isProject = (selectedConversation as any)?.isProjectGroup;
-      const projId = (selectedConversation as any)?.projectId;
+      const conv = conversationToDelete;
+      const convId = conv.id;
+      const isProject = (conv as any)?.isProjectGroup;
+      const projId = (conv as any)?.projectId;
+      const otherId =
+        conv.participant?.id ||
+        (conv.participant1Id === user.id ? conv.participant2Id : conv.participant1Id);
 
-      // 1. Delete in Supabase / backend
+      // 1. Mark permanently deleted in Supabase & broadcast cross-device
       await deleteSupabaseConversation(convId, user.id);
 
-      // 2. If project group, also remove from localStorage project groups & messages, and record deleted
+      // 2. Also record otherId and group key as deleted so it can never reappear
+      if (otherId) {
+        recordDeletedConversation(user.id, otherId);
+        recordDeletedConversation(user.id, `user_${otherId}`);
+      }
       if (isProject) {
         try {
           const rawGroups = localStorage.getItem('startupz_project_groups');
@@ -1443,16 +1547,30 @@ export const MessagesPage: React.FC = () => {
             localStorage.removeItem(`startupz_project_messages_${projId}`);
           }
           localStorage.removeItem(`startupz_project_messages_${convId}`);
-          recordDeletedConversation(user.id, convId);
-          if (projId) recordDeletedConversation(user.id, projId);
-          recordDeletedConversation(user.id, `group_${projId || convId}`);
         } catch {}
+        recordDeletedConversation(user.id, `group_${projId || convId}`);
+        if (projId) recordDeletedConversation(user.id, projId);
       }
 
-      setConversations((prev) => prev.filter((c) => c.id !== convId && (c as any).projectId !== projId));
-      setSelectedConversation(null);
-      setMessages([]);
-      navigate('/messages', { replace: true });
+      // 3. Mirror delete in backend API
+      await api.deleteConversation(convId).catch(() => {});
+
+      // 4. Update UI state in both desktop and mobile
+      setConversations((prev) =>
+        prev.filter((c) => c.id !== convId && (c as any).projectId !== projId)
+      );
+
+      if (
+        selectedConversation?.id === convId ||
+        (selectedConversation as any)?.projectId === projId
+      ) {
+        setSelectedConversation(null);
+        setMessages([]);
+        navigate('/messages', { replace: true });
+      }
+
+      setConversationToDelete(null);
+      showToast('Conversation deleted permanently.');
     } catch (err: any) {
       console.error('Failed to delete conversation:', err);
       alert(err.message || 'Unable to delete conversation. Please try again.');
@@ -1565,69 +1683,88 @@ export const MessagesPage: React.FC = () => {
                 const hasUnread = Boolean(conv.unreadCount && conv.unreadCount > 0 && !isSelected);
 
                 return (
-                  <button
+                  <div
                     key={conv.id}
-                    onClick={() => handleSelectConversation(conv)}
-                    className={`w-full text-left p-3.5 flex items-center gap-3 transition-colors cursor-pointer border-l-2 ${
+                    className={`group relative w-full flex items-center transition-colors cursor-pointer border-l-2 ${
                       isSelected
                         ? 'bg-brand-50/80 dark:bg-brand-950/40 border-brand-600 dark:border-brand-500'
                         : 'border-transparent hover:bg-slate-100/70 dark:hover:bg-dark-800/50'
                     }`}
                   >
-                    {(conv as any).isProjectGroup ? (
-                      <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-200/60 dark:border-brand-900/60 shrink-0">
-                        <FolderKanban size={18} />
-                      </div>
-                    ) : (
-                      <div className="relative shrink-0">
-                        <Avatar
-                          src={p?.profile?.avatar}
-                          name={name}
-                          size="md"
-                          className="!w-10 !h-10 rounded-full"
-                        />
-                        {hasUnread && (
-                          <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-brand-600 rounded-full border-2 border-white dark:border-dark-900" />
-                        )}
-                      </div>
-                    )}
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <span
-                          className={`text-xs truncate ${
-                            hasUnread
-                              ? 'font-bold text-slate-900 dark:text-white'
-                              : 'font-semibold text-slate-800 dark:text-slate-200'
-                          }`}
-                        >
-                          {name}
-                        </span>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="text-[10px] text-slate-400">
-                            {new Date(conv.lastMessageAt).toLocaleDateString(undefined, {
-                              month: 'short',
-                              day: 'numeric',
-                            })}
-                          </span>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectConversation(conv)}
+                      className="flex-1 min-w-0 text-left p-3.5 pr-1 flex items-center gap-3 cursor-pointer"
+                    >
+                      {(conv as any).isProjectGroup ? (
+                        <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-200/60 dark:border-brand-900/60 shrink-0">
+                          <FolderKanban size={18} />
+                        </div>
+                      ) : (
+                        <div className="relative shrink-0">
+                          <Avatar
+                            src={p?.profile?.avatar}
+                            name={name}
+                            size="md"
+                            className="!w-10 !h-10 rounded-full"
+                          />
                           {hasUnread && (
-                            <span className="bg-brand-600 text-white text-[10px] font-bold rounded-full min-w-4.5 h-4.5 px-1 flex items-center justify-center shadow-2xs">
-                              {conv.unreadCount}
-                            </span>
+                            <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-brand-600 rounded-full border-2 border-white dark:border-dark-900" />
                           )}
                         </div>
+                      )}
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span
+                            className={`text-xs truncate ${
+                              hasUnread
+                                ? 'font-bold text-slate-900 dark:text-white'
+                                : 'font-semibold text-slate-800 dark:text-slate-200'
+                            }`}
+                          >
+                            {name}
+                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] text-slate-400">
+                              {new Date(conv.lastMessageAt).toLocaleDateString(undefined, {
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                            </span>
+                            {hasUnread && (
+                              <span className="bg-brand-600 text-white text-[10px] font-bold rounded-full min-w-4.5 h-4.5 px-1 flex items-center justify-center shadow-2xs">
+                                {conv.unreadCount}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <p
+                          className={`text-[11px] truncate mt-0.5 ${
+                            hasUnread
+                              ? 'font-bold text-slate-900 dark:text-slate-100'
+                              : 'text-slate-500 dark:text-slate-400'
+                          }`}
+                        >
+                          {conv.lastMessage || 'Start a conversation...'}
+                        </p>
                       </div>
-                      <p
-                        className={`text-[11px] truncate mt-0.5 ${
-                          hasUnread
-                            ? 'font-bold text-slate-900 dark:text-slate-100'
-                            : 'text-slate-500 dark:text-slate-400'
-                        }`}
-                      >
-                        {conv.lastMessage || 'Start a conversation...'}
-                      </p>
-                    </div>
-                  </button>
+                    </button>
+
+                    {/* Quick Delete Chat Button (Visible directly on mobile, hover on desktop) */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConversationToDelete(conv);
+                      }}
+                      className="p-2 mr-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
+                      title="Delete conversation for you"
+                      aria-label="Delete chat"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 );
               })
             )}
@@ -1746,7 +1883,8 @@ export const MessagesPage: React.FC = () => {
 
                   {selectedConversation.id !== 'draft' && (
                     <button
-                      onClick={handleDeleteConversation}
+                      type="button"
+                      onClick={() => setConversationToDelete(selectedConversation)}
                       disabled={deletingConv}
                       className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-900/50 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 text-xs"
                       title="Delete conversation permanently for you"
@@ -1899,24 +2037,76 @@ export const MessagesPage: React.FC = () => {
                                     )}
                                   </div>
                                   <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-end gap-2 mr-1">
-                                    {/* Instagram-style Actions on Sender message */}
-                                    <div className="flex items-center gap-1.5 opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity mr-1">
+                                    {/* Action Buttons & Dropdown for Sender Message */}
+                                    <div className="relative flex items-center gap-1 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                       <button
                                         type="button"
                                         onClick={() => handleStartEdit(m)}
                                         className="text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 p-0.5 rounded cursor-pointer"
                                         title="Edit message"
                                       >
-                                        <Pencil size={11} />
+                                        <Pencil size={12} />
                                       </button>
                                       <button
                                         type="button"
                                         onClick={() => handleUnsend(m.id)}
                                         className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-0.5 rounded cursor-pointer"
-                                        title="Unsend message"
+                                        title="Unsend for everyone"
                                       >
-                                        <Undo2 size={11} />
+                                        <Undo2 size={12} />
                                       </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setActiveMessageMenuId(activeMessageMenuId === m.id ? null : m.id);
+                                        }}
+                                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded cursor-pointer"
+                                        title="Message options"
+                                      >
+                                        <MoreHorizontal size={13} />
+                                      </button>
+
+                                      {/* Dropdown Menu */}
+                                      {activeMessageMenuId === m.id && (
+                                        <div
+                                          className="absolute right-0 bottom-full mb-1 bg-white dark:bg-dark-850 border border-slate-200 dark:border-dark-750 rounded-xl shadow-xl py-1 px-1 min-w-[150px] z-30 animate-in fade-in zoom-in-95"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <button
+                                            type="button"
+                                            onClick={() => handleStartEdit(m)}
+                                            className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-750 flex items-center gap-2 cursor-pointer font-medium"
+                                          >
+                                            <Pencil size={13} className="text-brand-600 dark:text-brand-400" />
+                                            <span>Edit</span>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleUnsend(m.id)}
+                                            className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 flex items-center gap-2 cursor-pointer font-medium"
+                                          >
+                                            <Undo2 size={13} />
+                                            <span>Unsend</span>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDeleteMessageForMe(m.id)}
+                                            className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer font-medium"
+                                          >
+                                            <Trash2 size={13} />
+                                            <span>Delete for you</span>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleCopyMessage(m)}
+                                            className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-750 flex items-center gap-2 cursor-pointer font-medium"
+                                          >
+                                            <Copy size={13} />
+                                            <span>{copiedMessageId === m.id ? 'Copied!' : 'Copy'}</span>
+                                          </button>
+                                        </div>
+                                      )}
                                     </div>
 
                                     <span>
@@ -1971,6 +2161,42 @@ export const MessagesPage: React.FC = () => {
                                         <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         <span>•</span>
                                         <span className="text-brand-600 dark:text-brand-400 font-medium">Verified Team Analysis</span>
+                                        <div className="relative ml-auto">
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setActiveMessageMenuId(activeMessageMenuId === m.id ? null : m.id);
+                                            }}
+                                            className="p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
+                                            title="Message options"
+                                          >
+                                            <MoreHorizontal size={12} />
+                                          </button>
+                                          {activeMessageMenuId === m.id && (
+                                            <div
+                                              className="message-menu-dropdown absolute right-0 bottom-full mb-1 z-30 w-36 bg-white dark:bg-dark-850 border border-slate-200 dark:border-dark-750 rounded-xl shadow-lg p-1 text-xs animate-in fade-in"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <button
+                                                type="button"
+                                                onClick={() => handleDeleteMessageForMe(m.id)}
+                                                className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer font-medium"
+                                              >
+                                                <Trash2 size={13} />
+                                                <span>Delete for you</span>
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleCopyMessage(m)}
+                                                className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-750 flex items-center gap-2 cursor-pointer font-medium"
+                                              >
+                                                <Copy size={13} />
+                                                <span>{copiedMessageId === m.id ? 'Copied!' : 'Copy'}</span>
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
@@ -2002,13 +2228,49 @@ export const MessagesPage: React.FC = () => {
                                         </span>
                                       )}
                                     </div>
-                                    <div className="text-[10px] text-slate-400 mt-1 ml-1">
+                                    <div className="text-[10px] text-slate-400 mt-1 ml-1 flex items-center gap-1.5">
                                       <span>
                                         {new Date(m.createdAt).toLocaleTimeString([], {
                                           hour: '2-digit',
                                           minute: '2-digit',
                                         })}
                                       </span>
+                                      <div className="relative">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveMessageMenuId(activeMessageMenuId === m.id ? null : m.id);
+                                          }}
+                                          className="p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
+                                          title="Message options"
+                                        >
+                                          <MoreHorizontal size={12} />
+                                        </button>
+                                        {activeMessageMenuId === m.id && (
+                                          <div
+                                            className="message-menu-dropdown absolute left-0 bottom-full mb-1 z-30 w-36 bg-white dark:bg-dark-850 border border-slate-200 dark:border-dark-750 rounded-xl shadow-lg p-1 text-xs animate-in fade-in"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            <button
+                                              type="button"
+                                              onClick={() => handleDeleteMessageForMe(m.id)}
+                                              className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 cursor-pointer font-medium"
+                                            >
+                                              <Trash2 size={13} />
+                                              <span>Delete for you</span>
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleCopyMessage(m)}
+                                              className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-750 flex items-center gap-2 cursor-pointer font-medium"
+                                            >
+                                              <Copy size={13} />
+                                              <span>{copiedMessageId === m.id ? 'Copied!' : 'Copy'}</span>
+                                            </button>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -2243,6 +2505,55 @@ export const MessagesPage: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Delete Conversation Confirmation Modal */}
+      <Modal
+        isOpen={Boolean(conversationToDelete)}
+        onClose={() => setConversationToDelete(null)}
+        title="Delete Conversation"
+        maxWidth="sm"
+      >
+        <div className="space-y-4 py-2 font-sans">
+          <div className="flex items-start gap-3 text-slate-600 dark:text-slate-300">
+            <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center shrink-0">
+              <Trash2 size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Delete chat history?
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                This will delete this conversation for you across all your devices (desktop and mobile). The other participant will still retain their copy of the chat.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-dark-800">
+            <button
+              type="button"
+              onClick={() => setConversationToDelete(null)}
+              className="btn-secondary py-2 px-4 text-xs font-medium cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmDeleteConversation}
+              className="py-2 px-4 text-xs font-semibold rounded-lg text-white bg-rose-600 hover:bg-rose-700 transition-colors cursor-pointer"
+            >
+              Delete for me
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 dark:bg-white/95 text-white dark:text-slate-900 px-4 py-2.5 rounded-xl shadow-xl text-xs font-medium flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200 border border-slate-800 dark:border-slate-200">
+          <Check size={14} className="text-emerald-400 dark:text-emerald-600 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
       {/* Lightbox Image Preview Modal */}
       {lightboxImage && (

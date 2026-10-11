@@ -10,6 +10,7 @@ const router = express.Router();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DELETED_CHATS_FILE = path.resolve(__dirname, '../../data/deleted_conversations.json');
+const DELETED_MSGS_FILE = path.resolve(__dirname, '../../data/deleted_messages.json');
 
 function loadDeletedConversations() {
   const map = new Map();
@@ -37,8 +38,46 @@ function saveDeletedConversations(map) {
   } catch {}
 }
 
+function loadDeletedMessages() {
+  const map = new Map();
+  try {
+    if (fs.existsSync(DELETED_MSGS_FILE)) {
+      const raw = fs.readFileSync(DELETED_MSGS_FILE, 'utf8');
+      const obj = JSON.parse(raw);
+      for (const [k, v] of Object.entries(obj)) {
+        if (Array.isArray(v)) map.set(k, new Set(v));
+      }
+    }
+  } catch {}
+  return map;
+}
+
+function saveDeletedMessages(map) {
+  try {
+    const dir = path.dirname(DELETED_MSGS_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const obj = {};
+    for (const [k, v] of map.entries()) {
+      obj[k] = Array.from(v);
+    }
+    fs.writeFileSync(DELETED_MSGS_FILE, JSON.stringify(obj, null, 2), 'utf8');
+  } catch {}
+}
+
 // Per-user deleted conversations tracking (Map<userId, Set<conversationId>>)
 const userDeletedConversations = loadDeletedConversations();
+// Per-user deleted messages tracking (Map<userId, Set<messageId>>)
+const userDeletedMessages = loadDeletedMessages();
+
+// GET /api/messages/deleted-items
+router.get('/deleted-items', requireAuth, (req, res) => {
+  const convs = userDeletedConversations.get(req.user.id) || new Set();
+  const msgs = userDeletedMessages.get(req.user.id) || new Set();
+  return res.json({
+    deletedConversationIds: Array.from(convs),
+    deletedMessageIds: Array.from(msgs),
+  });
+});
 
 // GET /api/messages/conversations
 router.get('/conversations', requireAuth, async (req, res) => {
@@ -167,7 +206,12 @@ router.get('/:conversationId', requireAuth, async (req, res) => {
       data: { isRead: true },
     });
 
-    return res.json({ messages, data: messages, conversationId: conv.id });
+    const userDeletedMsgs = userDeletedMessages.get(req.user.id);
+    const visibleMessages = userDeletedMsgs
+      ? messages.filter((m) => !userDeletedMsgs.has(m.id))
+      : messages;
+
+    return res.json({ messages: visibleMessages, data: visibleMessages, conversationId: conv.id });
   } catch (error) {
     console.error('Get messages error:', error);
     return res.status(500).json({ error: 'Failed to retrieve messages.' });
@@ -315,6 +359,22 @@ router.put('/message/:id', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Edit message error:', error);
     return res.status(500).json({ error: 'Failed to edit message.' });
+  }
+});
+
+// POST /api/messages/message/:id/delete-for-me - Delete message for me
+router.post('/message/:id/delete-for-me', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!userDeletedMessages.has(req.user.id)) {
+      userDeletedMessages.set(req.user.id, new Set());
+    }
+    userDeletedMessages.get(req.user.id).add(id);
+    saveDeletedMessages(userDeletedMessages);
+    return res.json({ success: true, messageId: id, deletedForMe: true });
+  } catch (error) {
+    console.error('Delete message for me error:', error);
+    return res.status(500).json({ error: 'Failed to delete message for you.' });
   }
 });
 

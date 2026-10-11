@@ -344,6 +344,10 @@ export const api = {
     request<any>(`/messages/message/${messageId}`, { method: 'DELETE' }),
   editMessage: (messageId: string, content: string) =>
     request<any>(`/messages/message/${messageId}`, { method: 'PUT', body: JSON.stringify({ content }) }),
+  deleteMessageForMe: (messageId: string) =>
+    request<any>(`/messages/message/${messageId}/delete-for-me`, { method: 'POST' }),
+  getDeletedChatItems: () =>
+    request<{ deletedConversationIds: string[]; deletedMessageIds: string[] }>('/messages/deleted-items'),
   blockUser: (userId: string) =>
     request<any>(`/users/${userId}/block`, { method: 'POST' }),
   unblockUser: (userId: string) =>

@@ -1257,6 +1257,7 @@ export async function removeConnection(
 // ============================================================================
 
 const DELETED_CHATS_PREFIX = 'hookz_deleted_chats_';
+const DELETED_MSGS_PREFIX = 'hookz_deleted_msgs_';
 
 /**
  * Returns set of conversation IDs deleted by a given user
@@ -1283,6 +1284,59 @@ export function recordDeletedConversation(userId: string, conversationId: string
     set.add(conversationId);
     localStorage.setItem(`${DELETED_CHATS_PREFIX}${userId}`, JSON.stringify(Array.from(set)));
   } catch {}
+}
+
+/**
+ * Returns set of message IDs deleted for a given user ("delete for you")
+ */
+export function getDeletedMessageIds(userId?: string): Set<string> {
+  if (!userId) return new Set();
+  try {
+    const raw = localStorage.getItem(`${DELETED_MSGS_PREFIX}${userId}`);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+/**
+ * Records a message as deleted for this user
+ */
+export function recordDeletedMessage(userId: string, messageId: string): void {
+  if (!userId || !messageId) return;
+  try {
+    const set = getDeletedMessageIds(userId);
+    set.add(messageId);
+    localStorage.setItem(`${DELETED_MSGS_PREFIX}${userId}`, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
+/**
+ * Delete a message only for the current user ("Delete for you")
+ */
+export async function deleteSupabaseMessageForMe(
+  messageId: string,
+  currentUserId: string
+): Promise<boolean> {
+  if (!messageId || !currentUserId) return false;
+
+  recordDeletedMessage(currentUserId, messageId);
+
+  try {
+    await api.deleteMessageForMe(messageId).catch(() => {});
+  } catch {}
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('startupz_messages_updated', {
+        detail: { messageId, deletedForMe: true },
+      })
+    );
+  }
+
+  return true;
 }
 
 /**
@@ -1429,7 +1483,7 @@ export async function markMessagesAsRead(conversationId: string, currentUserId: 
  */
 export async function getSupabaseMessages(
   conversationId: string,
-  _currentUserId?: string
+  currentUserId?: string
 ): Promise<Message[]> {
   if (!conversationId || conversationId === 'draft') return [];
 
@@ -1444,15 +1498,19 @@ export async function getSupabaseMessages(
     return [];
   }
 
-  return data.map((m) => ({
-    id: m.id,
-    conversationId: m.conversation_id,
-    senderId: m.sender_id,
-    receiverId: m.receiver_id,
-    content: m.content,
-    isRead: m.is_read,
-    createdAt: m.created_at,
-  }));
+  const deletedMsgIds = currentUserId ? getDeletedMessageIds(currentUserId) : new Set<string>();
+
+  return data
+    .filter((m) => !deletedMsgIds.has(m.id))
+    .map((m) => ({
+      id: m.id,
+      conversationId: m.conversation_id,
+      senderId: m.sender_id,
+      receiverId: m.receiver_id,
+      content: m.content,
+      isRead: m.is_read,
+      createdAt: m.created_at,
+    }));
 }
 
 /**
@@ -1671,6 +1729,20 @@ export async function deleteSupabaseConversation(
       })
     );
   }
+
+  // 4. Broadcast on Realtime channel so any other open devices (laptop, mobile) sync immediately!
+  try {
+    const channel = supabase.channel('global-data-sync-broadcast');
+    channel.send({
+      type: 'broadcast',
+      event: 'chat_deleted',
+      payload: {
+        userId: currentUserId,
+        conversationId,
+        timestamp: new Date().toISOString(),
+      },
+    }).catch(() => null);
+  } catch {}
 
   return true;
 }
