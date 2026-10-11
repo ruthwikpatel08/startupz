@@ -859,7 +859,6 @@ export const FindCoFounderPage: React.FC = () => {
                                 @{inv.user.profile.username}
                               </span>
                             )}
-                            <RoleBadge role="INVESTOR" size="sm" />
                             <VerificationBadge badge="Verified Investor" isVerified={true} size="sm" />
                           </div>
                           <p className="text-xs text-slate-500">

@@ -745,7 +745,140 @@ router.put('/:id', requireAuth, async (req, res) => {
       }
     }
 
-    return res.json({ message: 'Startup updated successfully!', startup: updated });
+    // Handle Internship Opportunities update
+    const { internshipData, jobData } = req.body;
+
+    if (internshipData !== undefined && internshipData !== null) {
+      try {
+        const allOpps = await prisma.startupOpportunity.findMany({ where: { startupId: id } });
+        const existingIntern = allOpps.find(
+          (o) => (o.commitment && o.commitment.toLowerCase().includes('intern')) || (o.role && o.role.toLowerCase().includes('intern'))
+        );
+
+        if (internshipData.enabled) {
+          const durStr = internshipData.durationType === 'Permanent' 
+            ? 'Permanent' 
+            : `${internshipData.customDays || 60} Days`;
+          const internRole = (internshipData.role || `${updated.name || existing.name} Intern`).trim();
+          const internRoleTitle = internRole.toLowerCase().includes('intern') ? internRole : `${internRole} (Internship)`;
+          const internComp = (internshipData.compensation || 'Paid Stipend').trim();
+          const internWorkplace = internshipData.workplaceType || 'Remote';
+          const internDesc = (internshipData.description || `Internship opportunity at ${updated.name || existing.name} (${updated.industry || existing.industry}). Allotted Stipend: ${internComp}. Duration: ${durStr}. Work on building real products.`).trim();
+
+          if (existingIntern) {
+            const updatedOpp = await prisma.startupOpportunity.update({
+              where: { id: existingIntern.id },
+              data: {
+                role: internRoleTitle,
+                commitment: `Internship (${durStr})`,
+                compensation: internComp,
+                workplaceType: internWorkplace,
+                description: internDesc,
+                status: 'OPEN',
+              },
+            });
+            await saveOpportunityToSupabase(updatedOpp);
+          } else {
+            const newOpp = await prisma.startupOpportunity.create({
+              data: {
+                startupId: id,
+                role: internRoleTitle,
+                requiredSkills: updated.requiredSkills || existing.requiredSkills || 'Problem Solving, Teamwork',
+                commitment: `Internship (${durStr})`,
+                compensation: internComp,
+                location: updated.location || existing.location || 'Remote',
+                workplaceType: internWorkplace,
+                description: internDesc,
+                status: 'OPEN',
+              },
+            });
+            await saveOpportunityToSupabase(newOpp);
+          }
+        } else if (internshipData.enabled === false && existingIntern) {
+          await prisma.opportunityApplication.deleteMany({ where: { opportunityId: existingIntern.id } }).catch(() => null);
+          await prisma.startupOpportunity.delete({ where: { id: existingIntern.id } }).catch(() => null);
+          if (supabaseAdmin) {
+            await supabaseAdmin.from('opportunity_applications').delete().eq('opportunity_id', existingIntern.id).catch(() => null);
+            await supabaseAdmin.from('startup_opportunities').delete().eq('id', existingIntern.id).catch(() => null);
+          }
+        }
+      } catch (internErr) {
+        console.warn('Internship update notice:', internErr.message);
+      }
+    }
+
+    // Handle Job Openings update
+    if (jobData !== undefined && jobData !== null) {
+      try {
+        const allOpps = await prisma.startupOpportunity.findMany({ where: { startupId: id } });
+        const existingJob = allOpps.find(
+          (o) => (o.commitment && o.commitment.toLowerCase().includes('job')) || 
+                 (!o.role?.toLowerCase().includes('intern') && !o.commitment?.toLowerCase().includes('intern'))
+        );
+
+        if (jobData.enabled) {
+          const durStr = jobData.durationType === 'Permanent' 
+            ? 'Permanent' 
+            : `${jobData.customDays || 180} Days`;
+          const jobRoleTitle = (jobData.role || `${updated.name || existing.name} Team Member`).trim();
+          const jobComp = (jobData.compensation || 'Competitive Salary').trim();
+          const jobWorkplace = jobData.workplaceType || 'Remote';
+          const jobDesc = (jobData.description || `Job opening at ${updated.name || existing.name} (${updated.industry || existing.industry}). Allotted Compensation: ${jobComp}. Commitment: ${durStr}. Join as a key team member.`).trim();
+
+          if (existingJob) {
+            const updatedJob = await prisma.startupOpportunity.update({
+              where: { id: existingJob.id },
+              data: {
+                role: jobRoleTitle,
+                commitment: `Job (${durStr})`,
+                compensation: jobComp,
+                workplaceType: jobWorkplace,
+                description: jobDesc,
+                status: 'OPEN',
+              },
+            });
+            await saveOpportunityToSupabase(updatedJob);
+          } else {
+            const newJob = await prisma.startupOpportunity.create({
+              data: {
+                startupId: id,
+                role: jobRoleTitle,
+                requiredSkills: updated.requiredSkills || existing.requiredSkills || 'Full-Stack, Product Strategy',
+                commitment: `Job (${durStr})`,
+                compensation: jobComp,
+                location: updated.location || existing.location || 'Remote',
+                workplaceType: jobWorkplace,
+                description: jobDesc,
+                status: 'OPEN',
+              },
+            });
+            await saveOpportunityToSupabase(newJob);
+          }
+        } else if (jobData.enabled === false && existingJob) {
+          await prisma.opportunityApplication.deleteMany({ where: { opportunityId: existingJob.id } }).catch(() => null);
+          await prisma.startupOpportunity.delete({ where: { id: existingJob.id } }).catch(() => null);
+          if (supabaseAdmin) {
+            await supabaseAdmin.from('opportunity_applications').delete().eq('opportunity_id', existingJob.id).catch(() => null);
+            await supabaseAdmin.from('startup_opportunities').delete().eq('id', existingJob.id).catch(() => null);
+          }
+        }
+      } catch (jobErr) {
+        console.warn('Job update notice:', jobErr.message);
+      }
+    }
+
+    const freshOpps = await prisma.startupOpportunity.findMany({
+      where: { startupId: id, status: 'OPEN' },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return res.json({
+      message: 'Startup updated successfully!',
+      startup: {
+        ...updated,
+        opportunities: freshOpps,
+      },
+    });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to update startup.' });
   }

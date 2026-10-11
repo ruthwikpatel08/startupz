@@ -553,6 +553,76 @@ router.put('/applications/:applicationId/status', requireAuth, async (req, res) 
   }
 });
 
+// PUT /api/opportunities/:id - Update opportunity listing (Founder or Admin only)
+router.put('/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    let opp = await prisma.startupOpportunity.findUnique({
+      where: { id },
+      include: { startup: true },
+    });
+
+    if (!opp && supabaseAdmin) {
+      const { data } = await supabaseAdmin
+        .from('startup_opportunities')
+        .select('*, startup:startups(*)')
+        .eq('id', id)
+        .maybeSingle();
+      if (data) {
+        opp = {
+          ...data,
+          startup: data.startup ? {
+            id: data.startup.id,
+            founderId: data.startup.founder_id,
+          } : null,
+        };
+      }
+    }
+
+    if (!opp) {
+      return res.status(404).json({ error: 'Opportunity not found.' });
+    }
+
+    const founderId = opp.startup?.founderId || opp.startup?.founder_id || opp.founderId;
+    if (founderId !== req.user.id && !req.user.isAdmin) {
+      return res.status(403).json({ error: 'Only the startup founder can edit this opportunity.' });
+    }
+
+    const {
+      role,
+      requiredSkills,
+      commitment,
+      compensation,
+      location,
+      workplaceType,
+      description,
+      status,
+    } = req.body;
+
+    const updateData = {};
+    if (role !== undefined) updateData.role = role.trim();
+    if (requiredSkills !== undefined) updateData.requiredSkills = requiredSkills.trim();
+    if (commitment !== undefined) updateData.commitment = commitment;
+    if (compensation !== undefined) updateData.compensation = compensation;
+    if (location !== undefined) updateData.location = location;
+    if (workplaceType !== undefined) updateData.workplaceType = workplaceType;
+    if (description !== undefined) updateData.description = description.trim();
+    if (status !== undefined) updateData.status = status;
+
+    const updated = await prisma.startupOpportunity.update({
+      where: { id },
+      data: updateData,
+    });
+
+    await saveOpportunityToSupabase(updated);
+
+    return res.json({ message: 'Opportunity updated successfully!', opportunity: updated });
+  } catch (error) {
+    console.error('Update opportunity error:', error);
+    return res.status(500).json({ error: 'Failed to update opportunity.' });
+  }
+});
+
 // DELETE /api/opportunities/:id - Delete opportunity listing (Founder or Admin only)
 router.delete('/:id', requireAuth, async (req, res) => {
   try {

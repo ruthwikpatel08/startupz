@@ -237,6 +237,7 @@ export const api = {
   getOpportunity: (id: string) => request<any>(`/opportunities/${id}`),
   getOpportunityById: (id: string) => request<any>(`/opportunities/${id}`),
   createOpportunity: (payload: any) => request<any>('/opportunities', { method: 'POST', body: JSON.stringify(payload) }),
+  updateOpportunity: (id: string, payload: any) => request<any>(`/opportunities/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteOpportunity: (id: string) => request<any>(`/opportunities/${id}`, { method: 'DELETE' }),
   applyOpportunity: (id: string, payload: any) => request<any>(`/opportunities/${id}/apply`, { method: 'POST', body: JSON.stringify(payload) }),
   getMyApplications: () => request<any>('/opportunities/my-applications'),

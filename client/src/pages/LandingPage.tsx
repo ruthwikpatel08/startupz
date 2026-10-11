@@ -417,7 +417,6 @@ export const LandingPage: React.FC = () => {
                                   <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
                                     @{username}
                                   </span>
-                                  <RoleBadge role={displayRole} size="sm" />
                                   <VerificationBadge badge="Active Builder" isVerified={true} size="sm" />
                                 </div>
                                 <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{p.headline}</p>

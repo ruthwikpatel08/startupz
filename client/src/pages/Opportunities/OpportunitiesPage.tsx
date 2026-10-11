@@ -31,6 +31,7 @@ import {
   Award,
   Trash2,
   Plus,
+  Edit2,
 } from 'lucide-react';
 import { Avatar } from '../../components/common/Avatar';
 import { supabase, broadcastEntityDeleted } from '../../lib/supabase';
@@ -914,8 +915,19 @@ export const OpportunitiesPage: React.FC = () => {
                         );
 
                         if (isFounder) {
+                          const isIntern = opp.commitment?.toLowerCase().includes('intern') || opp.role.toLowerCase().includes('intern');
                           return (
                             <div className="flex items-center gap-1.5">
+                              {opp.startup?.id && (
+                                <Link
+                                  to={`/startups/${opp.startup.id}?edit=true&tab=${isIntern ? 'internship' : 'job'}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-900/60 border border-brand-200 dark:border-brand-900/80 rounded-md cursor-pointer transition-colors"
+                                  title={`Edit this ${isIntern ? 'internship' : 'job'}`}
+                                >
+                                  <Edit2 size={12} /> Edit
+                                </Link>
+                              )}
                               <button
                                 type="button"
                                 onClick={(e) => {

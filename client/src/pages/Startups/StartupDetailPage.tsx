@@ -31,6 +31,11 @@ import {
   Trash2,
   Edit2,
   X,
+  GraduationCap,
+  DollarSign,
+  Clock,
+  Calendar,
+  Plus,
 } from 'lucide-react';
 
 export const StartupDetailPage: React.FC = () => {
@@ -145,6 +150,7 @@ export const StartupDetailPage: React.FC = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [editTab, setEditTab] = useState<'details' | 'internship' | 'job'>('details');
   const [editFormData, setEditFormData] = useState({
     name: '',
     oneLineDescription: '',
@@ -162,8 +168,27 @@ export const StartupDetailPage: React.FC = () => {
     demoLink: '',
   });
 
-  const handleOpenEditModal = () => {
+  // Separate Internship Form State
+  const [offerInternship, setOfferInternship] = useState(false);
+  const [internshipRole, setInternshipRole] = useState('');
+  const [internshipWorkplaceType, setInternshipWorkplaceType] = useState('Remote');
+  const [internshipCompensation, setInternshipCompensation] = useState('');
+  const [internshipDurationType, setInternshipDurationType] = useState<'Permanent' | 'Custom'>('Custom');
+  const [internshipCustomDays, setInternshipCustomDays] = useState('60');
+  const [internshipDescription, setInternshipDescription] = useState('');
+
+  // Separate Job Form State
+  const [offerJob, setOfferJob] = useState(false);
+  const [jobRole, setJobRole] = useState('');
+  const [jobWorkplaceType, setJobWorkplaceType] = useState('Remote');
+  const [jobCompensation, setJobCompensation] = useState('');
+  const [jobDurationType, setJobDurationType] = useState<'Permanent' | 'Custom'>('Custom');
+  const [jobCustomDays, setJobCustomDays] = useState('180');
+  const [jobDescription, setJobDescription] = useState('');
+
+  const handleOpenEditModal = (initialTab?: 'details' | 'internship' | 'job' | React.MouseEvent) => {
     if (!startup) return;
+    const tab: 'details' | 'internship' | 'job' = typeof initialTab === 'string' ? initialTab : 'details';
     setEditFormData({
       name: startup.name || '',
       oneLineDescription: startup.oneLineDescription || '',
@@ -180,8 +205,73 @@ export const StartupDetailPage: React.FC = () => {
       website: startup.website || '',
       demoLink: startup.demoLink || '',
     });
+
+    const internOpp = startup.opportunities?.find((o) =>
+      o.commitment?.toLowerCase().includes('intern') || o.role?.toLowerCase().includes('intern')
+    );
+    if (internOpp) {
+      setOfferInternship(true);
+      setInternshipRole(internOpp.role.replace(/\s*\(Internship\)/i, ''));
+      setInternshipWorkplaceType(internOpp.workplaceType || 'Remote');
+      setInternshipCompensation(internOpp.compensation || '');
+      const isPerm = internOpp.commitment?.toLowerCase().includes('permanent');
+      setInternshipDurationType(isPerm ? 'Permanent' : 'Custom');
+      const daysMatch = internOpp.commitment?.match(/(\d+)\s*Days/i);
+      setInternshipCustomDays(daysMatch ? daysMatch[1] : '60');
+      setInternshipDescription(internOpp.description || '');
+    } else {
+      setOfferInternship(false);
+      setInternshipRole(`${startup.name} Intern`);
+      setInternshipWorkplaceType('Remote');
+      setInternshipCompensation('');
+      setInternshipDurationType('Custom');
+      setInternshipCustomDays('60');
+      setInternshipDescription('');
+    }
+
+    const jobOpp = startup.opportunities?.find((o) =>
+      o.commitment?.toLowerCase().includes('job') ||
+      (!o.role?.toLowerCase().includes('intern') && !o.commitment?.toLowerCase().includes('intern'))
+    );
+    if (jobOpp) {
+      setOfferJob(true);
+      setJobRole(jobOpp.role);
+      setJobWorkplaceType(jobOpp.workplaceType || 'Remote');
+      setJobCompensation(jobOpp.compensation || '');
+      const isPerm = jobOpp.commitment?.toLowerCase().includes('permanent');
+      setJobDurationType(isPerm ? 'Permanent' : 'Custom');
+      const daysMatch = jobOpp.commitment?.match(/(\d+)\s*Days/i);
+      setJobCustomDays(daysMatch ? daysMatch[1] : '180');
+      setJobDescription(jobOpp.description || '');
+    } else {
+      setOfferJob(false);
+      setJobRole(`${startup.name} Team Member`);
+      setJobWorkplaceType('Remote');
+      setJobCompensation('');
+      setJobDurationType('Custom');
+      setJobCustomDays('180');
+      setJobDescription('');
+    }
+
+    setEditTab(tab);
     setEditError(null);
     setEditModalOpen(true);
+  };
+
+  const handleDeleteOpportunity = async (oppId: string) => {
+    if (!window.confirm('Are you sure you want to remove this opportunity?')) return;
+    try {
+      await api.deleteOpportunity(oppId);
+      setStartup((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          opportunities: (prev.opportunities || []).filter((o) => o.id !== oppId),
+        };
+      });
+    } catch (err: any) {
+      alert(err.message || 'Failed to remove opportunity.');
+    }
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -191,7 +281,29 @@ export const StartupDetailPage: React.FC = () => {
     setEditError(null);
 
     try {
-      const res = await api.updateStartup(startup.id, editFormData);
+      const payload = {
+        ...editFormData,
+        internshipData: {
+          enabled: offerInternship,
+          role: internshipRole,
+          workplaceType: internshipWorkplaceType,
+          compensation: internshipCompensation,
+          durationType: internshipDurationType,
+          customDays: internshipCustomDays,
+          description: internshipDescription,
+        },
+        jobData: {
+          enabled: offerJob,
+          role: jobRole,
+          workplaceType: jobWorkplaceType,
+          compensation: jobCompensation,
+          durationType: jobDurationType,
+          customDays: jobCustomDays,
+          description: jobDescription,
+        },
+      };
+
+      const res = await api.updateStartup(startup.id, payload);
       const updated = res.startup || { ...startup, ...editFormData };
       setStartup((prev) => (prev ? { ...prev, ...updated } : null));
       setEditModalOpen(false);
@@ -215,7 +327,8 @@ export const StartupDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (startup && searchParams.get('edit') === 'true' && isOwner) {
-      handleOpenEditModal();
+      const reqTab = searchParams.get('tab');
+      handleOpenEditModal(reqTab === 'internship' || reqTab === 'job' ? reqTab : 'details');
     }
   }, [startup, searchParams, isOwner]);
 
@@ -531,34 +644,107 @@ export const StartupDetailPage: React.FC = () => {
           )}
 
           {/* Open Opportunities for this startup */}
-          {startup.opportunities && startup.opportunities.length > 0 && (
+          {startup.opportunities && startup.opportunities.length > 0 ? (
             <div className="card-base p-5 sm:p-6 space-y-4">
-              <h4 className="font-semibold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                <Briefcase size={16} className="text-brand-600" /> Open Opportunities at {startup.name}
-              </h4>
-              <div className="space-y-2.5">
-                {startup.opportunities.map((opp) => (
-                  <div
-                    key={opp.id}
-                    className="p-3.5 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200/60 dark:border-dark-700/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h4 className="font-semibold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                  <Briefcase size={16} className="text-brand-600" /> Open Opportunities at {startup.name}
+                </h4>
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditModal('internship')}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-900/60 px-2.5 py-1 rounded-md border border-brand-200 dark:border-brand-900/60 cursor-pointer transition-colors"
                   >
-                    <div>
-                      <h5 className="font-semibold text-xs text-slate-900 dark:text-white">{opp.role}</h5>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        {opp.commitment} • {opp.compensation} • {opp.workplaceType}
-                      </p>
-                    </div>
-                    <Link
-                      to="/opportunities"
-                      className="btn-primary px-3 py-1.5 text-xs font-medium"
+                    <Plus size={12} />
+                    <span>Manage / Add Opportunities</span>
+                  </button>
+                )}
+              </div>
+              <div className="space-y-2.5">
+                {startup.opportunities.map((opp) => {
+                  const isIntern = opp.commitment?.toLowerCase().includes('intern') || opp.role.toLowerCase().includes('intern');
+                  return (
+                    <div
+                      key={opp.id}
+                      className="p-3.5 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200/60 dark:border-dark-700/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                     >
-                      Apply Now
-                    </Link>
-                  </div>
-                ))}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h5 className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white">{opp.role}</h5>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              isIntern
+                                ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/60'
+                                : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/60'
+                            }`}
+                          >
+                            {isIntern ? 'Internship' : 'Job Position'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                          {opp.commitment} • {opp.compensation} • {opp.workplaceType}
+                        </p>
+                        {opp.description && (
+                          <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">
+                            {opp.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {isOwner && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditModal(isIntern ? 'internship' : 'job')}
+                              className="px-2.5 py-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-900/60 border border-brand-200 dark:border-brand-900/60 rounded-lg inline-flex items-center gap-1 cursor-pointer transition-colors"
+                              title={`Edit this ${isIntern ? 'internship' : 'job'}`}
+                            >
+                              <Edit2 size={12} />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteOpportunity(opp.id)}
+                              className="px-2.5 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/60 rounded-lg inline-flex items-center gap-1 cursor-pointer transition-colors"
+                              title="Delete this opportunity"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </>
+                        )}
+                        <Link
+                          to="/opportunities"
+                          className="btn-primary px-3 py-1.5 text-xs font-medium"
+                        >
+                          Apply Now
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          )}
+          ) : isOwner ? (
+            <div className="card-base p-5 sm:p-6 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h4 className="font-semibold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                  <Briefcase size={16} className="text-brand-600" /> Opportunities at {startup.name}
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => handleOpenEditModal('internship')}
+                  className="btn-primary px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Plus size={13} />
+                  <span>Add Internship or Job</span>
+                </button>
+              </div>
+              <p className="text-xs text-slate-500">
+                You haven't listed any internships or jobs yet. Add opportunities to attract student builders and talent.
+              </p>
+            </div>
+          ) : null}
 
         </div>
 
@@ -680,10 +866,10 @@ export const StartupDetailPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
-                    Edit Startup Venture
+                    Edit Startup & Opportunities
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Update details, pitch, stage, and customer targets for {startup.name}
+                    Update details, internship roles, and job positions for {startup.name}
                   </p>
                 </div>
               </div>
@@ -696,6 +882,56 @@ export const StartupDetailPage: React.FC = () => {
               </button>
             </div>
 
+            {/* Modal Navigation Tabs */}
+            <div className="flex items-center gap-1 border-b border-slate-200 dark:border-dark-700 px-4 sm:px-6 pt-2 bg-slate-50/40 dark:bg-dark-850/40 shrink-0 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setEditTab('details')}
+                className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  editTab === 'details'
+                    ? 'border-brand-600 text-brand-600 dark:text-brand-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+              >
+                <Rocket size={13} />
+                <span>Startup Details</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditTab('internship')}
+                className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  editTab === 'internship'
+                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+              >
+                <GraduationCap size={13} />
+                <span>Internships</span>
+                {offerInternship && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                    Active
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setEditTab('job')}
+                className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+                  editTab === 'job'
+                    ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+              >
+                <Briefcase size={13} />
+                <span>Jobs</span>
+                {offerJob && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                    Active
+                  </span>
+                )}
+              </button>
+            </div>
+
             <form onSubmit={handleSaveEdit} className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
               {editError && (
                 <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs border border-rose-200 dark:border-rose-900">
@@ -703,223 +939,594 @@ export const StartupDetailPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Startup Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editFormData.name}
-                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
-                  />
+              {/* TAB 1: STARTUP DETAILS */}
+              {editTab === 'details' && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Startup Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editFormData.name}
+                        onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                        className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Industry *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editFormData.industry}
+                        onChange={(e) => setEditFormData({ ...editFormData, industry: e.target.value })}
+                        className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      One-Line Pitch / Tagline *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editFormData.oneLineDescription}
+                      onChange={(e) => setEditFormData({ ...editFormData, oneLineDescription: e.target.value })}
+                      className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Stage
+                      </label>
+                      <select
+                        value={editFormData.stage}
+                        onChange={(e) => setEditFormData({ ...editFormData, stage: e.target.value as any })}
+                        className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                      >
+                        <option value="Idea">Idea</option>
+                        <option value="Prototype">Prototype</option>
+                        <option value="MVP">MVP</option>
+                        <option value="Early Traction">Early Traction</option>
+                        <option value="Scaling">Scaling</option>
+                        <option value="Growth">Growth</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Funding Status
+                      </label>
+                      <select
+                        value={editFormData.fundingStatus}
+                        onChange={(e) => setEditFormData({ ...editFormData, fundingStatus: e.target.value })}
+                        className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                      >
+                        <option value="Bootstrapped">Bootstrapped</option>
+                        <option value="Seeking Angel">Seeking Angel</option>
+                        <option value="Pre-Seed">Pre-Seed</option>
+                        <option value="Seed Funded">Seed Funded</option>
+                        <option value="Series A+">Series A+</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.location}
+                        onChange={(e) => setEditFormData({ ...editFormData, location: e.target.value })}
+                        placeholder="e.g. Remote, Bangalore, SF"
+                        className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      The Problem It Solves *
+                    </label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={editFormData.problem}
+                      onChange={(e) => setEditFormData({ ...editFormData, problem: e.target.value })}
+                      className="input-base w-full px-3 py-2 text-xs sm:text-sm resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      The Proposed Solution *
+                    </label>
+                    <textarea
+                      required
+                      rows={3}
+                      value={editFormData.solution}
+                      onChange={(e) => setEditFormData({ ...editFormData, solution: e.target.value })}
+                      className="input-base w-full px-3 py-2 text-xs sm:text-sm resize-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Target Customers
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.targetCustomers}
+                        onChange={(e) => setEditFormData({ ...editFormData, targetCustomers: e.target.value })}
+                        placeholder="e.g. B2B SaaS, College Students"
+                        className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Business Model
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.businessModel}
+                        onChange={(e) => setEditFormData({ ...editFormData, businessModel: e.target.value })}
+                        placeholder="e.g. Subscription, Marketplace Fee"
+                        className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Required Skills / Looking For
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.requiredSkills}
+                        onChange={(e) => setEditFormData({ ...editFormData, requiredSkills: e.target.value })}
+                        placeholder="e.g. AI Engineers, Growth Marketer"
+                        className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Funding Required ($)
+                      </label>
+                      <input
+                        type="text"
+                        value={editFormData.fundingRequired}
+                        onChange={(e) => setEditFormData({ ...editFormData, fundingRequired: e.target.value })}
+                        placeholder="e.g. 50,000"
+                        className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Website URL
+                      </label>
+                      <input
+                        type="url"
+                        value={editFormData.website}
+                        onChange={(e) => setEditFormData({ ...editFormData, website: e.target.value })}
+                        placeholder="https://example.com"
+                        className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Demo / Pitch Link
+                      </label>
+                      <input
+                        type="url"
+                        value={editFormData.demoLink}
+                        onChange={(e) => setEditFormData({ ...editFormData, demoLink: e.target.value })}
+                        placeholder="https://youtube.com/..."
+                        className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: INTERNSHIP OPPORTUNITY FORM */}
+              {editTab === 'internship' && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  <div className="p-4 sm:p-5 rounded-xl border border-indigo-200/80 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-400">
+                          <GraduationCap size={18} />
+                        </div>
+                        <div>
+                          <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                            Internship Opportunity Form
+                          </h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Offer student builder internships with allotted stipend and duration (permanent or custom days).
+                          </p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={offerInternship}
+                          onChange={(e) => setOfferInternship(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer dark:bg-dark-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                        <span className="ml-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          {offerInternship ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </label>
+                    </div>
+
+                    {offerInternship ? (
+                      <div className="pt-3 border-t border-indigo-200/60 dark:border-indigo-900/50 space-y-3.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                              Internship Role Title *
+                            </label>
+                            <input
+                              type="text"
+                              value={internshipRole}
+                              onChange={(e) => setInternshipRole(e.target.value)}
+                              placeholder="e.g. AI Research Intern, Frontend Intern"
+                              className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                              Workplace Mode
+                            </label>
+                            <select
+                              value={internshipWorkplaceType}
+                              onChange={(e) => setInternshipWorkplaceType(e.target.value)}
+                              className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                            >
+                              <option value="Remote">Remote</option>
+                              <option value="Hybrid">Hybrid</option>
+                              <option value="On-site">On-site</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Money Allotted / Stipend */}
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                              <DollarSign size={13} className="text-indigo-600" />
+                              Money Allotted / Stipend *
+                            </label>
+                            <input
+                              type="text"
+                              value={internshipCompensation}
+                              onChange={(e) => setInternshipCompensation(e.target.value)}
+                              placeholder="e.g. ₹15,000 / month, $500 / month, Stipend + Equity"
+                              className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                            />
+                          </div>
+
+                          {/* Duration Category: Permanent vs Custom Days */}
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                              <Clock size={13} className="text-indigo-600" />
+                              Working Duration Category *
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setInternshipDurationType('Permanent')}
+                                className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                                  internshipDurationType === 'Permanent'
+                                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                    : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-indigo-300'
+                                }`}
+                              >
+                                Permanent
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setInternshipDurationType('Custom')}
+                                className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                                  internshipDurationType === 'Custom'
+                                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                    : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-indigo-300'
+                                }`}
+                              >
+                                Custom Days
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {internshipDurationType === 'Custom' && (
+                          <div className="p-2.5 rounded-lg bg-indigo-100/50 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <span className="text-xs font-semibold text-indigo-950 dark:text-indigo-300 flex items-center gap-1.5">
+                              <Calendar size={14} /> Total Working Days Needed:
+                            </span>
+                            <div className="flex items-center gap-2">
+                              {[30, 60, 90, 180].map((days) => (
+                                <button
+                                  key={days}
+                                  type="button"
+                                  onClick={() => setInternshipCustomDays(String(days))}
+                                  className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition-all cursor-pointer ${
+                                    internshipCustomDays === String(days)
+                                      ? 'bg-indigo-600 text-white border-indigo-600'
+                                      : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700'
+                                  }`}
+                                >
+                                  {days}d
+                                </button>
+                              ))}
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="730"
+                                  value={internshipCustomDays}
+                                  onChange={(e) => setInternshipCustomDays(e.target.value)}
+                                  className="input-base !w-18 !py-1 !px-2 text-xs text-center"
+                                  placeholder="Days"
+                                />
+                                <span className="text-xs text-slate-500">Days</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            Internship Overview & Learning Outcomes
+                          </label>
+                          <input
+                            type="text"
+                            value={internshipDescription}
+                            onChange={(e) => setInternshipDescription(e.target.value)}
+                            placeholder="Brief summary of projects, mentorship support, and deliverables"
+                            className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-lg bg-slate-100/50 dark:bg-dark-800/50 text-xs text-slate-500">
+                        Internship hiring is currently disabled for this venture. Toggle "Enabled" above to post or edit an internship role.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: JOB OPENING FORM */}
+              {editTab === 'job' && (
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  <div className="p-4 sm:p-5 rounded-xl border border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400">
+                          <Briefcase size={18} />
+                        </div>
+                        <div>
+                          <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                            Job Opening Form
+                          </h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Hiring core engineers or leads? Specify allotted salary and commitment (permanent or custom days).
+                          </p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={offerJob}
+                          onChange={(e) => setOfferJob(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer dark:bg-dark-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                        <span className="ml-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          {offerJob ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </label>
+                    </div>
+
+                    {offerJob ? (
+                      <div className="pt-3 border-t border-emerald-200/60 dark:border-emerald-900/50 space-y-3.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                              Job Position Title *
+                            </label>
+                            <input
+                              type="text"
+                              value={jobRole}
+                              onChange={(e) => setJobRole(e.target.value)}
+                              placeholder="e.g. Senior Full Stack Engineer, Growth Lead"
+                              className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                              Workplace Mode
+                            </label>
+                            <select
+                              value={jobWorkplaceType}
+                              onChange={(e) => setJobWorkplaceType(e.target.value)}
+                              className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                            >
+                              <option value="Remote">Remote</option>
+                              <option value="Hybrid">Hybrid</option>
+                              <option value="On-site">On-site</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Money Allotted / Salary */}
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                              <DollarSign size={13} className="text-emerald-600" />
+                              Money Allotted / Salary *
+                            </label>
+                            <input
+                              type="text"
+                              value={jobCompensation}
+                              onChange={(e) => setJobCompensation(e.target.value)}
+                              placeholder="e.g. ₹80,000 / month, $4,000 / month, Equity + Salary"
+                              className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                            />
+                          </div>
+
+                          {/* Duration Category: Permanent vs Custom Days */}
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                              <Clock size={13} className="text-emerald-600" />
+                              Working Duration Category *
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setJobDurationType('Permanent')}
+                                className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                                  jobDurationType === 'Permanent'
+                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                                    : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-emerald-300'
+                                }`}
+                              >
+                                Permanent
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setJobDurationType('Custom')}
+                                className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                                  jobDurationType === 'Custom'
+                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                                    : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-emerald-300'
+                                }`}
+                              >
+                                Custom Days
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {jobDurationType === 'Custom' && (
+                          <div className="p-2.5 rounded-lg bg-emerald-100/50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <span className="text-xs font-semibold text-emerald-950 dark:text-emerald-300 flex items-center gap-1.5">
+                              <Calendar size={14} /> Total Duration:
+                            </span>
+                            <div className="flex items-center gap-2">
+                              {[90, 180, 270, 365].map((days) => (
+                                <button
+                                  key={days}
+                                  type="button"
+                                  onClick={() => setJobCustomDays(String(days))}
+                                  className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition-all cursor-pointer ${
+                                    jobCustomDays === String(days)
+                                      ? 'bg-emerald-600 text-white border-emerald-600'
+                                      : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700'
+                                  }`}
+                                >
+                                  {days}d
+                                </button>
+                              ))}
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="1825"
+                                  value={jobCustomDays}
+                                  onChange={(e) => setJobCustomDays(e.target.value)}
+                                  className="input-base !w-18 !py-1 !px-2 text-xs text-center"
+                                  placeholder="Days"
+                                />
+                                <span className="text-xs text-slate-500">Days</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            Job Responsibilities & Impact
+                          </label>
+                          <input
+                            type="text"
+                            value={jobDescription}
+                            onChange={(e) => setJobDescription(e.target.value)}
+                            placeholder="Brief outline of architecture, systems, and ownership expectations"
+                            className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-lg bg-slate-100/50 dark:bg-dark-800/50 text-xs text-slate-500">
+                        Job hiring is currently disabled for this venture. Toggle "Enabled" above to post or edit a job opening.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1">
+                  {editTab === 'details' && (
+                    <button
+                      type="button"
+                      onClick={() => setEditTab('internship')}
+                      className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Edit Internships →</span>
+                    </button>
+                  )}
+                  {editTab === 'internship' && (
+                    <button
+                      type="button"
+                      onClick={() => setEditTab('job')}
+                      className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Edit Jobs →</span>
+                    </button>
+                  )}
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Industry *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editFormData.industry}
-                    onChange={(e) => setEditFormData({ ...editFormData, industry: e.target.value })}
-                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  One-Line Pitch / Tagline *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editFormData.oneLineDescription}
-                  onChange={(e) => setEditFormData({ ...editFormData, oneLineDescription: e.target.value })}
-                  className="input-base w-full px-3 py-2 text-xs sm:text-sm"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Stage
-                  </label>
-                  <select
-                    value={editFormData.stage}
-                    onChange={(e) => setEditFormData({ ...editFormData, stage: e.target.value })}
-                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditModalOpen(false)}
+                    className="btn-secondary px-4 py-2 text-xs font-medium cursor-pointer"
                   >
-                    <option value="Idea">Idea</option>
-                    <option value="Prototype">Prototype</option>
-                    <option value="MVP">MVP</option>
-                    <option value="Early Traction">Early Traction</option>
-                    <option value="Scaling">Scaling</option>
-                    <option value="Growth">Growth</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Funding Status
-                  </label>
-                  <select
-                    value={editFormData.fundingStatus}
-                    onChange={(e) => setEditFormData({ ...editFormData, fundingStatus: e.target.value })}
-                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingEdit}
+                    className="btn-primary px-4 py-2 text-xs font-medium disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
                   >
-                    <option value="Bootstrapped">Bootstrapped</option>
-                    <option value="Seeking Angel">Seeking Angel</option>
-                    <option value="Pre-Seed">Pre-Seed</option>
-                    <option value="Seed Funded">Seed Funded</option>
-                    <option value="Series A+">Series A+</option>
-                  </select>
+                    <Edit2 size={13} />
+                    <span>{isSavingEdit ? 'Saving Changes...' : 'Save All Changes'}</span>
+                  </button>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Location
-                  </label>
-                  <input
-                    type="text"
-                    value={editFormData.location}
-                    onChange={(e) => setEditFormData({ ...editFormData, location: e.target.value })}
-                    placeholder="e.g. Remote, Bangalore, SF"
-                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  The Problem It Solves *
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  value={editFormData.problem}
-                  onChange={(e) => setEditFormData({ ...editFormData, problem: e.target.value })}
-                  className="input-base w-full px-3 py-2 text-xs sm:text-sm resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  The Proposed Solution *
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  value={editFormData.solution}
-                  onChange={(e) => setEditFormData({ ...editFormData, solution: e.target.value })}
-                  className="input-base w-full px-3 py-2 text-xs sm:text-sm resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Target Customers
-                  </label>
-                  <input
-                    type="text"
-                    value={editFormData.targetCustomers}
-                    onChange={(e) => setEditFormData({ ...editFormData, targetCustomers: e.target.value })}
-                    placeholder="e.g. B2B SaaS, College Students"
-                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Business Model
-                  </label>
-                  <input
-                    type="text"
-                    value={editFormData.businessModel}
-                    onChange={(e) => setEditFormData({ ...editFormData, businessModel: e.target.value })}
-                    placeholder="e.g. Subscription, Marketplace Fee"
-                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Required Skills / Looking For
-                  </label>
-                  <input
-                    type="text"
-                    value={editFormData.requiredSkills}
-                    onChange={(e) => setEditFormData({ ...editFormData, requiredSkills: e.target.value })}
-                    placeholder="e.g. AI Engineers, Growth Marketer"
-                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Funding Required ($)
-                  </label>
-                  <input
-                    type="text"
-                    value={editFormData.fundingRequired}
-                    onChange={(e) => setEditFormData({ ...editFormData, fundingRequired: e.target.value })}
-                    placeholder="e.g. 50,000"
-                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Website URL
-                  </label>
-                  <input
-                    type="url"
-                    value={editFormData.website}
-                    onChange={(e) => setEditFormData({ ...editFormData, website: e.target.value })}
-                    placeholder="https://example.com"
-                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Demo / Pitch Link
-                  </label>
-                  <input
-                    type="url"
-                    value={editFormData.demoLink}
-                    onChange={(e) => setEditFormData({ ...editFormData, demoLink: e.target.value })}
-                    placeholder="https://youtube.com/..."
-                    className="input-base w-full px-3 py-2 text-xs sm:text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditModalOpen(false)}
-                  className="btn-secondary px-4 py-2 text-xs font-medium cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSavingEdit}
-                  className="btn-primary px-4 py-2 text-xs font-medium disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
-                >
-                  <Edit2 size={13} />
-                  <span>{isSavingEdit ? 'Saving Changes...' : 'Save Changes'}</span>
-                </button>
               </div>
             </form>
           </div>
