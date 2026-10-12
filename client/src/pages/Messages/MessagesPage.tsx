@@ -950,6 +950,28 @@ export const MessagesPage: React.FC = () => {
           } catch {}
 
           if (msgs.length === 0) {
+            try {
+              const { data: supaMsgs } = await supabase
+                .from('project_messages')
+                .select('*')
+                .eq('project_id', pId)
+                .order('created_at', { ascending: true });
+              if (Array.isArray(supaMsgs) && supaMsgs.length > 0) {
+                msgs = supaMsgs.map((sm: any) => ({
+                  id: sm.id,
+                  projectId: sm.project_id,
+                  conversationId: sm.conversation_id || `proj-group-${sm.project_id}`,
+                  senderId: sm.sender_id,
+                  content: sm.content,
+                  sender: sm.sender || {},
+                  isAiScout: Boolean(sm.is_ai_scout),
+                  createdAt: sm.created_at,
+                }));
+              }
+            } catch {}
+          }
+
+          if (msgs.length === 0) {
             const raw = localStorage.getItem(`startupz_project_messages_${pId}`);
             msgs = raw ? JSON.parse(raw) : [];
           }
@@ -1255,7 +1277,20 @@ export const MessagesPage: React.FC = () => {
           }
         } catch {}
 
-        // 2. Broadcast via Supabase Realtime channel to all active project members
+        // 2. Persist in Supabase project_messages table & broadcast
+        try {
+          await supabase.from('project_messages').upsert({
+            id: savedMsg.id || `pmsg-${Date.now()}`,
+            project_id: pId,
+            conversation_id: `proj-group-${pId}`,
+            sender_id: user.id,
+            content: contentToSend,
+            sender: savedMsg.sender || {},
+            is_ai_scout: false,
+            created_at: new Date().toISOString(),
+          }, { onConflict: 'id' });
+        } catch {}
+
         try {
           const projChannel = supabase.channel(`proj_room_${pId}`);
           projChannel.send({

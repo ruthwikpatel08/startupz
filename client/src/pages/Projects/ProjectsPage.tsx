@@ -25,6 +25,7 @@ import {
   UserPlus,
   XCircle,
   Share2,
+  ExternalLink,
 } from 'lucide-react';
 import { SEO } from '../../components/common/SEO';
 import { Avatar } from '../../components/common/Avatar';
@@ -35,6 +36,7 @@ import { supabase, fetchUserConnections, broadcastEntityDeleted } from '../../li
 export interface PendingApplicant {
   userId: string;
   fullName: string;
+  username?: string;
   avatar?: string | null;
   roleDescription?: string;
   appliedAt: string;
@@ -179,6 +181,9 @@ export const ProjectsPage: React.FC = () => {
   // Completion Prompt Modal for Leader
   const [roleCompletionModal, setRoleCompletionModal] = useState<BuilderProject | null>(null);
 
+  // Review Applicants Modal for Team Lead
+  const [reviewRoleModal, setReviewRoleModal] = useState<{ project: BuilderProject; role: ProjectRole } | null>(null);
+
   // New Project Form State
   const [newTitle, setNewTitle] = useState('');
   const [newTagline, setNewTagline] = useState('');
@@ -287,7 +292,7 @@ export const ProjectsPage: React.FC = () => {
 
   // Prevent background scrolling and enable Escape key when any modal is open
   useEffect(() => {
-    const isAnyModalOpen = Boolean(createModalOpen || roleCompletionModal || assignModalRole);
+    const isAnyModalOpen = Boolean(createModalOpen || roleCompletionModal || assignModalRole || reviewRoleModal);
     if (isAnyModalOpen) {
       document.body.style.overflow = 'hidden';
       const handleKeyDown = (e: KeyboardEvent) => {
@@ -295,6 +300,7 @@ export const ProjectsPage: React.FC = () => {
           if (createModalOpen) setCreateModalOpen(false);
           if (roleCompletionModal) setRoleCompletionModal(null);
           if (assignModalRole) setAssignModalRole(null);
+          if (reviewRoleModal) setReviewRoleModal(null);
         }
       };
       window.addEventListener('keydown', handleKeyDown);
@@ -303,7 +309,7 @@ export const ProjectsPage: React.FC = () => {
         window.removeEventListener('keydown', handleKeyDown);
       };
     }
-  }, [createModalOpen, roleCompletionModal, assignModalRole]);
+  }, [createModalOpen, roleCompletionModal, assignModalRole, reviewRoleModal]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -1191,7 +1197,11 @@ export const ProjectsPage: React.FC = () => {
 
   const handleAcceptApplicant = async (projectId: string, roleId: string, applicantUserId?: string) => {
     try {
-      await api.respondProjectApplicant(projectId, roleId, 'ACCEPT', applicantUserId).catch(() => null);
+      const res = await api.respondProjectApplicant(projectId, roleId, 'ACCEPT', applicantUserId).catch(() => null);
+      if (res && res.project) {
+        setProjects((prev) => prev.map((p) => (p.id === projectId ? res.project : p)));
+        saveProjects(projects.map((p) => (p.id === projectId ? res.project : p)));
+      }
     } catch {}
 
     let triggeredCompletion = false;
@@ -1243,6 +1253,23 @@ export const ProjectsPage: React.FC = () => {
     });
 
     saveProjects(updated);
+
+    // Direct Supabase sync so cloud database reflects acceptance immediately
+    try {
+      const projToSync = updated.find((p) => p.id === projectId);
+      if (projToSync) {
+        await supabase.from('projects').update({
+          roles: projToSync.roles,
+          updated_at: new Date().toISOString(),
+        }).eq('id', projectId);
+      }
+    } catch (sbErr) {
+      console.warn('Supabase accept sync notice:', sbErr);
+    }
+
+    if (reviewRoleModal && reviewRoleModal.role.id === roleId) {
+      setReviewRoleModal(null);
+    }
 
     if (triggeredCompletion && completedProject) {
       setRoleCompletionModal(completedProject);
@@ -1338,6 +1365,14 @@ export const ProjectsPage: React.FC = () => {
         saveProjects(projects.map((p) => (p.id === projectId ? res.project : p)));
       }
     } catch {}
+
+    if (reviewRoleModal && reviewRoleModal.role.id === roleId) {
+      const targetProj = updated.find((p) => p.id === projectId);
+      const targetRole = targetProj?.roles.find((r) => r.id === roleId);
+      if (targetProj && targetRole) {
+        setReviewRoleModal({ project: targetProj, role: targetRole });
+      }
+    }
 
     showToast('Application declined.');
   };
@@ -1517,7 +1552,10 @@ export const ProjectsPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {filteredProjects.map((project) => {
-            const isCreator = user?.id === project.creator.userId;
+            const creatorUserId = project.creator?.userId || (project.creator as any)?.id || (project as any)?.creatorId || (project as any)?.creator_id;
+            const projectLeadUserId = project.roles.find((r) => r.roleName === 'Project Lead')?.assignedTo?.userId;
+            const isCreator = Boolean(user?.id && (user.id === creatorUserId || user.isAdmin));
+            const isProjectLead = Boolean(user?.id && (user.id === projectLeadUserId || isCreator || user.isAdmin));
             const openRolesCount = project.roles.filter((r) => r.status === 'OPEN').length;
             const pendingRolesCount = project.roles.filter((r) => r.status === 'PENDING').length;
             const allFilled = project.roles.every((r) => r.status === 'ASSIGNED');
@@ -1553,8 +1591,8 @@ export const ProjectsPage: React.FC = () => {
                         <span>{project.visibility === 'PUBLIC' ? 'Public' : 'Private'}</span>
                       </span>
 
-                      {/* Creator Visibility Switcher */}
-                      {isCreator && (
+                      {/* Creator / Team Lead Visibility Switcher */}
+                      {isProjectLead && (
                         <button
                           type="button"
                           onClick={() => handleToggleVisibility(project.id, project.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC')}
@@ -1599,7 +1637,7 @@ export const ProjectsPage: React.FC = () => {
                         <span>Share</span>
                       </button>
 
-                      {isCreator && (
+                      {isProjectLead && (
                         <button
                           type="button"
                           onClick={() => handleDeleteProject(project.id)}
@@ -1788,8 +1826,8 @@ export const ProjectsPage: React.FC = () => {
                                       Decline
                                     </button>
                                   </div>
-                                ) : isCreator ? (
-                                  /* Creator sees invitation pending acceptance */
+                                ) : isProjectLead ? (
+                                  /* Team Lead sees invitation pending acceptance */
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <span className="text-[11px] text-indigo-700 dark:text-indigo-400 font-semibold">
                                       Invited: {role.invitedUser?.fullName} (Waiting for acceptance)
@@ -1808,24 +1846,36 @@ export const ProjectsPage: React.FC = () => {
                                     Invitation sent to {role.invitedUser?.fullName}
                                   </span>
                                 )
-                              ) : isCreator ? (
-                                /* Role is unassigned - Creator controls */
+                              ) : isProjectLead ? (
+                                /* Role is unassigned - Team Lead controls */
                                 <div className="flex items-center gap-2 flex-wrap justify-end">
-                                  {hasApplicants && (
+                                  {hasApplicants ? (
                                     <div className="flex items-center gap-1.5 flex-wrap">
+                                      <button
+                                        type="button"
+                                        onClick={() => setReviewRoleModal({ project, role })}
+                                        className="btn-primary !py-1 !px-2.5 !text-[11px] font-semibold cursor-pointer inline-flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white"
+                                        title="Review candidate profiles who applied for this role"
+                                      >
+                                        <Users size={11} /> Review Profiles ({applicantsList.length})
+                                      </button>
                                       {applicantsList.map((app) => (
                                         <div
                                           key={app.userId}
-                                          className="inline-flex items-center gap-1.5 bg-amber-100/70 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900/60 px-2 py-0.5 rounded text-[11px]"
+                                          className="inline-flex items-center gap-1 bg-amber-100/70 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900/60 px-2 py-0.5 rounded text-[11px]"
                                         >
                                           <Avatar src={app.avatar} name={app.fullName} size="xs" className="!w-4 !h-4" />
-                                          <span className="font-semibold text-amber-900 dark:text-amber-300">
+                                          <Link
+                                            to={`/profile/${app.userId}`}
+                                            className="font-semibold text-amber-900 dark:text-amber-300 hover:underline max-w-[90px] truncate"
+                                            title="Click to view applicant profile"
+                                          >
                                             {app.fullName}
-                                          </span>
+                                          </Link>
                                           <button
                                             type="button"
                                             onClick={() => handleAcceptApplicant(project.id, role.id, app.userId)}
-                                            className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 inline-flex items-center gap-0.5 cursor-pointer ml-1"
+                                            className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 inline-flex items-center gap-0.5 cursor-pointer ml-0.5"
                                             title="Accept applicant into role"
                                           >
                                             <Check size={10} /> Accept
@@ -1841,6 +1891,10 @@ export const ProjectsPage: React.FC = () => {
                                         </div>
                                       ))}
                                     </div>
+                                  ) : (
+                                    <span className="text-[10px] text-slate-400 italic">
+                                      Open for applicants
+                                    </span>
                                   )}
                                   <div className="flex items-center gap-1.5">
                                     <button
@@ -1851,14 +1905,7 @@ export const ProjectsPage: React.FC = () => {
                                     >
                                       <UserPlus size={11} /> Assign Connection
                                     </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleApplyRole(project.id, role.id)}
-                                      className="btn-secondary !py-1 !px-2 !text-[11px] font-semibold cursor-pointer inline-flex items-center gap-1"
-                                    >
-                                      Take Role
-                                    </button>
-                                    {isCreator && role.roleName !== 'Project Lead' && (
+                                    {isProjectLead && role.roleName !== 'Project Lead' && (
                                       <button
                                         type="button"
                                         onClick={() => handleDeleteRole(project.id, role.id)}
@@ -1871,7 +1918,7 @@ export const ProjectsPage: React.FC = () => {
                                   </div>
                                 </div>
                               ) : (
-                                /* Role is unassigned - Non-creator perspective */
+                                /* Role is unassigned - Non-leader perspective */
                                 <div className="flex items-center gap-1.5">
                                   {isDeclined ? (
                                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40">
@@ -2495,6 +2542,126 @@ export const ProjectsPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setAssignModalRole(null)}
+                className="btn-secondary !text-xs !py-1.5 !px-3.5 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Team Lead Review Role Applicants Modal */}
+      {reviewRoleModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto font-sans">
+          <div
+            className="fixed inset-0 w-full h-full bg-slate-900/60 backdrop-blur-xs transition-opacity"
+            onClick={() => setReviewRoleModal(null)}
+            aria-hidden="true"
+          />
+          <div
+            className="relative z-10 max-w-lg w-full bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-6 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between border-b border-slate-100 dark:border-dark-800 pb-3">
+              <div>
+                <h4 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                  <Users size={18} className="text-amber-600" />
+                  Review Applicants: {reviewRoleModal.role.roleName}
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Applicants who applied for this role on "{reviewRoleModal.project.title}". Review profiles and select whom to accept.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReviewRoleModal(null)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-md cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* List of pending applicants */}
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+              {(() => {
+                const role = reviewRoleModal.project.roles.find((r) => r.id === reviewRoleModal.role.id) || reviewRoleModal.role;
+                const declinedList = Array.isArray(role.declinedApplicantIds) ? role.declinedApplicantIds : [];
+                const rawList = Array.isArray(role.pendingApplicants) && role.pendingApplicants.length > 0
+                  ? role.pendingApplicants
+                  : role.pendingApplicant
+                  ? [role.pendingApplicant]
+                  : [];
+                const activeApplicants = rawList.filter((a) => !declinedList.includes(a.userId));
+
+                if (activeApplicants.length === 0) {
+                  return (
+                    <div className="p-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                      No pending applicants for this role currently.
+                    </div>
+                  );
+                }
+
+                return activeApplicants.map((app) => (
+                  <div
+                    key={app.userId}
+                    className="p-3.5 rounded-xl border border-slate-200 dark:border-dark-800 bg-slate-50/70 dark:bg-dark-850/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  >
+                    <div className="flex items-start gap-3 min-w-0">
+                      <Avatar src={app.avatar} name={app.fullName} size="sm" className="!w-9 !h-9 mt-0.5 shrink-0" />
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                            {app.fullName}
+                          </span>
+                          {app.username && (
+                            <span className="text-[11px] text-slate-400 truncate">
+                              @{app.username}
+                            </span>
+                          )}
+                        </div>
+                        {app.roleDescription && (
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                            {app.roleDescription}
+                          </p>
+                        )}
+                        <Link
+                          to={`/profile/${app.userId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline pt-0.5"
+                        >
+                          View Full Profile <ExternalLink size={10} />
+                        </Link>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                      <button
+                        type="button"
+                        onClick={() => handleAcceptApplicant(reviewRoleModal.project.id, reviewRoleModal.role.id, app.userId)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1 cursor-pointer shadow-xs"
+                      >
+                        <Check size={12} /> Accept
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeclineApplicant(reviewRoleModal.project.id, reviewRoleModal.role.id, app.userId)}
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 dark:bg-dark-800 hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/40 text-slate-700 dark:text-slate-300 cursor-pointer transition-colors"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 dark:border-dark-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setReviewRoleModal(null)}
                 className="btn-secondary !text-xs !py-1.5 !px-3.5 cursor-pointer"
               >
                 Close

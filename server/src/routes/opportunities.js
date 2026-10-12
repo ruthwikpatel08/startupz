@@ -220,6 +220,27 @@ router.get('/', optionalAuth, async (req, res) => {
 
       applications.forEach((a) => applicationsMap.set(a.opportunityId, { status: a.status, createdAt: a.createdAt }));
       saves.forEach((s) => savedOppIds.add(s.itemId));
+
+      if (supabaseAdmin) {
+        try {
+          const { data: supaApps } = await supabaseAdmin
+            .from('opportunity_applications')
+            .select('opportunity_id, status, created_at')
+            .eq('applicant_id', req.user.id);
+          if (Array.isArray(supaApps)) {
+            supaApps.forEach((sa) => {
+              if (sa.opportunity_id) {
+                const current = applicationsMap.get(sa.opportunity_id);
+                if (!current || (sa.status && sa.status !== 'PENDING')) {
+                  applicationsMap.set(sa.opportunity_id, { status: sa.status, createdAt: sa.created_at });
+                }
+              }
+            });
+          }
+        } catch (sbErr) {
+          console.warn('Supabase opportunities applicationsMap error:', sbErr.message);
+        }
+      }
     }
 
     const formatted = opportunities.map((opp) => {
@@ -358,6 +379,20 @@ router.post('/:id/apply', requireAuth, async (req, res) => {
     });
 
     if (supabaseAdmin) {
+      try {
+        await supabaseAdmin.from('opportunity_applications').upsert({
+          id: application.id,
+          opportunity_id: id,
+          applicant_id: req.user.id,
+          cover_letter: coverLetter || `Hi, I am interested in joining ${opportunity.startup.name} as a ${opportunity.role}.`,
+          resume_url: resumeUrl || null,
+          status: 'PENDING',
+          created_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+      } catch (sbAppErr) {
+        console.warn('Supabase opportunity application insert notice:', sbAppErr.message);
+      }
+
       await supabaseAdmin.from('notifications').insert({
         user_id: opportunity.startup.founderId,
         sender_id: req.user.id,
@@ -397,7 +432,51 @@ router.get('/my-applications', requireAuth, async (req, res) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    return res.json({ applications });
+    let mergedApplications = [...applications];
+    if (supabaseAdmin) {
+      try {
+        const { data: supaApps } = await supabaseAdmin
+          .from('opportunity_applications')
+          .select('*, opportunity:startup_opportunities(*, startup:startups(*))')
+          .eq('applicant_id', req.user.id);
+        if (Array.isArray(supaApps) && supaApps.length > 0) {
+          const existingIds = new Set(mergedApplications.map((a) => a.opportunityId || a.id));
+          supaApps.forEach((sa) => {
+            if (!existingIds.has(sa.opportunity_id) && !existingIds.has(sa.id)) {
+              mergedApplications.push({
+                id: sa.id,
+                opportunityId: sa.opportunity_id,
+                applicantId: sa.applicant_id,
+                coverLetter: sa.cover_letter,
+                resumeUrl: sa.resume_url,
+                status: sa.status || 'PENDING',
+                createdAt: sa.created_at,
+                opportunity: sa.opportunity ? {
+                  id: sa.opportunity.id,
+                  role: sa.opportunity.role,
+                  startup: sa.opportunity.startup ? {
+                    id: sa.opportunity.startup.id,
+                    name: sa.opportunity.startup.name,
+                    logo: sa.opportunity.startup.logo,
+                    stage: sa.opportunity.startup.stage,
+                    industry: sa.opportunity.startup.industry,
+                  } : undefined,
+                } : undefined,
+              });
+            } else {
+              const target = mergedApplications.find((a) => a.opportunityId === sa.opportunity_id || a.id === sa.id);
+              if (target && sa.status) {
+                target.status = sa.status;
+              }
+            }
+          });
+        }
+      } catch (sbErr) {
+        console.warn('Supabase my-applications notice:', sbErr.message);
+      }
+    }
+
+    return res.json({ applications: mergedApplications });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to fetch applications.' });
   }
@@ -536,6 +615,15 @@ router.put('/applications/:applicationId/status', requireAuth, async (req, res) 
     });
 
     if (supabaseAdmin) {
+      try {
+        await supabaseAdmin
+          .from('opportunity_applications')
+          .update({ status: normalizedStatus })
+          .or(`id.eq.${applicationId},and(opportunity_id.eq.${app.opportunityId},applicant_id.eq.${app.applicantId})`);
+      } catch (sbErr) {
+        console.warn('Supabase status update notice:', sbErr.message);
+      }
+
       await supabaseAdmin.from('notifications').insert({
         user_id: app.applicantId,
         sender_id: req.user.id,

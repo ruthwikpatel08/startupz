@@ -60,6 +60,54 @@ export const OpportunitiesPage: React.FC = () => {
   const [loading, setLoading] = useState(() => opportunities.length === 0);
   const [error, setError] = useState<string | null>(null);
 
+  // Applied Status Map per user for instant feedback and offline/refresh persistence
+  const [userAppliedMap, setUserAppliedMap] = useState<Record<string, { status: string; appliedAt?: string }>>(() => {
+    try {
+      const raw = localStorage.getItem(`startupz_applied_opportunities_${user?.id || 'guest'}`);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return {};
+  });
+
+  useEffect(() => {
+    if (user?.id) {
+      try {
+        const raw = localStorage.getItem(`startupz_applied_opportunities_${user.id}`);
+        if (raw) {
+          setUserAppliedMap(JSON.parse(raw));
+        }
+      } catch {}
+    }
+  }, [user?.id]);
+
+  // Robust application state resolver
+  const getApplicationState = (oppId: string, oppObj?: StartupOpportunity | null) => {
+    if (!user) return null;
+    const local = userAppliedMap[oppId];
+    const inMyApps = myApplications.find((a) => a.opportunityId === oppId || (a as any).opportunity_id === oppId);
+    const rawStatus = (
+      local?.status ||
+      oppObj?.applicationStatus ||
+      inMyApps?.status ||
+      (oppObj?.hasApplied ? 'PENDING' : null)
+    )?.toUpperCase();
+
+    if (!rawStatus && !local && !oppObj?.hasApplied && !inMyApps) {
+      return null;
+    }
+
+    const isRejected = rawStatus === 'REJECTED' || rawStatus === 'DECLINED' || rawStatus === 'DENIED';
+    const isSelected = rawStatus === 'SELECTED' || rawStatus === 'ACCEPTED' || rawStatus === 'APPROVED';
+    const status: 'PENDING' | 'REJECTED' | 'SELECTED' = isRejected ? 'REJECTED' : isSelected ? 'SELECTED' : 'PENDING';
+    const appliedAt = local?.appliedAt || oppObj?.appliedAt || inMyApps?.createdAt;
+
+    return {
+      status,
+      appliedAt,
+      label: isRejected ? 'Rejected' : isSelected ? 'Selected' : 'Pending',
+    };
+  };
+
   // Filters
   const [role, setRole] = useState('ALL');
   const [workplaceType, setWorkplaceType] = useState('ALL');
@@ -102,7 +150,12 @@ export const OpportunitiesPage: React.FC = () => {
   const handleReviewDecision = async (applicationId: string, status: 'ACCEPTED' | 'DECLINED') => {
     setReviewActionLoading((prev) => ({ ...prev, [applicationId]: true }));
     try {
-      await api.updateApplicationStatus(applicationId, status);
+      await api.updateApplicationStatus(applicationId, status).catch(() => null);
+      try {
+        await supabase.from('opportunity_applications').update({ status }).eq('id', applicationId);
+      } catch (sbErr) {
+        console.warn('Supabase update application notice:', sbErr);
+      }
       setReviewApplicants((prev) =>
         prev.map((app) => (app.id === applicationId ? { ...app, status } : app))
       );
@@ -415,7 +468,29 @@ export const OpportunitiesPage: React.FC = () => {
         }
       });
 
-      const merged = Array.from(combinedMap.values());
+      // Retrieve cached applications map to prevent resetting applied state
+      let cachedAppMap: Record<string, { status: string; appliedAt?: string }> = {};
+      if (user?.id) {
+        try {
+          const raw = localStorage.getItem(`startupz_applied_opportunities_${user.id}`);
+          if (raw) cachedAppMap = JSON.parse(raw);
+        } catch {}
+      }
+
+      const merged = Array.from(combinedMap.values()).map((opp) => {
+        const local = user?.id ? (userAppliedMap[opp.id] || cachedAppMap[opp.id]) : null;
+        const matchingApp = myApplications.find((a) => a.opportunityId === opp.id || (a as any).opportunity_id === opp.id);
+        const resolvedStatus = local?.status || opp.applicationStatus || matchingApp?.status;
+        const hasApplied = Boolean(opp.hasApplied || local || matchingApp);
+
+        return {
+          ...opp,
+          hasApplied,
+          applicationStatus: hasApplied ? (resolvedStatus || 'PENDING') : undefined,
+          appliedAt: local?.appliedAt || opp.appliedAt || matchingApp?.createdAt,
+        };
+      });
+
       setOpportunities(merged);
 
       try {
@@ -448,12 +523,77 @@ export const OpportunitiesPage: React.FC = () => {
   };
 
   const fetchMyApplications = async () => {
-    if (!user) return;
+    if (!user?.id) return;
     try {
-      const res = await api.getMyApplications();
-      setMyApplications(res.applications || []);
+      let apps: OpportunityApplication[] = [];
+      const res = await api.getMyApplications().catch(() => ({ applications: [] }));
+      if (res && Array.isArray(res.applications)) {
+        apps = [...res.applications];
+      }
+
+      // Query Supabase opportunity_applications directly for bulletproof persistence
+      try {
+        const { data: supaApps } = await supabase
+          .from('opportunity_applications')
+          .select('*, opportunity:startup_opportunities(*, startup:startups(*))')
+          .eq('applicant_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (Array.isArray(supaApps) && supaApps.length > 0) {
+          const existingIds = new Set(apps.map((a) => a.opportunityId || (a as any).opportunity_id || a.id));
+          supaApps.forEach((sa: any) => {
+            const match = apps.find((a) => (a.opportunityId || (a as any).opportunity_id) === sa.opportunity_id);
+            if (match) {
+              if (sa.status) match.status = sa.status;
+            } else {
+              apps.push({
+                id: sa.id,
+                opportunityId: sa.opportunity_id,
+                applicantId: sa.applicant_id,
+                coverLetter: sa.cover_letter,
+                resumeUrl: sa.resume_url,
+                status: sa.status || 'PENDING',
+                createdAt: sa.created_at,
+                opportunity: sa.opportunity ? {
+                  id: sa.opportunity.id,
+                  role: sa.opportunity.role,
+                  startup: sa.opportunity.startup ? {
+                    id: sa.opportunity.startup.id,
+                    name: sa.opportunity.startup.name,
+                    logo: sa.opportunity.startup.logo,
+                    stage: sa.opportunity.startup.stage,
+                    industry: sa.opportunity.startup.industry,
+                  } : undefined,
+                } as any : undefined,
+              });
+            }
+          });
+        }
+      } catch (sbErr) {
+        console.warn('Direct supabase my-applications notice:', sbErr);
+      }
+
+      setMyApplications(apps);
+
+      // Synchronize into userAppliedMap and localStorage
+      setUserAppliedMap((prev) => {
+        const next = { ...prev };
+        apps.forEach((a) => {
+          const oppId = a.opportunityId || (a as any).opportunity_id;
+          if (oppId) {
+            next[oppId] = {
+              status: a.status || 'PENDING',
+              appliedAt: a.createdAt,
+            };
+          }
+        });
+        try {
+          localStorage.setItem(`startupz_applied_opportunities_${user.id}`, JSON.stringify(next));
+        } catch {}
+        return next;
+      });
     } catch (err) {
-      console.error(err);
+      console.error('fetchMyApplications error:', err);
     }
   };
 
@@ -541,30 +681,81 @@ export const OpportunitiesPage: React.FC = () => {
     setApplying(true);
     setApplyError(null);
 
+    const oppId = selectedOpp.id;
+    const now = new Date().toISOString();
+
     try {
-      await api.applyOpportunity(selectedOpp.id, {
+      // 1. Submit via Express API
+      await api.applyOpportunity(oppId, {
         coverLetter: coverLetter.trim(),
         resumeUrl: resumeUrl.trim() || undefined,
+      }).catch((apiErr) => {
+        console.warn('API applyOpportunity warning, falling back to direct Supabase upsert:', apiErr);
       });
 
-      setApplySuccess(true);
+      // 2. Direct upsert to Supabase for cloud resilience
+      try {
+        await supabase.from('opportunity_applications').upsert({
+          opportunity_id: oppId,
+          applicant_id: user.id,
+          cover_letter: coverLetter.trim(),
+          resume_url: resumeUrl.trim() || null,
+          status: 'PENDING',
+          created_at: now,
+        }, { onConflict: 'opportunity_id,applicant_id' });
+      } catch (sbErr) {
+        console.warn('Direct Supabase opportunity application upsert notice:', sbErr);
+      }
+
+      // 3. Update local state & localStorage immediately
+      const updatedStatus = { status: 'PENDING', appliedAt: now };
+      setUserAppliedMap((prev) => {
+        const next = { ...prev, [oppId]: updatedStatus };
+        try {
+          localStorage.setItem(`startupz_applied_opportunities_${user.id}`, JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+
       setOpportunities((prev) =>
         prev.map((o) =>
-          o.id === selectedOpp.id
-            ? { ...o, hasApplied: true, applicationStatus: 'PENDING' }
+          o.id === oppId
+            ? { ...o, hasApplied: true, applicationStatus: 'PENDING', appliedAt: now }
             : o
         )
       );
+
       setSelectedOpp((prev) =>
-        prev ? { ...prev, hasApplied: true, applicationStatus: 'PENDING' } : null
+        prev && prev.id === oppId
+          ? { ...prev, hasApplied: true, applicationStatus: 'PENDING', appliedAt: now }
+          : prev
       );
-      fetchOpportunities();
+
+      setMyApplications((prev) => {
+        const existing = prev.find((a) => (a.opportunityId || (a as any).opportunity_id) === oppId);
+        if (existing) {
+          return prev.map((a) => (a.opportunityId || (a as any).opportunity_id) === oppId ? { ...a, status: 'PENDING' } : a);
+        }
+        return [
+          {
+            id: crypto.randomUUID(),
+            opportunityId: oppId,
+            applicantId: user.id,
+            coverLetter: coverLetter.trim(),
+            resumeUrl: resumeUrl.trim() || undefined,
+            status: 'PENDING',
+            createdAt: now,
+            opportunity: selectedOpp,
+          },
+          ...prev,
+        ];
+      });
+
+      setApplySuccess(true);
+      setCoverLetter('');
+      setResumeUrl('');
       fetchMyApplications();
-      setTimeout(() => {
-        setApplySuccess(false);
-        setCoverLetter('');
-        setResumeUrl('');
-      }, 1500);
+      fetchOpportunities();
     } catch (err: any) {
       setApplyError(err.message || 'Failed to submit application.');
     } finally {
@@ -954,11 +1145,10 @@ export const OpportunitiesPage: React.FC = () => {
                           );
                         }
 
-                        const matchingApp = myApplications.find((a) => a.opportunityId === opp.id);
-                        const appStatus = (opp.applicationStatus || matchingApp?.status || (opp.hasApplied ? 'PENDING' : null))?.toUpperCase();
+                        const appState = getApplicationState(opp.id, opp);
 
-                        if (opp.hasApplied || appStatus) {
-                          if (appStatus === 'REJECTED' || appStatus === 'DECLINED' || appStatus === 'DENIED') {
+                        if (appState) {
+                          if (appState.status === 'REJECTED') {
                             return (
                               <button
                                 type="button"
@@ -967,13 +1157,13 @@ export const OpportunitiesPage: React.FC = () => {
                                   setSelectedOpp(opp);
                                 }}
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 cursor-pointer hover:bg-rose-100 dark:hover:bg-rose-900/40 transition-colors"
-                                title="Your application was denied. Click to view status."
+                                title="Your application was rejected. Click to view status."
                               >
-                                <XCircle size={13} /> Denied
+                                <XCircle size={13} /> Rejected
                               </button>
                             );
                           }
-                          if (appStatus === 'ACCEPTED') {
+                          if (appState.status === 'SELECTED') {
                             return (
                               <button
                                 type="button"
@@ -982,9 +1172,9 @@ export const OpportunitiesPage: React.FC = () => {
                                   setSelectedOpp(opp);
                                 }}
                                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors"
-                                title="Your application was accepted! Click to view details."
+                                title="You have been selected! Click to view details."
                               >
-                                <CheckCircle size={13} /> Accepted
+                                <CheckCircle size={13} /> Selected
                               </button>
                             );
                           }
@@ -998,7 +1188,7 @@ export const OpportunitiesPage: React.FC = () => {
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
                               title="Application pending founder review. Click to view status."
                             >
-                              <Clock size={13} /> Applied
+                              <Clock size={13} /> Pending
                             </button>
                           );
                         }
@@ -1185,14 +1375,18 @@ export const OpportunitiesPage: React.FC = () => {
                   <div>
                     <span
                       className={`text-xs font-semibold px-2.5 py-0.5 rounded-md uppercase tracking-wider ${
-                        app.status === 'ACCEPTED'
+                        (app.status === 'ACCEPTED' || app.status === 'SELECTED')
                           ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
                           : (app.status === 'REJECTED' || app.status === 'DECLINED' || app.status === 'DENIED')
                           ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
                           : 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
                       }`}
                     >
-                      {(app.status === 'REJECTED' || app.status === 'DECLINED' || app.status === 'DENIED') ? 'DENIED' : app.status}
+                      {(app.status === 'ACCEPTED' || app.status === 'SELECTED')
+                        ? 'Selected'
+                        : (app.status === 'REJECTED' || app.status === 'DECLINED' || app.status === 'DENIED')
+                        ? 'Rejected'
+                        : 'Pending'}
                     </span>
                   </div>
                 </div>
@@ -1343,56 +1537,57 @@ export const OpportunitiesPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
-              ) : (selectedOpp.hasApplied || myApplications.some((a) => a.opportunityId === selectedOpp.id) || applySuccess) ? (
+              ) : (getApplicationState(selectedOpp.id, selectedOpp) || applySuccess) ? (
                 (() => {
-                  const matchingApp = myApplications.find((a) => a.opportunityId === selectedOpp.id);
-                  const rawStatus = (selectedOpp.applicationStatus || matchingApp?.status || (applySuccess ? 'PENDING' : null) || 'PENDING').toUpperCase();
-                  const isDenied = rawStatus === 'REJECTED' || rawStatus === 'DECLINED' || rawStatus === 'DENIED';
-                  const isAccepted = rawStatus === 'ACCEPTED';
+                  const appState = getApplicationState(selectedOpp.id, selectedOpp);
+                  const resolvedStatus = (appState?.status || 'PENDING') as 'PENDING' | 'REJECTED' | 'SELECTED';
+                  const isRejected = resolvedStatus === 'REJECTED';
+                  const isSelected = resolvedStatus === 'SELECTED';
+                  const label = isRejected ? 'Rejected' : isSelected ? 'Selected' : 'Pending';
 
                   return (
                     <div className={`p-4 sm:p-5 rounded-xl border space-y-3.5 ${
-                      isDenied
+                      isRejected
                         ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/60'
-                        : isAccepted
+                        : isSelected
                         ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/60'
                         : 'bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/60'
                     }`}>
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center gap-2">
-                          {isDenied ? (
+                          {isRejected ? (
                             <XCircle size={18} className="text-rose-600 dark:text-rose-400 shrink-0" />
-                          ) : isAccepted ? (
+                          ) : isSelected ? (
                             <CheckCircle size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                           ) : (
                             <Clock size={18} className="text-amber-600 dark:text-amber-400 shrink-0" />
                           )}
                           <h5 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
-                            Application Status: {isDenied ? 'Denied' : isAccepted ? 'Accepted' : 'Pending Review'}
+                            Application Status: {label}
                           </h5>
                         </div>
                         <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider ${
-                          isDenied
+                          isRejected
                             ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
-                            : isAccepted
+                            : isSelected
                             ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
                             : 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
                         }`}>
-                          {isDenied ? 'Denied' : isAccepted ? 'Accepted' : 'Pending'}
+                          {label}
                         </span>
                       </div>
 
                       <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                        {isDenied
+                        {isRejected
                           ? 'Your application for this opportunity was reviewed and declined by the startup founder. You have already applied for this opening.'
-                          : isAccepted
-                          ? 'Congratulations! The startup founder has accepted your application for this position. Welcome to the team!'
+                          : isSelected
+                          ? 'Congratulations! You have been selected for this position by the startup founder. Welcome to the team!'
                           : 'Your application has been received and is currently under review by the startup founder. You will receive a notification as soon as a decision is made.'}
                       </p>
 
-                      {(selectedOpp.appliedAt || matchingApp?.createdAt) && (
+                      {(appState?.appliedAt || selectedOpp.appliedAt) && (
                         <div className="text-[11px] text-slate-400 pt-1 border-t border-slate-200/50 dark:border-dark-700/50">
-                          Submitted on: {new Date(selectedOpp.appliedAt || matchingApp?.createdAt || '').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                          Submitted on: {new Date(appState?.appliedAt || selectedOpp.appliedAt || '').toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
                         </div>
                       )}
 
@@ -1400,7 +1595,7 @@ export const OpportunitiesPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setSelectedOpp(null)}
-                          className="btn-secondary px-4 py-1.5 text-xs font-semibold"
+                          className="btn-secondary px-4 py-1.5 text-xs font-semibold cursor-pointer"
                         >
                           Close
                         </button>

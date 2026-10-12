@@ -78,6 +78,59 @@ export function writeProjectMessage(projectId, message) {
 }
 
 // Helper functions for Supabase permanent persistence
+export async function fetchProjectMessagesFromSupabase(projectId) {
+  if (!supabaseAdmin || !projectId) return null;
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('project_messages')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: true });
+    if (!error && Array.isArray(data)) {
+      return data.map((row) => ({
+        id: row.id,
+        projectId: row.project_id,
+        conversationId: row.conversation_id || `proj-group-${row.project_id}`,
+        senderId: row.sender_id,
+        content: row.content,
+        sender: row.sender || {},
+        isAiScout: Boolean(row.is_ai_scout),
+        createdAt: row.created_at,
+      }));
+    }
+  } catch (err) {
+    console.warn('fetchProjectMessagesFromSupabase error:', err.message);
+  }
+  return null;
+}
+
+export async function saveProjectMessageToSupabase(projectId, message) {
+  if (!supabaseAdmin || !projectId || !message) return;
+  try {
+    await supabaseAdmin.from('project_messages').upsert({
+      id: message.id,
+      project_id: projectId,
+      conversation_id: message.conversationId || `proj-group-${projectId}`,
+      sender_id: message.senderId,
+      content: message.content,
+      sender: message.sender || {},
+      is_ai_scout: Boolean(message.isAiScout),
+      created_at: message.createdAt && !isNaN(Date.parse(message.createdAt)) ? new Date(message.createdAt).toISOString() : new Date().toISOString(),
+    }, { onConflict: 'id' });
+  } catch (err) {
+    console.warn('saveProjectMessageToSupabase error:', err.message);
+  }
+}
+
+export async function deleteProjectMessagesFromSupabase(projectId) {
+  if (!supabaseAdmin || !projectId) return;
+  try {
+    await supabaseAdmin.from('project_messages').delete().eq('project_id', projectId);
+  } catch (err) {
+    console.warn('deleteProjectMessagesFromSupabase error:', err.message);
+  }
+}
+
 export async function saveProjectToSupabase(project) {
   if (!supabaseAdmin || !project || !project.id) return;
   try {
@@ -109,6 +162,7 @@ export async function deleteProjectFromSupabase(projectId) {
   if (!supabaseAdmin || !projectId) return;
   try {
     await supabaseAdmin.from('projects').delete().eq('id', projectId);
+    await deleteProjectMessagesFromSupabase(projectId);
   } catch (err) {
     console.warn('deleteProjectFromSupabase error:', err.message);
   }
@@ -170,12 +224,14 @@ export function getAllProjectsList() {
 export async function getOrFetchProject(id) {
   let all = getAllProjectsList();
   let project = all.find((p) => p.id === id);
-  if (!project && supabaseAdmin) {
+  if (supabaseAdmin) {
     const supaList = await fetchProjectsFromSupabase();
-    cachedProjects = supaList;
-    writeProjects(supaList);
-    all = supaList;
-    project = all.find((p) => p.id === id);
+    if (Array.isArray(supaList) && supaList.length > 0) {
+      cachedProjects = supaList;
+      writeProjects(supaList);
+      all = supaList;
+      project = all.find((p) => p.id === id) || project;
+    }
   }
   return { all, project };
 }
@@ -340,11 +396,8 @@ router.delete('/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
     const { all, project } = await getOrFetchProject(id);
 
-    if (project) {
-      const creatorId = project.creator?.userId || project.creator?.id || project.creatorId || project.creator_id;
-      if (creatorId && creatorId !== req.user.id && !req.user.isAdmin) {
-        return res.status(403).json({ error: 'Only the project creator can delete this project.' });
-      }
+    if (project && !isProjectLeadOrCreator(project, req.user)) {
+      return res.status(403).json({ error: 'Only the project creator or team lead can delete this project.' });
     }
 
     cachedProjects = all.filter((p) => p.id !== id);
@@ -380,10 +433,8 @@ router.post('/:id/roles/:roleId/apply', requireAuth, async (req, res) => {
     const applicantUsername = req.user.profile?.username ? `@${req.user.profile.username}` : '';
     const applicantLabel = applicantUsername ? `${applicantName} (${applicantUsername})` : applicantName;
     const applicantHeadline = req.user.profile?.headline || 'Team Collaborator';
-    const creatorId = project.creator?.userId || project.creatorId;
-
-    // If creator applies to their own role, directly assign
-    if (creatorId === req.user.id) {
+    // If creator or project lead applies to their own role, directly assign
+    if (isProjectLeadOrCreator(project, req.user)) {
       role.status = 'ASSIGNED';
       role.assignedTo = {
         userId: req.user.id,
@@ -472,12 +523,7 @@ router.post('/:id/roles/:roleId/invite', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Project not found.' });
     }
 
-    const creatorId = project.creator?.userId || project.creator?.id || project.creatorId || project.creator_id;
-    if (!creatorId) {
-      return res.status(400).json({ error: 'Project creator information is missing or corrupted.' });
-    }
-
-    if (creatorId !== req.user.id && !req.user.isAdmin) {
+    if (!isProjectLeadOrCreator(project, req.user)) {
       return res.status(403).json({ error: 'Only the project lead can invite connections to roles.' });
     }
 
@@ -647,8 +693,7 @@ router.post('/:id/roles/:roleId/respond-applicant', requireAuth, async (req, res
       return res.status(404).json({ error: 'Project not found.' });
     }
 
-    const creatorId = project.creator?.userId || project.creator?.id || project.creatorId || project.creator_id;
-    if (creatorId !== req.user.id && !req.user.isAdmin) {
+    if (!isProjectLeadOrCreator(project, req.user)) {
       return res.status(403).json({ error: 'Only the project lead can accept or decline applicants.' });
     }
 
@@ -777,8 +822,7 @@ router.post('/:id/roles/:roleId/assign', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Project not found.' });
     }
 
-    const creatorId = project.creator?.userId || project.creatorId;
-    if (creatorId !== req.user.id && !req.user.isAdmin) {
+    if (!isProjectLeadOrCreator(project, req.user)) {
       return res.status(403).json({ error: 'Only the project lead can assign roles.' });
     }
 
@@ -843,13 +887,27 @@ router.post('/:id/roles/:roleId/assign', requireAuth, async (req, res) => {
 });
 
 /**
+ * Helper to check if a user is a project creator, assigned project lead, or admin
+ */
+export function isProjectLeadOrCreator(project, user) {
+  if (!user || !user.id || !project) return false;
+  if (user.isAdmin) return true;
+  const creatorId = project.creator?.userId || project.creator?.id || project.creatorId || project.creator_id;
+  if (creatorId && creatorId === user.id) return true;
+  const leadRole = Array.isArray(project.roles) && project.roles.find((r) => r.roleName === 'Project Lead');
+  if (leadRole && (leadRole.assignedTo?.userId === user.id || leadRole.assignedTo?.id === user.id)) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Helper to check if a user is a project creator, assigned team member, or admin
  */
 export function isProjectMemberOrCreator(project, user) {
   if (!user || !user.id || !project) return false;
   if (user.isAdmin) return true;
-  const creatorId = project.creator?.userId || project.creator?.id || project.creatorId || project.creator_id;
-  if (creatorId && creatorId === user.id) return true;
+  if (isProjectLeadOrCreator(project, user)) return true;
   if (Array.isArray(project.roles) && project.roles.some((r) => r.assignedTo?.userId === user.id || r.assignedTo?.id === user.id)) {
     return true;
   }
@@ -883,7 +941,10 @@ router.get('/:id/messages', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'You are not authorized to view messages in this private project.' });
     }
 
-    const msgs = readProjectMessages(id);
+    let msgs = await fetchProjectMessagesFromSupabase(id);
+    if (msgs === null || msgs.length === 0) {
+      msgs = readProjectMessages(id);
+    }
     return res.json({ messages: msgs.map(sanitizeProjectMessage) });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to retrieve project messages.' });
@@ -932,6 +993,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     };
 
     writeProjectMessage(id, newMsg);
+    await saveProjectMessageToSupabase(id, newMsg);
 
     // Update project lastMessage
     const allProjects = getAllProjectsList();
@@ -1016,7 +1078,10 @@ router.post('/:id/ai-scout', requireAuth, async (req, res) => {
     }
 
     // 3. Gather relevant recent project chat messages (only from this project)
-    const allMsgs = readProjectMessages(id);
+    let allMsgs = await fetchProjectMessagesFromSupabase(id);
+    if (!allMsgs || allMsgs.length === 0) {
+      allMsgs = readProjectMessages(id);
+    }
     const recentMessages = allMsgs.slice(-25).map((m) => ({
       sender: m.sender?.profile?.fullName || (m.senderId === 'ai-scout' ? 'AI Scout' : 'Team Member'),
       role: m.sender?.role || '',
@@ -1059,6 +1124,7 @@ router.post('/:id/ai-scout', requireAuth, async (req, res) => {
 
     // 6. Persist AI Scout response in project messages
     writeProjectMessage(id, scoutMsg);
+    await saveProjectMessageToSupabase(id, scoutMsg);
 
     // 7. Realtime broadcast to all active project members
     if (supabaseAdmin) {
