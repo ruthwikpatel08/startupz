@@ -37,7 +37,7 @@ router.get('/', optionalAuth, async (req, res) => {
     if (search) {
       const q = search.trim();
       where.OR = [
-        { email: { contains: q } },
+        ...(req.user ? [{ email: { contains: q } }] : []),
         { profile: { fullName: { contains: q } } },
         { profile: { headline: { contains: q } } },
         { profile: { bio: { contains: q } } },
@@ -107,10 +107,21 @@ router.get('/', optionalAuth, async (req, res) => {
       });
     }
 
-    const formattedUsers = users.map((u) => ({
-      ...u,
-      connectionStatus: userConnections.get(u.id) || null,
-    }));
+    const formattedUsers = users.map((u) => {
+      const conn = userConnections.get(u.id) || null;
+      const isSelf = req.user && req.user.id === u.id;
+      const isAdmin = req.user && Boolean(req.user.isAdmin);
+      const isConnected = conn?.status === 'ACCEPTED';
+      const canViewEmail = isSelf || isAdmin || isConnected;
+
+      const { email, ...safeUser } = u;
+
+      return {
+        ...safeUser,
+        ...(canViewEmail ? { email } : {}),
+        connectionStatus: conn,
+      };
+    });
 
     return res.json({
       users: formattedUsers,
@@ -258,7 +269,12 @@ router.get('/matching/cofounders', optionalAuth, async (req, res) => {
 
     const candidates = await prisma.user.findMany({
       where,
-      include: {
+      select: {
+        id: true,
+        role: true,
+        isVerified: true,
+        verificationBadge: true,
+        createdAt: true,
         profile: true,
         startups: {
           select: { id: true, name: true, stage: true, industry: true },
@@ -341,7 +357,14 @@ router.get('/matching/cofounders', optionalAuth, async (req, res) => {
       }
 
       return {
-        ...cand,
+        id: cand.id,
+        role: cand.role,
+        isVerified: cand.isVerified,
+        verificationBadge: cand.verificationBadge || null,
+        createdAt: cand.createdAt,
+        profile: cand.profile || null,
+        startups: cand.startups || [],
+        investorProfile: cand.investorProfile || null,
         matchPercentage: finalMatchPercentage,
         matchExplanation: matchReasons.join(' • '),
         connectionStatus: connMap.get(cand.id) || null,
@@ -383,7 +406,12 @@ router.get('/recommendations', requireAuth, async (req, res) => {
         id: { not: req.user.id },
         isSuspended: false,
       },
-      include: {
+      select: {
+        id: true,
+        role: true,
+        isVerified: true,
+        verificationBadge: true,
+        createdAt: true,
         profile: true,
         startups: { select: { id: true, name: true, stage: true } },
       },
@@ -403,7 +431,13 @@ router.get('/recommendations', requireAuth, async (req, res) => {
       }
 
       return {
-        ...u,
+        id: u.id,
+        role: u.role,
+        isVerified: u.isVerified,
+        verificationBadge: u.verificationBadge || null,
+        createdAt: u.createdAt,
+        profile: u.profile || null,
+        startups: u.startups || [],
         recommendationReason: explanation,
       };
     });
@@ -425,8 +459,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
         OR: [
           { id },
           { profile: { username: cleanId } },
-          { email: cleanId },
-          { email: { startsWith: `${cleanId}@` } },
+          ...(req.user ? [{ email: cleanId }, { email: { startsWith: `${cleanId}@` } }] : []),
         ],
       },
       include: {
@@ -490,9 +523,16 @@ router.get('/:id', optionalAuth, async (req, res) => {
       },
     });
 
-    const { password: _, ...userSafe } = user;
+    const isSelf = req.user && req.user.id === user.id;
+    const isAdmin = req.user && Boolean(req.user.isAdmin);
+    const isConnected = connectionStatus?.status === 'ACCEPTED';
+    const canViewEmail = isSelf || isAdmin || isConnected;
+
+    const { password: _, isAdmin: userIsAdmin, isSuspended: userIsSuspended, email: userEmail, ...userSafe } = user;
     return res.json({
       ...userSafe,
+      ...(canViewEmail ? { email: userEmail } : {}),
+      ...(isSelf || isAdmin ? { isAdmin: userIsAdmin, isSuspended: userIsSuspended } : {}),
       connectionsCount,
       connectionStatus,
     });

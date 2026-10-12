@@ -351,6 +351,15 @@ router.get('/:id', optionalAuth, async (req, res) => {
       return res.status(404).json({ error: 'Startup venture not found.' });
     }
 
+    const isFounder = req.user && (req.user.id === startup.founderId || req.user.id === startup.founder?.id);
+    const isAdmin = req.user && Boolean(req.user.isAdmin);
+    const isMember = req.user && Array.isArray(startup.members) && startup.members.some((m) => m.userId === req.user.id || m.user?.id === req.user.id);
+    const canViewFounderEmail = isFounder || isAdmin || isMember;
+
+    if (startup.visibility === 'PRIVATE' && !canViewFounderEmail) {
+      return res.status(403).json({ error: 'This startup venture is private.' });
+    }
+
     prisma.startup.update({
       where: { id },
       data: { viewsCount: { increment: 1 } },
@@ -372,8 +381,18 @@ router.get('/:id', optionalAuth, async (req, res) => {
       isFollowed = !!follow;
     }
 
+    let safeFounder = startup.founder;
+    if (startup.founder) {
+      const { email: founderEmail, ...restFounder } = startup.founder;
+      safeFounder = {
+        ...restFounder,
+        ...(canViewFounderEmail ? { email: founderEmail } : {}),
+      };
+    }
+
     return res.json({
       ...startup,
+      founder: safeFounder,
       isLiked,
       isSaved,
       isFollowed,

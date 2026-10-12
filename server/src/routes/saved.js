@@ -2,7 +2,7 @@ import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { supabaseAdmin } from '../supabase.js';
-import { getAllProjectsList } from './projects.js';
+import { getAllProjectsList, getOrFetchProject, isProjectMemberOrCreator } from './projects.js';
 
 const router = express.Router();
 
@@ -123,7 +123,13 @@ router.get('/', requireAuth, async (req, res) => {
         }
       }
       if (item.itemType === 'PROJECT') {
-        data = projectMap.get(item.itemId);
+        const proj = projectMap.get(item.itemId);
+        if (proj) {
+          if (proj.visibility === 'PRIVATE' && !isProjectMemberOrCreator(proj, req.user)) {
+            return null; // Unauthorized private project: omit from populated items
+          }
+          data = proj;
+        }
       }
 
       // If data is still missing, provide an item stub rather than silently discarding
@@ -142,7 +148,7 @@ router.get('/', requireAuth, async (req, res) => {
         data,
         details: data,
       };
-    });
+    }).filter(Boolean);
 
     return res.json({ savedItems: populatedItems });
   } catch (error) {
@@ -175,6 +181,13 @@ async function handleToggleSave(req, res) {
       await prisma.savedItem.delete({ where: { id: existing.id } });
       return res.json({ saved: false, message: 'Item removed from saved.' });
     } else {
+      if (normalizedType === 'PROJECT') {
+        const { project: proj } = await getOrFetchProject(itemId);
+        if (proj && proj.visibility === 'PRIVATE' && !isProjectMemberOrCreator(proj, req.user)) {
+          return res.status(403).json({ error: 'You are not authorized to save this private project.' });
+        }
+      }
+
       const saved = await prisma.savedItem.create({
         data: {
           userId: req.user.id,

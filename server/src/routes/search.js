@@ -38,7 +38,7 @@ router.get('/', optionalAuth, async (req, res) => {
             where: {
               isSuspended: false,
               OR: [
-                { email: { contains: query } },
+                ...(req.user ? [{ email: { contains: query } }] : []),
                 { role: { contains: query } },
                 { profile: { fullName: { contains: query } } },
                 { profile: { headline: { contains: query } } },
@@ -51,7 +51,6 @@ router.get('/', optionalAuth, async (req, res) => {
             take: limitNum,
             select: {
               id: true,
-              email: true,
               role: true,
               isVerified: true,
               verificationBadge: true,

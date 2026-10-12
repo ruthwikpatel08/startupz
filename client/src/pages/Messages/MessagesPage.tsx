@@ -1579,6 +1579,15 @@ export const MessagesPage: React.FC = () => {
     }
   };
 
+  // Trigger conversation deletion modal or execute deletion
+  const handleDeleteConversation = (conv?: Conversation) => {
+    if (conv) {
+      setConversationToDelete(conv);
+    } else {
+      handleConfirmDeleteConversation();
+    }
+  };
+
   const handleBackToList = () => {
     setSelectedConversation(null);
     navigate('/messages', { replace: true });
@@ -1756,7 +1765,7 @@ export const MessagesPage: React.FC = () => {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setConversationToDelete(conv);
+                        handleDeleteConversation(conv);
                       }}
                       className="p-2 mr-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
                       title="Delete conversation for you"
@@ -1884,7 +1893,7 @@ export const MessagesPage: React.FC = () => {
                   {selectedConversation.id !== 'draft' && (
                     <button
                       type="button"
-                      onClick={() => setConversationToDelete(selectedConversation)}
+                      onClick={() => handleDeleteConversation(selectedConversation)}
                       disabled={deletingConv}
                       className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-900/50 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 text-xs"
                       title="Delete conversation permanently for you"

@@ -199,14 +199,8 @@ router.get('/', optionalAuth, async (req, res) => {
       // Public projects: visible to all members and visitors across the platform
       if (p.visibility === 'PUBLIC') return true;
 
-      // Private projects: strictly visible ONLY to creator or assigned team members
-      if (currentUserId) {
-        const creatorId = p.creator?.userId || p.creatorId;
-        const isCreator = creatorId === currentUserId;
-        const isTeamMember = Array.isArray(p.roles) && p.roles.some((r) => r.assignedTo?.userId === currentUserId);
-        if (isCreator || isTeamMember) return true;
-      }
-      return false;
+      // Private projects: strictly visible ONLY to creator, assigned team members, or platform admin
+      return isProjectMemberOrCreator(p, req.user);
     });
 
     return res.json({ projects: filtered });
@@ -226,14 +220,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
       return res.status(404).json({ error: 'Project not found.' });
     }
 
-    const currentUserId = req.user?.id;
-    const creatorId = project.creator?.userId || project.creatorId;
-    const isMemberOrCreator = currentUserId && (
-      creatorId === currentUserId ||
-      (Array.isArray(project.roles) && project.roles.some((r) => r.assignedTo?.userId === currentUserId))
-    );
-
-    if (project.visibility === 'PRIVATE' && !isMemberOrCreator) {
+    if (project.visibility === 'PRIVATE' && !isProjectMemberOrCreator(project, req.user)) {
       return res.status(403).json({ error: 'This project is private.' });
     }
 
@@ -485,7 +472,12 @@ router.post('/:id/roles/:roleId/invite', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Project not found.' });
     }
 
-    if (project.creator.userId !== req.user.id && !req.user.isAdmin) {
+    const creatorId = project.creator?.userId || project.creator?.id || project.creatorId || project.creator_id;
+    if (!creatorId) {
+      return res.status(400).json({ error: 'Project creator information is missing or corrupted.' });
+    }
+
+    if (creatorId !== req.user.id && !req.user.isAdmin) {
       return res.status(403).json({ error: 'Only the project lead can invite connections to roles.' });
     }
 
@@ -853,12 +845,12 @@ router.post('/:id/roles/:roleId/assign', requireAuth, async (req, res) => {
 /**
  * Helper to check if a user is a project creator, assigned team member, or admin
  */
-function isProjectMemberOrCreator(project, user) {
+export function isProjectMemberOrCreator(project, user) {
   if (!user || !user.id || !project) return false;
   if (user.isAdmin) return true;
-  const creatorId = project.creator?.userId || project.creatorId;
+  const creatorId = project.creator?.userId || project.creator?.id || project.creatorId || project.creator_id;
   if (creatorId && creatorId === user.id) return true;
-  if (Array.isArray(project.roles) && project.roles.some((r) => r.assignedTo?.userId === user.id)) {
+  if (Array.isArray(project.roles) && project.roles.some((r) => r.assignedTo?.userId === user.id || r.assignedTo?.id === user.id)) {
     return true;
   }
   return false;
@@ -1018,10 +1010,9 @@ router.post('/:id/ai-scout', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Project not found or has been deleted.' });
     }
 
-    // 2. Authorize user: creator, assigned role member, or public project participant
-    const isMemberOrCreator = isProjectMemberOrCreator(project, req.user);
-    if (!isMemberOrCreator && project.visibility === 'PRIVATE') {
-      return res.status(403).json({ error: 'You are not authorized to use AI Scout in this private project workspace.' });
+    // 2. Authorize user: only creator, assigned team members, or authorized platform administrators can use AI Scout
+    if (!isProjectMemberOrCreator(project, req.user)) {
+      return res.status(403).json({ error: 'You are not authorized to use AI Scout in this project workspace.' });
     }
 
     // 3. Gather relevant recent project chat messages (only from this project)
