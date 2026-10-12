@@ -1,4 +1,4 @@
-import { createClient, User as SupabaseAuthUser } from '@supabase/supabase-js';
+1import { createClient, User as SupabaseAuthUser } from '@supabase/supabase-js';
 import { User, Profile, UserRole, Connection, Conversation, Message } from '../types';
 import { api } from '../services/api';
 
@@ -1291,6 +1291,34 @@ export function recordDeletedConversation(userId: string, conversationId: string
   } catch {}
 }
 
+const DELETED_PROJECTS_KEY = 'startupz_deleted_project_ids';
+
+/**
+ * Returns set of permanently deleted project IDs across sessions
+ */
+export function getDeletedProjectIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(DELETED_PROJECTS_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+/**
+ * Records a project as permanently deleted
+ */
+export function recordDeletedProjectId(projectId: string): void {
+  if (!projectId) return;
+  try {
+    const set = getDeletedProjectIds();
+    set.add(projectId);
+    localStorage.setItem(DELETED_PROJECTS_KEY, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
 /**
  * Returns set of message IDs deleted for a given user ("delete for you")
  */
@@ -1826,18 +1854,35 @@ export function broadcastEntityDeleted(
   entityType: 'PROJECT' | 'STARTUP' | 'OPPORTUNITY' | 'POST' | 'PROBLEM',
   id: string
 ): void {
-  try {
-    const channel = supabase.channel('global-data-sync-broadcast');
-    channel.send({
-      type: 'broadcast',
-      event: 'entity_deleted',
-      payload: {
-        entityType,
-        id,
-        timestamp: new Date().toISOString(),
-      },
-    }).catch(() => null);
-  } catch {}
+  if (!id) return;
+  if (entityType === 'PROJECT') {
+    recordDeletedProjectId(id);
+  }
+
+  const payload = {
+    entityType,
+    id,
+    timestamp: new Date().toISOString(),
+  };
+
+  const channelNames = [
+    'global-data-sync-broadcast',
+    'global-projects-sync-channel',
+    'global-startups-sync-channel',
+    'global-opps-sync-channel',
+    'global-problems-sync-channel',
+  ];
+
+  channelNames.forEach((chName) => {
+    try {
+      const channel = supabase.channel(chName);
+      channel.send({
+        type: 'broadcast',
+        event: 'entity_deleted',
+        payload,
+      }).catch(() => null);
+    } catch {}
+  });
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(

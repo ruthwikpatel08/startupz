@@ -222,17 +222,17 @@ export function getAllProjectsList() {
 }
 
 export async function getOrFetchProject(id) {
-  let all = getAllProjectsList();
-  let project = all.find((p) => p.id === id);
   if (supabaseAdmin) {
     const supaList = await fetchProjectsFromSupabase();
-    if (Array.isArray(supaList) && supaList.length > 0) {
+    if (Array.isArray(supaList)) {
       cachedProjects = supaList;
       writeProjects(supaList);
-      all = supaList;
-      project = all.find((p) => p.id === id) || project;
+      const project = supaList.find((p) => p.id === id) || null;
+      return { all: supaList, project };
     }
   }
+  const all = getAllProjectsList();
+  const project = all.find((p) => p.id === id) || null;
   return { all, project };
 }
 
@@ -366,16 +366,20 @@ router.put('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Project not found.' });
     }
 
-    const creatorId = existing.creator?.userId || existing.creatorId;
-    if (creatorId !== req.user.id && !req.user.isAdmin) {
-      return res.status(403).json({ error: 'Only the project creator can edit this project.' });
+    if (!isProjectLeadOrCreator(existing, req.user)) {
+      return res.status(403).json({ error: 'Only the project creator or team lead can edit this project.' });
     }
+
+    const newVisibility = req.body.visibility !== undefined
+      ? (req.body.visibility === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC')
+      : (existing.visibility || 'PUBLIC');
 
     const updated = {
       ...existing,
       ...req.body,
       id: existing.id,
       creator: existing.creator,
+      visibility: newVisibility,
       updatedAt: new Date().toISOString(),
     };
 
@@ -900,14 +904,42 @@ router.post('/:id/roles/:roleId/assign', requireAuth, async (req, res) => {
  * Helper to check if a user is a project creator, assigned project lead, or admin
  */
 export function isProjectLeadOrCreator(project, user) {
-  if (!user || !user.id || !project) return false;
+  if (!user || !project) return false;
   if (user.isAdmin) return true;
-  const creatorId = project.creator?.userId || project.creator?.id || project.creatorId || project.creator_id;
-  if (creatorId && creatorId === user.id) return true;
-  const leadRole = Array.isArray(project.roles) && project.roles.find((r) => r.roleName === 'Project Lead');
-  if (leadRole && (leadRole.assignedTo?.userId === user.id || leadRole.assignedTo?.id === user.id)) {
-    return true;
+
+  const userIds = new Set(
+    [user.id, user.profile?.id, user.profile?.userId, user._id]
+      .filter(Boolean)
+      .map(String)
+  );
+
+  const creatorId = String(
+    project.creator?.userId ||
+    project.creator?.id ||
+    project.creatorId ||
+    project.creator_id ||
+    ''
+  );
+
+  if (creatorId && userIds.has(creatorId)) return true;
+
+  const leadRole = Array.isArray(project.roles) && project.roles.find(
+    (r) => (r.roleName || '').toLowerCase().includes('lead') || r.isLead
+  );
+  if (leadRole?.assignedTo) {
+    const assignedId = String(leadRole.assignedTo.userId || leadRole.assignedTo.id || '');
+    if (assignedId && userIds.has(assignedId)) return true;
+    if (user.email && leadRole.assignedTo.email && user.email.toLowerCase().trim() === leadRole.assignedTo.email.toLowerCase().trim()) return true;
   }
+
+  const userEmail = (user.email || '').toLowerCase().trim();
+  const creatorEmail = (project.creator?.email || '').toLowerCase().trim();
+  if (userEmail && creatorEmail && userEmail === creatorEmail) return true;
+
+  const userFullName = (user.profile?.fullName || '').toLowerCase().trim();
+  const creatorFullName = (project.creator?.fullName || '').toLowerCase().trim();
+  if (userFullName && creatorFullName && userFullName === creatorFullName) return true;
+
   return false;
 }
 
@@ -915,11 +947,27 @@ export function isProjectLeadOrCreator(project, user) {
  * Helper to check if a user is a project creator, assigned team member, or admin
  */
 export function isProjectMemberOrCreator(project, user) {
-  if (!user || !user.id || !project) return false;
+  if (!user || !project) return false;
   if (user.isAdmin) return true;
   if (isProjectLeadOrCreator(project, user)) return true;
-  if (Array.isArray(project.roles) && project.roles.some((r) => r.status === 'ASSIGNED' && (r.assignedTo?.userId === user.id || r.assignedTo?.id === user.id))) {
-    return true;
+
+  const userIds = new Set(
+    [user.id, user.profile?.id, user.profile?.userId, user._id]
+      .filter(Boolean)
+      .map(String)
+  );
+  const userEmail = (user.email || '').toLowerCase().trim();
+  const userFullName = (user.profile?.fullName || '').toLowerCase().trim();
+
+  if (Array.isArray(project.roles)) {
+    return project.roles.some((r) => {
+      if (r.status !== 'ASSIGNED' || !r.assignedTo) return false;
+      const assignedId = String(r.assignedTo.userId || r.assignedTo.id || '');
+      if (assignedId && userIds.has(assignedId)) return true;
+      if (userEmail && r.assignedTo.email && userEmail === r.assignedTo.email.toLowerCase().trim()) return true;
+      if (userFullName && r.assignedTo.fullName && userFullName === r.assignedTo.fullName.toLowerCase().trim()) return true;
+      return false;
+    });
   }
   return false;
 }
@@ -1079,7 +1127,10 @@ router.post('/:id/ai-scout', requireAuth, async (req, res) => {
     // 1. Verify project exists (if deleted, AI Scout must not be accessible)
     const { project } = await getOrFetchProject(id);
     if (!project) {
-      return res.status(404).json({ error: 'Project not found or has been deleted.' });
+      return res.status(404).json({
+        error: 'This project has been deleted. AI Scout is only available for active projects.',
+        isDeleted: true,
+      });
     }
 
     // 2. Authorize user: project creator, lead, assigned team members, or admin

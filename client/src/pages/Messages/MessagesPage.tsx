@@ -56,6 +56,8 @@ import {
   deleteSupabaseMessageForMe,
   getDeletedMessageIds,
   recordDeletedMessage,
+  getDeletedProjectIds,
+  recordDeletedProjectId,
 } from '../../lib/supabase';
 
 function renderLineTokens(
@@ -717,10 +719,17 @@ export const MessagesPage: React.FC = () => {
           });
         } catch {}
 
+        const deletedProjectIds = getDeletedProjectIds();
         groupList.forEach((g: any) => {
           const pId = g.projectId || g.id;
           const key = `group_${pId}`;
-          if (deletedIds.has(g.id) || (g.projectId && deletedIds.has(g.projectId)) || deletedIds.has(key)) {
+          if (
+            deletedIds.has(g.id) ||
+            (g.projectId && deletedIds.has(g.projectId)) ||
+            deletedIds.has(key) ||
+            deletedProjectIds.has(pId) ||
+            deletedProjectIds.has(g.id)
+          ) {
             return;
           }
 
@@ -884,29 +893,86 @@ export const MessagesPage: React.FC = () => {
     };
   }, [user?.id]);
 
-  // Realtime subscription for cross-device conversation deletion & sync (laptop <-> mobile)
+  // Realtime subscription for cross-device conversation and project deletion & sync (laptop <-> mobile)
   useEffect(() => {
-    if (!user?.id) return;
-    const syncChannel = supabase
-      .channel(`user_chat_sync_${user.id}`)
-      .on('broadcast', { event: 'chat_deleted' }, ({ payload }) => {
-        if (payload?.userId === user.id && payload?.conversationId) {
-          const cId = payload.conversationId;
-          recordDeletedConversation(user.id, cId);
-          setConversations((prev) => prev.filter((c) => c.id !== cId && (c as any).projectId !== cId));
-          setSelectedConversation((curr: any) => {
-            if (curr && (curr.id === cId || curr.projectId === cId)) {
-              setMessages([]);
-              return null;
-            }
-            return curr;
-          });
+    const handleProjectDelete = (projectId: string) => {
+      if (!projectId) return;
+      recordDeletedProjectId(projectId);
+      setConversations((prev) =>
+        prev.filter((c) => c.id !== projectId && (c as any).projectId !== projectId && c.id !== `group-${projectId}`)
+      );
+      setSelectedConversation((curr: any) => {
+        if (curr && (curr.id === projectId || curr.projectId === projectId || curr.id === `group-${projectId}`)) {
+          setMessages([]);
+          return null;
+        }
+        return curr;
+      });
+      try {
+        const raw = localStorage.getItem('startupz_project_groups');
+        if (raw) {
+          const groups = JSON.parse(raw);
+          const filtered = groups.filter(
+            (g: any) => g.projectId !== projectId && g.id !== projectId && g.id !== `proj-group-${projectId}`
+          );
+          localStorage.setItem('startupz_project_groups', JSON.stringify(filtered));
+        }
+        localStorage.removeItem(`startupz_project_messages_${projectId}`);
+      } catch {}
+    };
+
+    const entityChannel = supabase
+      .channel('global-data-sync-broadcast')
+      .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => {
+        if (payload?.entityType === 'PROJECT' && payload?.id) {
+          handleProjectDelete(payload.id);
         }
       })
       .subscribe();
 
+    const projChannel = supabase
+      .channel('global-projects-sync-channel')
+      .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => {
+        if (payload?.entityType === 'PROJECT' && payload?.id) {
+          handleProjectDelete(payload.id);
+        }
+      })
+      .subscribe();
+
+    const handleLocalEntityDelete = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.entityType === 'PROJECT' && detail?.id) {
+        handleProjectDelete(detail.id);
+      }
+    };
+    window.addEventListener('global_entity_deleted', handleLocalEntityDelete);
+
+    let syncChannel: any = null;
+    if (user?.id) {
+      syncChannel = supabase
+        .channel(`user_chat_sync_${user.id}`)
+        .on('broadcast', { event: 'chat_deleted' }, ({ payload }) => {
+          if (payload?.userId === user.id && payload?.conversationId) {
+            const cId = payload.conversationId;
+            recordDeletedConversation(user.id, cId);
+            setConversations((prev) => prev.filter((c) => c.id !== cId && (c as any).projectId !== cId));
+            setSelectedConversation((curr: any) => {
+              if (curr && (curr.id === cId || curr.projectId === cId)) {
+                setMessages([]);
+                return null;
+              }
+              return curr;
+            });
+          }
+        })
+        .subscribe();
+    }
+
     return () => {
-      supabase.removeChannel(syncChannel);
+      supabase.removeChannel(entityChannel);
+      supabase.removeChannel(projChannel);
+      if (syncChannel) supabase.removeChannel(syncChannel);
+      window.removeEventListener('global_entity_deleted', handleLocalEntityDelete);
     };
   }, [user?.id]);
 
@@ -960,6 +1026,12 @@ export const MessagesPage: React.FC = () => {
         // Handle Project Group Messages
         if ((selectedConversation as any)?.isProjectGroup) {
           const pId = (selectedConversation as any).projectId || selectedConversation.id;
+          if (getDeletedProjectIds().has(pId)) {
+            setSelectedConversation(null);
+            setMessages([]);
+            setLoadingMessages(false);
+            return;
+          }
           let msgs: any[] = [];
           try {
             const sRes = await api.getProjectMessages(pId).catch(() => null);
@@ -1267,6 +1339,13 @@ export const MessagesPage: React.FC = () => {
     // Handle sending message in Project Group Chat
     if ((selectedConversation as any)?.isProjectGroup) {
       const pId = (selectedConversation as any).projectId || selectedConversation.id;
+      if (getDeletedProjectIds().has(pId)) {
+        showToast('This project has been deleted. Project chat is no longer available.');
+        setSelectedConversation(null);
+        setMessages([]);
+        setSending(false);
+        return;
+      }
       const newMsg: any = {
         id: `pmsg-${Date.now()}`,
         conversationId: selectedConversation.id,
@@ -1379,6 +1458,11 @@ export const MessagesPage: React.FC = () => {
         // 4. Trigger AI Scout analysis if message mentions @AI Scout, @Scout, or @AI
         const isScoutMention = /@(AI\s*Scout|Scout|AI)\b/i.test(contentToSend);
         if (isScoutMention) {
+          if (getDeletedProjectIds().has(pId)) {
+            showToast('This project has been deleted. AI Scout is only available for active projects.');
+            return;
+          }
+
           (async () => {
             try {
               setIsScoutAnalyzing(true);
@@ -1395,8 +1479,27 @@ export const MessagesPage: React.FC = () => {
                   localStorage.setItem(storageKey, JSON.stringify([...latestList, sMsg]));
                 }
               }
-            } catch (scoutErr) {
-              console.error('AI Scout analysis call notice:', scoutErr);
+            } catch (scoutErr: any) {
+              console.warn('AI Scout analysis call notice:', scoutErr);
+              const errMsg = String(
+                scoutErr?.message ||
+                scoutErr?.response?.data?.error ||
+                scoutErr?.data?.error ||
+                ''
+              );
+              const isProjectDeleted =
+                scoutErr?.response?.status === 404 ||
+                scoutErr?.status === 404 ||
+                errMsg.toLowerCase().includes('deleted') ||
+                errMsg.toLowerCase().includes('not found') ||
+                getDeletedProjectIds().has(pId);
+
+              if (isProjectDeleted) {
+                recordDeletedProjectId(pId);
+                showToast('This project has been deleted. AI Scout is only available for active projects.');
+                return;
+              }
+
               const fallbackMsg: any = {
                 id: `scout-fallback-${Date.now()}`,
                 projectId: pId,

@@ -31,7 +31,13 @@ import { SEO } from '../../components/common/SEO';
 import { Avatar } from '../../components/common/Avatar';
 import { ShareModal, ShareItemData } from '../../components/common/ShareModal';
 import { api } from '../../services/api';
-import { supabase, fetchUserConnections, broadcastEntityDeleted } from '../../lib/supabase';
+import {
+  supabase,
+  fetchUserConnections,
+  broadcastEntityDeleted,
+  getDeletedProjectIds,
+  recordDeletedProjectId,
+} from '../../lib/supabase';
 
 export interface PendingApplicant {
   userId: string;
@@ -161,9 +167,11 @@ export const ProjectsPage: React.FC = () => {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
+          const deletedIds = getDeletedProjectIds();
           return parsed.filter(
             (p: any) =>
               p &&
+              !deletedIds.has(p.id) &&
               !['proj-1', 'proj-2', 'proj-3'].includes(p.id) &&
               !['creator-1', 'creator-2', 'creator-3'].includes(p?.creator?.userId)
           );
@@ -447,6 +455,9 @@ export const ProjectsPage: React.FC = () => {
             }),
           }));
 
+          const deletedIds = getDeletedProjectIds();
+          serverList = serverList.filter((p) => !deletedIds.has(p.id));
+
           setAppliedRolesSet(new Set(aSet));
           setProjects(serverList);
           try {
@@ -461,19 +472,42 @@ export const ProjectsPage: React.FC = () => {
 
     fetchServerProjects();
 
-    // Cross-device broadcast listener (mobile <-> laptop)
+    const handleRemoteProjectDelete = (payload: any) => {
+      if (payload?.entityType === 'PROJECT' && payload?.id) {
+        recordDeletedProjectId(payload.id);
+        setProjects((prev) => {
+          const next = prev.filter((p) => p.id !== payload.id);
+          try {
+            localStorage.setItem('startupz_builder_projects', JSON.stringify(next));
+          } catch {}
+          return next;
+        });
+        try {
+          const raw = localStorage.getItem('startupz_project_groups');
+          if (raw) {
+            const groups = JSON.parse(raw);
+            const filteredGroups = groups.filter(
+              (g: any) => g.projectId !== payload.id && g.id !== payload.id && g.id !== `proj-group-${payload.id}`
+            );
+            localStorage.setItem('startupz_project_groups', JSON.stringify(filteredGroups));
+          }
+          localStorage.removeItem(`startupz_project_messages_${payload.id}`);
+        } catch {}
+      }
+    };
+
+    // Cross-device broadcast listeners (mobile <-> laptop)
     const syncChannel = supabase.channel('global-projects-sync-channel');
     syncChannel
       .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => {
-        if (payload?.entityType === 'PROJECT' && payload?.id) {
-          setProjects((prev) => {
-            const next = prev.filter((p) => p.id !== payload.id);
-            try {
-              localStorage.setItem('startupz_builder_projects', JSON.stringify(next));
-            } catch {}
-            return next;
-          });
-        }
+        handleRemoteProjectDelete(payload);
+      })
+      .subscribe();
+
+    const dataChannel = supabase.channel('global-data-sync-broadcast');
+    dataChannel
+      .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => {
+        handleRemoteProjectDelete(payload);
       })
       .subscribe();
 
@@ -488,15 +522,7 @@ export const ProjectsPage: React.FC = () => {
     // Local custom event listener
     const handleLocalDelete = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      if (detail?.entityType === 'PROJECT' && detail?.id) {
-        setProjects((prev) => {
-          const next = prev.filter((p) => p.id !== detail.id);
-          try {
-            localStorage.setItem('startupz_builder_projects', JSON.stringify(next));
-          } catch {}
-          return next;
-        });
-      }
+      handleRemoteProjectDelete(detail);
     };
     window.addEventListener('global_entity_deleted', handleLocalDelete);
 
@@ -515,6 +541,7 @@ export const ProjectsPage: React.FC = () => {
       window.removeEventListener('focus', handleVisibility);
       window.removeEventListener('global_entity_deleted', handleLocalDelete);
       supabase.removeChannel(syncChannel);
+      supabase.removeChannel(dataChannel);
       supabase.removeChannel(dbChannel);
     };
   }, [user?.id]);
@@ -954,7 +981,10 @@ export const ProjectsPage: React.FC = () => {
     if (!window.confirm('Are you sure you want to delete this project idea?')) {
       return;
     }
-    // 1. Optimistically update local state & localStorage
+    // 1. Immediately record in persistent deleted set across all sessions
+    recordDeletedProjectId(projectId);
+
+    // 2. Optimistically update local state & localStorage
     const updated = projects.filter((p) => p.id !== projectId);
     setProjects(updated);
     saveProjects(updated);
@@ -964,25 +994,29 @@ export const ProjectsPage: React.FC = () => {
       if (raw) {
         const groups = JSON.parse(raw);
         const filteredGroups = groups.filter(
-          (g: any) => g.projectId !== projectId && g.id !== `proj-group-${projectId}`
+          (g: any) => g.projectId !== projectId && g.id !== projectId && g.id !== `proj-group-${projectId}`
         );
         localStorage.setItem('startupz_project_groups', JSON.stringify(filteredGroups));
       }
+      localStorage.removeItem(`startupz_project_messages_${projectId}`);
     } catch {}
 
-    // 2. Direct Supabase delete for cloud permanence
+    // 3. Direct Supabase delete for cloud permanence
     try {
       await supabase.from('projects').delete().eq('id', projectId);
+      await supabase.from('project_messages').delete().eq('project_id', projectId);
     } catch (sbErr) {
       console.warn('Supabase direct project delete notice:', sbErr);
     }
 
-    // 3. Server API delete
+    // 4. Server API delete
     try {
-      await api.deleteProject(projectId).catch(() => null);
-    } catch {}
+      await api.deleteProject(projectId);
+    } catch (apiErr) {
+      console.warn('Server project delete notice:', apiErr);
+    }
 
-    // 4. Broadcast deletion to all other connected devices & tabs (mobile <-> laptop)
+    // 5. Broadcast deletion to all other connected devices & tabs (mobile <-> laptop)
     broadcastEntityDeleted('PROJECT', projectId);
 
     showToast('Project deleted successfully.');
@@ -1405,13 +1439,29 @@ export const ProjectsPage: React.FC = () => {
   };
 
   const handleToggleVisibility = async (projectId: string, newVis: 'PUBLIC' | 'PRIVATE') => {
-    try {
-      await api.updateProject(projectId, { visibility: newVis }).catch(() => null);
-    } catch {}
-
+    // 1. Optimistically update local state & localStorage
     const updated = projects.map((p) => (p.id === projectId ? { ...p, visibility: newVis } : p));
+    setProjects(updated);
     saveProjects(updated);
-    showToast(`Project visibility set to ${newVis}.`);
+
+    // 2. Direct Supabase update for immediate database persistence across mobile and desktop
+    try {
+      await supabase
+        .from('projects')
+        .update({ visibility: newVis, updated_at: new Date().toISOString() })
+        .eq('id', projectId);
+    } catch (sbErr) {
+      console.warn('Supabase visibility update notice:', sbErr);
+    }
+
+    // 3. Server API update
+    try {
+      await api.updateProject(projectId, { visibility: newVis });
+    } catch (apiErr) {
+      console.warn('Server visibility update notice:', apiErr);
+    }
+
+    showToast(`Project visibility set to ${newVis === 'PRIVATE' ? 'Private' : 'Public'}.`);
     if (roleCompletionModal?.id === projectId) {
       setRoleCompletionModal(null);
     }
@@ -1433,11 +1483,51 @@ export const ProjectsPage: React.FC = () => {
   };
 
   const filteredProjects = projects.filter((p) => {
-    // Visibility check: Private projects only visible to creator or assigned members
+    // Visibility check: Private projects only visible to creator, lead, or assigned members
     if (p.visibility === 'PRIVATE') {
-      const creatorId = p.creator?.userId || (p as any).creatorId;
-      const isMine = creatorId === user?.id || (Array.isArray(p.roles) && p.roles.some((r) => r.assignedTo?.userId === user?.id));
-      if (!isMine) return false;
+      if (!user) return false;
+      if (user.isAdmin) return true;
+
+      const userIds = new Set(
+        [user.id, user.profile?.id, user.profile?.userId].filter(Boolean).map(String)
+      );
+      const creatorId = String(p.creator?.userId || (p as any).creatorId || '');
+      const isCreator = Boolean(creatorId && userIds.has(creatorId));
+
+      const isMember = Array.isArray(p.roles) && p.roles.some((r) => {
+        if (r.status !== 'ASSIGNED' || !r.assignedTo) return false;
+        const assignedId = String(r.assignedTo.userId || (r.assignedTo as any).id || '');
+        return Boolean(assignedId && userIds.has(assignedId));
+      });
+
+      const isLead = Array.isArray(p.roles) && p.roles.some((r) => {
+        const isLeadRole = (r.roleName || '').toLowerCase().includes('lead') || (r as any).isLead;
+        if (!isLeadRole || !r.assignedTo) return false;
+        const assignedId = String(r.assignedTo.userId || (r.assignedTo as any).id || '');
+        return Boolean(assignedId && userIds.has(assignedId));
+      });
+
+      const userEmail = (user.email || '').toLowerCase().trim();
+      const emailMatches =
+        Boolean(userEmail) &&
+        (((p.creator as any)?.email && userEmail === (p.creator as any).email.toLowerCase().trim()) ||
+          (Array.isArray(p.roles) &&
+            p.roles.some((r) => (r.assignedTo as any)?.email && userEmail === (r.assignedTo as any).email.toLowerCase().trim())));
+
+      const userFullName = (user.profile?.fullName || '').toLowerCase().trim();
+      const nameMatches =
+        Boolean(userFullName) &&
+        ((p.creator?.fullName && userFullName === p.creator.fullName.trim().toLowerCase()) ||
+          (Array.isArray(p.roles) &&
+            p.roles.some(
+              (r) =>
+                r.assignedTo?.fullName &&
+                userFullName === r.assignedTo.fullName.trim().toLowerCase()
+            )));
+
+      if (!isCreator && !isMember && !isLead && !emailMatches && !nameMatches) {
+        return false;
+      }
     }
 
     if (filterTab === 'open_roles') {
