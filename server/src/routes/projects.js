@@ -918,7 +918,7 @@ export function isProjectMemberOrCreator(project, user) {
   if (!user || !user.id || !project) return false;
   if (user.isAdmin) return true;
   if (isProjectLeadOrCreator(project, user)) return true;
-  if (Array.isArray(project.roles) && project.roles.some((r) => r.assignedTo?.userId === user.id || r.assignedTo?.id === user.id)) {
+  if (Array.isArray(project.roles) && project.roles.some((r) => r.status === 'ASSIGNED' && (r.assignedTo?.userId === user.id || r.assignedTo?.id === user.id))) {
     return true;
   }
   return false;
@@ -946,9 +946,9 @@ router.get('/:id/messages', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Project not found.' });
     }
 
-    // Private projects strictly allow only creator, assigned team members, or admin
-    if (project.visibility === 'PRIVATE' && !isProjectMemberOrCreator(project, req.user)) {
-      return res.status(403).json({ error: 'You are not authorized to view messages in this private project.' });
+    // Only project creator, assigned team members, or admin can access the project team chat
+    if (!isProjectMemberOrCreator(project, req.user)) {
+      return res.status(403).json({ error: 'You are not authorized to view messages in this project team chat.' });
     }
 
     let msgs = await fetchProjectMessagesFromSupabase(id);
@@ -1082,11 +1082,10 @@ router.post('/:id/ai-scout', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Project not found or has been deleted.' });
     }
 
-    // 2. Authorize user: project creator, lead, assigned team members, or public project participants
+    // 2. Authorize user: project creator, lead, assigned team members, or admin
     const isMember = isProjectMemberOrCreator(project, req.user);
-    const isPublic = project.visibility === 'PUBLIC' || !project.visibility;
-    if (!isMember && !isPublic && !req.user.isAdmin) {
-      return res.status(403).json({ error: 'You are not authorized to use AI Scout in this private project workspace.' });
+    if (!isMember && !req.user.isAdmin) {
+      return res.status(403).json({ error: 'You must be an accepted team member or project lead to use AI Scout in this project chat.' });
     }
 
     // 3. Gather relevant recent project chat messages (only from this project)

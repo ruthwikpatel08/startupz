@@ -694,12 +694,12 @@ export const MessagesPage: React.FC = () => {
           const serverProjs = Array.isArray(pRes?.projects) ? pRes.projects : [];
           serverProjs.forEach((sp: any) => {
             const isCreator = user?.id && (sp.creator?.userId === user.id || sp.creatorId === user.id);
-            const isMember = user?.id && Array.isArray(sp.roles) && sp.roles.some((r: any) => r.assignedTo?.userId === user.id);
+            const isMember = user?.id && Array.isArray(sp.roles) && sp.roles.some((r: any) => r.status === 'ASSIGNED' && (r.assignedTo?.userId === user.id || r.assignedTo?.id === user.id));
             if (isCreator || isMember) {
               const exists = groupList.some((g: any) => g.id === sp.id || g.projectId === sp.id);
               if (!exists) {
-                const members = (sp.roles || []).filter((r: any) => r.assignedTo).map((r: any) => ({
-                  userId: r.assignedTo.userId,
+                const members = (sp.roles || []).filter((r: any) => r.status === 'ASSIGNED' && r.assignedTo).map((r: any) => ({
+                  userId: r.assignedTo.userId || r.assignedTo.id,
                   fullName: r.assignedTo.fullName,
                   role: r.roleName,
                   avatar: r.assignedTo.avatar || null,
@@ -708,6 +708,7 @@ export const MessagesPage: React.FC = () => {
                   id: `group-${sp.id}`,
                   projectId: sp.id,
                   title: sp.title,
+                  creatorId: sp.creator?.userId || sp.creatorId,
                   members,
                   createdAt: sp.createdAt || new Date().toISOString(),
                 });
@@ -722,6 +723,18 @@ export const MessagesPage: React.FC = () => {
           if (deletedIds.has(g.id) || (g.projectId && deletedIds.has(g.projectId)) || deletedIds.has(key)) {
             return;
           }
+
+          // STRICT CHECK: Only project creator/lead or accepted team members can see this project chat
+          const isCreator = Boolean(user?.id && (g.creatorId === user.id || g.creator?.userId === user.id));
+          const isMember = Boolean(
+            user?.id &&
+            Array.isArray(g.members) &&
+            g.members.some((m: any) => (m.userId === user.id || m.id === user.id))
+          );
+          if (!isCreator && !isMember) {
+            return;
+          }
+
           const groupConv: any = {
             id: g.id,
             projectId: pId,

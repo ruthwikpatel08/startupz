@@ -1461,7 +1461,7 @@ export const ProjectsPage: React.FC = () => {
   });
 
   return (
-    <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5 sm:space-y-8">
+    <div className="w-full max-w-full xl:max-w-7xl 2xl:max-w-[1500px] mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5 sm:space-y-8 min-w-0 overflow-x-hidden">
       <SEO
         title="Builder Projects & Collaborative Teams | HookZ"
         description="Discover collaborative builder projects, split roles with teammates, and build real-world products together on HookZ."
@@ -1481,7 +1481,7 @@ export const ProjectsPage: React.FC = () => {
       )}
 
       {/* Hero Banner */}
-      <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-brand-900 via-slate-900 to-indigo-950 text-white shadow-modal border border-brand-800/40 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-brand-900 via-slate-900 to-indigo-950 text-white shadow-modal border border-brand-800/40 flex flex-col md:flex-row md:items-center justify-between gap-6 min-w-0 overflow-hidden">
         <div className="max-w-xl space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/20 text-brand-300 text-xs font-semibold border border-brand-500/30">
             <Rocket size={13} /> Pre-Establishment Builder Workspace
@@ -1577,12 +1577,17 @@ export const ProjectsPage: React.FC = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-5 min-w-0">
           {filteredProjects.map((project) => {
             const creatorUserId = project.creator?.userId || (project.creator as any)?.id || (project as any)?.creatorId || (project as any)?.creator_id;
             const projectLeadUserId = project.roles.find((r) => r.roleName === 'Project Lead')?.assignedTo?.userId;
             const isCreator = Boolean(user?.id && (user.id === creatorUserId || user.isAdmin));
             const isProjectLead = Boolean(user?.id && (user.id === projectLeadUserId || isCreator || user.isAdmin));
+            const isAcceptedMember = Boolean(
+              user?.id &&
+              Array.isArray(project.roles) &&
+              project.roles.some((r) => r.status === 'ASSIGNED' && r.assignedTo?.userId === user.id)
+            );
             const openRolesCount = project.roles.filter((r) => r.status === 'OPEN').length;
             const pendingRolesCount = project.roles.filter((r) => r.status === 'PENDING').length;
             const allFilled = project.roles.every((r) => r.status === 'ASSIGNED');
@@ -1675,14 +1680,18 @@ export const ProjectsPage: React.FC = () => {
                           <span>Delete</span>
                         </button>
                       )}
-                      <Link
-                        to={`/messages?projectGroupId=proj-group-${project.id}`}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900 hover:bg-brand-100 transition-colors shrink-0"
-                        title="Open project group team chat"
-                      >
-                        <MessageSquare size={12} />
-                        <span>Team Chat</span>
-                      </Link>
+
+                      {/* Team Chat Link: strictly visible ONLY to project lead and accepted members */}
+                      {(isProjectLead || isAcceptedMember) && (
+                        <Link
+                          to={`/messages?projectGroupId=proj-group-${project.id}`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900 hover:bg-brand-100 transition-colors shrink-0"
+                          title="Open project group team chat"
+                        >
+                          <MessageSquare size={12} />
+                          <span>Team Chat</span>
+                        </Link>
+                      )}
                     </div>
                   </div>
 
@@ -1775,7 +1784,7 @@ export const ProjectsPage: React.FC = () => {
                         return (
                           <div
                             key={role.id}
-                            className={`p-2.5 rounded-lg border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-colors ${
+                            className={`p-2.5 rounded-xl border text-xs flex flex-col gap-2 transition-colors min-w-0 overflow-hidden break-words ${
                               isAssigned
                                 ? 'bg-slate-50/70 dark:bg-dark-850/40 border-slate-200/60 dark:border-dark-800'
                                 : hasApplicants
@@ -1785,33 +1794,53 @@ export const ProjectsPage: React.FC = () => {
                                 : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800'
                             }`}
                           >
-                            <div className="flex items-center gap-2">
-                              <span className="p-1 rounded bg-slate-100 dark:bg-dark-800">
-                                {getRoleIcon(role.iconType)}
-                              </span>
-                              <span className="font-medium text-slate-800 dark:text-slate-200">
-                                {role.roleName}
-                              </span>
+                            {/* Role Header: Icon, Name and Status Badge */}
+                            <div className="flex items-center justify-between gap-2 min-w-0">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="p-1 rounded bg-slate-100 dark:bg-dark-800 shrink-0">
+                                  {getRoleIcon(role.iconType)}
+                                </span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-200 truncate" title={role.roleName}>
+                                  {role.roleName}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {isAssigned ? (
+                                  <div className="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/60 px-1.5 py-0.5 rounded text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
+                                    <Avatar
+                                      src={role.assignedTo?.avatar}
+                                      name={role.assignedTo?.fullName}
+                                      size="xs"
+                                      className="!w-4 !h-4"
+                                    />
+                                    <span className="truncate max-w-[85px]">
+                                      {role.assignedTo?.fullName} {isMyAssignedRole && '(You)'}
+                                    </span>
+                                  </div>
+                                ) : isInvited ? (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400">
+                                    Invited
+                                  </span>
+                                ) : hasApplicants ? (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400">
+                                    {applicantsList.length} Applicant{applicantsList.length > 1 ? 's' : ''}
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">
+                                    Open
+                                  </span>
+                                )}
+                              </div>
                             </div>
 
-                            {/* Status and Action */}
-                            <div className="flex items-center gap-2 self-end sm:self-auto">
+                            {/* Role Actions Footer */}
+                            <div className="flex items-center justify-between gap-1.5 flex-wrap pt-1.5 border-t border-slate-100 dark:border-dark-800/70 min-w-0">
                               {isAssigned ? (
-                                <div className="flex items-center gap-1.5">
-                                  <Avatar
-                                    src={role.assignedTo?.avatar}
-                                    name={role.assignedTo?.fullName}
-                                    size="xs"
-                                    className="!w-5 !h-5"
-                                  />
-                                  <span className="font-medium text-slate-700 dark:text-slate-300 text-[11px]">
-                                    {role.assignedTo?.fullName} {isMyAssignedRole && '(You)'}
-                                  </span>
-                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400">
-                                    Assigned
-                                  </span>
+                                <div className="flex items-center gap-1 w-full justify-between min-w-0">
+                                  <span className="text-[10px] text-slate-400">Role Assigned</span>
                                   {isCreator && role.roleName !== 'Project Lead' && (
-                                    <div className="flex items-center gap-1 ml-auto sm:ml-1">
+                                    <div className="flex items-center gap-1 shrink-0 ml-auto">
                                       <button
                                         type="button"
                                         onClick={() => handleUnassignRole(project.id, role.id)}
@@ -1833,36 +1862,36 @@ export const ProjectsPage: React.FC = () => {
                                 </div>
                               ) : isInvited ? (
                                 isMyInvitedRole ? (
-                                  /* Target user sees invitation with Accept / Decline */
-                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                  <div className="flex items-center gap-1.5 flex-wrap w-full justify-between min-w-0">
                                     <span className="text-[11px] text-brand-600 dark:text-brand-400 font-bold">
                                       Invited You!
                                     </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRespondInvite(project.id, role.id, 'ACCEPT')}
-                                      className="px-2.5 py-1 rounded text-[11px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 inline-flex items-center gap-1 cursor-pointer shadow-xs"
-                                    >
-                                      <Check size={11} /> Accept Role
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRespondInvite(project.id, role.id, 'DECLINE')}
-                                      className="px-2.5 py-1 rounded text-[11px] font-bold bg-slate-200 dark:bg-dark-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 cursor-pointer"
-                                    >
-                                      Decline
-                                    </button>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRespondInvite(project.id, role.id, 'ACCEPT')}
+                                        className="px-2.5 py-1 rounded text-[11px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 inline-flex items-center gap-1 cursor-pointer shadow-xs"
+                                      >
+                                        <Check size={11} /> Accept Role
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRespondInvite(project.id, role.id, 'DECLINE')}
+                                        className="px-2.5 py-1 rounded text-[11px] font-bold bg-slate-200 dark:bg-dark-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 cursor-pointer"
+                                      >
+                                        Decline
+                                      </button>
+                                    </div>
                                   </div>
                                 ) : isProjectLead ? (
-                                  /* Team Lead sees invitation pending acceptance */
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span className="text-[11px] text-indigo-700 dark:text-indigo-400 font-semibold">
-                                      Invited: {role.invitedUser?.fullName} (Waiting for acceptance)
+                                  <div className="flex items-center gap-1.5 flex-wrap w-full justify-between min-w-0">
+                                    <span className="text-[10px] text-indigo-700 dark:text-indigo-400 font-medium truncate max-w-[170px]">
+                                      Invited: {role.invitedUser?.fullName}
                                     </span>
                                     <button
                                       type="button"
                                       onClick={() => handleCancelInvite(project.id, role.id)}
-                                      className="px-2 py-0.5 rounded text-[10px] font-semibold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+                                      className="px-2 py-0.5 rounded text-[10px] font-semibold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer shrink-0"
                                       title="Cancel role invitation"
                                     >
                                       Cancel
@@ -1874,102 +1903,65 @@ export const ProjectsPage: React.FC = () => {
                                   </span>
                                 )
                               ) : isProjectLead ? (
-                                /* Role is unassigned - Team Lead controls */
-                                <div className="flex items-center gap-2 flex-wrap justify-end">
+                                <div className="flex items-center gap-1.5 flex-wrap w-full justify-between min-w-0">
                                   {hasApplicants ? (
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      <button
-                                        type="button"
-                                        onClick={() => setReviewRoleModal({ project, role })}
-                                        className="btn-primary !py-1 !px-2.5 !text-[11px] font-semibold cursor-pointer inline-flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white"
-                                        title="Review candidate profiles who applied for this role"
-                                      >
-                                        <Users size={11} /> Review Profiles ({applicantsList.length})
-                                      </button>
-                                      {applicantsList.map((app) => (
-                                        <div
-                                          key={app.userId}
-                                          className="inline-flex items-center gap-1 bg-amber-100/70 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900/60 px-2 py-0.5 rounded text-[11px]"
-                                        >
-                                          <Avatar src={app.avatar} name={app.fullName} size="xs" className="!w-4 !h-4" />
-                                          <Link
-                                            to={`/profile/${app.userId}`}
-                                            className="font-semibold text-amber-900 dark:text-amber-300 hover:underline max-w-[90px] truncate"
-                                            title="Click to view applicant profile"
-                                          >
-                                            {app.fullName}
-                                          </Link>
-                                          <button
-                                            type="button"
-                                            onClick={() => handleAcceptApplicant(project.id, role.id, app.userId)}
-                                            className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white hover:bg-emerald-700 inline-flex items-center gap-0.5 cursor-pointer ml-0.5"
-                                            title="Accept applicant into role"
-                                          >
-                                            <Check size={10} /> Accept
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={() => handleDeclineApplicant(project.id, role.id, app.userId)}
-                                            className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-200 dark:bg-dark-800 text-slate-600 dark:text-slate-300 hover:bg-rose-100 dark:hover:bg-rose-950/40 hover:text-rose-600 cursor-pointer"
-                                            title="Decline applicant"
-                                          >
-                                            Decline
-                                          </button>
-                                        </div>
-                                      ))}
-                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => setReviewRoleModal({ project, role })}
+                                      className="btn-primary !py-1 !px-2.5 !text-[11px] font-semibold cursor-pointer inline-flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white shrink-0"
+                                      title="Review candidate profiles who applied for this role"
+                                    >
+                                      <Users size={11} /> Review Profiles ({applicantsList.length})
+                                    </button>
                                   ) : (
                                     <span className="text-[10px] text-slate-400 italic">
                                       Open for applicants
                                     </span>
                                   )}
-                                  <div className="flex items-center gap-1.5">
+                                  <div className="flex items-center gap-1 shrink-0 ml-auto">
                                     <button
                                       type="button"
                                       onClick={() => handleOpenAssignModal(project.id, role.id, role.roleName)}
-                                      className="btn-primary !py-1 !px-2.5 !text-[11px] font-semibold cursor-pointer inline-flex items-center gap-1"
+                                      className="btn-secondary !py-1 !px-2 !text-[11px] font-medium cursor-pointer inline-flex items-center gap-1 shrink-0"
                                       title="Invite or assign a connection to this role"
                                     >
-                                      <UserPlus size={11} /> Assign Connection
+                                      <UserPlus size={11} /> Assign
                                     </button>
                                     {isProjectLead && role.roleName !== 'Project Lead' && (
                                       <button
                                         type="button"
                                         onClick={() => handleDeleteRole(project.id, role.id)}
-                                        className="p-1 rounded text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 cursor-pointer inline-flex items-center gap-0.5 text-[10px]"
+                                        className="p-1 rounded text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 cursor-pointer inline-flex items-center text-[10px] shrink-0"
                                         title="Delete this role from project"
                                       >
-                                        <Trash2 size={13} />
+                                        <Trash2 size={12} />
                                       </button>
                                     )}
                                   </div>
                                 </div>
                               ) : (
-                                /* Role is unassigned - Non-leader perspective */
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center justify-between w-full min-w-0">
                                   {isDeclined ? (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40">
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 shrink-0">
                                       <XCircle size={11} /> Application Declined
                                     </span>
                                   ) : isMyPendingRole ? (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40">
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-semibold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40 shrink-0">
                                       <Clock size={11} /> Applied (Pending Review)
                                     </span>
                                   ) : (
-                                    <div className="flex items-center gap-2">
-                                      {hasApplicants && (
-                                        <span className="text-[10px] text-slate-400 font-medium">
-                                          {applicantsList.length} applicant{applicantsList.length > 1 ? 's' : ''}
-                                        </span>
-                                      )}
+                                    <>
+                                      <span className="text-[10px] text-slate-400 truncate mr-1">
+                                        {hasApplicants ? `${applicantsList.length} applicant${applicantsList.length > 1 ? 's' : ''}` : 'No applicants yet'}
+                                      </span>
                                       <button
                                         type="button"
                                         onClick={() => handleApplyRole(project.id, role.id)}
-                                        className="btn-primary !py-1 !px-2.5 !text-[11px] font-semibold cursor-pointer inline-flex items-center gap-1"
+                                        className="btn-primary !py-1 !px-2.5 !text-[11px] font-semibold cursor-pointer inline-flex items-center gap-1 shrink-0 ml-auto"
                                       >
                                         <Plus size={11} /> Apply for Role
                                       </button>
-                                    </div>
+                                    </>
                                   )}
                                 </div>
                               )}
