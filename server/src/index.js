@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -104,10 +105,35 @@ app.get('/api/health/db/init', async (req, res) => {
 });
 
 
+/**
+ * Helper to safely authenticate admin maintenance requests in constant time.
+ * Requires ADMIN_MAINTENANCE_SECRET (min 32 chars) and header-based authentication.
+ * Rejects query-parameter credentials and fails closed if configuration is missing.
+ */
+export function isAuthorizedMaintenanceRequest(req) {
+  const configuredSecret = process.env.ADMIN_MAINTENANCE_SECRET;
+  if (!configuredSecret || typeof configuredSecret !== 'string' || configuredSecret.length < 32) {
+    return false;
+  }
+
+  const providedSecret = req.headers?.['x-admin-maintenance-secret'] || req.headers?.['x-admin-secret'];
+  if (!providedSecret || typeof providedSecret !== 'string') {
+    return false;
+  }
+
+  const expectedBuf = Buffer.from(configuredSecret, 'utf8');
+  const providedBuf = Buffer.from(providedSecret, 'utf8');
+
+  if (expectedBuf.length !== providedBuf.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(expectedBuf, providedBuf);
+}
+
 // Maintenance Endpoint: Purge all demo data from database (admin protected)
 app.post('/api/health/purge-demo-data', async (req, res) => {
-  const secret = req.headers['x-admin-secret'] || req.query.secret;
-  if (!secret || secret !== process.env.JWT_SECRET) {
+  if (!isAuthorizedMaintenanceRequest(req)) {
     return res.status(403).json({ error: 'Unauthorized maintenance operation.' });
   }
   try {
@@ -265,8 +291,18 @@ async function ensureDatabaseReady() {
   }
 }
 
-app.listen(PORT, async () => {
-  console.log(`🚀 StartupZ Server running on http://localhost:${PORT}`);
-  await ensureDatabaseReady();
-  checkAndRefreshWeeklyProblems().catch(() => {});
-});
+const isServerEntry = process.argv[1] && (
+  process.argv[1].endsWith('start.js') ||
+  process.argv[1].endsWith('src\\index.js') ||
+  process.argv[1].endsWith('src/index.js') ||
+  process.argv[1].endsWith('server\\index.js') ||
+  process.argv[1].endsWith('server/index.js')
+);
+
+if (isServerEntry && process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, async () => {
+    console.log(`🚀 StartupZ Server running on http://localhost:${PORT}`);
+    await ensureDatabaseReady();
+    checkAndRefreshWeeklyProblems().catch(() => {});
+  });
+}

@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { prisma } from '../db.js';
-import { fetchSupabaseProfile } from '../supabase.js';
+import { fetchSupabaseProfile, supabaseAdmin } from '../supabase.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'startupz_super_secret_jwt_key_2026_modern_startup_network';
 
@@ -35,10 +35,19 @@ async function enrichWithSupabaseProfile(user) {
   return user;
 }
 
-async function resolveUserFromToken(token, req) {
-  if (!token) return null;
+/**
+ * Resolves and authenticates a user from a cryptographically verified token.
+ * Tokens MUST pass cryptographic signature verification:
+ * 1. Internal StartupZ JWTs are verified with JWT_SECRET.
+ * 2. Supabase Auth JWTs are verified with Supabase Auth service (via supabaseAdmin.auth.getUser).
+ *
+ * Under NO circumstances are unverified decoded claims (jwt.decode) or unauthenticated
+ * request headers (x-user-email / x-user-id) trusted for user authentication.
+ */
+export async function resolveUserFromToken(token, req = null) {
+  if (!token || typeof token !== 'string' || token === 'anon') return null;
 
-  // 1. Try StartupZ internal JWT verification
+  // 1. Try StartupZ internal JWT verification (cryptographically verified with JWT_SECRET)
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     if (decoded && decoded.userId) {
@@ -49,119 +58,68 @@ async function resolveUserFromToken(token, req) {
       if (user && !user.isSuspended) return enrichWithSupabaseProfile(user);
     }
   } catch (err) {
-    // Fall through to decode check
+    // If not a valid StartupZ token (e.g. invalid signature, expired, or issued by Supabase)
   }
 
-  // 2. Try Supabase JWT decode
-  try {
-    const decoded = jwt.decode(token);
-    if (decoded && typeof decoded === 'object') {
-      const userId = decoded.sub || decoded.userId;
-      const userEmail = (decoded.email || '').toLowerCase().trim();
+  // 2. Try Supabase JWT verification (cryptographically verified via Supabase Auth service)
+  if (supabaseAdmin) {
+    try {
+      const { data, error } = await supabaseAdmin.auth.getUser(token);
+      if (!error && data?.user) {
+        const supaUser = data.user;
+        const userId = supaUser.id;
+        const userEmail = (supaUser.email || '').toLowerCase().trim();
 
-      if (userId || userEmail) {
-        let user = await prisma.user.findFirst({
-          where: {
-            OR: [
-              ...(userId ? [{ id: userId }] : []),
-              ...(userEmail ? [{ email: userEmail }] : []),
-            ],
-          },
-          include: { profile: true },
-        });
-
-        // Auto-provision user in Prisma if authenticated via Supabase
-        if (!user && userEmail) {
-          const meta = decoded.user_metadata || {};
-          const fullName = meta.full_name || meta.name || userEmail.split('@')[0];
-          const role = (meta.role || 'FOUNDER').toUpperCase();
-          const avatar = meta.avatar_url || meta.picture || null;
-
-          user = await prisma.user.create({
-            data: {
-              id: userId || undefined,
-              email: userEmail,
-              password: 'SUPABASE_MANAGED_AUTH',
-              role,
-              isVerified: true,
-              verificationBadge: decoded.app_metadata?.provider === 'google' ? 'Verified via Google' : 'Verified Member',
-              profile: {
-                create: {
-                  fullName,
-                  headline: meta.headline || `${role} | Startup Builder`,
-                  location: meta.location || 'Remote',
-                  avatar,
-                  openTo: 'Co-Founder,Startup Team,Investment',
-                  profileCompletion: 80,
-                },
-              },
+        if (userId || userEmail) {
+          let user = await prisma.user.findFirst({
+            where: {
+              OR: [
+                ...(userId ? [{ id: userId }] : []),
+                ...(userEmail ? [{ email: userEmail }] : []),
+              ],
             },
             include: { profile: true },
           });
+
+          // Auto-provision user in Prisma if authenticated via Supabase
+          if (!user && userEmail) {
+            const meta = supaUser.user_metadata || {};
+            const fullName = meta.full_name || meta.name || userEmail.split('@')[0];
+            const role = (meta.role || 'FOUNDER').toUpperCase();
+            const avatar = meta.avatar_url || meta.picture || null;
+
+            user = await prisma.user.create({
+              data: {
+                id: userId || undefined,
+                email: userEmail,
+                password: 'SUPABASE_MANAGED_AUTH',
+                role,
+                isVerified: true,
+                verificationBadge: supaUser.app_metadata?.provider === 'google' ? 'Verified via Google' : 'Verified Member',
+                profile: {
+                  create: {
+                    fullName,
+                    headline: meta.headline || `${role} | Startup Builder`,
+                    location: meta.location || 'Remote',
+                    avatar,
+                    openTo: 'Co-Founder,Startup Team,Investment',
+                    profileCompletion: 80,
+                  },
+                },
+              },
+              include: { profile: true },
+            });
+          }
+
+          if (user && !user.isSuspended) return enrichWithSupabaseProfile(user);
         }
-
-        if (user && !user.isSuspended) return enrichWithSupabaseProfile(user);
       }
+    } catch (err) {
+      // Supabase verification error / network failure
     }
-  } catch (err) {
-    // Ignore decode error
   }
 
-  // 3. Fallback header check (for seamless local/google quick sessions)
-  const headerEmail = req.headers['x-user-email'] || req.headers['x-user-id'];
-  if (headerEmail) {
-    const clean = String(headerEmail).toLowerCase().trim();
-    let user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { id: clean },
-          { email: clean },
-        ],
-      },
-      include: { profile: true },
-    });
-
-    if (!user && clean) {
-      let supaProfile = null;
-      try {
-        supaProfile = await fetchSupabaseProfile(clean.includes('@') ? '' : clean, clean.includes('@') ? clean : undefined);
-      } catch {}
-
-      const userEmail = clean.includes('@') ? clean : (supaProfile?.email || `${clean}@startupz.network`);
-      const fullName = supaProfile?.full_name || userEmail.split('@')[0];
-      const role = (supaProfile?.preferred_role || 'FOUNDER').toUpperCase();
-
-      user = await prisma.user.create({
-        data: {
-          id: clean.includes('@') ? undefined : clean,
-          email: userEmail,
-          password: 'SUPABASE_MANAGED_AUTH',
-          role,
-          isVerified: true,
-          verificationBadge: 'Verified Member',
-          profile: {
-            create: {
-              fullName,
-              headline: supaProfile?.headline || `${role} | Startup Builder`,
-              location: supaProfile?.location || 'Remote',
-              avatar: supaProfile?.avatar || null,
-              openTo: 'Co-Founder,Startup Team,Investment',
-              profileCompletion: 80,
-            },
-          },
-        },
-        include: { profile: true },
-      }).catch(async () => {
-        return prisma.user.findFirst({
-          where: { OR: [{ id: clean }, { email: userEmail }] },
-          include: { profile: true },
-        });
-      });
-    }
-
-    if (user && !user.isSuspended) return enrichWithSupabaseProfile(user);
-  }
-
+  // Never fall back to unverified decode or unauthenticated headers
   return null;
 }
 
@@ -173,12 +131,11 @@ export const requireAuth = async (req, res, next) => {
       token = authHeader.split(' ')[1];
     }
 
-    let user = token && token !== 'anon' ? await resolveUserFromToken(token, req) : null;
-
-    // Fallback: check headers if token verification was empty or anon
-    if (!user) {
-      user = await resolveUserFromToken(null, req);
+    if (!token || token === 'anon') {
+      return res.status(401).json({ error: 'Authentication required. Please log in.' });
     }
+
+    const user = await resolveUserFromToken(token, req);
 
     if (!user) {
       return res.status(401).json({ error: 'Authentication required. Please log in.' });
@@ -204,6 +161,11 @@ export const optionalAuth = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
+    if (!token || token === 'anon') {
+      req.user = null;
+      return next();
+    }
+
     const user = await resolveUserFromToken(token, req);
     req.user = user && !user.isSuspended ? user : null;
     next();
