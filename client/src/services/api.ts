@@ -205,6 +205,7 @@ export const api = {
     return request<any>('/auth/forgot-password', { method: 'POST', body: JSON.stringify(body) });
   },
   resetPassword: (payload: any) => request<any>('/auth/reset-password', { method: 'POST', body: JSON.stringify(payload) }),
+  setPassword: (password: string) => request<any>('/auth/set-password', { method: 'POST', body: JSON.stringify({ password }) }),
 
   // USERS
   getUsers: (params?: any) => request<any>(`/users${buildQuery(params)}`),

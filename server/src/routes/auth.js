@@ -81,19 +81,53 @@ router.post('/register', async (req, res) => {
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, identifier: rawId, password } = req.body;
+    let identifier = (email || rawId || '').trim().toLowerCase();
 
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required.' });
+    if (!identifier || !password) {
+      return res.status(400).json({ error: 'Email, Gmail, or username and password are required.' });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: email.trim().toLowerCase() },
+    if (identifier.endsWith('@gmail')) {
+      identifier = `${identifier}.com`;
+    }
+
+    const cleanUsername = identifier.replace(/^@/, '');
+
+    // 1. Try finding by direct email, gmail handle, or username
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { email: identifier.includes('@') ? identifier : `${identifier}@gmail.com` },
+          { profile: { username: cleanUsername } },
+        ],
+      },
       include: { profile: true },
     });
 
+    // 2. Fallback to Supabase profiles to resolve email if not directly found
+    if (!user && supabaseAdmin) {
+      try {
+        const { data: matchedProfiles } = await supabaseAdmin
+          .from('profiles')
+          .select('email, username')
+          .or(`email.ilike.${identifier},email.ilike.${identifier}@gmail.com,username.ilike.${cleanUsername}`)
+          .limit(1);
+
+        if (matchedProfiles && matchedProfiles.length > 0 && matchedProfiles[0].email) {
+          user = await prisma.user.findUnique({
+            where: { email: matchedProfiles[0].email.toLowerCase() },
+            include: { profile: true },
+          });
+        }
+      } catch (sbErr) {
+        console.warn('Supabase profile login lookup notice:', sbErr.message);
+      }
+    }
+
     if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password.' });
+      return res.status(401).json({ error: 'Invalid email, username, or password.' });
     }
 
     if (user.isSuspended) {
@@ -102,7 +136,7 @@ router.post('/login', async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid email or password.' });
+      return res.status(401).json({ error: 'Invalid email, username, or password.' });
     }
 
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
@@ -381,6 +415,27 @@ router.post('/verify-email', requireAuth, async (req, res) => {
   });
 
   return res.json({ message: 'Email address successfully verified!' });
+});
+
+// POST /api/auth/set-password (sets or updates password for Google/OAuth/new users)
+router.post('/set-password', requireAuth, async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { password: hashedPassword },
+    });
+
+    return res.json({ message: 'Password set successfully! You can now log in using your password.' });
+  } catch (err) {
+    console.error('Set password error:', err);
+    return res.status(500).json({ error: 'Failed to set password.' });
+  }
 });
 
 export default router;

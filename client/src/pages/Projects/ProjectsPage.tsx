@@ -1177,6 +1177,33 @@ export const ProjectsPage: React.FC = () => {
       }
     } catch {}
 
+    // Send realtime notification directly to team lead and creator in Supabase
+    if (!isCreator && targetProject && user?.id) {
+      const creatorId = targetProject.creator?.userId;
+      const leadRole = targetProject.roles.find((r) => r.roleName === 'Project Lead');
+      const leadId = leadRole?.assignedTo?.userId;
+      const targetIds = new Set<string>();
+      if (creatorId && creatorId !== user.id) targetIds.add(creatorId);
+      if (leadId && leadId !== user.id) targetIds.add(leadId);
+
+      const targetRole = targetProject.roles.find((r) => r.id === roleId);
+      const roleName = targetRole?.roleName || 'Project Role';
+
+      targetIds.forEach(async (tId) => {
+        try {
+          await supabase.from('notifications').insert({
+            user_id: tId,
+            sender_id: user.id,
+            type: 'PROJECT_APPLICATION',
+            title: `Role Application: ${roleName}`,
+            message: `${userName} applied for the "${roleName}" role on "${targetProject.title}". Review their profile to accept or decline.`,
+            link: '/projects',
+            is_read: false,
+          });
+        } catch {}
+      });
+    }
+
     // Call server endpoint and adopt authoritative project response
     try {
       const res = await api.applyProjectRole(projectId, roleId).catch(() => null);

@@ -268,7 +268,7 @@ export const LoginPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Email or Username
+                Email, Gmail, or Username
               </label>
               <div className="relative">
                 <Mail size={15} className="absolute left-3 top-2.5 text-slate-400" />
@@ -278,7 +278,7 @@ export const LoginPage: React.FC = () => {
                   value={identifier}
                   disabled={loading}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="student@college.edu or username"
+                  placeholder="name@gmail.com, yourname, or email"
                   className="input-base w-full pl-9 pr-3 py-2 text-xs disabled:opacity-60"
                 />
               </div>

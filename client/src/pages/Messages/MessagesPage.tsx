@@ -504,6 +504,9 @@ export const MessagesPage: React.FC = () => {
   const [sending, setSending] = useState(false);
   const [deletingConv, setDeletingConv] = useState(false);
   const [search, setSearch] = useState('');
+  const [chatTab, setChatTab] = useState<'DIRECT' | 'PROJECTS' | 'ALL'>(
+    targetProjectGroupId ? 'PROJECTS' : 'DIRECT'
+  );
 
   // Block User State
   const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
@@ -601,7 +604,7 @@ export const MessagesPage: React.FC = () => {
     setNewMessage((prev) => {
       const trimmed = prev.trim();
       if (!trimmed) return '@AI Scout ';
-      if (/@AI\s*Scout\b/i.test(trimmed)) return prev;
+      if (/@(AI\s*Scout|Scout|AI)\b/i.test(trimmed)) return prev;
       return `@AI Scout ${trimmed}`;
     });
     setTimeout(() => {
@@ -835,8 +838,14 @@ export const MessagesPage: React.FC = () => {
   };
 
   useEffect(() => {
+    if (targetProjectGroupId) {
+      setChatTab('PROJECTS');
+    }
+  }, [targetProjectGroupId]);
+
+  useEffect(() => {
     fetchConversations();
-  }, [targetUserId, targetConvId, user?.id]);
+  }, [targetUserId, targetConvId, targetProjectGroupId, user?.id]);
 
   // Realtime subscription for conversation updates
   useEffect(() => {
@@ -1354,8 +1363,8 @@ export const MessagesPage: React.FC = () => {
           }
         }
 
-        // 4. Trigger AI Scout analysis if message mentions @AI Scout
-        const isScoutMention = /@AI\s*Scout\b/i.test(contentToSend);
+        // 4. Trigger AI Scout analysis if message mentions @AI Scout, @Scout, or @AI
+        const isScoutMention = /@(AI\s*Scout|Scout|AI)\b/i.test(contentToSend);
         if (isScoutMention) {
           (async () => {
             try {
@@ -1629,8 +1638,21 @@ export const MessagesPage: React.FC = () => {
   };
 
   const safeConversations = Array.isArray(conversations) ? conversations : [];
-  const filteredConversations = safeConversations.filter((c) => {
-    const pName = c.participant?.profile?.fullName || c.participant?.email || '';
+  const directConversations = safeConversations.filter((c) => !(c as any).isProjectGroup);
+  const projectConversations = safeConversations.filter((c) => Boolean((c as any).isProjectGroup));
+
+  const tabConversations =
+    chatTab === 'PROJECTS'
+      ? projectConversations
+      : chatTab === 'ALL'
+      ? safeConversations
+      : directConversations;
+
+  const filteredConversations = tabConversations.filter((c) => {
+    const pName =
+      (c as any).isProjectGroup
+        ? (c as any).projectTitle || c.participant?.profile?.fullName || ''
+        : c.participant?.profile?.fullName || c.participant?.email || '';
     return pName.toLowerCase().includes(search.toLowerCase());
   });
 
@@ -1684,13 +1706,70 @@ export const MessagesPage: React.FC = () => {
               </span>
             </div>
 
+            {/* Category Tabs: Separate Direct Messages from Project Team Chats */}
+            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-dark-850 rounded-xl text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setChatTab('DIRECT')}
+                className={`flex-1 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  chatTab === 'DIRECT'
+                    ? 'bg-white dark:bg-dark-750 text-brand-600 dark:text-brand-400 shadow-2xs font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <UserIcon size={13} />
+                <span>Direct</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                    chatTab === 'DIRECT'
+                      ? 'bg-brand-50 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 font-bold'
+                      : 'bg-slate-200/60 dark:bg-dark-700 text-slate-500'
+                  }`}
+                >
+                  {directConversations.length}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setChatTab('PROJECTS')}
+                className={`flex-1 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  chatTab === 'PROJECTS'
+                    ? 'bg-white dark:bg-dark-750 text-brand-600 dark:text-brand-400 shadow-2xs font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <FolderKanban size={13} />
+                <span>Projects</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                    chatTab === 'PROJECTS'
+                      ? 'bg-brand-50 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 font-bold'
+                      : 'bg-slate-200/60 dark:bg-dark-700 text-slate-500'
+                  }`}
+                >
+                  {projectConversations.length}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setChatTab('ALL')}
+                className={`py-1.5 px-2.5 rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                  chatTab === 'ALL'
+                    ? 'bg-white dark:bg-dark-750 text-brand-600 dark:text-brand-400 shadow-2xs font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <span>All</span>
+              </button>
+            </div>
+
             <div className="relative">
               <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search direct messages..."
+                placeholder={chatTab === 'PROJECTS' ? 'Search project chats...' : 'Search direct messages...'}
                 className="input-base pl-9 pr-3 py-1.5 text-xs w-full bg-slate-50 dark:bg-dark-850"
               />
             </div>
@@ -1760,15 +1839,22 @@ export const MessagesPage: React.FC = () => {
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
-                          <span
-                            className={`text-xs truncate ${
-                              hasUnread
-                                ? 'font-bold text-slate-900 dark:text-white'
-                                : 'font-semibold text-slate-800 dark:text-slate-200'
-                            }`}
-                          >
-                            {name}
-                          </span>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span
+                              className={`text-xs truncate ${
+                                hasUnread
+                                  ? 'font-bold text-slate-900 dark:text-white'
+                                  : 'font-semibold text-slate-800 dark:text-slate-200'
+                              }`}
+                            >
+                              {name}
+                            </span>
+                            {(conv as any).isProjectGroup && (
+                              <span className="shrink-0 px-1.5 py-0.2 rounded text-[9px] font-bold bg-brand-100 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+                                Project
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             <span className="text-[10px] text-slate-400">
                               {new Date(conv.lastMessageAt).toLocaleDateString(undefined, {
@@ -2452,6 +2538,21 @@ export const MessagesPage: React.FC = () => {
                       >
                         <Link2 size={18} />
                       </button>
+
+                      {/* Quick AI Scout trigger button for project chat (accessible on mobile & desktop) */}
+                      {(selectedConversation as any)?.isProjectGroup && (
+                        <button
+                          type="button"
+                          onClick={handleTriggerScoutMention}
+                          disabled={sending || isUploadingAttachment}
+                          title="Ask AI Scout in this project"
+                          className="px-2 py-1 sm:py-1.5 rounded-full bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/70 dark:hover:bg-brand-900/80 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800/60 transition-colors cursor-pointer flex items-center gap-1 font-semibold text-xs shrink-0"
+                          aria-label="Ask AI Scout"
+                        >
+                          <Bot size={15} className={isScoutAnalyzing ? 'animate-spin' : ''} />
+                          <span className="text-[11px] font-bold">@AI Scout</span>
+                        </button>
+                      )}
                     </div>
 
                     <input

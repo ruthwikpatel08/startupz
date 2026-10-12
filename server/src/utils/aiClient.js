@@ -471,9 +471,9 @@ Question / Request: ${userQuery || 'Please analyze our team project discussion a
 
   if (ai) {
     const candidateModels = [
-      process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-      'gemini-2.0-flash',
+      process.env.GEMINI_MODEL || 'gemini-2.0-flash',
       'gemini-1.5-flash',
+      'gemini-1.5-pro',
     ].filter((v, i, a) => Boolean(v) && a.indexOf(v) === i);
 
     for (const model of candidateModels) {

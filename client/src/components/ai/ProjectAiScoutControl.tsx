@@ -195,7 +195,7 @@ export const ProjectAiScoutControl: React.FC<ProjectAiScoutControlProps> = ({
     const dx = e.clientX - pointerStartRef.current.x;
     const dy = e.clientY - pointerStartRef.current.y;
 
-    if (!hasMovedRef.current && Math.hypot(dx, dy) > 6) {
+    if (!hasMovedRef.current && Math.hypot(dx, dy) > 14) {
       hasMovedRef.current = true;
     }
 
@@ -248,6 +248,7 @@ export const ProjectAiScoutControl: React.FC<ProjectAiScoutControlProps> = ({
 
     const moved = hasMovedRef.current;
     const currentDrag = dragState;
+    const duration = Date.now() - (pointerStartRef.current?.time || 0);
 
     // Reset drag state
     setDragState(null);
@@ -255,11 +256,11 @@ export const ProjectAiScoutControl: React.FC<ProjectAiScoutControlProps> = ({
     startBtnPosRef.current = null;
     hasMovedRef.current = false;
 
-    if (moved && currentDrag) {
+    if (moved && currentDrag && duration > 200) {
       // Snap to nearest valid corner (never settle in an invalid position)
       setPosition(currentDrag.targetCorner);
-    } else if (!moved) {
-      // Clean click: Trigger @AI Scout mention in composer
+    } else {
+      // Fast tap or clean click on desktop/mobile: Trigger @AI Scout mention in composer
       onTriggerMention();
     }
   };
@@ -350,6 +351,10 @@ export const ProjectAiScoutControl: React.FC<ProjectAiScoutControlProps> = ({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
+        onClick={(e) => {
+          e.preventDefault();
+          onTriggerMention();
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();

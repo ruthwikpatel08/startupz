@@ -583,11 +583,16 @@ export async function resolveEmailOrUsername(identifier: string): Promise<string
   const clean = (identifier || '').trim().toLowerCase();
   if (!clean) return '';
   if (clean.includes('@')) {
+    if (clean.endsWith('@gmail')) {
+      return `${clean}.com`;
+    }
     return clean;
   }
 
-  if (KNOWN_ACCOUNT_MAP[clean]) {
-    return KNOWN_ACCOUNT_MAP[clean];
+  const cleanNoAt = clean.replace(/^@/, '');
+
+  if (KNOWN_ACCOUNT_MAP[cleanNoAt]) {
+    return KNOWN_ACCOUNT_MAP[cleanNoAt];
   }
 
   // 1. Try finding in Supabase public.profiles table by username, full_name or email prefix
@@ -595,7 +600,7 @@ export async function resolveEmailOrUsername(identifier: string): Promise<string
     const { data: matchedProfiles } = await supabase
       .from('profiles')
       .select('email, full_name, username')
-      .or(`username.ilike.${clean},email.ilike.${clean}@%,full_name.ilike.${clean},full_name.ilike.%${clean}%`)
+      .or(`username.ilike.${cleanNoAt},email.ilike.${cleanNoAt}@%,full_name.ilike.${cleanNoAt}`)
       .limit(1);
 
     if (matchedProfiles && matchedProfiles.length > 0 && matchedProfiles[0].email) {
@@ -605,8 +610,8 @@ export async function resolveEmailOrUsername(identifier: string): Promise<string
     console.warn('Profile username lookup notice:', err);
   }
 
-  // 2. Default: If a username without @ is entered, treat as a Gmail handle (e.g. "ruthwikpatel08" -> "ruthwikpatel08@gmail.com")
-  return `${clean}@gmail.com`;
+  // 2. Default: If a handle without @ is entered, treat as a Gmail handle (e.g. "ruthwikpatel08" -> "ruthwikpatel08@gmail.com")
+  return `${cleanNoAt}@gmail.com`;
 }
 
 /**

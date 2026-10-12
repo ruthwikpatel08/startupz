@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
-import { upsertUserProfile } from '../../lib/supabase';
+import { supabase, upsertUserProfile } from '../../lib/supabase';
 import { SEO } from '../../components/common/SEO';
 
 const STUDENT_AREAS = [
@@ -22,6 +22,11 @@ export const OnboardingPage: React.FC = () => {
   const [role, setRole] = useState<RoleType>('Student');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  // Password creation fields for Google/OAuth/new users
+  const [accountPassword, setAccountPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Student fields
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
@@ -62,7 +67,32 @@ export const OnboardingPage: React.FC = () => {
     if (!user) return;
     setSaving(true);
     setError('');
+
+    if (!accountPassword) {
+      setError('Please create a password for your account to proceed.');
+      setSaving(false);
+      return;
+    }
+    if (accountPassword.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      setSaving(false);
+      return;
+    }
+    if (accountPassword !== confirmPassword) {
+      setError('Passwords do not match. Please re-enter.');
+      setSaving(false);
+      return;
+    }
+
     try {
+      // 1. Update password in Supabase Auth & backend database
+      try {
+        await supabase.auth.updateUser({ password: accountPassword });
+      } catch (sbPassErr) {
+        console.warn('Supabase auth password set notice:', sbPassErr);
+      }
+      await api.setPassword(accountPassword).catch(() => null);
+
       let profileUpdate: Record<string, any> = {
         preferred_role: role.toUpperCase(),
         is_category_selected: true,
@@ -412,6 +442,65 @@ export const OnboardingPage: React.FC = () => {
               {profSkills && <div>🛠 {profSkills}</div>}
             </div>
           )}
+        </div>
+
+        {/* Create Password Section for Login */}
+        <div style={{ background: '#f8fafc', borderRadius: 12, padding: '20px', marginBottom: 24, border: '1px solid #e2e8f0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 16 }}>🔒</span>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>
+              Create Account Password
+            </div>
+          </div>
+          <p style={{ fontSize: 12, color: '#64748b', marginBottom: 16, lineHeight: 1.5 }}>
+            Set a password so you can sign in anytime using your email, Gmail, or username.
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={labelStyle}>New Password (min 6 characters) *</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  style={inputStyle}
+                  placeholder="Create a strong password"
+                  value={accountPassword}
+                  onChange={(e) => setAccountPassword(e.target.value)}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: 12,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    fontSize: 12,
+                    color: '#64748b',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                  }}
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Confirm Password *</label>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                style={inputStyle}
+                placeholder="Re-enter your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
         </div>
 
         {error && (

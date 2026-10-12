@@ -474,28 +474,38 @@ router.post('/:id/roles/:roleId/apply', requireAuth, async (req, res) => {
       // Role remains open so other people can also apply
       role.status = 'OPEN';
 
-      // Notify project creator
-      await prisma.notification.create({
-        data: {
-          userId: creatorId,
-          senderId: req.user.id,
-          type: 'PROJECT_APPLICATION',
-          title: `Role Application: ${role.roleName}`,
-          message: `${applicantLabel} applied for the "${role.roleName}" role on "${project.title}". Review and accept to add them to your team.`,
-          link: `/projects`,
-        },
-      }).catch(() => null);
+      // Notify project creator and project lead
+      const creatorId = project.creator?.userId || project.creator?.id || project.creatorId || project.creator_id;
+      const leadRole = Array.isArray(project.roles) && project.roles.find((r) => r.roleName === 'Project Lead');
+      const leadId = leadRole?.assignedTo?.userId || leadRole?.assignedTo?.id;
 
-      if (supabaseAdmin) {
-        await supabaseAdmin.from('notifications').insert({
-          user_id: creatorId,
-          sender_id: req.user.id,
-          type: 'PROJECT_APPLICATION',
-          title: `Role Application: ${role.roleName}`,
-          message: `${applicantLabel} applied for the "${role.roleName}" role on "${project.title}". Review and accept to add them to your team.`,
-          link: `/projects`,
-          is_read: false,
-        }).catch(() => null);
+      const targetUserIds = new Set();
+      if (creatorId && creatorId !== req.user.id) targetUserIds.add(creatorId);
+      if (leadId && leadId !== req.user.id) targetUserIds.add(leadId);
+
+      for (const targetId of targetUserIds) {
+        await prisma.notification.create({
+          data: {
+            userId: targetId,
+            senderId: req.user.id,
+            type: 'PROJECT_APPLICATION',
+            title: `Role Application: ${role.roleName}`,
+            message: `${applicantLabel} applied for the "${role.roleName}" role on "${project.title}". Review and accept to add them to your team.`,
+            link: `/projects`,
+          },
+        }).catch((e) => console.warn('Prisma notification warning:', e.message));
+
+        if (supabaseAdmin) {
+          await supabaseAdmin.from('notifications').insert({
+            user_id: targetId,
+            sender_id: req.user.id,
+            type: 'PROJECT_APPLICATION',
+            title: `Role Application: ${role.roleName}`,
+            message: `${applicantLabel} applied for the "${role.roleName}" role on "${project.title}". Review and accept to add them to your team.`,
+            link: `/projects`,
+            is_read: false,
+          }).catch((e) => console.warn('Supabase notification warning:', e.message));
+        }
       }
     }
 
@@ -1072,9 +1082,11 @@ router.post('/:id/ai-scout', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Project not found or has been deleted.' });
     }
 
-    // 2. Authorize user: only creator, assigned team members, or authorized platform administrators can use AI Scout
-    if (!isProjectMemberOrCreator(project, req.user)) {
-      return res.status(403).json({ error: 'You are not authorized to use AI Scout in this project workspace.' });
+    // 2. Authorize user: project creator, lead, assigned team members, or public project participants
+    const isMember = isProjectMemberOrCreator(project, req.user);
+    const isPublic = project.visibility === 'PUBLIC' || !project.visibility;
+    if (!isMember && !isPublic && !req.user.isAdmin) {
+      return res.status(403).json({ error: 'You are not authorized to use AI Scout in this private project workspace.' });
     }
 
     // 3. Gather relevant recent project chat messages (only from this project)
