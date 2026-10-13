@@ -522,6 +522,57 @@ export const OpportunitiesPage: React.FC = () => {
     setSearchParams(params);
   };
 
+  const isInternship = (opp: StartupOpportunity) => {
+    const r = (opp.role || '').toLowerCase();
+    const c = (opp.commitment || '').toLowerCase();
+    const d = (opp.description || '').toLowerCase();
+    return c.includes('intern') || r.includes('intern') || d.includes('[internship');
+  };
+
+  const isJob = (opp: StartupOpportunity) => {
+    return !isInternship(opp);
+  };
+
+  const displayedOpportunities = React.useMemo(() => {
+    return opportunities.filter((opp) => {
+      // 1. Opportunity Type Filter (All Opportunities vs Internships vs Jobs)
+      if (currentType && currentType !== 'all') {
+        const tLower = currentType.toLowerCase();
+        if (tLower === 'internships' || tLower === 'internship') {
+          if (!isInternship(opp)) return false;
+        } else if (tLower === 'jobs' || tLower === 'job') {
+          if (!isJob(opp)) return false;
+        }
+      }
+
+      // 2. Role Filter
+      if (role !== 'ALL') {
+        const rLower = role.toLowerCase();
+        const oppRoleLower = (opp.role || '').toLowerCase();
+        if (!oppRoleLower.includes(rLower)) {
+          if (rLower.includes('grant') && !oppRoleLower.includes('grant') && !oppRoleLower.includes('fellowship')) return false;
+          if (rLower.includes('engineer') && !oppRoleLower.includes('engineer') && !oppRoleLower.includes('builder') && !oppRoleLower.includes('developer')) return false;
+          if (!rLower.includes('grant') && !rLower.includes('engineer')) return false;
+        }
+      }
+
+      // 3. Workplace Type Filter
+      if (workplaceType !== 'ALL' && opp.workplaceType !== workplaceType) return false;
+
+      // 4. Commitment Filter
+      if (commitment !== 'ALL' && opp.commitment !== commitment) return false;
+
+      // 5. Search Filter
+      if (search.trim()) {
+        const q = search.trim().toLowerCase();
+        const text = `${opp.role} ${opp.description} ${opp.requiredSkills} ${opp.startup?.name || ''} ${opp.location || ''}`.toLowerCase();
+        if (!text.includes(q)) return false;
+      }
+
+      return true;
+    });
+  }, [opportunities, currentType, role, workplaceType, commitment, search]);
+
   const fetchMyApplications = async () => {
     if (!user?.id) return;
     try {
@@ -945,7 +996,7 @@ export const OpportunitiesPage: React.FC = () => {
                 </button>
               </div>
             </div>
-          ) : opportunities.length === 0 ? (
+          ) : displayedOpportunities.length === 0 ? (
             hasActiveFilters ? (
               <EmptyState
                 icon={Briefcase}
@@ -988,7 +1039,9 @@ export const OpportunitiesPage: React.FC = () => {
             )
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {opportunities.map((opp) => (
+              {displayedOpportunities.map((opp) => {
+                const isIntern = isInternship(opp);
+                return (
                 <div
                   key={opp.id}
                   onClick={() => setSelectedOpp(opp)}
@@ -1017,9 +1070,20 @@ export const OpportunitiesPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-dark-700/60">
-                        {opp.workplaceType}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                            isIntern
+                              ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/60'
+                              : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/60'
+                          }`}
+                        >
+                          {isIntern ? 'Internship' : 'Job'}
+                        </span>
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-dark-700/60">
+                          {opp.workplaceType}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Description */}
@@ -1209,8 +1273,9 @@ export const OpportunitiesPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
+          </div>
           )}
 
           {/* Permanent Educational Guide & Career Pillars */}

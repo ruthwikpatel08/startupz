@@ -48,7 +48,7 @@ export const AuthCallbackPage: React.FC = () => {
   const [avatar, setAvatar] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('STUDENT');
   const [customRoleDescription, setCustomRoleDescription] = useState('');
-  const [headline, setHeadline] = useState('Student Builder & Campus Innovator');
+  const [headline, setHeadline] = useState('');
   const [location, setLocation] = useState('Remote');
   const [oneLineBio, setOneLineBio] = useState('');
   const [bio, setBio] = useState('');
@@ -200,7 +200,7 @@ export const AuthCallbackPage: React.FC = () => {
             '';
 
           let initialRole: UserRole = 'STUDENT';
-          let initialHeadline = 'Student Builder & Campus Innovator';
+          let initialHeadline = '';
           let initialLocation = 'Remote';
           let initialCustomRole = '';
 
@@ -264,7 +264,7 @@ export const AuthCallbackPage: React.FC = () => {
                 '';
 
               let initialRole: UserRole = 'STUDENT';
-              let initialHeadline = 'Student Builder & Campus Innovator';
+              let initialHeadline = '';
               let initialLocation = 'Remote';
               let initialCustomRole = '';
 
@@ -326,13 +326,8 @@ export const AuthCallbackPage: React.FC = () => {
     };
   }, [navigate, searchParams]);
 
-  const handleRoleSelect = (roleId: UserRole, defaultHeadline: string) => {
+  const handleRoleSelect = (roleId: UserRole) => {
     setSelectedRole(roleId);
-    if (roleId === 'OTHER' && customRoleDescription.trim()) {
-      setHeadline(customRoleDescription.trim());
-    } else {
-      setHeadline(defaultHeadline);
-    }
   };
 
   const handleCompleteSetup = async (e: React.FormEvent) => {
@@ -353,13 +348,10 @@ export const AuthCallbackPage: React.FC = () => {
         selectedRole === 'OTHER' && cleanCustomRole
           ? `Other: ${cleanCustomRole}`
           : selectedRole;
-      const cleanHeadline =
-        selectedRole === 'OTHER' && cleanCustomRole
-          ? cleanCustomRole
-          : headline.trim() || `${selectedRole} | Startup Builder`;
+      const cleanHeadline = headline.trim();
       const cleanLocation = location.trim() || 'Remote';
-      const cleanOneLineBio = (oneLineBio || bio || '').trim();
-      const cleanBio = (bio || oneLineBio || '').trim();
+      const cleanOneLineBio = oneLineBio.trim();
+      const cleanBio = (bio || '').trim();
       const openToString =
         openTo.length > 0
           ? openTo.join(',')
@@ -370,7 +362,7 @@ export const AuthCallbackPage: React.FC = () => {
         full_name: cleanFullName,
         username: cleanUsername,
         headline: cleanHeadline,
-        one_line_bio: cleanOneLineBio || cleanHeadline,
+        one_line_bio: cleanOneLineBio,
         location: cleanLocation,
         bio: cleanBio,
         avatar,
@@ -416,7 +408,7 @@ export const AuthCallbackPage: React.FC = () => {
           fullName: cleanFullName,
           username: cleanUsername,
           headline: cleanHeadline,
-          oneLineBio: cleanOneLineBio || cleanHeadline,
+          oneLineBio: cleanOneLineBio,
           location: cleanLocation,
           bio: cleanBio,
           avatar,
@@ -515,7 +507,7 @@ export const AuthCallbackPage: React.FC = () => {
                     <button
                       key={cat.id}
                       type="button"
-                      onClick={() => handleRoleSelect(cat.id, cat.defaultHeadline)}
+                      onClick={() => handleRoleSelect(cat.id)}
                       className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
                         isSelected
                           ? 'bg-brand-50/60 dark:bg-brand-950/30 border-brand-600 dark:border-brand-500 ring-1 ring-brand-500/30'
@@ -583,7 +575,6 @@ export const AuthCallbackPage: React.FC = () => {
                     value={customRoleDescription}
                     onChange={(e) => {
                       setCustomRoleDescription(e.target.value);
-                      setHeadline(e.target.value);
                     }}
                     placeholder="e.g. Student, Salesman, or Frontend Designer"
                     className="input-base w-full text-xs sm:text-sm py-2 bg-white dark:bg-dark-900 border-brand-300 dark:border-brand-800"
@@ -627,7 +618,7 @@ export const AuthCallbackPage: React.FC = () => {
                       value={username}
                       onChange={(e) =>
                         setUsername(
-                          e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
+                           e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
                         )
                       }
                       className="input-base w-full pl-8 text-xs sm:text-sm py-2"
@@ -639,11 +630,10 @@ export const AuthCallbackPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Professional Headline <span className="text-rose-500">*</span>
+                    Professional Headline <span className="text-slate-400 font-normal">(Optional)</span>
                   </label>
                   <input
                     type="text"
-                    required
                     value={headline}
                     onChange={(e) => setHeadline(e.target.value)}
                     placeholder="e.g. AI Founder | Serial Builder"

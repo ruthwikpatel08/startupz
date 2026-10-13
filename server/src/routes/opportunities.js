@@ -101,20 +101,14 @@ router.get('/', optionalAuth, async (req, res) => {
         orConditions.push(
           { commitment: { contains: 'Intern' } },
           { role: { contains: 'Intern' } },
-          { description: { contains: 'intern' } },
+          { description: { contains: '[Internship' } },
         );
       } else if (tLower === 'jobs' || tLower === 'job') {
-        orConditions.push(
-          { description: { contains: '[Job Opening]' } },
-          { commitment: 'Full-time' },
-          { commitment: 'Part-time' },
-          { role: { contains: 'Engineer' } },
-          { role: { contains: 'Lead' } },
-          { role: { contains: 'Architect' } },
-          { role: { contains: 'Scientist' } },
-          { role: { contains: 'Specialist' } },
-          { role: { contains: 'Researcher' } },
-        );
+        where.NOT = [
+          { commitment: { contains: 'Intern' } },
+          { role: { contains: 'Intern' } },
+          { description: { contains: '[Internship' } },
+        ];
       }
     }
 

@@ -66,9 +66,7 @@ export const RegisterPage: React.FC = () => {
     try {
       const cleanCustomRole = customRoleDescription.trim();
       const finalRole = role === 'OTHER' && cleanCustomRole ? `Other: ${cleanCustomRole}` : role;
-      const finalHeadline = role === 'OTHER' && cleanCustomRole
-        ? cleanCustomRole
-        : (headline.trim() || `${role.charAt(0) + role.slice(1).toLowerCase()} | HookZ Member`);
+      const finalHeadline = headline.trim();
 
       // Save preliminary role & headline so the OAuth callback can populate the profile
       const oauthMeta = {
@@ -128,9 +126,7 @@ export const RegisterPage: React.FC = () => {
     const trimmedName = fullName.trim();
     const cleanCustomRole = customRoleDescription.trim();
     const finalRole = role === 'OTHER' && cleanCustomRole ? `Other: ${cleanCustomRole}` : role;
-    const finalHeadline = role === 'OTHER' && cleanCustomRole
-      ? cleanCustomRole
-      : (headline.trim() || `${role.charAt(0) + role.slice(1).toLowerCase()} | HookZ Member`);
+    const finalHeadline = headline.trim();
     const finalLocation = location.trim() || 'Remote';
 
     try {
@@ -391,9 +387,6 @@ export const RegisterPage: React.FC = () => {
                       disabled={loading}
                       onChange={(e) => {
                         setCustomRoleDescription(e.target.value);
-                        if (!headline || headline.includes('HookZ') || headline.includes('Other')) {
-                          setHeadline(e.target.value);
-                        }
                       }}
                       placeholder="Enter your role (e.g. Student Designer, Researcher)"
                       className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-white border border-brand-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 text-slate-900 placeholder:text-slate-400"

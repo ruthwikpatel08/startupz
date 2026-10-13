@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           profileRow = await upsertUserProfile(userId, {
             full_name: fullName,
             username: (authUser.email ? authUser.email.split('@')[0] : '').toLowerCase().replace(/[^a-z0-9_]/g, ''),
-            headline: metadata.headline || `${role} | Startup Builder`,
+            headline: metadata.headline || '',
             location: metadata.location || 'Remote',
             avatar,
             preferred_role: role,
@@ -341,7 +341,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: userId,
         userId,
         fullName: cleanName,
-        headline: `${role.charAt(0) + role.slice(1).toLowerCase()} | Startup Builder`,
+        headline: '',
         location: 'Remote',
         avatar,
         skills: '',
@@ -359,7 +359,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await upsertUserProfile(userId, {
         full_name: cleanName,
         username: cleanEmail.split('@')[0],
-        headline: `${role} | Startup Builder`,
+        headline: '',
         location: 'Remote',
         avatar: avatar || undefined,
         preferred_role: role,
@@ -377,7 +377,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: cleanEmail,
         fullName: cleanName,
         role,
-        headline: `${role} | Startup Builder`,
+        headline: '',
         location: 'Remote',
         avatar,
       });
