@@ -412,6 +412,23 @@ const deleteConversationHandler = async (req, res) => {
     userDeletedConversations.get(req.user.id).add(conv.id);
     saveDeletedConversations(userDeletedConversations);
 
+    // Also mark ALL existing messages in this conversation as deleted for current user
+    // so if a conversation is restarted later, old messages never reappear
+    try {
+      const existingMsgs = await prisma.message.findMany({
+        where: { conversationId: conv.id },
+        select: { id: true },
+      });
+      if (!userDeletedMessages.has(req.user.id)) {
+        userDeletedMessages.set(req.user.id, new Set());
+      }
+      const userMsgSet = userDeletedMessages.get(req.user.id);
+      for (const m of existingMsgs) {
+        userMsgSet.add(m.id);
+      }
+      saveDeletedMessages(userDeletedMessages);
+    } catch {}
+
     const otherId = conv.participant1Id === req.user.id ? conv.participant2Id : conv.participant1Id;
 
     // If the other participant has also deleted this conversation, purge completely

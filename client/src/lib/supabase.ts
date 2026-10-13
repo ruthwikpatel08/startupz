@@ -1454,7 +1454,9 @@ export function getDeletedConversationIds(userId?: string): Set<string> {
     const raw = localStorage.getItem(`${DELETED_CHATS_PREFIX}${userId}`);
     if (!raw) return new Set();
     const arr = JSON.parse(raw);
-    return new Set(Array.isArray(arr) ? arr : []);
+    if (!Array.isArray(arr)) return new Set();
+    const valid = arr.filter((id) => typeof id === 'string' && !id.startsWith('user_'));
+    return new Set(valid);
   } catch {
     return new Set();
   }
@@ -1560,8 +1562,19 @@ export function unhideConversation(userId: string, conversationId: string): void
   if (!userId || !conversationId) return;
   try {
     const set = getDeletedConversationIds(userId);
-    if (set.has(conversationId)) {
-      set.delete(conversationId);
+    let changed = false;
+    const candidates = [
+      conversationId,
+      `user_${conversationId}`,
+      conversationId.replace(/^user_/, ''),
+    ];
+    for (const c of candidates) {
+      if (set.has(c)) {
+        set.delete(c);
+        changed = true;
+      }
+    }
+    if (changed) {
       localStorage.setItem(`${DELETED_CHATS_PREFIX}${userId}`, JSON.stringify(Array.from(set)));
     }
   } catch {}
@@ -1911,6 +1924,10 @@ export async function sendSupabaseMessage(
   // 5. Unhide conversation if previously hidden
   unhideConversation(senderId, finalConvId);
   unhideConversation(receiverId, finalConvId);
+  unhideConversation(senderId, receiverId);
+  unhideConversation(receiverId, senderId);
+  unhideConversation(senderId, `user_${receiverId}`);
+  unhideConversation(receiverId, `user_${senderId}`);
 
   // 6. Mirror to backend in background
   try {
@@ -1944,12 +1961,28 @@ export async function deleteSupabaseConversation(
   // 1. Mark permanently deleted in client storage for this user
   recordDeletedConversation(currentUserId, conversationId);
 
-  // 2. Mirror delete to backend API ("delete for me")
+  // 2. Fetch and record all existing messages in this conversation as deleted for this user
+  // so that if a new chat is started later with this user, old messages NEVER reappear!
+  try {
+    const { data: convMsgs } = await supabase
+      .from('messages')
+      .select('id')
+      .eq('conversation_id', conversationId);
+    if (Array.isArray(convMsgs) && convMsgs.length > 0) {
+      convMsgs.forEach((m) => {
+        if (m?.id) recordDeletedMessage(currentUserId, m.id);
+      });
+    }
+  } catch (err) {
+    console.warn('Error archiving message IDs on delete:', err);
+  }
+
+  // 3. Mirror delete to backend API ("delete for me")
   try {
     await api.deleteConversation(conversationId).catch(() => {});
   } catch {}
 
-  // 3. Dispatch event so UI and open tabs refresh immediately
+  // 4. Dispatch event so UI and open tabs refresh immediately
   if (typeof window !== 'undefined') {
     window.dispatchEvent(
       new CustomEvent('startupz_messages_updated', {
@@ -1958,10 +1991,21 @@ export async function deleteSupabaseConversation(
     );
   }
 
-  // 4. Broadcast on Realtime channel so any other open devices (laptop, mobile) sync immediately!
+  // 5. Broadcast on Realtime channels so any other open devices (laptop, mobile) sync immediately!
   try {
     const channel = supabase.channel('global-data-sync-broadcast');
     channel.send({
+      type: 'broadcast',
+      event: 'chat_deleted',
+      payload: {
+        userId: currentUserId,
+        conversationId,
+        timestamp: new Date().toISOString(),
+      },
+    }).catch(() => null);
+
+    const userChannel = supabase.channel(`user_chat_sync_${currentUserId}`);
+    userChannel.send({
       type: 'broadcast',
       event: 'chat_deleted',
       payload: {

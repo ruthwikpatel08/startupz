@@ -687,11 +687,7 @@ export const MessagesPage: React.FC = () => {
 
       supaList.forEach((c) => {
         const key = getParticipantKey(c);
-        const myId = user?.id ? String(user.id).trim().toLowerCase() : '';
-        const otherId =
-          c.participant?.id ||
-          (String(c.participant1Id || '').toLowerCase() === myId ? c.participant2Id : c.participant1Id);
-        if (deletedIds.has(c.id) || (otherId && deletedIds.has(otherId)) || deletedIds.has(key)) return;
+        if (deletedIds.has(c.id)) return;
         if (!convMap.has(key)) {
           convMap.set(key, c);
         }
@@ -702,11 +698,7 @@ export const MessagesPage: React.FC = () => {
           return;
         }
         const key = getParticipantKey(c);
-        const myId = user?.id ? String(user.id).trim().toLowerCase() : '';
-        const otherId =
-          c.participant?.id ||
-          (String(c.participant1Id || '').toLowerCase() === myId ? c.participant2Id : c.participant1Id);
-        if (deletedIds.has(c.id) || (otherId && deletedIds.has(otherId)) || deletedIds.has(key)) return;
+        if (deletedIds.has(c.id)) return;
         if (!convMap.has(key)) {
           convMap.set(key, c);
         }
@@ -822,8 +814,16 @@ export const MessagesPage: React.FC = () => {
         currentTargetKey && currentTargetKey !== lastHandledTargetRef.current
       );
 
-      // If user already has an active conversation and this is not a new external navigation target, preserve it!
-      if (!isExternalTargetChange && activeConv) {
+      // If active conversation was deleted, clear it immediately so it doesn't ghost
+      if (
+        activeConv &&
+        (deletedIds.has(activeConv.id) ||
+          ((activeConv as any).projectId && deletedIds.has((activeConv as any).projectId)))
+      ) {
+        selectedConversationRef.current = null;
+        setSelectedConversation(null);
+        setMessages([]);
+      } else if (!isExternalTargetChange && activeConv) {
         let matching: any = null;
         if ((activeConv as any).isProjectGroup) {
           const pId = (activeConv as any).projectId || activeConv.id;
@@ -861,8 +861,8 @@ export const MessagesPage: React.FC = () => {
         if (matching) {
           selectedConversationRef.current = matching;
           setSelectedConversation(matching);
+          return;
         }
-        return;
       }
 
       // Record this target as handled
@@ -1058,6 +1058,8 @@ export const MessagesPage: React.FC = () => {
             setConversations((prev) => prev.filter((c) => c.id !== cId && (c as any).projectId !== cId));
             setSelectedConversation((curr: any) => {
               if (curr && (curr.id === cId || curr.projectId === cId)) {
+                selectedConversationRef.current = null;
+                lastHandledTargetRef.current = '';
                 setMessages([]);
                 return null;
               }
@@ -1380,6 +1382,8 @@ export const MessagesPage: React.FC = () => {
   }, [messages.length]);
 
   const handleSelectConversation = async (conv: Conversation) => {
+    // Clear messages immediately so prior conversation messages never linger
+    setMessages([]);
     selectedConversationRef.current = conv;
     setSelectedConversation(conv);
 
@@ -1395,7 +1399,7 @@ export const MessagesPage: React.FC = () => {
         (String(conv.participant1Id || '').toLowerCase() === myId
           ? conv.participant2Id
           : conv.participant1Id);
-      const targetKey = otherId ? `user:${otherId}` : `conv:${conv.id}`;
+      const targetKey = conv.id && conv.id !== 'draft' ? `conv:${conv.id}` : (otherId ? `user:${otherId}` : '');
       lastHandledTargetRef.current = targetKey;
       if (conv.id && conv.id !== 'draft') {
         navigate(`/messages?conversationId=${conv.id}${otherId ? `&user=${otherId}` : ''}`, {
@@ -1694,7 +1698,7 @@ export const MessagesPage: React.FC = () => {
         const updated = { ...selectedConversation, id: res.conversationId, lastMessage: contentToSend };
         selectedConversationRef.current = updated;
         setSelectedConversation(updated);
-        lastHandledTargetRef.current = `user:${receiverId}`;
+        lastHandledTargetRef.current = `conv:${res.conversationId}`;
         navigate(`/messages?conversationId=${res.conversationId}&user=${receiverId}`, { replace: true });
       }
       await fetchConversations();
@@ -1827,11 +1831,6 @@ export const MessagesPage: React.FC = () => {
       // 1. Mark permanently deleted in Supabase & broadcast cross-device
       await deleteSupabaseConversation(convId, user.id);
 
-      // 2. Also record otherId and group key as deleted so it can never reappear
-      if (otherId) {
-        recordDeletedConversation(user.id, otherId);
-        recordDeletedConversation(user.id, `user_${otherId}`);
-      }
       if (isProject) {
         try {
           const rawGroups = localStorage.getItem('startupz_project_groups');
@@ -1849,20 +1848,34 @@ export const MessagesPage: React.FC = () => {
         } catch {}
         recordDeletedConversation(user.id, `group_${projId || convId}`);
         if (projId) recordDeletedConversation(user.id, projId);
+      } else {
+        try {
+          localStorage.removeItem(`startupz_project_messages_${convId}`);
+        } catch {}
       }
 
-      // 3. Mirror delete in backend API
+      // 2. Mirror delete in backend API
       await api.deleteConversation(convId).catch(() => {});
 
-      // 4. Update UI state in both desktop and mobile
+      // 3. Update UI state in both desktop and mobile
       setConversations((prev) =>
         prev.filter((c) => c.id !== convId && (c as any).projectId !== projId)
       );
 
-      if (
-        selectedConversation?.id === convId ||
-        (selectedConversation as any)?.projectId === projId
-      ) {
+      const currentSelected = selectedConversationRef.current || selectedConversation;
+      const isCurrentlySelected = Boolean(
+        currentSelected && (
+          currentSelected.id === convId ||
+          (projId && (currentSelected as any)?.projectId === projId) ||
+          (otherId && (
+            String(currentSelected.participant?.id || '').toLowerCase() === String(otherId).toLowerCase() ||
+            String(currentSelected.participant1Id || '').toLowerCase() === String(otherId).toLowerCase() ||
+            String(currentSelected.participant2Id || '').toLowerCase() === String(otherId).toLowerCase()
+          ))
+        )
+      );
+
+      if (isCurrentlySelected) {
         selectedConversationRef.current = null;
         setSelectedConversation(null);
         lastHandledTargetRef.current = '';
