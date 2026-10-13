@@ -1408,14 +1408,19 @@ export async function getSupabaseConversations(userId: string): Promise<Conversa
   // Deduplicate by other participant ID so that each account only appears ONCE
   const deduplicatedRows: any[] = [];
   const seenOtherUsers = new Set<string>();
+  const uid = String(userId || '').trim().toLowerCase();
+
   for (const c of convRows) {
     // If deleted by this user, do not show in user's chat list
     if (deletedIds.has(c.id)) continue;
 
-    const otherId = c.participant1_id === userId ? c.participant2_id : c.participant1_id;
-    if (!otherId || seenOtherUsers.has(otherId)) continue;
-    seenOtherUsers.add(otherId);
-    deduplicatedRows.push(c);
+    const p1 = String(c.participant1_id || '').trim().toLowerCase();
+    const p2 = String(c.participant2_id || '').trim().toLowerCase();
+    const otherId = p1 === uid ? c.participant2_id : p2 === uid ? c.participant1_id : (c.participant1_id || c.participant2_id);
+    const otherKey = String(otherId || '').trim().toLowerCase();
+    if (!otherKey || otherKey === uid || seenOtherUsers.has(otherKey)) continue;
+    seenOtherUsers.add(otherKey);
+    deduplicatedRows.push({ ...c, _resolvedOtherId: otherId });
   }
 
   const otherIds = Array.from(seenOtherUsers);
@@ -1434,7 +1439,11 @@ export async function getSupabaseConversations(userId: string): Promise<Conversa
       .eq('is_read', false),
   ]);
 
-  const profileMap = new Map((profileRows || []).map((p) => [p.user_id, p]));
+  const profileMap = new Map<string, any>();
+  (profileRows || []).forEach((p) => {
+    if (p.user_id) profileMap.set(String(p.user_id).toLowerCase(), p);
+    if (p.id) profileMap.set(String(p.id).toLowerCase(), p);
+  });
 
   const unreadMap = new Map<string, number>();
   (unreadRows || []).forEach((r) => {
@@ -1442,8 +1451,8 @@ export async function getSupabaseConversations(userId: string): Promise<Conversa
   });
 
   return deduplicatedRows.map((c) => {
-    const otherId = c.participant1_id === userId ? c.participant2_id : c.participant1_id;
-    const p = profileMap.get(otherId);
+    const otherId = c._resolvedOtherId || (String(c.participant1_id).toLowerCase() === uid ? c.participant2_id : c.participant1_id);
+    const p = profileMap.get(String(otherId).toLowerCase()) || profileMap.get(otherId);
     const otherUser: User = {
       id: otherId,
       email: p?.email || '',
@@ -1559,16 +1568,21 @@ export async function ensureSupabaseConversationId(
     throw new Error('Invalid participants for conversation.');
   }
 
-  // 1. If a hint is provided and not draft, verify if it actually exists in Supabase
+  // 1. If a hint is provided and not draft, verify if it actually exists in Supabase and matches both participants
   if (hintConversationId && hintConversationId !== 'draft') {
     try {
       const { data: checkData } = await supabase
         .from('conversations')
-        .select('id')
+        .select('id, participant1_id, participant2_id')
         .eq('id', hintConversationId)
         .maybeSingle();
 
-      if (checkData?.id) {
+      const uA = String(userA).trim().toLowerCase();
+      const uB = String(userB).trim().toLowerCase();
+      const cp1 = String(checkData?.participant1_id || '').trim().toLowerCase();
+      const cp2 = String(checkData?.participant2_id || '').trim().toLowerCase();
+
+      if (checkData?.id && ((cp1 === uA && cp2 === uB) || (cp1 === uB && cp2 === uA))) {
         return checkData.id;
       }
     } catch {

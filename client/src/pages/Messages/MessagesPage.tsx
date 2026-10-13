@@ -499,6 +499,12 @@ export const MessagesPage: React.FC = () => {
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const selectedConversationRef = useRef<Conversation | null>(null);
+  const lastHandledTargetRef = useRef<string>('');
+
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation;
+  }, [selectedConversation]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
@@ -626,10 +632,27 @@ export const MessagesPage: React.FC = () => {
     if (c.isProjectGroup) {
       return `group_${c.projectId || c.id}`;
     }
-    const otherId =
-      c.participant?.id ||
-      (c.participant1Id === user?.id ? c.participant2Id : c.participant1Id);
-    return otherId ? `user_${otherId}` : `conv_${c.id}`;
+    const myId = user?.id ? String(user.id).trim().toLowerCase() : '';
+    const p1 = c.participant1Id ? String(c.participant1Id).trim().toLowerCase() : '';
+    const p2 = c.participant2Id ? String(c.participant2Id).trim().toLowerCase() : '';
+
+    let otherId = c.participant?.id;
+    if (!otherId || (myId && String(otherId).trim().toLowerCase() === myId)) {
+      if (p1 && myId && p1 === myId) otherId = c.participant2Id;
+      else if (p2 && myId && p2 === myId) otherId = c.participant1Id;
+      else otherId = c.participant2Id || c.participant1Id;
+    }
+
+    if (otherId && myId && String(otherId).trim().toLowerCase() !== myId) {
+      return `user_${String(otherId).trim().toLowerCase()}`;
+    }
+
+    const email = c.participant?.email ? String(c.participant.email).trim().toLowerCase() : '';
+    if (email && (!user?.email || email !== String(user.email).trim().toLowerCase())) {
+      return `email_${email}`;
+    }
+
+    return `conv_${c.id}`;
   };
 
   const fetchConversations = async () => {
@@ -664,9 +687,10 @@ export const MessagesPage: React.FC = () => {
 
       supaList.forEach((c) => {
         const key = getParticipantKey(c);
+        const myId = user?.id ? String(user.id).trim().toLowerCase() : '';
         const otherId =
           c.participant?.id ||
-          (c.participant1Id === user?.id ? c.participant2Id : c.participant1Id);
+          (String(c.participant1Id || '').toLowerCase() === myId ? c.participant2Id : c.participant1Id);
         if (deletedIds.has(c.id) || (otherId && deletedIds.has(otherId)) || deletedIds.has(key)) return;
         if (!convMap.has(key)) {
           convMap.set(key, c);
@@ -674,10 +698,14 @@ export const MessagesPage: React.FC = () => {
       });
 
       apiList.forEach((c: any) => {
+        if (!c.isProjectGroup && (!c.participant || (!c.participant.email && !c.participant.profile?.fullName))) {
+          return;
+        }
         const key = getParticipantKey(c);
+        const myId = user?.id ? String(user.id).trim().toLowerCase() : '';
         const otherId =
           c.participant?.id ||
-          (c.participant1Id === user?.id ? c.participant2Id : c.participant1Id);
+          (String(c.participant1Id || '').toLowerCase() === myId ? c.participant2Id : c.participant1Id);
         if (deletedIds.has(c.id) || (otherId && deletedIds.has(otherId)) || deletedIds.has(key)) return;
         if (!convMap.has(key)) {
           convMap.set(key, c);
@@ -773,7 +801,72 @@ export const MessagesPage: React.FC = () => {
       }
 
       const list = Array.from(convMap.values());
+      list.sort((a, b) => {
+        const tA = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+        const tB = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+        return tB - tA;
+      });
       setConversations(list);
+
+      // Check if user actively has a conversation selected
+      const activeConv = selectedConversationRef.current;
+      const currentTargetKey = targetProjectGroupId
+        ? `project:${targetProjectGroupId}`
+        : targetConvId
+        ? `conv:${targetConvId}`
+        : targetUserId
+        ? `user:${targetUserId}`
+        : '';
+
+      const isExternalTargetChange = Boolean(
+        currentTargetKey && currentTargetKey !== lastHandledTargetRef.current
+      );
+
+      // If user already has an active conversation and this is not a new external navigation target, preserve it!
+      if (!isExternalTargetChange && activeConv) {
+        let matching: any = null;
+        if ((activeConv as any).isProjectGroup) {
+          const pId = (activeConv as any).projectId || activeConv.id;
+          matching = list.find(
+            (c: any) =>
+              c.isProjectGroup &&
+              (c.projectId === pId || c.id === activeConv.id || (c.id && c.id.includes(pId)))
+          );
+        } else {
+          const myId = user?.id ? String(user.id).trim().toLowerCase() : '';
+          const activeOtherId =
+            activeConv.participant?.id ||
+            (String(activeConv.participant1Id || '').toLowerCase() === myId
+              ? activeConv.participant2Id
+              : activeConv.participant1Id);
+          const activeOtherKey = activeOtherId ? String(activeOtherId).trim().toLowerCase() : '';
+          const activeEmail = activeConv.participant?.email
+            ? String(activeConv.participant.email).trim().toLowerCase()
+            : '';
+
+          matching = list.find((c: any) => {
+            if ((c as any).isProjectGroup) return false;
+            if (activeConv.id && activeConv.id !== 'draft' && c.id === activeConv.id) return true;
+            const cOtherId =
+              c.participant?.id ||
+              (String(c.participant1Id || '').toLowerCase() === myId ? c.participant2Id : c.participant1Id);
+            if (activeOtherKey && cOtherId && String(cOtherId).trim().toLowerCase() === activeOtherKey)
+              return true;
+            if (activeEmail && c.participant?.email && String(c.participant.email).trim().toLowerCase() === activeEmail)
+              return true;
+            return false;
+          });
+        }
+
+        if (matching) {
+          selectedConversationRef.current = matching;
+          setSelectedConversation(matching);
+        }
+        return;
+      }
+
+      // Record this target as handled
+      lastHandledTargetRef.current = currentTargetKey;
 
       // Check project group link: /messages?projectGroupId=xyz
       if (targetProjectGroupId && list.length > 0) {
@@ -784,6 +877,7 @@ export const MessagesPage: React.FC = () => {
             (c.id && c.id.includes(targetProjectGroupId))
         );
         if (found) {
+          selectedConversationRef.current = found;
           setSelectedConversation(found);
           return;
         }
@@ -793,6 +887,7 @@ export const MessagesPage: React.FC = () => {
       if (targetConvId && list.length > 0) {
         const found = list.find((c: any) => c.id === targetConvId);
         if (found) {
+          selectedConversationRef.current = found;
           setSelectedConversation(found);
           return;
         }
@@ -800,14 +895,18 @@ export const MessagesPage: React.FC = () => {
 
       // 2. If user came via /messages?user=xyz
       if (targetUserId) {
-        let found = list.find(
-          (c: any) =>
-            c.participant?.id === targetUserId ||
-            c.participant1Id === targetUserId ||
-            c.participant2Id === targetUserId
-        );
+        const myId = user?.id ? String(user.id).trim().toLowerCase() : '';
+        const targetClean = String(targetUserId).trim().toLowerCase();
+        let found = list.find((c: any) => {
+          if ((c as any).isProjectGroup) return false;
+          const pId = c.participant?.id ? String(c.participant.id).trim().toLowerCase() : '';
+          const p1 = c.participant1Id ? String(c.participant1Id).trim().toLowerCase() : '';
+          const p2 = c.participant2Id ? String(c.participant2Id).trim().toLowerCase() : '';
+          return pId === targetClean || (p1 === targetClean && p1 !== myId) || (p2 === targetClean && p2 !== myId);
+        });
 
         if (found) {
+          selectedConversationRef.current = found;
           setSelectedConversation(found);
         } else {
           // If conversation doesn't exist in list yet, fetch user to start a clean draft conversation
@@ -845,6 +944,7 @@ export const MessagesPage: React.FC = () => {
                 lastMessageAt: new Date().toISOString(),
                 messages: [],
               };
+              selectedConversationRef.current = draftConv;
               setSelectedConversation(draftConv);
             }
           } catch (err) {
@@ -1126,7 +1226,12 @@ export const MessagesPage: React.FC = () => {
     };
 
     fetchMessages();
-  }, [selectedConversation?.id, user?.id]);
+  }, [
+    selectedConversation?.id,
+    selectedConversation?.participant?.id,
+    (selectedConversation as any)?.projectId,
+    user?.id,
+  ]);
 
   // Supabase Realtime subscription for instant message updates in the active conversation
   useEffect(() => {
@@ -1275,7 +1380,34 @@ export const MessagesPage: React.FC = () => {
   }, [messages.length]);
 
   const handleSelectConversation = async (conv: Conversation) => {
+    selectedConversationRef.current = conv;
     setSelectedConversation(conv);
+
+    if ((conv as any).isProjectGroup) {
+      const pId = (conv as any).projectId || conv.id;
+      const targetKey = `project:${pId}`;
+      lastHandledTargetRef.current = targetKey;
+      navigate(`/messages?projectGroupId=${pId}`, { replace: true });
+    } else {
+      const myId = user?.id ? String(user.id).trim().toLowerCase() : '';
+      const otherId =
+        conv.participant?.id ||
+        (String(conv.participant1Id || '').toLowerCase() === myId
+          ? conv.participant2Id
+          : conv.participant1Id);
+      const targetKey = otherId ? `user:${otherId}` : `conv:${conv.id}`;
+      lastHandledTargetRef.current = targetKey;
+      if (conv.id && conv.id !== 'draft') {
+        navigate(`/messages?conversationId=${conv.id}${otherId ? `&user=${otherId}` : ''}`, {
+          replace: true,
+        });
+      } else if (otherId) {
+        navigate(`/messages?user=${otherId}`, { replace: true });
+      } else {
+        navigate('/messages', { replace: true });
+      }
+    }
+
     if (conv.unreadCount && conv.unreadCount > 0 && conv.id !== 'draft' && user?.id) {
       setConversations((prev) =>
         prev.map((c) => (c.id === conv.id ? { ...c, unreadCount: 0 } : c))
@@ -1288,11 +1420,16 @@ export const MessagesPage: React.FC = () => {
     e.preventDefault();
     if ((!newMessage.trim() && !selectedAttachment) || !selectedConversation || !user?.id || sending || isUploadingAttachment) return;
 
+    const myId = String(user.id || '').trim().toLowerCase();
+    const p1 = String(selectedConversation.participant1Id || '').trim().toLowerCase();
+    const p2 = String(selectedConversation.participant2Id || '').trim().toLowerCase();
     const receiverId =
       selectedConversation.participant?.id ||
-      (selectedConversation.participant1Id === user.id
+      (p1 === myId
         ? selectedConversation.participant2Id
-        : selectedConversation.participant1Id);
+        : p2 === myId
+        ? selectedConversation.participant1Id
+        : selectedConversation.participant2Id || selectedConversation.participant1Id);
 
     if (!receiverId) return;
 
@@ -1554,9 +1691,11 @@ export const MessagesPage: React.FC = () => {
       setNewMessage('');
 
       if (selectedConversation.id === 'draft' && res.conversationId) {
-        setSelectedConversation((prev) =>
-          prev ? { ...prev, id: res.conversationId, lastMessage: contentToSend } : null
-        );
+        const updated = { ...selectedConversation, id: res.conversationId, lastMessage: contentToSend };
+        selectedConversationRef.current = updated;
+        setSelectedConversation(updated);
+        lastHandledTargetRef.current = `user:${receiverId}`;
+        navigate(`/messages?conversationId=${res.conversationId}&user=${receiverId}`, { replace: true });
       }
       await fetchConversations();
     } catch (err: any) {
@@ -1571,7 +1710,7 @@ export const MessagesPage: React.FC = () => {
     (selectedConversation as any)?.isProjectGroup
       ? null
       : selectedConversation?.participant?.id ||
-        (selectedConversation?.participant1Id === user?.id
+        (String(selectedConversation?.participant1Id || '').toLowerCase() === String(user?.id || '').toLowerCase()
           ? selectedConversation?.participant2Id
           : selectedConversation?.participant1Id);
 
@@ -1724,7 +1863,9 @@ export const MessagesPage: React.FC = () => {
         selectedConversation?.id === convId ||
         (selectedConversation as any)?.projectId === projId
       ) {
+        selectedConversationRef.current = null;
         setSelectedConversation(null);
+        lastHandledTargetRef.current = '';
         setMessages([]);
         navigate('/messages', { replace: true });
       }
@@ -1749,7 +1890,9 @@ export const MessagesPage: React.FC = () => {
   };
 
   const handleBackToList = () => {
+    selectedConversationRef.current = null;
     setSelectedConversation(null);
+    lastHandledTargetRef.current = '';
     navigate('/messages', { replace: true });
   };
 
@@ -1916,14 +2059,30 @@ export const MessagesPage: React.FC = () => {
               </div>
             ) : (
               filteredConversations.map((conv) => {
-                const isSelected = selectedConversation?.id === conv.id;
+                const isSelected = Boolean(
+                  selectedConversation &&
+                    (selectedConversation.id === conv.id ||
+                      ((conv as any).isProjectGroup &&
+                        (selectedConversation as any).isProjectGroup &&
+                        ((selectedConversation as any).projectId === (conv as any).projectId ||
+                          selectedConversation.id === conv.id)) ||
+                      (!(conv as any).isProjectGroup &&
+                        !(selectedConversation as any).isProjectGroup &&
+                        conv.participant?.id &&
+                        selectedConversation.participant?.id &&
+                        conv.participant.id === selectedConversation.participant.id))
+                );
                 const p = conv.participant;
-                const name = p?.profile?.fullName || p?.email || 'User';
+                const name =
+                  (conv as any).isProjectGroup
+                    ? (conv as any).projectTitle || p?.profile?.fullName || 'Project Team'
+                    : p?.profile?.fullName || p?.email || 'User';
                 const hasUnread = Boolean(conv.unreadCount && conv.unreadCount > 0 && !isSelected);
 
                 return (
                   <div
-                    key={conv.id}
+                    key={`${conv.id}-${conv.participant?.id || (conv as any).projectId || ''}`}
+                    onClick={() => handleSelectConversation(conv)}
                     className={`group relative w-full flex items-center transition-colors cursor-pointer border-l-2 ${
                       isSelected
                         ? 'bg-brand-50/80 dark:bg-brand-950/40 border-brand-600 dark:border-brand-500'
@@ -1932,7 +2091,10 @@ export const MessagesPage: React.FC = () => {
                   >
                     <button
                       type="button"
-                      onClick={() => handleSelectConversation(conv)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectConversation(conv);
+                      }}
                       className="flex-1 min-w-0 text-left p-3.5 pr-1 flex items-center gap-3 cursor-pointer"
                     >
                       {(conv as any).isProjectGroup ? (
