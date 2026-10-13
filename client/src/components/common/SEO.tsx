@@ -13,7 +13,7 @@ export interface SEOProps {
 
 const SITE_NAME = 'HookZ';
 const BASE_URL = 'https://hookz.in';
-const DEFAULT_TITLE = 'HookZ — Connect with Founders, Co-Founders & Investors';
+const DEFAULT_TITLE = 'HookZ — Find Hackathon Teammates & Connect with Student Builders';
 const DEFAULT_DESC =
   'HookZ is a startup networking platform where founders, co-founders, mentors and investors connect, discover opportunities and build startups together.';
 const DEFAULT_IMAGE = `${BASE_URL}/og-image.png`;

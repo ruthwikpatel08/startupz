@@ -19,7 +19,7 @@ export const PublicLandingPage: React.FC = () => {
       }}
     >
       <SEO
-        title="HookZ — Connect with Founders, Co-Founders & Investors"
+        title="HookZ — Find Hackathon Teammates & Connect with Student Builders"
         description="HookZ is a startup networking platform where founders, co-founders, mentors and investors connect, discover opportunities and build startups together."
         canonicalPath="/"
       />

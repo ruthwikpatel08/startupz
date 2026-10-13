@@ -1,0 +1,21 @@
+{
+  "name": "HookZ",
+  "short_name": "HookZ",
+  "description": "HookZ is a student-first platform to find hackathon teammates, connect with like-minded peers across frontend, backend, design, and pitching, and build project teams.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-1import { createClient, User as SupabaseAuthUser } from '@supabase/supabase-js';
+import { createClient, User as SupabaseAuthUser } from '@supabase/supabase-js';
 import { User, Profile, UserRole, Connection, Conversation, Message } from '../types';
 import { api } from '../services/api';
 
