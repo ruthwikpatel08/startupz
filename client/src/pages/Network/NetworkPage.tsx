@@ -85,6 +85,34 @@ export const NetworkPage: React.FC = () => {
       let rxProp = (proposalsRes as any)?.received || [];
       let txProp = (proposalsRes as any)?.sent || [];
 
+      // Helper to identify whether two proposal records refer to the same proposal
+      const isSameProposal = (a: any, b: any) => {
+        if (!a || !b) return false;
+        if (a.id && b.id && a.id === b.id) return true;
+        const aSender = a.senderId || a.sender?.id || a.sender_id;
+        const bSender = b.senderId || b.sender?.id || b.sender_id;
+        const aReceiver = a.receiverId || a.receiver?.id || a.receiver_id;
+        const bReceiver = b.receiverId || b.receiver?.id || b.receiver_id;
+        const aTitle = (a.ideaTitle || a.idea_title || '').trim().toLowerCase();
+        const bTitle = (b.ideaTitle || b.idea_title || '').trim().toLowerCase();
+
+        if (aTitle && bTitle && aTitle === bTitle) {
+          if (aSender && bSender && aSender === bSender) return true;
+          if (aReceiver && bReceiver && aReceiver === bReceiver) return true;
+        }
+        return false;
+      };
+
+      const dedupeProposals = (list: any[]) => {
+        const unique: any[] = [];
+        for (const item of list) {
+          if (!unique.some((u) => isSameProposal(u, item))) {
+            unique.push(item);
+          }
+        }
+        return unique;
+      };
+
       const supaConns = supaConnsRes?.data || [];
       const supaProps = supaPropsRes?.data || [];
 
@@ -200,35 +228,27 @@ export const NetworkPage: React.FC = () => {
             },
           };
 
+          const propItem = {
+            id: pr.id,
+            senderId: pr.sender_id,
+            receiverId: pr.receiver_id,
+            ideaTitle: pr.idea_title,
+            pitchDescription: pr.pitch_description,
+            proposedRole: pr.proposed_role,
+            proposedEquity: pr.proposed_equity,
+            status: pr.status || 'PENDING',
+            createdAt: pr.created_at,
+            sender: otherUserObj,
+            receiver: otherUserObj,
+          };
+
           if (pr.receiver_id === user.id) {
-            if (!rxProp.some((item: any) => item.id === pr.id)) {
-              rxProp.push({
-                id: pr.id,
-                senderId: pr.sender_id,
-                receiverId: pr.receiver_id,
-                ideaTitle: pr.idea_title,
-                pitchDescription: pr.pitch_description,
-                proposedRole: pr.proposed_role,
-                proposedEquity: pr.proposed_equity,
-                status: pr.status || 'PENDING',
-                createdAt: pr.created_at,
-                sender: otherUserObj,
-              });
+            if (!rxProp.some((item: any) => isSameProposal(item, propItem))) {
+              rxProp.push(propItem);
             }
           } else if (pr.sender_id === user.id) {
-            if (!txProp.some((item: any) => item.id === pr.id)) {
-              txProp.push({
-                id: pr.id,
-                senderId: pr.sender_id,
-                receiverId: pr.receiver_id,
-                ideaTitle: pr.idea_title,
-                pitchDescription: pr.pitch_description,
-                proposedRole: pr.proposed_role,
-                proposedEquity: pr.proposed_equity,
-                status: pr.status || 'PENDING',
-                createdAt: pr.created_at,
-                receiver: otherUserObj,
-              });
+            if (!txProp.some((item: any) => isSameProposal(item, propItem))) {
+              txProp.push(propItem);
             }
           }
         }
@@ -246,8 +266,8 @@ export const NetworkPage: React.FC = () => {
       setConnections(cleanConnList);
       setPendingReceived(rxList.filter((r: any) => (r.sender?.id || r.senderId) !== user?.id));
       setPendingSent(txList.filter((r: any) => (r.receiver?.id || r.receiverId) !== user?.id));
-      setReceivedProposals(rxProp.filter((r: any) => (r.sender?.id || r.senderId) !== user?.id));
-      setSentProposals(txProp.filter((r: any) => (r.receiver?.id || r.receiverId) !== user?.id));
+      setReceivedProposals(dedupeProposals(rxProp.filter((r: any) => (r.sender?.id || r.senderId) !== user?.id)));
+      setSentProposals(dedupeProposals(txProp.filter((r: any) => (r.receiver?.id || r.receiverId) !== user?.id)));
     } catch (err) {
       console.error('Failed to load network connections:', err);
     } finally {

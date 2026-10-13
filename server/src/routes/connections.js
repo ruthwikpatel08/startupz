@@ -680,11 +680,36 @@ router.post('/startup-proposal', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'You cannot propose starting a company with yourself.' });
     }
 
+    const trimmedTitle = ideaTitle.trim();
+
+    // Check if an identical pending proposal already exists to prevent duplicates
+    const existingProposal = await prisma.startupProposal.findFirst({
+      where: {
+        senderId: req.user.id,
+        receiverId,
+        ideaTitle: trimmedTitle,
+        status: 'PENDING',
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            email: true,
+            profile: { select: { fullName: true, avatar: true, headline: true } },
+          },
+        },
+      },
+    });
+
+    if (existingProposal) {
+      return res.status(200).json({ message: 'Startup proposal submitted successfully!', proposal: existingProposal });
+    }
+
     const proposal = await prisma.startupProposal.create({
       data: {
         senderId: req.user.id,
         receiverId,
-        ideaTitle: ideaTitle.trim(),
+        ideaTitle: trimmedTitle,
         pitchDescription: pitchDescription.trim(),
         proposedRole: proposedRole || 'Technical Co-Founder',
         proposedEquity: proposedEquity || '50/50',
@@ -751,7 +776,17 @@ router.get('/startup-proposals', requireAuth, async (req, res) => {
       }),
     ]);
 
-    return res.json({ received, sent });
+    const dedupeProposals = (list) => {
+      const seen = new Set();
+      return (list || []).filter((p) => {
+        const key = `${p.senderId}_${p.receiverId}_${(p.ideaTitle || '').trim().toLowerCase()}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    };
+
+    return res.json({ received: dedupeProposals(received), sent: dedupeProposals(sent) });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to retrieve startup proposals.' });
   }

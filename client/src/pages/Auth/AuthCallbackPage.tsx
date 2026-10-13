@@ -24,6 +24,9 @@ import {
   FileText,
   CheckSquare,
   Square,
+  Lock,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { UserRole } from '../../types';
 
@@ -53,6 +56,9 @@ export const AuthCallbackPage: React.FC = () => {
   const [location, setLocation] = useState('Remote');
   const [oneLineBio, setOneLineBio] = useState('');
   const [bio, setBio] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [openTo, setOpenTo] = useState<string[]>([
     'Co-Founder',
     'Startup Team',
@@ -427,6 +433,25 @@ export const AuthCallbackPage: React.FC = () => {
           ? openTo.join(',')
           : 'Co-Founder,Startup Team,Investment';
 
+      // Validate password
+      if (!password || password.length < 6) {
+        setErrorMessage('Password must be at least 6 characters long.');
+        setIsSubmitting(false);
+        return;
+      }
+      if (password !== confirmPassword) {
+        setErrorMessage('Passwords do not match. Please check and try again.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Update password in Supabase Auth
+      try {
+        await supabase.auth.updateUser({ password });
+      } catch (passErr) {
+        console.warn('Supabase auth password update notice:', passErr);
+      }
+
       // 1. Save profile to Supabase public.profiles
       await upsertUserProfile(authUser.id, {
         full_name: cleanFullName,
@@ -460,10 +485,15 @@ export const AuthCallbackPage: React.FC = () => {
           location: cleanLocation,
           bio: cleanBio,
           avatar,
+          password,
         });
       } catch {
         // Backend offline fallback
       }
+
+      try {
+        await api.setPassword(password);
+      } catch {}
 
       // 4. Update cached user in localStorage & AuthContext
       const appUser = {
@@ -747,6 +777,53 @@ export const AuthCallbackPage: React.FC = () => {
                       <CheckCircle2 size={11} /> @{username} is available!
                     </p>
                   )}
+                </div>
+              </div>
+
+              {/* Account Password & Confirm Password */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Set Account Password <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Lock size={13} className="absolute left-3 top-2.5 text-slate-400" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      disabled={isSubmitting}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Min 6 characters"
+                      className="input-base w-full pl-8 pr-10 text-xs sm:text-sm py-2"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-0.5 cursor-pointer"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Confirm Password <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Lock size={13} className="absolute left-3 top-2.5 text-slate-400" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={confirmPassword}
+                      disabled={isSubmitting}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Repeat password"
+                      className="input-base w-full pl-8 text-xs sm:text-sm py-2"
+                    />
+                  </div>
                 </div>
               </div>
 

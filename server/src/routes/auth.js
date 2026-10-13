@@ -227,7 +227,7 @@ router.post('/google', async (req, res) => {
 // POST /api/auth/sync - Ensure any logged-in real user is saved in DB and receives a valid token
 router.post('/sync', async (req, res) => {
   try {
-    const { id, email, fullName, role = 'FOUNDER', headline, location, bio, avatar, skills, username } = req.body;
+    const { id, email, fullName, role = 'FOUNDER', headline, location, bio, avatar, skills, username, password } = req.body;
     const cleanEmail = (email || '').trim().toLowerCase();
     if (!cleanEmail) {
       return res.status(400).json({ error: 'Email is required for synchronization.' });
@@ -247,7 +247,9 @@ router.post('/sync', async (req, res) => {
     });
 
     if (!user) {
-      const generatedPassword = await bcrypt.hash(`AuthSync_${Math.random()}_2026!`, 10);
+      const generatedPassword = (password && typeof password === 'string' && password.length >= 6)
+        ? await bcrypt.hash(password, 10)
+        : await bcrypt.hash(`AuthSync_${Math.random()}_2026!`, 10);
       user = await prisma.user.create({
         data: {
           id: id || undefined,
@@ -273,6 +275,14 @@ router.post('/sync', async (req, res) => {
         include: { profile: true },
       });
     } else {
+      if (password && typeof password === 'string' && password.length >= 6) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { password: hashedPassword },
+        }).catch(() => null);
+      }
+
       if (user.role !== upperRole && upperRole) {
         await prisma.user.update({
           where: { id: user.id },

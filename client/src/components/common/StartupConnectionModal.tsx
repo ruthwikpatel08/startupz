@@ -113,68 +113,70 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
       console.warn('Backend sendStartupProposal notice:', backendErrorMsg);
     }
 
-    // Mirror to Supabase to guarantee delivery & notification
-    try {
-      const isUuid = (str?: string): boolean =>
-        Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
+    // Mirror to Supabase ONLY if backend API is offline or failed to prevent duplicate proposals
+    if (!completed) {
+      try {
+        const isUuid = (str?: string): boolean =>
+          Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
 
-      let targetSenderId = user.id;
-      let targetRecipientId = recipientIdRaw;
+        let targetSenderId = user.id;
+        let targetRecipientId = recipientIdRaw;
 
-      if (!isUuid(targetSenderId) && user.email) {
-        const { data: sProf } = await supabase
-          .from('profiles')
-          .select('user_id, id')
-          .eq('email', user.email.toLowerCase().trim())
-          .maybeSingle();
-        if (sProf?.user_id && isUuid(sProf.user_id)) targetSenderId = sProf.user_id;
-        else if (sProf?.id && isUuid(sProf.id)) targetSenderId = sProf.id;
-      }
+        if (!isUuid(targetSenderId) && user.email) {
+          const { data: sProf } = await supabase
+            .from('profiles')
+            .select('user_id, id')
+            .eq('email', user.email.toLowerCase().trim())
+            .maybeSingle();
+          if (sProf?.user_id && isUuid(sProf.user_id)) targetSenderId = sProf.user_id;
+          else if (sProf?.id && isUuid(sProf.id)) targetSenderId = sProf.id;
+        }
 
-      if (!isUuid(targetRecipientId) && recipientEmail) {
-        const { data: rProf } = await supabase
-          .from('profiles')
-          .select('user_id, id')
-          .eq('email', recipientEmail.toLowerCase().trim())
-          .maybeSingle();
-        if (rProf?.user_id && isUuid(rProf.user_id)) targetRecipientId = rProf.user_id;
-        else if (rProf?.id && isUuid(rProf.id)) targetRecipientId = rProf.id;
-      }
+        if (!isUuid(targetRecipientId) && recipientEmail) {
+          const { data: rProf } = await supabase
+            .from('profiles')
+            .select('user_id, id')
+            .eq('email', recipientEmail.toLowerCase().trim())
+            .maybeSingle();
+          if (rProf?.user_id && isUuid(rProf.user_id)) targetRecipientId = rProf.user_id;
+          else if (rProf?.id && isUuid(rProf.id)) targetRecipientId = rProf.id;
+        }
 
-      if (isUuid(targetSenderId) && isUuid(targetRecipientId)) {
-        await supabase.from('startup_proposals').insert({
-          sender_id: targetSenderId,
-          receiver_id: targetRecipientId,
-          idea_title: ideaTitle.trim(),
-          pitch_description: pitchDescription.trim(),
-          proposed_role: proposedRole,
-          proposed_equity: proposedEquity,
-          status: 'PENDING',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
+        if (isUuid(targetSenderId) && isUuid(targetRecipientId)) {
+          await supabase.from('startup_proposals').insert({
+            sender_id: targetSenderId,
+            receiver_id: targetRecipientId,
+            idea_title: ideaTitle.trim(),
+            pitch_description: pitchDescription.trim(),
+            proposed_role: proposedRole,
+            proposed_equity: proposedEquity,
+            status: 'PENDING',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
 
-        await supabase.from('notifications').insert({
-          user_id: targetRecipientId,
-          sender_id: targetSenderId,
-          type: 'PROPOSAL_RECEIVED',
-          title: 'New Startup Collaboration Pitch 🚀',
-          message: `${
-            user.profile?.fullName || 'A founder'
-          } sent you a proposal for "${ideaTitle.trim()}" (Role: ${proposedRole}).`,
-          link: '/network?tab=PROPOSALS',
-          is_read: false,
-          created_at: new Date().toISOString(),
-        });
+          await supabase.from('notifications').insert({
+            user_id: targetRecipientId,
+            sender_id: targetSenderId,
+            type: 'PROPOSAL_RECEIVED',
+            title: 'New Startup Collaboration Pitch 🚀',
+            message: `${
+              user.profile?.fullName || 'A founder'
+            } sent you a proposal for "${ideaTitle.trim()}" (Role: ${proposedRole}).`,
+            link: '/network?tab=PROPOSALS',
+            is_read: false,
+            created_at: new Date().toISOString(),
+          });
 
-        completed = true;
-      }
-    } catch (supaErr: any) {
-      console.warn('Supabase proposal fallback notice:', supaErr);
-      if (!completed) {
-        setError(backendErrorMsg || supaErr?.message || 'Failed to send startup proposal.');
-        setLoading(false);
-        return;
+          completed = true;
+        }
+      } catch (supaErr: any) {
+        console.warn('Supabase proposal fallback notice:', supaErr);
+        if (!completed) {
+          setError(backendErrorMsg || supaErr?.message || 'Failed to send startup proposal.');
+          setLoading(false);
+          return;
+        }
       }
     }
 
