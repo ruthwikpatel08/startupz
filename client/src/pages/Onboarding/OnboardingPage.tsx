@@ -154,7 +154,7 @@ export const OnboardingPage: React.FC = () => {
     padding: '24px 16px',
     boxSizing: 'border-box',
     width: '100%',
-    maxWidth: '100vw',
+    maxWidth: '100%',
     overflowX: 'hidden',
   };
 

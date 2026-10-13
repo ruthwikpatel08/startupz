@@ -163,7 +163,7 @@ const AppContent: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-[#F8F9FB] transition-colors selection:bg-brand-600 selection:text-white relative w-full max-w-full overflow-x-hidden">
       {!isPublicLanding && <Navbar />}
       <NewUserCategoryModal />
-      <div className={`flex-1 flex w-full ${isPublicLanding ? '' : 'pt-14'}`}>
+      <div className={`flex-1 flex w-full max-w-full min-w-0 overflow-x-hidden ${isPublicLanding ? '' : 'pt-14'}`}>
         {user && <Sidebar />}
         <main
           className={`flex-1 min-w-0 flex flex-col justify-between overflow-x-hidden ${
@@ -172,7 +172,7 @@ const AppContent: React.FC = () => {
             !user || isAuthOrMeetingPage ? '' : 'lg:pl-60 xl:pl-64'
           }`}
         >
-          <div className={`flex-1 min-w-0 w-full ${!user || isAuthOrMeetingPage ? '' : (isMessagesPage ? 'p-0' : 'px-0 sm:px-2 md:px-4')}`}>
+          <div className={`flex-1 min-w-0 w-full max-w-full overflow-x-hidden ${!user || isAuthOrMeetingPage ? '' : (isMessagesPage ? 'p-0' : 'px-0 sm:px-2 md:px-4')}`}>
             <React.Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public landing for logged-out users; existing dashboard for logged-in users */}

@@ -212,7 +212,7 @@ export const Navbar: React.FC = () => {
 
             {/* 2. CENTER: WIDER search bar (hidden on login/signup auth pages) */}
             {!isAuthPage && (
-              <div className="hidden md:flex flex-1 max-w-[48%] min-w-[320px] justify-center px-2">
+              <div className="hidden md:flex flex-1 max-w-[48%] min-w-0 justify-center px-2">
                 <button
                   onClick={() => setSearchModalOpen(true)}
                   className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 transition-colors w-full text-left cursor-pointer group shadow-xs"

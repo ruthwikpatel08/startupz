@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase, upsertUserProfile, recordAuthProviderHint, fetchUserProfile } from '../../lib/supabase';
+import { supabase, upsertUserProfile, recordAuthProviderHint, fetchUserProfile, checkUsernameAvailability } from '../../lib/supabase';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -15,6 +15,7 @@ import {
   GraduationCap,
   Briefcase,
   Check,
+  CheckCircle2,
   Sparkles,
   MapPin,
   AtSign,
@@ -58,6 +59,56 @@ export const AuthCallbackPage: React.FC = () => {
     'Investment',
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Live username uniqueness validation & suggestions state
+  const [usernameStatus, setUsernameStatus] = useState<{
+    checking: boolean;
+    available: boolean | null;
+    message: string | null;
+    suggestions: string[];
+  }>({
+    checking: false,
+    available: null,
+    message: null,
+    suggestions: [],
+  });
+
+  const usernameCheckTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerUsernameCheck = (candidate: string, targetUserId?: string) => {
+    if (usernameCheckTimerRef.current) {
+      clearTimeout(usernameCheckTimerRef.current);
+    }
+    const clean = candidate.trim().toLowerCase().replace(/^@/, '');
+    if (!clean) {
+      setUsernameStatus({ checking: false, available: null, message: null, suggestions: [] });
+      return;
+    }
+    if (clean.length < 3) {
+      setUsernameStatus({
+        checking: false,
+        available: false,
+        message: 'Username must be at least 3 characters long.',
+        suggestions: [],
+      });
+      return;
+    }
+    setUsernameStatus((prev) => ({ ...prev, checking: true }));
+    usernameCheckTimerRef.current = setTimeout(async () => {
+      try {
+        const uid = targetUserId || authUser?.id;
+        const res = await checkUsernameAvailability(clean, uid);
+        setUsernameStatus({
+          checking: false,
+          available: res.available,
+          message: res.message,
+          suggestions: res.suggestions,
+        });
+      } catch {
+        setUsernameStatus((prev) => ({ ...prev, checking: false }));
+      }
+    }, 300);
+  };
 
   const roleCategories: RoleCategoryOption[] = [
     {
@@ -225,7 +276,9 @@ export const AuthCallbackPage: React.FC = () => {
           if (isSubscribed) {
             setAuthUser(user);
             setFullName(userFullName);
-            setUsername((user.email?.split('@')[0] || 'user').toLowerCase().replace(/[^a-z0-9_]/g, ''));
+            const initUsername = (user.email?.split('@')[0] || 'user').toLowerCase().replace(/[^a-z0-9_]/g, '');
+            setUsername(initUsername);
+            triggerUsernameCheck(initUsername, user.id);
             setAvatar(userAvatar);
             setSelectedRole(initialRole);
             setCustomRoleDescription(initialCustomRole);
@@ -289,7 +342,9 @@ export const AuthCallbackPage: React.FC = () => {
               if (isSubscribed) {
                 setAuthUser(user);
                 setFullName(userFullName);
-                setUsername((user.email?.split('@')[0] || 'user').toLowerCase().replace(/[^a-z0-9_]/g, ''));
+                const initUsername = (user.email?.split('@')[0] || 'user').toLowerCase().replace(/[^a-z0-9_]/g, '');
+                setUsername(initUsername);
+                triggerUsernameCheck(initUsername, user.id);
                 setAvatar(userAvatar);
                 setSelectedRole(initialRole);
                 setCustomRoleDescription(initialCustomRole);
@@ -342,6 +397,21 @@ export const AuthCallbackPage: React.FC = () => {
         username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '') ||
         authUser.email?.split('@')[0] ||
         'user';
+
+      // Validate username availability and uniqueness before proceeding
+      const availability = await checkUsernameAvailability(cleanUsername, authUser.id);
+      if (!availability.available) {
+        setErrorMessage(availability.message || 'This username is already taken. Please choose another username.');
+        setUsernameStatus({
+          checking: false,
+          available: false,
+          message: availability.message,
+          suggestions: availability.suggestions,
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       const cleanFullName = fullName.trim() || 'Member';
       const cleanCustomRole = customRoleDescription.trim();
       const finalPreferredRole =
@@ -607,23 +677,76 @@ export const AuthCallbackPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Username / Handle <span className="text-rose-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                      Username / Handle <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-[10px] text-slate-400">Unique identifier</span>
+                  </div>
                   <div className="relative">
                     <AtSign size={13} className="absolute left-3 top-2.5 text-slate-400" />
                     <input
                       type="text"
                       required
                       value={username}
-                      onChange={(e) =>
-                        setUsername(
-                           e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '')
-                        )
-                      }
-                      className="input-base w-full pl-8 text-xs sm:text-sm py-2"
+                      onChange={(e) => {
+                        const val = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+                        setUsername(val);
+                        triggerUsernameCheck(val);
+                      }}
+                      placeholder="username"
+                      className={`input-base w-full pl-8 pr-8 text-xs sm:text-sm py-2 ${
+                        usernameStatus.available === false ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' :
+                        usernameStatus.available === true && username ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500' : ''
+                      }`}
                     />
+                    {usernameStatus.checking && (
+                      <RefreshCw size={13} className="absolute right-3 top-2.5 text-slate-400 animate-spin" />
+                    )}
+                    {!usernameStatus.checking && usernameStatus.available === true && username && (
+                      <CheckCircle2 size={14} className="absolute right-3 top-2.5 text-emerald-500" />
+                    )}
+                    {!usernameStatus.checking && usernameStatus.available === false && (
+                      <AlertCircle size={14} className="absolute right-3 top-2.5 text-rose-500" />
+                    )}
                   </div>
+
+                  {usernameStatus.available === false && (
+                    <div className="mt-1.5 space-y-1.5">
+                      <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                        <AlertCircle size={11} className="shrink-0" />
+                        {usernameStatus.message || 'This username is already taken. Please choose another username.'}
+                      </p>
+                      {usernameStatus.suggestions.length > 0 && (
+                        <div className="p-2 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-750">
+                          <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                            Available suggestions (click to use):
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {usernameStatus.suggestions.map((sug) => (
+                              <button
+                                key={sug}
+                                type="button"
+                                onClick={() => {
+                                  setUsername(sug);
+                                  triggerUsernameCheck(sug);
+                                }}
+                                className="px-2 py-0.5 rounded text-[11px] font-medium bg-white dark:bg-dark-800 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-900 hover:bg-brand-50 dark:hover:bg-brand-950 transition-colors cursor-pointer"
+                              >
+                                @{sug}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {usernameStatus.available === true && username && (
+                    <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                      <CheckCircle2 size={11} /> @{username} is available!
+                    </p>
+                  )}
                 </div>
               </div>
 

@@ -14,6 +14,7 @@ import {
   ConnectionStatusInfo,
   invalidateUserProfileCache,
   isUuid,
+  checkUsernameAvailability,
 } from '../../lib/supabase';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { invalidateFindCoFounderCache } from '../CoFounders/FindCoFounderPage';
@@ -46,6 +47,7 @@ import {
   Share2,
   Users,
   CheckCircle2,
+  AlertCircle,
   Calendar,
   Building2,
   BookOpen,
@@ -302,6 +304,61 @@ export const ProfilePage: React.FC = () => {
   const [collegeSuggestions, setCollegeSuggestions] = useState<any[]>([]);
   const [showCollegeDropdown, setShowCollegeDropdown] = useState(false);
 
+  // Live username uniqueness validation & suggestions state
+  const [usernameStatus, setUsernameStatus] = useState<{
+    checking: boolean;
+    available: boolean | null;
+    message: string | null;
+    suggestions: string[];
+  }>({
+    checking: false,
+    available: null,
+    message: null,
+    suggestions: [],
+  });
+
+  const usernameCheckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerUsernameCheck = (candidate: string, overrideInitial?: string) => {
+    if (usernameCheckTimerRef.current) {
+      clearTimeout(usernameCheckTimerRef.current);
+    }
+    const clean = candidate.trim().toLowerCase().replace(/^@/, '');
+    const currentInit = (overrideInitial ?? formData.initialUsername ?? '').trim().toLowerCase().replace(/^@/, '');
+
+    if (!clean) {
+      setUsernameStatus({ checking: false, available: null, message: null, suggestions: [] });
+      return;
+    }
+    if (currentInit && clean === currentInit) {
+      setUsernameStatus({ checking: false, available: true, message: 'This is your current username.', suggestions: [] });
+      return;
+    }
+    if (clean.length < 3) {
+      setUsernameStatus({
+        checking: false,
+        available: false,
+        message: 'Username must be at least 3 characters long.',
+        suggestions: [],
+      });
+      return;
+    }
+    setUsernameStatus((prev) => ({ ...prev, checking: true }));
+    usernameCheckTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await checkUsernameAvailability(clean, currentUser?.id, currentInit);
+        setUsernameStatus({
+          checking: false,
+          available: res.available,
+          message: res.message,
+          suggestions: res.suggestions,
+        });
+      } catch {
+        setUsernameStatus((prev) => ({ ...prev, checking: false }));
+      }
+    }, 300);
+  };
+
   const { logout } = useAuth();
 
   const handleOpenEdit = () => {
@@ -372,6 +429,7 @@ export const ProfilePage: React.FC = () => {
       });
       setLocationSuggestions([]);
       setCollegeSuggestions([]);
+      setUsernameStatus({ checking: false, available: null, message: null, suggestions: [] });
     }
     setEditOpen(true);
   };
@@ -1386,6 +1444,21 @@ export const ProfilePage: React.FC = () => {
       if (timePassed < thirtyDaysMs) {
         const daysRemaining = Math.ceil((thirtyDaysMs - timePassed) / (24 * 60 * 60 * 1000));
         setSaveError(`You can only change your username once every 30 days. You can change it again in ${daysRemaining} day(s).`);
+        setSaving(false);
+        return;
+      }
+    }
+
+    if (isUsernameChanging) {
+      const availability = await checkUsernameAvailability(cleanUsername, currentUser?.id, initialUsername);
+      if (!availability.available) {
+        setSaveError(availability.message || 'This username is already taken. Please choose another username.');
+        setUsernameStatus({
+          checking: false,
+          available: false,
+          message: availability.message,
+          suggestions: availability.suggestions,
+        });
         setSaving(false);
         return;
       }
@@ -3358,14 +3431,65 @@ export const ProfilePage: React.FC = () => {
                             type="text"
                             value={formData.username || ''}
                             disabled={isUsernameLocked}
-                            onChange={(e) => setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                            onChange={(e) => {
+                              const rawVal = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+                              setFormData({ ...formData, username: rawVal });
+                              triggerUsernameCheck(rawVal);
+                            }}
                             placeholder="username"
-                            className="input-base w-full pl-7 pr-3 py-1.5 text-xs font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                            className={`input-base w-full pl-7 pr-7 py-1.5 text-xs font-medium disabled:opacity-60 disabled:cursor-not-allowed ${
+                              usernameStatus.available === false ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' :
+                              usernameStatus.available === true && formData.username && formData.username !== formData.initialUsername ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500' : ''
+                            }`}
                           />
+                          {usernameStatus.checking && (
+                            <RefreshCw size={12} className="absolute right-2.5 top-2 text-slate-400 animate-spin" />
+                          )}
+                          {!usernameStatus.checking && usernameStatus.available === true && formData.username && formData.username !== formData.initialUsername && (
+                            <CheckCircle2 size={13} className="absolute right-2.5 top-2 text-emerald-500" />
+                          )}
+                          {!usernameStatus.checking && usernameStatus.available === false && (
+                            <AlertCircle size={13} className="absolute right-2.5 top-2 text-rose-500" />
+                          )}
                         </div>
                         {isUsernameLocked && (
                           <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
                             Locked for {daysRemaining} more days.
+                          </p>
+                        )}
+                        {!isUsernameLocked && usernameStatus.available === false && (
+                          <div className="mt-1.5 space-y-1">
+                            <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1">
+                              <AlertCircle size={11} className="shrink-0" />
+                              {usernameStatus.message || 'This username is already taken. Please choose another username.'}
+                            </p>
+                            {usernameStatus.suggestions.length > 0 && (
+                              <div className="p-2 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-750">
+                                <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                                  Available suggestions (click to use):
+                                </span>
+                                <div className="flex flex-wrap gap-1">
+                                  {usernameStatus.suggestions.map((sug) => (
+                                    <button
+                                      key={sug}
+                                      type="button"
+                                      onClick={() => {
+                                        setFormData({ ...formData, username: sug });
+                                        triggerUsernameCheck(sug);
+                                      }}
+                                      className="px-2 py-0.5 rounded text-[10px] font-semibold bg-white dark:bg-dark-800 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-900/60 hover:bg-brand-50 dark:hover:bg-brand-950/60 shadow-2xs transition-colors cursor-pointer"
+                                    >
+                                      @{sug}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {!isUsernameLocked && usernameStatus.available === true && formData.username && formData.username !== formData.initialUsername && (
+                          <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                            <CheckCircle2 size={10} /> @{formData.username} is available!
                           </p>
                         )}
                       </div>

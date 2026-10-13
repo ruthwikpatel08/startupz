@@ -1055,7 +1055,7 @@ export const StartupFeedPage: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
+    <div className="w-full max-w-full xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6 min-w-0 overflow-x-hidden">
       <SEO
         title="Startup Feed — Ideas, Updates & Wins | HookZ"
         description="Follow real-time startup milestones, breakthrough ideas, problem solutions, and founder updates across the HookZ ecosystem."

@@ -13,7 +13,7 @@ export const PublicLandingPage: React.FC = () => {
         color: '#1a1a2e',
         fontFamily: 'Inter, system-ui, sans-serif',
         width: '100%',
-        maxWidth: '100vw',
+        maxWidth: '100%',
         overflowX: 'hidden',
         boxSizing: 'border-box',
       }}

@@ -31,7 +31,7 @@
 html {
   box-sizing: border-box;
   overflow-x: hidden;
-  max-width: 100vw;
+  max-width: 100%;
   width: 100%;
 }
 
@@ -44,7 +44,7 @@ body {
   padding: 0;
   min-width: 320px;
   width: 100%;
-  max-width: 100vw;
+  max-width: 100%;
   min-height: 100vh;
   overflow-x: hidden;
   background-color: var(--bg-primary);
@@ -55,10 +55,23 @@ body {
 
 #root {
   width: 100%;
-  max-width: 100vw;
+  max-width: 100%;
   overflow-x: hidden;
   min-height: 100vh;
   position: relative;
+}
+
+/* Prevent horizontal overflow across all laptop viewports & screen sizes */
+img, video, canvas, svg, iframe, embed, object {
+  max-width: 100%;
+}
+
+pre, code, table {
+  max-width: 100%;
+}
+
+p, h1, h2, h3, h4, h5, h6, span {
+  overflow-wrap: break-word;
 }
 
 /* Light Theme Font Thickness & Rich Appearance */

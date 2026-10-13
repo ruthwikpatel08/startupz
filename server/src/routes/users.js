@@ -1,7 +1,7 @@
 import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth, optionalAuth } from '../middleware/auth.js';
-import { deleteSupabaseUserCompletely, upsertSupabaseProfile } from '../supabase.js';
+import { deleteSupabaseUserCompletely, upsertSupabaseProfile, supabaseAdmin } from '../supabase.js';
 
 const router = express.Router();
 
@@ -17,6 +17,63 @@ function computeProfileCompletion(profile) {
   if (profile.startupExperience) score += 5;
   return Math.min(100, score);
 }
+
+// GET /api/users/check-username/:username - Check availability and generate available suggestions
+router.get('/check-username/:username', optionalAuth, async (req, res) => {
+  try {
+    const raw = req.params.username || '';
+    const clean = String(raw).trim().toLowerCase().replace(/^@/, '');
+    if (!clean || !/^[a-z0-9_]{3,30}$/.test(clean)) {
+      return res.status(400).json({
+        available: false,
+        error: 'Username must be between 3 and 30 characters and can only contain letters, numbers, and underscores.',
+        suggestions: [],
+      });
+    }
+
+    const currentUserId = req.user?.id || null;
+
+    // Check SQLite Prisma
+    const takenPrisma = await prisma.profile.findFirst({
+      where: {
+        username: clean,
+        ...(currentUserId ? { userId: { not: currentUserId } } : {}),
+      },
+    });
+
+    // Check Supabase public.profiles
+    let takenSupa = false;
+    if (supabaseAdmin) {
+      try {
+        let q = supabaseAdmin.from('profiles').select('id, user_id').ilike('username', clean);
+        if (currentUserId) q = q.neq('user_id', currentUserId);
+        const { data } = await q.maybeSingle();
+        if (data) takenSupa = true;
+      } catch {}
+    }
+
+    if (takenPrisma || takenSupa) {
+      const candidates = [
+        `${clean}${Math.floor(10 + Math.random() * 89)}`,
+        `${clean}_${Math.floor(10 + Math.random() * 89)}`,
+        `${clean}_dev`,
+        `${clean}_pro`,
+      ];
+      return res.json({
+        available: false,
+        error: 'This username is already taken. Please choose another username.',
+        suggestions: candidates,
+      });
+    }
+
+    return res.json({
+      available: true,
+      suggestions: [],
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to check username availability' });
+  }
+});
 
 // GET /api/users - User Directory
 router.get('/', optionalAuth, async (req, res) => {
@@ -653,9 +710,17 @@ router.put('/profile', requireAuth, async (req, res) => {
             userId: { not: req.user.id },
           },
         });
+        const candidateSuggestions = [
+          `${cleanUsername}${Math.floor(10 + Math.random() * 89)}`,
+          `${cleanUsername}_${Math.floor(10 + Math.random() * 89)}`,
+          `${cleanUsername}_dev`,
+          `${cleanUsername}_pro`,
+        ];
+
         if (takenPrisma) {
           return res.status(400).json({
             error: 'This username is already taken. Please choose another username.',
+            suggestions: candidateSuggestions,
           });
         }
 
@@ -671,6 +736,7 @@ router.put('/profile', requireAuth, async (req, res) => {
             if (takenSupa) {
               return res.status(400).json({
                 error: 'This username is already taken. Please choose another username.',
+                suggestions: candidateSuggestions,
               });
             }
           } catch {}
