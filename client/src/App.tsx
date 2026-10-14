@@ -189,6 +189,7 @@ const AppContent: React.FC = () => {
                 <Route path="/startups" element={<ExploreStartupsPage />} />
                 <Route path="/startups/:id" element={<StartupDetailPage />} />
                 <Route path="/cofounders" element={<FindCoFounderPage />} />
+                <Route path="/students" element={<Navigate to="/cofounders?category=students" replace />} />
                 <Route path="/opportunities" element={<OpportunitiesPage />} />
                 <Route path="/investors" element={<InvestorsPage />} />
                 <Route path="/mentors" element={<MentorsPage />} />

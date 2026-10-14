@@ -28,6 +28,7 @@ import {
   ArrowRight,
   Crown,
   Briefcase,
+  LayoutDashboard,
 } from 'lucide-react';
 
 export const BusinessPage: React.FC = () => {
@@ -943,6 +944,56 @@ export const BusinessPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* CTA BANNER: Ready to find collaborators and build your venture? */}
+      <section className="py-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="p-8 sm:p-10 rounded-2xl bg-brand-50/60 dark:bg-slate-900 text-slate-900 dark:text-white border border-brand-100 dark:border-slate-800 text-center space-y-4">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Ready to find collaborators and build your venture?
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
+              Join founders, engineers, designers, mentors, and investors building tomorrow's startup ecosystem.
+            </p>
+
+            {user ? (
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link
+                  to="/feed"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 transition-colors shadow-sm cursor-pointer"
+                >
+                  <LayoutDashboard size={14} />
+                  <span>Go to Feed</span>
+                  <ArrowRight size={14} />
+                </Link>
+                <Link
+                  to={`/profile/${user.id}`}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-white bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors shadow-sm"
+                >
+                  <span>My Startup Profile</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+                <Link
+                  to="/login"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors cursor-pointer"
+                >
+                  <span>Sign In</span>
+                </Link>
+
+                <Link
+                  to="/register"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 transition-colors"
+                >
+                  <span>Get Started Free</span>
+                  <ArrowRight size={13} />
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
 
       {/* Connect Modal */}
       <ConnectModal
