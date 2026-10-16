@@ -65,6 +65,12 @@ export function getProfileRoleAndCategory(profile: any): {
   if (prefUpper.includes('DESIGNER')) {
     return { role: 'Designer', category: 'others' };
   }
+  if (prefUpper.includes('PROFESSIONAL')) {
+    return { role: 'Professional', category: 'others' };
+  }
+  if (prefUpper.includes('OPERATOR')) {
+    return { role: 'Operator', category: 'others' };
+  }
   if (prefUpper.startsWith('OTHER:')) {
     const customRole = pref.substring(6).trim();
     return { role: customRole || 'Other', category: 'others' };
@@ -113,40 +119,51 @@ export const LandingPage: React.FC = () => {
   const [recentConnections, setRecentConnections] = useState<any[]>([]);
   const [otherProfiles, setOtherProfiles] = useState<any[]>([]);
   const [otherProfilesLoading, setOtherProfilesLoading] = useState<boolean>(true);
+  const [roleFilter, setRoleFilter] = useState<'all' | 'students' | 'others'>('all');
   const [connectUser, setConnectUser] = useState<any | null>(null);
   const [startupConnectUser, setStartupConnectUser] = useState<any | null>(null);
   const [connectionStatusMap, setConnectionStatusMap] = useState<Map<string, string>>(new Map());
 
-  // Fetch community profiles excluding current user and founders/co-founders
+  // Fetch all community profiles (students and other talent) excluding current user and founders/co-founders
   useEffect(() => {
     let isMounted = true;
     const fetchCommunityProfiles = async () => {
       try {
-        const [byUpdatedRes, byCreatedRes] = await Promise.allSettled([
+        const [supaRes, apiRes] = await Promise.allSettled([
           supabase
             .from('profiles')
             .select('*')
-            .order('updated_at', { ascending: false, nullsFirst: false })
-            .limit(80),
-          supabase
-            .from('profiles')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(80),
+            .order('created_at', { ascending: false }),
+          api.getCofounderMatches('category=all').catch(() => null),
         ]);
 
         let rawList: any[] = [];
-        if (byUpdatedRes.status === 'fulfilled' && byUpdatedRes.value.data) {
-          rawList = [...rawList, ...byUpdatedRes.value.data];
+        if (supaRes.status === 'fulfilled' && supaRes.value?.data) {
+          rawList = [...rawList, ...supaRes.value.data];
         }
-        if (byCreatedRes.status === 'fulfilled' && byCreatedRes.value.data) {
-          rawList = [...rawList, ...byCreatedRes.value.data];
+        if (apiRes.status === 'fulfilled' && apiRes.value?.matches) {
+          const apiMatches = (apiRes.value.matches || []).map((m: any) => ({
+            id: m.id || m.profile?.userId,
+            user_id: m.id || m.profile?.userId,
+            email: m.email,
+            full_name: m.profile?.fullName || m.fullName,
+            username: m.profile?.username || m.username,
+            avatar: m.profile?.avatar || m.avatar,
+            headline: m.profile?.headline || m.headline,
+            preferred_role: m.profile?.preferredRole || m.role,
+            skills: m.profile?.skills || m.skills,
+            location: m.profile?.location || m.location,
+            bio: m.profile?.bio || m.bio,
+            one_line_bio: m.profile?.oneLineBio || m.oneLineBio || m.profile?.headline,
+            created_at: m.createdAt,
+          }));
+          rawList = [...rawList, ...apiMatches];
         }
 
-        // Deduplicate profiles, excluding current user and founder/co-founder roles from home showcase
+        // Deduplicate profiles, excluding current user and founder/co-founder roles from community showcase
         const profMap = new Map<string, any>();
         for (const p of rawList) {
-          const key = p.user_id || p.id || p.email;
+          const key = (p.user_id || p.id || p.userId || p.email || '').toString().toLowerCase();
           if (!key || profMap.has(key)) continue;
 
           // Never display the logged-in user's own profile on home; only all other users
@@ -162,14 +179,15 @@ export const LandingPage: React.FC = () => {
 
           const { role, category } = getProfileRoleAndCategory(p);
 
-          // Exclude founders and co-founders from home talent showcase
-          const isFounderOrCoFounder =
-            category === 'founders' ||
-            category === 'cofounders' ||
-            role.toLowerCase().includes('founder') ||
-            (p.preferred_role && p.preferred_role.toUpperCase().includes('FOUNDER')) ||
-            (p.role && p.role.toUpperCase().includes('FOUNDER'));
-          if (isFounderOrCoFounder) continue;
+          // Exclude founders and co-founders from home talent showcase (they belong in cofounders directory)
+          if (category === 'founders' || category === 'cofounders') continue;
+          if (category !== 'students' && category !== 'others') {
+            const roleUpper = role.toUpperCase();
+            const prefUpper = (p.preferred_role || p.role || '').toString().toUpperCase();
+            if (roleUpper.includes('FOUNDER') || prefUpper.includes('FOUNDER')) {
+              continue;
+            }
+          }
 
           profMap.set(key, {
             ...p,
@@ -199,16 +217,24 @@ export const LandingPage: React.FC = () => {
       })
       .subscribe();
 
-    // Listen for client-side profile save event
+    // Listen for client-side profile save event and window focus to refresh immediately
     const handleProfileEvt = () => fetchCommunityProfiles();
     window.addEventListener('profile_updated', handleProfileEvt);
+    window.addEventListener('focus', handleProfileEvt);
+
+    // Periodic sync every 15s to guarantee fresh display when new students register
+    const pollInterval = setInterval(() => {
+      fetchCommunityProfiles();
+    }, 15000);
 
     return () => {
       isMounted = false;
+      clearInterval(pollInterval);
       supabase.removeChannel(profilesChannel);
       window.removeEventListener('profile_updated', handleProfileEvt);
+      window.removeEventListener('focus', handleProfileEvt);
     };
-  }, [user?.id]);
+  }, [user?.id, user?.email]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -301,22 +327,62 @@ export const LandingPage: React.FC = () => {
         <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Community Profiles: Students, Operators, Specialists & Community Members */}
           <div className="w-full mb-10">
-            <div className="mb-4">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 text-xs font-semibold border border-brand-200/60 dark:border-brand-900/60 mb-1.5">
-                <Sparkles size={12} /> Community Talent Showcase
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 text-xs font-semibold border border-brand-200/60 dark:border-brand-900/60 mb-1.5">
+                  <Sparkles size={12} /> Community Talent Showcase
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                  Students, Specialists & Community Talent
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                  Discover ambitious students, engineers, designers & builders across the ecosystem
+                </p>
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                Students, Specialists & Community Talent
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                Discover ambitious students, engineers, designers & builders across the ecosystem
-              </p>
+
+              {/* Category Filter Tabs */}
+              <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg self-start sm:self-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setRoleFilter('all')}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                    roleFilter === 'all'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  All ({otherProfiles.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRoleFilter('students')}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                    roleFilter === 'students'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  Students ({otherProfiles.filter((p) => p.category === 'students').length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRoleFilter('others')}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                    roleFilter === 'others'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  Others ({otherProfiles.filter((p) => p.category === 'others').length})
+                </button>
+              </div>
             </div>
 
             {(() => {
-              const unconnectedProfiles = otherProfiles.filter((p) => {
-                const status = p.user_id ? connectionStatusMap.get(p.user_id) : undefined;
-                return status !== 'ACCEPTED';
+              const displayedProfiles = otherProfiles.filter((p) => {
+                if (roleFilter === 'students') return p.category === 'students';
+                if (roleFilter === 'others') return p.category === 'others';
+                return true;
               });
 
               if (otherProfilesLoading) {
@@ -327,11 +393,11 @@ export const LandingPage: React.FC = () => {
                 );
               }
 
-              if (unconnectedProfiles.length === 0) {
+              if (displayedProfiles.length === 0) {
                 return (
                   <div className="text-center py-8 px-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                      No new community talent profiles found to connect with.
+                      No profiles found in this category.
                     </p>
                     <Link
                       to="/cofounders"
@@ -345,12 +411,12 @@ export const LandingPage: React.FC = () => {
 
               return (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {unconnectedProfiles.slice(0, 12).map((p) => {
+                  {displayedProfiles.map((p) => {
                     const displayName = p.full_name || 'Community Member';
                     const displayRole = p.role_label || 'Other';
-                    const username = p.username || displayName.toLowerCase().replace(/\s+/g, '_');
-                    const profileUrl = p.user_id ? `/profile/${p.user_id}` : '/cofounders';
-                    const connStatus = p.user_id ? connectionStatusMap.get(p.user_id) : undefined;
+                    const username = p.username || (p.email ? p.email.split('@')[0] : displayName.toLowerCase().replace(/\s+/g, '_'));
+                    const profileUrl = p.user_id ? `/profile/${p.user_id}` : (p.id ? `/profile/${p.id}` : '/cofounders');
+                    const connStatus = p.user_id ? connectionStatusMap.get(p.user_id) : (p.id ? connectionStatusMap.get(p.id) : undefined);
                     const targetUserObj = {
                       id: p.user_id || p.id,
                       email: p.email || '',
@@ -364,7 +430,7 @@ export const LandingPage: React.FC = () => {
 
                     return (
                       <div
-                        key={p.id}
+                        key={p.user_id || p.id || p.email}
                         className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-subtle transition-colors flex flex-col justify-between space-y-3"
                       >
                         <div className="space-y-2.5">
@@ -433,7 +499,11 @@ export const LandingPage: React.FC = () => {
                             </button>
 
                             {/* User Connection Button */}
-                            {connStatus === 'PENDING' ? (
+                            {connStatus === 'ACCEPTED' ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
+                                <Check size={12} /> Connected
+                              </span>
+                            ) : connStatus === 'PENDING' ? (
                               <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
                                 Pending
                               </span>
