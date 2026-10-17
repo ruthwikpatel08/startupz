@@ -42,6 +42,44 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 
+const LOCAL_POSTS_KEY = 'startupz_user_persisted_posts';
+const LOCAL_DELETED_KEY = 'startupz_user_deleted_post_ids';
+
+const getLocalPersistedPosts = (): any[] => {
+  try {
+    const raw = localStorage.getItem(LOCAL_POSTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveLocalPersistedPost = (newPost: any) => {
+  try {
+    const current = getLocalPersistedPosts().filter((p) => p.id !== newPost.id);
+    localStorage.setItem(LOCAL_POSTS_KEY, JSON.stringify([newPost, ...current]));
+  } catch {}
+};
+
+const getLocalDeletedIds = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem(LOCAL_DELETED_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch {
+    return new Set();
+  }
+};
+
+const markPostDeletedLocally = (postId: string) => {
+  try {
+    const currentPosts = getLocalPersistedPosts().filter((p) => p.id !== postId);
+    localStorage.setItem(LOCAL_POSTS_KEY, JSON.stringify(currentPosts));
+    const deletedIds = getLocalDeletedIds();
+    deletedIds.add(postId);
+    localStorage.setItem(LOCAL_DELETED_KEY, JSON.stringify(Array.from(deletedIds)));
+  } catch {}
+};
+
 export const StartupFeedPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -56,13 +94,22 @@ export const StartupFeedPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('ALL');
 
-  // Strict classification sets: Ideas and Achievements NEVER mix
+  // Strict classification sets: Ideas and Executions NEVER mix
   const IDEA_POST_TYPES = new Set(['IDEA', 'COFOUNDER', 'ADVICE', 'HIRING']);
-  const ACHIEVEMENT_POST_TYPES = new Set(['EXPERIENCE', 'LAUNCH', 'FUNDING', 'MILESTONE', 'ACHIEVEMENT']);
+  const ACHIEVEMENT_POST_TYPES = new Set([
+    'EXECUTION',
+    'ACHIEVEMENT',
+    'DRAWBACK',
+    'DRAWBACKS',
+    'LAUNCH',
+    'EXPERIENCE',
+    'FUNDING',
+    'MILESTONE',
+  ]);
 
   // Post composer state
   const [composerOpen, setComposerOpen] = useState(false);
-  const [postType, setPostType] = useState('EXPERIENCE');
+  const [postType, setPostType] = useState('EXECUTION');
   const [postTitle, setPostTitle] = useState('');
   const [postContent, setPostContent] = useState('');
   const [postLinks, setPostLinks] = useState('');
@@ -123,7 +170,7 @@ export const StartupFeedPage: React.FC = () => {
     setActivePillar(pillar);
     setFilterType('ALL');
     if (pillar === 'ACHIEVEMENTS') {
-      setPostType('LAUNCH');
+      setPostType('EXECUTION');
     } else if (pillar === 'IDEAS') {
       setPostType('IDEA');
     }
@@ -167,8 +214,18 @@ export const StartupFeedPage: React.FC = () => {
         } catch {}
       }
 
+      const deletedIds = getLocalDeletedIds();
+      const localPersisted = getLocalPersistedPosts().filter((p) => !deletedIds.has(p.id));
+
+      const mergePersistedPosts = (loadedList: any[]) => {
+        const withoutDeleted = (loadedList || []).filter((p) => !deletedIds.has(p.id));
+        const loadedIds = new Set(withoutDeleted.map((p) => p.id));
+        const missingLocal = localPersisted.filter((lp) => !loadedIds.has(lp.id));
+        return [...missingLocal, ...withoutDeleted];
+      };
+
       if (res?.posts && res.posts.length > 0) {
-        setPosts(res.posts.map((p: any) => {
+        const mapped = res.posts.map((p: any) => {
           const isLiked = p.isLiked ?? userLikedIds.has(p.id);
           const uVote = p.userVote || userVoteMap[p.id] || (isLiked ? 'up' : null);
           if (uVote) {
@@ -182,7 +239,8 @@ export const StartupFeedPage: React.FC = () => {
             isLiked: Boolean(isLiked),
             isSaved: savedPostIds.has(p.id) || p.isSaved || false,
           };
-        }));
+        });
+        setPosts(mergePersistedPosts(mapped));
         setUserVotes((prev) => ({ ...prev, ...userVoteMap }));
       } else {
         // Fallback: direct Supabase select if backend is empty
@@ -240,14 +298,17 @@ export const StartupFeedPage: React.FC = () => {
               },
             };
           });
-          setPosts(formatted as any);
+          setPosts(mergePersistedPosts(formatted as any));
           setUserVotes((prev) => ({ ...prev, ...userVoteMap }));
         } else if (res?.posts) {
-          setPosts(res.posts.map((p: any) => ({
+          const fallbackMapped = res.posts.map((p: any) => ({
             ...p,
             isLiked: userLikedIds.has(p.id) || p.isLiked || false,
             isSaved: savedPostIds.has(p.id) || p.isSaved || false,
-          })));
+          }));
+          setPosts(mergePersistedPosts(fallbackMapped));
+        } else if (localPersisted.length > 0) {
+          setPosts(localPersisted);
         }
       }
     } catch (err) {
@@ -337,8 +398,20 @@ export const StartupFeedPage: React.FC = () => {
       if (IDEA_POST_TYPES.has(rawType)) {
         return false;
       }
-      if (filterType === 'MY_ACHIEVEMENTS') {
+      if (filterType === 'MY_SHARES' || filterType === 'MY_ACHIEVEMENTS') {
         return isMyPost && (ACHIEVEMENT_POST_TYPES.has(rawType) || rawType === 'UPDATE');
+      }
+      if (filterType === 'EXECUTION' || filterType === 'ACHIEVEMENT') {
+        return rawType === 'EXECUTION' || rawType === 'ACHIEVEMENT';
+      }
+      if (filterType === 'DRAWBACK' || filterType === 'DRAWBACKS') {
+        return rawType === 'DRAWBACK' || rawType === 'DRAWBACKS';
+      }
+      if (filterType === 'LAUNCH') {
+        return rawType === 'LAUNCH';
+      }
+      if (filterType === 'EXPERIENCE') {
+        return rawType === 'EXPERIENCE';
       }
       if (filterType !== 'ALL') {
         return rawType === filterType;
@@ -382,7 +455,7 @@ export const StartupFeedPage: React.FC = () => {
 
     const finalPostType = activePillar === 'IDEAS'
       ? (IDEA_POST_TYPES.has(postType) ? postType : 'IDEA')
-      : (ACHIEVEMENT_POST_TYPES.has(postType) || postType === 'UPDATE' ? postType : 'EXPERIENCE');
+      : (ACHIEVEMENT_POST_TYPES.has(postType) || postType === 'UPDATE' ? postType : 'EXECUTION');
 
     setSubmittingPost(true);
     setComposerError(null);
@@ -466,7 +539,8 @@ export const StartupFeedPage: React.FC = () => {
       }
 
       if (createdPost) {
-        setPosts((prev) => [createdPost, ...prev]);
+        saveLocalPersistedPost(createdPost);
+        setPosts((prev) => [createdPost, ...prev.filter((p) => p.id !== createdPost.id)]);
         clearApiCache();
       }
 
@@ -905,8 +979,11 @@ export const StartupFeedPage: React.FC = () => {
         // Fallback: direct Supabase delete
         await supabase.from('posts').delete().eq('id', postId);
       }
+      markPostDeletedLocally(postId);
       setPosts((prev) => prev.filter((p) => p.id !== postId));
       broadcastEntityDeleted('POST', postId);
+      setSuccessToast('Post deleted successfully.');
+      setTimeout(() => setSuccessToast(null), 3000);
     } catch (err: any) {
       alert(err.message || 'Failed to delete post.');
     }
@@ -929,6 +1006,7 @@ export const StartupFeedPage: React.FC = () => {
     syncChannel
       .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => {
         if (payload?.entityType === 'POST' && payload?.id) {
+          markPostDeletedLocally(payload.id);
           setPosts((prev) => prev.filter((p) => p.id !== payload.id));
         } else if (payload?.entityType === 'PROBLEM' && payload?.id) {
           setProblems((prev) => prev.filter((p) => p.id !== payload.id));
@@ -946,6 +1024,7 @@ export const StartupFeedPage: React.FC = () => {
     const handleLocalDelete = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail?.entityType === 'POST' && detail?.id) {
+        markPostDeletedLocally(detail.id);
         setPosts((prev) => prev.filter((p) => p.id !== detail.id));
       } else if (detail?.entityType === 'PROBLEM' && detail?.id) {
         setProblems((prev) => prev.filter((p) => p.id !== detail.id));
@@ -970,7 +1049,7 @@ export const StartupFeedPage: React.FC = () => {
     };
   }, []);
 
-  const myAchievementsCount = posts.filter(
+  const mySharesCount = posts.filter(
     (p) =>
       Boolean(user?.id) &&
       (p.authorId === user?.id || p.author?.id === user?.id) &&
@@ -986,13 +1065,13 @@ export const StartupFeedPage: React.FC = () => {
       (IDEA_POST_TYPES.has((p.postType || 'UPDATE').toUpperCase()) || (p.postType || 'UPDATE').toUpperCase() === 'UPDATE')
   ).length;
 
-  const achievementFilters = [
-    { id: 'ALL', label: 'All Achievements' },
-    { id: 'MY_ACHIEVEMENTS', label: user ? `🌟 My Achievements (${myAchievementsCount})` : '🌟 My Achievements' },
-    { id: 'ACHIEVEMENT', label: '🌟 Achievements' },
-    { id: 'LAUNCH', label: '🎉 Launches' },
-    { id: 'FUNDING', label: '💰 Funding' },
-    { id: 'UPDATE', label: '🏆 Milestones' },
+  const executionFilters = [
+    { id: 'ALL', label: 'All Executions' },
+    { id: 'MY_SHARES', label: user ? `🌟 My Shares (${mySharesCount})` : '🌟 My Shares' },
+    { id: 'EXECUTION', label: '🌟 Execution' },
+    { id: 'DRAWBACK', label: '⚠️ Drawbacks' },
+    { id: 'LAUNCH', label: '🚀 Product Launch' },
+    { id: 'EXPERIENCE', label: '📖 Experience' },
   ];
 
   const ideaFilters = [
@@ -1003,12 +1082,11 @@ export const StartupFeedPage: React.FC = () => {
     { id: 'HIRING', label: '💼 Hiring' },
   ];
 
-  const achievementComposerTypes = [
-    { id: 'ACHIEVEMENT', label: '🌟 Achievement' },
+  const executionComposerTypes = [
+    { id: 'EXECUTION', label: '🌟 Execution' },
+    { id: 'DRAWBACK', label: '⚠️ Drawbacks' },
+    { id: 'LAUNCH', label: '🚀 Product Launch' },
     { id: 'EXPERIENCE', label: '📖 Experience' },
-    { id: 'LAUNCH', label: '🎉 Product Launch' },
-    { id: 'FUNDING', label: '💰 Funding Round' },
-    { id: 'UPDATE', label: '🏆 Milestone' },
   ];
 
   const ideaComposerTypes = [
@@ -1020,11 +1098,12 @@ export const StartupFeedPage: React.FC = () => {
 
   const postTypes = [
     { key: 'ALL', label: 'All Updates' },
-    { key: 'ACHIEVEMENT', label: '🌟 Achievements' },
-    { key: 'IDEA', label: '💡 Ideas' },
+    { key: 'EXECUTION', label: '🌟 Executions' },
+    { key: 'DRAWBACK', label: '⚠️ Drawbacks' },
+    { key: 'LAUNCH', label: '🚀 Product Launch' },
     { key: 'EXPERIENCE', label: '📖 Experiences' },
+    { key: 'IDEA', label: '💡 Ideas' },
     { key: 'UPDATE', label: '🚀 Updates' },
-    { key: 'LAUNCH', label: '🎉 Launches' },
     { key: 'COFOUNDER', label: '🤝 Co-Founder' },
     { key: 'HIRING', label: '💼 Hiring' },
     { key: 'FUNDING', label: '💰 Funding' },
@@ -1032,9 +1111,13 @@ export const StartupFeedPage: React.FC = () => {
   ];
 
   const getPostTypeBadge = (type: string) => {
-    switch (type) {
+    switch ((type || '').toUpperCase()) {
+      case 'EXECUTION':
       case 'ACHIEVEMENT':
         return 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800';
+      case 'DRAWBACK':
+      case 'DRAWBACKS':
+        return 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800';
       case 'IDEA':
         return 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800';
       case 'EXPERIENCE':
@@ -1054,15 +1137,23 @@ export const StartupFeedPage: React.FC = () => {
     }
   };
 
+  const formatPostTypeLabel = (type: string) => {
+    const upper = (type || '').toUpperCase();
+    if (upper === 'ACHIEVEMENT' || upper === 'EXECUTION') return 'EXECUTION';
+    if (upper === 'DRAWBACK' || upper === 'DRAWBACKS') return 'DRAWBACKS';
+    if (upper === 'LAUNCH') return 'PRODUCT LAUNCH';
+    return type || 'UPDATE';
+  };
+
   return (
     <div className="w-full max-w-full xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6 min-w-0 overflow-x-hidden">
       <SEO
-        title="Startup Feed — Ideas, Updates & Wins | HookZ"
-        description="Follow real-time startup milestones, breakthrough ideas, problem solutions, and founder updates across the HookZ ecosystem."
+        title="Startup Feed — Executions, Ideas & Updates | HookZ"
+        description="Follow real-time startup executions, drawbacks, breakthrough ideas, problem solutions, and founder updates across the HookZ ecosystem."
         canonicalPath="/feed"
         breadcrumbs={[{ name: 'Feed', path: '/feed' }]}
       />
-      <h1 className="sr-only">Startup Feed — Real-Time Achievements, Ideas & Updates | HookZ</h1>
+      <h1 className="sr-only">Startup Feed — Real-Time Executions, Ideas & Updates | HookZ</h1>
       {/* Toast notifications */}
       {successToast && (
         <div className="fixed top-18 right-6 z-50 p-4 rounded-xl bg-emerald-600 text-white shadow-modal text-xs font-semibold flex items-center gap-2.5 animate-in fade-in slide-in-from-top-3 max-w-md">
@@ -1079,7 +1170,7 @@ export const StartupFeedPage: React.FC = () => {
 
       {/* 3 Core Pillars Header (Fixed on mobile view, no sliding) */}
       <div className="grid grid-cols-3 gap-1.5 sm:gap-3 w-full">
-        {/* 1. Achievements */}
+        {/* 1. Executions */}
         <button
           type="button"
           onClick={() => handlePillarChange('ACHIEVEMENTS')}
@@ -1091,7 +1182,7 @@ export const StartupFeedPage: React.FC = () => {
         >
           <Award size={16} className="text-amber-500 shrink-0" />
           <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
-            Achievements
+            Executions
           </span>
           {activePillar === 'ACHIEVEMENTS' && (
             <span className="w-1.5 h-1.5 rounded-full bg-brand-600 shrink-0 hidden sm:block" />
@@ -1145,13 +1236,13 @@ export const StartupFeedPage: React.FC = () => {
           {activePillar === 'IDEAS' && <Rocket size={18} className="text-brand-600 dark:text-brand-400 shrink-0" />}
           {activePillar === 'PROBLEMS' && <Globe size={18} className="text-blue-500 shrink-0" />}
           <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-            {activePillar === 'ACHIEVEMENTS' && 'Achievements'}
+            {activePillar === 'ACHIEVEMENTS' && 'Executions'}
             {activePillar === 'IDEAS' && 'Startup Ideas'}
             {activePillar === 'PROBLEMS' && 'Real-World Problem Statements'}
           </h2>
         </div>
         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-          {activePillar === 'ACHIEVEMENTS' && 'See what others achieved across product launches, funding rounds, milestones, and work experiences.'}
+          {activePillar === 'ACHIEVEMENTS' && 'See what others executed across achievements, drawbacks, product launches, and experiences.'}
           {activePillar === 'IDEAS' && 'Work on their ideas to build — discover concepts, pitch synergies, or find dedicated co-founders.'}
           {activePillar === 'PROBLEMS' && 'Work on real-world problems and Sustainable Development Goals to build high-impact global solutions.'}
         </p>
@@ -1172,7 +1263,7 @@ export const StartupFeedPage: React.FC = () => {
               className="flex-1 text-left px-3.5 py-2 rounded-md bg-slate-50 dark:bg-dark-850 hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-500 text-xs font-normal border border-slate-200/80 dark:border-dark-700/80 transition-colors"
             >
               {activePillar === 'ACHIEVEMENTS'
-                ? 'Share a work experience, product launch, or milestone achievement...'
+                ? 'Share an execution, drawback, product launch, or experience...'
                 : 'Share a startup idea, early concept, or seek co-founders...'}
             </button>
           </div>
@@ -1182,7 +1273,7 @@ export const StartupFeedPage: React.FC = () => {
               <div className="space-y-1.5">
                 <span className="text-xs font-medium text-slate-500">Post Category:</span>
                 <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-1 px-1">
-                  {(activePillar === 'ACHIEVEMENTS' ? achievementComposerTypes : ideaComposerTypes).map((t) => (
+                  {(activePillar === 'ACHIEVEMENTS' ? executionComposerTypes : ideaComposerTypes).map((t) => (
                     <button
                       key={t.id}
                       type="button"
@@ -1205,7 +1296,7 @@ export const StartupFeedPage: React.FC = () => {
                 onChange={(e) => setPostTitle(e.target.value)}
                 placeholder={
                   activePillar === 'ACHIEVEMENTS'
-                    ? 'Achievement or experience headline (optional)'
+                    ? 'Execution or experience headline (optional)'
                     : 'Startup idea title or concept name (optional)'
                 }
                 className="input-base w-full px-3 py-2 text-xs"
@@ -1217,7 +1308,7 @@ export const StartupFeedPage: React.FC = () => {
                 onChange={(e) => setPostContent(e.target.value)}
                 placeholder={
                   activePillar === 'ACHIEVEMENTS'
-                    ? 'Describe what you achieved, metrics reached, lessons learned, or new product features...'
+                    ? 'Describe your execution, metrics reached, drawbacks encountered, lessons learned, or new product features...'
                     : 'Describe your startup idea, problem it solves, target users, or co-founder criteria...'
                 }
                 rows={4}
@@ -1298,7 +1389,7 @@ export const StartupFeedPage: React.FC = () => {
       {/* Sub-Category Filter Chips Bar (Horizontal scrollable option on mobile) */}
       {activePillar !== 'PROBLEMS' && (
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
-          {(activePillar === 'ACHIEVEMENTS' ? achievementFilters : ideaFilters).map((item) => (
+          {(activePillar === 'ACHIEVEMENTS' ? executionFilters : ideaFilters).map((item) => (
             <button
               key={item.id}
               type="button"
@@ -1369,24 +1460,24 @@ export const StartupFeedPage: React.FC = () => {
         <EmptyState
           icon={Share2}
           title={
-            filterType === 'MY_ACHIEVEMENTS'
-              ? "You haven't posted any achievements yet"
+            filterType === 'MY_SHARES' || filterType === 'MY_ACHIEVEMENTS'
+              ? "You haven't posted any executions yet"
               : filterType === 'MY_IDEAS'
               ? "You haven't posted any startup ideas yet"
               : activePillar === 'ACHIEVEMENTS'
-              ? "No achievements published yet"
+              ? "No executions published yet"
               : "No idea posts found"
           }
           description={
-            filterType === 'MY_ACHIEVEMENTS'
-              ? "Share your milestones, funding rounds, or product launches with the community."
+            filterType === 'MY_SHARES' || filterType === 'MY_ACHIEVEMENTS'
+              ? "Share your executions, drawbacks, product launches, or experiences with the community."
               : filterType === 'MY_IDEAS'
               ? "Publish a new startup concept or problem to gather feedback and find builders."
               : activePillar === 'ACHIEVEMENTS'
-              ? "Be the first to share an achievement, product launch, or funding milestone."
+              ? "Be the first to share an execution, drawback, or product launch."
               : "Share an early idea, concept proposal, or seek co-founders to build together."
           }
-          actionLabel={activePillar === 'ACHIEVEMENTS' ? "Share Achievement" : "Post an Idea"}
+          actionLabel={activePillar === 'ACHIEVEMENTS' ? "Share Execution" : "Post an Idea"}
           onAction={() => setComposerOpen(true)}
         />
       ) : (
@@ -1471,7 +1562,7 @@ export const StartupFeedPage: React.FC = () => {
                         post.postType
                       )}`}
                     >
-                      {post.postType}
+                      {formatPostTypeLabel(post.postType)}
                     </span>
 
                     {(user?.id === post.authorId || user?.id === author?.id || user?.isAdmin) && (
@@ -1598,7 +1689,7 @@ export const StartupFeedPage: React.FC = () => {
                         </button>
                       </div>
                     ) : (
-                      /* Default Heart reaction button for Achievements / other feeds */
+                      /* Default Heart reaction button for Executions / other feeds */
                       <button
                         type="button"
                         onClick={() => handleLikePost(post.id)}

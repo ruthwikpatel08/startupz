@@ -857,6 +857,25 @@ export const ProfilePage: React.FC = () => {
         console.warn('Supabase profile posts fetch notice:', sbErr);
       }
 
+      // Merge any local persisted posts authored by this user
+      try {
+        const rawLocal = localStorage.getItem('startupz_user_persisted_posts');
+        const rawDel = localStorage.getItem('startupz_user_deleted_post_ids');
+        const delSet = new Set(rawDel ? JSON.parse(rawDel) : []);
+        if (rawLocal) {
+          const localPosts: any[] = JSON.parse(rawLocal);
+          const postMap = new Map(postsList.map((p: any) => [p.id, p]));
+          localPosts
+            .filter((lp: any) => (lp.authorId === authorId || lp.author?.id === authorId) && !delSet.has(lp.id))
+            .forEach((lp: any) => {
+              if (!postMap.has(lp.id)) {
+                postsList.unshift(lp);
+              }
+            });
+        }
+        postsList = postsList.filter((p: any) => !delSet.has(p.id));
+      } catch {}
+
       postsList.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setUserPosts(postsList);
     } catch (err) {
@@ -875,6 +894,17 @@ export const ProfilePage: React.FC = () => {
       await api.deletePost(postId).catch(() => null);
       try {
         await supabase.from('posts').delete().eq('id', postId);
+      } catch {}
+      try {
+        const rawLocal = localStorage.getItem('startupz_user_persisted_posts');
+        if (rawLocal) {
+          const list: any[] = JSON.parse(rawLocal);
+          localStorage.setItem('startupz_user_persisted_posts', JSON.stringify(list.filter((p) => p.id !== postId)));
+        }
+        const rawDel = localStorage.getItem('startupz_user_deleted_post_ids');
+        const delSet = new Set(rawDel ? JSON.parse(rawDel) : []);
+        delSet.add(postId);
+        localStorage.setItem('startupz_user_deleted_post_ids', JSON.stringify(Array.from(delSet)));
       } catch {}
       setUserPosts((prev) => prev.filter((p) => p.id !== postId));
     } catch (err) {
@@ -1733,10 +1763,10 @@ export const ProfilePage: React.FC = () => {
   const completionPercentage = Math.round((completedFields / totalFields) * 100);
 
   const renderPostsAndUpdatesSection = () => {
-    const ACHIEVEMENT_SET = new Set(['ACHIEVEMENT', 'EXPERIENCE', 'LAUNCH', 'FUNDING', 'MILESTONE']);
+    const ACHIEVEMENT_SET = new Set(['ACHIEVEMENT', 'EXECUTION', 'DRAWBACK', 'DRAWBACKS', 'EXPERIENCE', 'LAUNCH', 'FUNDING', 'MILESTONE']);
     const IDEA_SET = new Set(['IDEA', 'COFOUNDER', 'ADVICE', 'HIRING']);
 
-    const achievementsCount = userPosts.filter((post) => ACHIEVEMENT_SET.has((post.postType || '').toUpperCase())).length;
+    const executionsCount = userPosts.filter((post) => ACHIEVEMENT_SET.has((post.postType || '').toUpperCase())).length;
     const ideasCount = userPosts.filter((post) => IDEA_SET.has((post.postType || '').toUpperCase())).length;
     const updatesCount = userPosts.filter((post) => (post.postType || 'UPDATE').toUpperCase() === 'UPDATE').length;
 
@@ -1794,7 +1824,7 @@ export const ProfilePage: React.FC = () => {
                   : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-700'
               }`}
             >
-              🌟 Achievements ({achievementsCount})
+              🌟 Executions ({executionsCount})
             </button>
             <button
               type="button"
@@ -1841,13 +1871,15 @@ export const ProfilePage: React.FC = () => {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                        pType === 'ACHIEVEMENT'
+                        pType === 'ACHIEVEMENT' || pType === 'EXECUTION'
                           ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                          : pType === 'DRAWBACK' || pType === 'DRAWBACKS'
+                          ? 'bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700'
                           : isAch
                           ? 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/60'
                           : 'bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-900/60'
                       }`}>
-                        {post.postType || 'UPDATE'}
+                        {pType === 'ACHIEVEMENT' ? 'EXECUTION' : (pType === 'DRAWBACK' || pType === 'DRAWBACKS' ? 'DRAWBACKS' : (post.postType || 'UPDATE'))}
                       </span>
                       <span className="text-[11px] text-slate-400">
                         {new Date(post.createdAt).toLocaleDateString(undefined, {

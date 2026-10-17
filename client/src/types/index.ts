@@ -233,7 +233,7 @@ export interface Post {
   author?: User;
   startupId?: string | null;
   startup?: Startup | null;
-  postType: 'UPDATE' | 'LAUNCH' | 'MILESTONE' | 'FUNDING' | 'HIRING' | 'COFOUNDER' | 'ADVICE' | 'ACHIEVEMENT' | 'EVENT' | string;
+  postType: 'UPDATE' | 'LAUNCH' | 'MILESTONE' | 'FUNDING' | 'HIRING' | 'COFOUNDER' | 'ADVICE' | 'ACHIEVEMENT' | 'EXECUTION' | 'DRAWBACK' | 'DRAWBACKS' | 'EVENT' | string;
   title?: string | null;
   content: string;
   images?: string | null;

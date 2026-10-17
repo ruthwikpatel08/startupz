@@ -35,7 +35,7 @@ export const seedPosts = [
   {
     authorEmail: 'rohan.kapoor@finsync.io',
     startupName: 'FinSync Global',
-    postType: 'ACHIEVEMENT',
+    postType: 'EXECUTION',
     title: 'Crossed $1.4M in monthly settled cross-border volume!',
     content: 'Just closed out our monthly audit at FinSync Global: over $1.4M settled across 85 active B2B export-import merchants between India, UAE, and Kenya. Average settlement latency dropped from 3.5 days to under 4 minutes with zero FX slippage disputes. Huge validation that SME cross-border payments do not need to be slow and predatory.',
     likesCount: 42,
@@ -50,6 +50,23 @@ export const seedPosts = [
       {
         authorEmail: 'tariq.mansoor@cybermesh.io',
         content: 'Zero fraud disputes at $1.4M volume is testament to solid KYC architecture. Keep up the high operational rigor!',
+        daysAgo: 2,
+      },
+    ],
+  },
+  {
+    authorEmail: 'marcus.dev@codeflow.dev',
+    startupName: 'CodeFlow Edge',
+    postType: 'DRAWBACK',
+    title: 'Drawbacks & latency bottlenecks discovered during rural sync load test',
+    content: 'Full transparency: during our offline WhatsApp messaging stress test in low-signal rural regions, we encountered significant cache invalidation latency when over 500 edge nodes concurrently synced. The SQLite write lock contention slowed response times by 3.2 seconds. We are decoupling edge queuing with an in-memory worker ring to resolve this before the public beta.',
+    likesCount: 27,
+    commentsCount: 2,
+    daysAgo: 3,
+    comments: [
+      {
+        authorEmail: 'sarah.chen@aiagri.io',
+        content: 'Appreciate the open post on this drawback! Rural network partitions are tough, but the decoupled queue architecture should fix it.',
         daysAgo: 2,
       },
     ],
@@ -157,7 +174,7 @@ export const seedPosts = [
   {
     authorEmail: 'daniel.carter@tracecraft.supply',
     startupName: 'TraceCraft',
-    postType: 'ACHIEVEMENT',
+    postType: 'EXECUTION',
     title: 'Crossed €340K ARR in verified Scope 3 supply chain carbon auditing!',
     content: 'Just 11 months since founding, TraceCraft has surpassed €340K ARR across 14 European enterprise clients. Over 8,000 tier-1 suppliers are now audited using our automated ERP ingestion engine rather than manual spreadsheet surveys.',
     likesCount: 37,
@@ -190,7 +207,7 @@ export const seedPosts = [
   {
     authorEmail: 'amara.okafor@femisave.africa',
     startupName: 'FemiSave Health',
-    postType: 'ACHIEVEMENT',
+    postType: 'EXECUTION',
     title: '3,200 women screened in public hospital clinical study with 96.2% sensitivity',
     content: 'FemiSave’s portable optical imaging device has completed clinical evaluation across 3,200 rural women in Tamil Nadu and Nigeria. With 96.2% sensitivity compared to gold-standard colposcopy, our $3 test enables primary health workers to detect pre-cancerous lesions years before symptoms emerge.',
     likesCount: 61,
@@ -223,7 +240,7 @@ export const seedPosts = [
   {
     authorEmail: 'samantha.hayes@biomaterials.io',
     startupName: 'EcoWrap Packaging',
-    postType: 'ACHIEVEMENT',
+    postType: 'EXECUTION',
     title: 'Signed commercial LOIs for 250,000 biodegradable packaging units',
     content: 'Excited to announce commercial letters of intent with two premium consumer electronics manufacturers to replace petroleum-based Styrofoam with EcoWrap marine-biodegradable seaweed packaging starting Q3.',
     likesCount: 46,
@@ -267,7 +284,7 @@ export const seedPosts = [
   {
     authorEmail: 'arjun.mehta@agritech.in',
     startupName: 'KrishiGyan AI',
-    postType: 'ACHIEVEMENT',
+    postType: 'EXECUTION',
     title: '110,000 crop disease diagnoses conducted in 12 regional languages!',
     content: 'Language should never be a barrier to agronomic knowledge. KrishiGyan has crossed 110,000 leaf scans diagnosed with spoken voice guidance in Gujarati, Hindi, Marathi, Telugu, and Tamil. Farmers get answers in 10 seconds right in their fields.',
     likesCount: 49,
@@ -306,7 +323,7 @@ export const seedPosts = [
   {
     authorEmail: 'julian.vance@aihealth.co',
     startupName: 'BioShield Therapeutics',
-    postType: 'ACHIEVEMENT',
+    postType: 'EXECUTION',
     title: '4 de novo antimicrobial peptides achieve 100% in vitro inhibition against MRSA',
     content: 'Milestone day in our computational biology lab: out of 12 synthetic peptides designed by our generative protein diffusion models, 4 candidates demonstrated complete in vitro inhibition against drug-resistant Staphylococcus aureus with zero human cell hemolysis.',
     likesCount: 47,
@@ -328,7 +345,7 @@ export const seedPosts = [
   {
     authorEmail: 'kavya.nair@talentloom.ai',
     startupName: 'PathFinder Edu',
-    postType: 'ACHIEVEMENT',
+    postType: 'EXECUTION',
     title: '420 vocational apprentices placed across 65 fast-growing tech startups',
     content: 'Degrees open doors, but verifiable code gets people hired. PathFinder apprentices have officially crossed 420 paid placements, with 68% converting to full-time engineering roles within 90 days. Proud of our mentors and partner startups!',
     likesCount: 43,
@@ -609,7 +626,7 @@ export const seedPosts = [
   {
     authorEmail: 'devansh.joshi@agridata.in',
     startupName: 'VoltSync Hub',
-    postType: 'ACHIEVEMENT',
+    postType: 'EXECUTION',
     title: 'VoltSync Hub delivers 28% electricity bill reduction in Dubai office tower',
     content: 'Real-time AI chiller optimization and dynamic indoor air quality control across 40 floors produced a certified 28% drop in monthly electricity consumption during peak summer cooling demand.',
     likesCount: 44,
