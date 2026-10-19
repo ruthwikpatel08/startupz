@@ -8,7 +8,8 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { ReportModal } from '../../components/common/ReportModal';
 import { Avatar } from '../../components/common/Avatar';
-import { ProblemCard } from '../../components/problems/ProblemCard';
+import { PrototypeCard } from '../../components/prototypes/PrototypeCard';
+import { CreatePrototypeModal } from '../../components/prototypes/CreatePrototypeModal';
 import { SEO } from '../../components/common/SEO';
 import { ShareModal, ShareItemData } from '../../components/common/ShareModal';
 import {
@@ -39,7 +40,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Users,
+  Boxes,
 } from 'lucide-react';
+
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 
 const LOCAL_POSTS_KEY = 'startupz_user_persisted_posts';
@@ -87,14 +90,13 @@ export const StartupFeedPage: React.FC = () => {
   const location = useLocation();
   const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
 
-  const [activePillar, setActivePillar] = useState<'ACHIEVEMENTS' | 'IDEAS' | 'PROBLEMS'>('ACHIEVEMENTS');
+  const [activePillar, setActivePillar] = useState<'ACHIEVEMENTS' | 'IDEAS' | 'PROTOTYPES'>('ACHIEVEMENTS');
   const [posts, setPosts] = useState<Post[]>([]);
-  const [problems, setProblems] = useState<Problem[]>([]);
-  const [problemsLoading, setProblemsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('ALL');
+  const [createPrototypeModalOpen, setCreatePrototypeModalOpen] = useState(false);
 
-  // Strict classification sets: Ideas and Executions NEVER mix
+  // Strict classification sets: Ideas, Executions, and Prototypes NEVER mix
   const IDEA_POST_TYPES = new Set(['IDEA', 'COFOUNDER', 'ADVICE', 'HIRING']);
   const ACHIEVEMENT_POST_TYPES = new Set([
     'EXECUTION',
@@ -106,6 +108,13 @@ export const StartupFeedPage: React.FC = () => {
     'FUNDING',
     'MILESTONE',
   ]);
+
+  const prototypeFilters = [
+    { id: 'ALL', label: 'All Prototypes' },
+    { id: 'MY_PROTOTYPES', label: 'My Prototypes' },
+    { id: 'WEBSITES', label: 'Live Websites' },
+    { id: 'VIDEOS', label: 'Demo Videos' },
+  ];
 
   // Post composer state
   const [composerOpen, setComposerOpen] = useState(false);
@@ -166,15 +175,18 @@ export const StartupFeedPage: React.FC = () => {
     }
   }, [user?.id]);
 
-  const handlePillarChange = (pillar: 'ACHIEVEMENTS' | 'IDEAS' | 'PROBLEMS') => {
+  const handlePillarChange = (pillar: 'ACHIEVEMENTS' | 'IDEAS' | 'PROTOTYPES') => {
     setActivePillar(pillar);
     setFilterType('ALL');
     if (pillar === 'ACHIEVEMENTS') {
       setPostType('EXECUTION');
     } else if (pillar === 'IDEAS') {
       setPostType('IDEA');
+    } else if (pillar === 'PROTOTYPES') {
+      setPostType('PROTOTYPE');
     }
   };
+
 
   const [successToast, setSuccessToast] = useState<string | null>(null);
   const [errorToast, setErrorToast] = useState<string | null>(null);
@@ -322,23 +334,6 @@ export const StartupFeedPage: React.FC = () => {
     fetchPosts();
   }, []);
 
-  useEffect(() => {
-    if (activePillar === 'PROBLEMS' && problems.length === 0) {
-      const fetchProblems = async () => {
-        setProblemsLoading(true);
-        try {
-          const res = await api.getProblems();
-          setProblems(res.problems || []);
-        } catch (err) {
-          console.error('Failed to load problems:', err);
-        } finally {
-          setProblemsLoading(false);
-        }
-      };
-      fetchProblems();
-    }
-  }, [activePillar, problems.length]);
-
   // Handle direct redirection to a shared post (?postId=xyz or #post-xyz)
   useEffect(() => {
     const rawTarget =
@@ -350,13 +345,16 @@ export const StartupFeedPage: React.FC = () => {
       const targetPost = posts.find((p) => p.id === rawTarget);
       if (targetPost) {
         const rawType = (targetPost.postType || 'UPDATE').toUpperCase();
-        if (IDEA_POST_TYPES.has(rawType)) {
+        if (rawType === 'PROTOTYPE' || targetPost.content?.startsWith('{"isPrototype"')) {
+          setActivePillar('PROTOTYPES');
+        } else if (IDEA_POST_TYPES.has(rawType)) {
           setActivePillar('IDEAS');
         } else {
           setActivePillar('ACHIEVEMENTS');
         }
         setFilterType('ALL');
       }
+
 
       const scrollToTarget = () => {
         const el = document.getElementById(`post-${rawTarget}`);
@@ -393,7 +391,13 @@ export const StartupFeedPage: React.FC = () => {
       if (!isMyPost && !isConnection) return false;
     }
 
+    const isProtoPost =
+      rawType === 'PROTOTYPE' ||
+      p.postType === 'PROTOTYPE' ||
+      (typeof p.content === 'string' && p.content.startsWith('{"isPrototype"'));
+
     if (activePillar === 'ACHIEVEMENTS') {
+      if (isProtoPost) return false;
       // 1. STRICT: Exclude ALL ideas/cofounder/advice/hiring
       if (IDEA_POST_TYPES.has(rawType)) {
         return false;
@@ -423,6 +427,7 @@ export const StartupFeedPage: React.FC = () => {
     }
 
     if (activePillar === 'IDEAS') {
+      if (isProtoPost) return false;
       // 1. STRICT: Exclude ALL achievements/experiences/launches/funding
       if (ACHIEVEMENT_POST_TYPES.has(rawType)) {
         return false;
@@ -439,8 +444,28 @@ export const StartupFeedPage: React.FC = () => {
       );
     }
 
+    if (activePillar === 'PROTOTYPES') {
+      if (!isProtoPost) return false;
+
+      if (filterType === 'MY_PROTOTYPES') {
+        return isMyPost;
+      }
+      if (filterType === 'WEBSITES') {
+        return Boolean(p.websiteUrl || p.links || (typeof p.content === 'string' && p.content.includes('"websiteUrl"')));
+      }
+      if (filterType === 'VIDEOS') {
+        return (
+          p.mediaType === 'video' ||
+          (typeof p.content === 'string' && p.content.includes('"mediaType":"video"')) ||
+          (typeof p.images === 'string' && (p.images.endsWith('.mp4') || p.images.endsWith('.webm') || p.images.endsWith('.mov')))
+        );
+      }
+      return true;
+    }
+
     return true;
   });
+
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -989,17 +1014,6 @@ export const StartupFeedPage: React.FC = () => {
     }
   };
 
-  const handleDeleteProblem = async (problemId: string) => {
-    if (!window.confirm('Are you sure you want to delete this startup idea?')) return;
-    try {
-      await api.deleteProblem(problemId);
-      setProblems((prev) => prev.filter((p) => p.id !== problemId));
-      broadcastEntityDeleted('PROBLEM', problemId);
-    } catch (err: any) {
-      alert(err.message || 'Failed to delete idea.');
-    }
-  };
-
   // Cross-device sync & auto-refresh on focus
   useEffect(() => {
     const syncChannel = supabase.channel('global-feed-sync-channel');
@@ -1008,8 +1022,6 @@ export const StartupFeedPage: React.FC = () => {
         if (payload?.entityType === 'POST' && payload?.id) {
           markPostDeletedLocally(payload.id);
           setPosts((prev) => prev.filter((p) => p.id !== payload.id));
-        } else if (payload?.entityType === 'PROBLEM' && payload?.id) {
-          setProblems((prev) => prev.filter((p) => p.id !== payload.id));
         }
       })
       .subscribe();
@@ -1026,8 +1038,6 @@ export const StartupFeedPage: React.FC = () => {
       if (detail?.entityType === 'POST' && detail?.id) {
         markPostDeletedLocally(detail.id);
         setPosts((prev) => prev.filter((p) => p.id !== detail.id));
-      } else if (detail?.entityType === 'PROBLEM' && detail?.id) {
-        setProblems((prev) => prev.filter((p) => p.id !== detail.id));
       }
     };
     window.addEventListener('global_entity_deleted', handleLocalDelete);
@@ -1208,22 +1218,21 @@ export const StartupFeedPage: React.FC = () => {
           )}
         </button>
 
-        {/* 3. Problem Statements */}
+        {/* 3. Prototypes */}
         <button
           type="button"
-          onClick={() => handlePillarChange('PROBLEMS')}
+          onClick={() => handlePillarChange('PROTOTYPES')}
           className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 ${
-            activePillar === 'PROBLEMS'
+            activePillar === 'PROTOTYPES'
               ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
               : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
           }`}
         >
-          <Globe size={16} className="text-blue-500 shrink-0" />
+          <Boxes size={16} className="text-cyan-500 shrink-0" />
           <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
-            <span className="sm:hidden">Problems</span>
-            <span className="hidden sm:inline">Problem Statements</span>
+            Prototypes
           </span>
-          {activePillar === 'PROBLEMS' && (
+          {activePillar === 'PROTOTYPES' && (
             <span className="w-1.5 h-1.5 rounded-full bg-brand-600 shrink-0 hidden sm:block" />
           )}
         </button>
@@ -1234,19 +1243,20 @@ export const StartupFeedPage: React.FC = () => {
         <div className="flex items-center gap-2 mb-1">
           {activePillar === 'ACHIEVEMENTS' && <Award size={18} className="text-amber-500 shrink-0" />}
           {activePillar === 'IDEAS' && <Rocket size={18} className="text-brand-600 dark:text-brand-400 shrink-0" />}
-          {activePillar === 'PROBLEMS' && <Globe size={18} className="text-blue-500 shrink-0" />}
+          {activePillar === 'PROTOTYPES' && <Boxes size={18} className="text-cyan-500 shrink-0" />}
           <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
             {activePillar === 'ACHIEVEMENTS' && 'Executions'}
             {activePillar === 'IDEAS' && 'Startup Ideas'}
-            {activePillar === 'PROBLEMS' && 'Real-World Problem Statements'}
+            {activePillar === 'PROTOTYPES' && 'Prototypes & Early Samples'}
           </h2>
         </div>
         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
           {activePillar === 'ACHIEVEMENTS' && 'See what others executed across achievements, drawbacks, product launches, and experiences.'}
           {activePillar === 'IDEAS' && 'Work on their ideas to build — discover concepts, pitch synergies, or find dedicated co-founders.'}
-          {activePillar === 'PROBLEMS' && 'Work on real-world problems and Sustainable Development Goals to build high-impact global solutions.'}
+          {activePillar === 'PROTOTYPES' && 'Explore early sample builds, interactive websites, and demo videos (<60s). Click "Build Together" to collaborate on turning samples into live products.'}
         </p>
       </div>
+
 
       {/* Post Composer Card */}
       {user && (
@@ -1258,17 +1268,35 @@ export const StartupFeedPage: React.FC = () => {
               size="md"
               className="!w-9 !h-9"
             />
-            <button
-              onClick={() => setComposerOpen(!composerOpen)}
-              className="flex-1 text-left px-3.5 py-2 rounded-md bg-slate-50 dark:bg-dark-850 hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-500 text-xs font-normal border border-slate-200/80 dark:border-dark-700/80 transition-colors"
-            >
-              {activePillar === 'ACHIEVEMENTS'
-                ? 'Share an execution, drawback, product launch, or experience...'
-                : 'Share a startup idea, early concept, or seek co-founders...'}
-            </button>
+            {activePillar === 'PROTOTYPES' ? (
+              <div className="flex items-center justify-between w-full">
+                <button
+                  type="button"
+                  onClick={() => setCreatePrototypeModalOpen(true)}
+                  className="flex-1 text-left px-3.5 py-2 rounded-md bg-cyan-50/70 dark:bg-cyan-950/30 hover:bg-cyan-100/70 dark:hover:bg-cyan-950/50 text-cyan-800 dark:text-cyan-200 text-xs font-semibold border border-cyan-200/80 dark:border-cyan-800/80 transition-colors flex items-center justify-between gap-2"
+                >
+                  <span className="flex items-center gap-2">
+                    <Boxes size={14} className="text-cyan-600 dark:text-cyan-400" />
+                    <span>Share what you built (sample website, MVP, or video &lt;60s)...</span>
+                  </span>
+                  <span className="btn-primary py-1 px-2.5 text-[11px] rounded-lg shrink-0">
+                    + Post Prototype
+                  </span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setComposerOpen(!composerOpen)}
+                className="flex-1 text-left px-3.5 py-2 rounded-md bg-slate-50 dark:bg-dark-850 hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-500 text-xs font-normal border border-slate-200/80 dark:border-dark-700/80 transition-colors"
+              >
+                {activePillar === 'ACHIEVEMENTS'
+                  ? 'Share an execution, drawback, product launch, or experience...'
+                  : 'Share a startup idea, early concept, or seek co-founders...'}
+              </button>
+            )}
           </div>
 
-          {composerOpen && (
+          {composerOpen && activePillar !== 'PROTOTYPES' && (
             <form onSubmit={handleCreatePost} className="mt-4 pt-4 border-t border-slate-100 dark:border-dark-800 space-y-3">
               <div className="space-y-1.5">
                 <span className="text-xs font-medium text-slate-500">Post Category:</span>
@@ -1386,76 +1414,60 @@ export const StartupFeedPage: React.FC = () => {
         </div>
       )}
 
-      {/* Sub-Category Filter Chips Bar (Horizontal scrollable option on mobile) */}
-      {activePillar !== 'PROBLEMS' && (
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
-          {(activePillar === 'ACHIEVEMENTS' ? executionFilters : ideaFilters).map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setFilterType(item.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
-                filterType === item.id
-                  ? 'bg-brand-600 text-white shadow-sm'
-                  : 'bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-dark-700'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Sub-Category Filter Chips Bar */}
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+        {(activePillar === 'ACHIEVEMENTS'
+          ? executionFilters
+          : activePillar === 'IDEAS'
+          ? ideaFilters
+          : prototypeFilters
+        ).map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setFilterType(item.id)}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+              filterType === item.id
+                ? 'bg-brand-600 text-white shadow-sm'
+                : 'bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-dark-700'
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
 
-      {/* Feed Stream or Problem Statements View */}
-      {activePillar === 'PROBLEMS' ? (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-dark-800">
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <Globe size={15} className="text-blue-500" />
-                Real-World Problem Statements
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Explore real challenges from the United Nations, WHO, and the World Bank to build impactful startups.
-              </p>
-            </div>
-            <Link
-              to="/problems"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline shrink-0"
-            >
-              <span>Explore all</span>
-              <ArrowRight size={12} />
-            </Link>
-          </div>
-
-          {problemsLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((n) => (
-                <div key={n} className="h-44 rounded-lg bg-slate-100 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 animate-pulse" />
-              ))}
-            </div>
-          ) : problems.length === 0 ? (
-            <EmptyState
-              icon={Globe}
-              title="No Problem Statements Available"
-              description="World-wide problem statements will appear here as they are published by the ecosystem."
-              actionLabel="Explore Global SDGs"
-              onAction={() => navigate('/problems')}
-            />
-          ) : (
-            <div className="space-y-4">
-              {problems.map((problem) => (
-                <ProblemCard key={problem.id} problem={problem} onDelete={handleDeleteProblem} />
-              ))}
-            </div>
-          )}
-        </div>
-      ) : loading ? (
+      {/* Feed Stream */}
+      {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((n) => (
             <div key={n} className="h-44 rounded-lg bg-slate-100 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 animate-pulse" />
           ))}
         </div>
+      ) : activePillar === 'PROTOTYPES' ? (
+        filteredPosts.length === 0 ? (
+          <EmptyState
+            icon={Boxes}
+            title={
+              filterType === 'MY_PROTOTYPES'
+                ? "You haven't posted any prototypes yet"
+                : "No Prototypes Found"
+            }
+            description="Founders and builders can showcase early samples, websites, or video demos under 60 seconds."
+            actionLabel="Post a Prototype"
+            onAction={() => setCreatePrototypeModalOpen(true)}
+          />
+        ) : (
+          <div className="space-y-4">
+            {filteredPosts.map((post) => (
+              <PrototypeCard
+                key={post.id}
+                post={post}
+                onDelete={handleDeletePost}
+              />
+            ))}
+          </div>
+        )
       ) : filteredPosts.length === 0 ? (
         <EmptyState
           icon={Share2}
@@ -1482,6 +1494,7 @@ export const StartupFeedPage: React.FC = () => {
         />
       ) : (
         <div className="space-y-4">
+
           {filteredPosts.map((post) => {
             const author = post.author;
             const authorName = author?.profile?.fullName || author?.email || 'Founder';
@@ -1842,6 +1855,18 @@ export const StartupFeedPage: React.FC = () => {
         onClose={() => setShareModalItem(null)}
         item={shareModalItem}
       />
+
+      {/* Create Prototype Modal */}
+      <CreatePrototypeModal
+        isOpen={createPrototypeModalOpen}
+        onClose={() => setCreatePrototypeModalOpen(false)}
+        onSuccess={(newPost) => {
+          setPosts((prev) => [newPost, ...prev]);
+          setSuccessToast('Prototype published successfully!');
+          setTimeout(() => setSuccessToast(null), 3000);
+        }}
+      />
     </div>
   );
 };
+

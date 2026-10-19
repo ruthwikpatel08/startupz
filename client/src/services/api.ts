@@ -321,6 +321,15 @@ export const api = {
   getPostComments: (id: string) => request<any>(`/posts/${id}/comments`),
   addComment: (id: string, content: string) =>
     request<any>(`/posts/${id}/comments`, { method: 'POST', body: JSON.stringify({ content }) }),
+  sendPrototypeProposal: (prototypeId: string, payload: { aboutMe: string; contribution: string; contactInfo?: string }) =>
+    request<any>(`/posts/${prototypeId}/proposals`, { method: 'POST', body: JSON.stringify(payload) }),
+  getPrototypeProposals: (prototypeId: string) =>
+    request<{ proposals: any[] }>(`/posts/${prototypeId}/proposals`),
+  updatePrototypeProposal: (proposalId: string, status: string) =>
+    request<any>(`/posts/proposals/${proposalId}`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  getPrototypeProposalStats: () =>
+    request<{ counts: Record<string, number> }>('/posts/proposals/stats'),
+
 
   // MESSAGES
   getConversations: async () => {

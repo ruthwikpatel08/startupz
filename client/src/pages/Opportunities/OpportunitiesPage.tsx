@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { api, isDemoRecord } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { StartupOpportunity, OpportunityApplication } from '../../types';
+import { StartupOpportunity, OpportunityApplication, Problem } from '../../types';
 import { FALLBACK_OPPORTUNITIES } from '../../data/curatedFallbackData';
 import { Modal } from '../../components/common/Modal';
 import { EmptyState } from '../../components/common/EmptyState';
 import { SEO } from '../../components/common/SEO';
+import { ProblemCard } from '../../components/problems/ProblemCard';
+import { ProblemFilters } from '../../components/problems/ProblemFilters';
+import { ShareProblemModal } from '../../components/problems/ShareProblemModal';
 import {
   Briefcase,
   Search,
@@ -32,6 +35,10 @@ import {
   Trash2,
   Plus,
   Edit2,
+  Globe,
+  Globe2,
+  Compass,
+  Sparkles,
 } from 'lucide-react';
 import { Avatar } from '../../components/common/Avatar';
 import { supabase, broadcastEntityDeleted } from '../../lib/supabase';
@@ -43,7 +50,17 @@ export const OpportunitiesPage: React.FC = () => {
   const currentType = (searchParams.get('type') || 'ALL').toLowerCase();
   const isInitialMount = React.useRef(true);
 
-  const [activeTab, setActiveTab] = useState<'EXPLORE' | 'MY_APPLICATIONS'>('EXPLORE');
+  const [activeTab, setActiveTab] = useState<'EXPLORE' | 'PROBLEMS' | 'MY_APPLICATIONS'>(() => {
+    const tabParam = searchParams.get('tab');
+    const typeParam = searchParams.get('type');
+    if (tabParam === 'PROBLEMS' || tabParam === 'problems' || typeParam === 'problems') {
+      return 'PROBLEMS';
+    }
+    if (tabParam === 'MY_APPLICATIONS' || tabParam === 'applications') {
+      return 'MY_APPLICATIONS';
+    }
+    return 'EXPLORE';
+  });
   const [opportunities, setOpportunities] = useState<StartupOpportunity[]>(() => {
     try {
       const raw =
@@ -79,6 +96,109 @@ export const OpportunitiesPage: React.FC = () => {
       } catch {}
     }
   }, [user?.id]);
+
+  // Sync activeTab with searchParams
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const typeParam = searchParams.get('type');
+    if (tabParam === 'PROBLEMS' || tabParam === 'problems' || typeParam === 'problems') {
+      setActiveTab('PROBLEMS');
+    } else if (tabParam === 'MY_APPLICATIONS' || tabParam === 'applications') {
+      setActiveTab('MY_APPLICATIONS');
+    } else if (tabParam === 'EXPLORE') {
+      setActiveTab('EXPLORE');
+    }
+  }, [searchParams]);
+
+  // Problem Statements State (Moved to Opportunities)
+  const [problems, setProblems] = useState<Problem[]>(() => {
+    try {
+      const raw = sessionStorage.getItem('startupz_cached_problems');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+  const [probCategories, setProbCategories] = useState<string[]>([]);
+  const [probRegions, setProbRegions] = useState<string[]>([]);
+  const [probTags, setProbTags] = useState<string[]>([]);
+  const [probLoading, setProbLoading] = useState<boolean>(false);
+  const [probError, setProbError] = useState<string | null>(null);
+  const [probSearch, setProbSearch] = useState<string>('');
+  const [probCategory, setProbCategory] = useState<string>('');
+  const [probRegion, setProbRegion] = useState<string>('');
+  const [probImpact, setProbImpact] = useState<string>('');
+  const [probTag, setProbTag] = useState<string>('');
+  const [sharingProblem, setSharingProblem] = useState<Problem | null>(null);
+
+  const fetchProblems = async () => {
+    if (problems.length === 0) setProbLoading(true);
+    setProbError(null);
+    try {
+      const params: any = {};
+      if (probSearch.trim()) params.search = probSearch.trim();
+      if (probCategory) params.category = probCategory;
+      if (probRegion) params.region = probRegion;
+      if (probImpact) params.impact = probImpact;
+      if (probTag) params.tag = probTag;
+
+      const res = await api.getProblems(params);
+      const list = Array.isArray(res) ? res : res?.problems || [];
+      setProblems(list);
+      if (!probSearch.trim() && !probCategory && !probRegion && !probImpact && !probTag && list.length > 0) {
+        try {
+          sessionStorage.setItem('startupz_cached_problems', JSON.stringify(list));
+        } catch {}
+      }
+    } catch (err: any) {
+      console.error('Failed to load problems:', err);
+      setProbError(err?.message || 'Unable to retrieve problem statements.');
+    } finally {
+      setProbLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    api.getProblemMeta()
+      .then((res) => {
+        if (res) {
+          const cats = res.categories ? res.categories.map((c: any) => c.name || c) : [];
+          const regs = res.regions ? res.regions.map((r: any) => r.name || r) : [];
+          const tgs = res.tags ? res.tags.map((t: any) => t.name || t) : [];
+          setProbCategories(cats);
+          setProbRegions(regs);
+          setProbTags(tgs);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'PROBLEMS') {
+      fetchProblems();
+    }
+  }, [activeTab, probSearch, probCategory, probRegion, probImpact, probTag]);
+
+  const handleProblemSaveToggle = (problemId: string, isSaved: boolean) => {
+    setProblems((prev) =>
+      prev.map((p) => (p.id === problemId ? { ...p, isSaved } : p))
+    );
+  };
+
+  const handleDeleteProblem = async (problemId: string) => {
+    if (!window.confirm('Are you sure you want to delete this problem statement?')) {
+      return;
+    }
+    try {
+      await api.deleteProblem(problemId);
+      setProblems((prev) => prev.filter((p) => p.id !== problemId));
+      broadcastEntityDeleted('PROBLEM', problemId);
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete problem statement.');
+    }
+  };
 
   // Robust application state resolver
   const getApplicationState = (oppId: string, oppObj?: StartupOpportunity | null) => {
@@ -841,7 +961,13 @@ export const OpportunitiesPage: React.FC = () => {
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-dark-900 rounded-2xl border border-slate-200 dark:border-slate-800">
             <button
-              onClick={() => setActiveTab('EXPLORE')}
+              onClick={() => {
+                setActiveTab('EXPLORE');
+                const params = new URLSearchParams(searchParams);
+                params.delete('tab');
+                if (params.get('type') === 'problems') params.delete('type');
+                setSearchParams(params);
+              }}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'EXPLORE'
                   ? 'bg-white dark:bg-dark-800 text-slate-900 dark:text-white shadow-xs'
@@ -851,7 +977,29 @@ export const OpportunitiesPage: React.FC = () => {
               Explore Openings ({opportunities.length})
             </button>
             <button
-              onClick={() => setActiveTab('MY_APPLICATIONS')}
+              onClick={() => {
+                setActiveTab('PROBLEMS');
+                const params = new URLSearchParams(searchParams);
+                params.set('tab', 'PROBLEMS');
+                setSearchParams(params);
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeTab === 'PROBLEMS'
+                  ? 'bg-white dark:bg-dark-800 text-brand-600 dark:text-brand-400 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Globe size={13} className="text-brand-500" />
+              Problem Statements ({problems.length})
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('MY_APPLICATIONS');
+                const params = new URLSearchParams(searchParams);
+                params.delete('tab');
+                if (params.get('type') === 'problems') params.delete('type');
+                setSearchParams(params);
+              }}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 activeTab === 'MY_APPLICATIONS'
                   ? 'bg-white dark:bg-dark-800 text-slate-900 dark:text-white shadow-xs'
@@ -884,6 +1032,7 @@ export const OpportunitiesPage: React.FC = () => {
                 { label: 'All Opportunities', value: 'ALL' },
                 { label: 'Internships', value: 'internships' },
                 { label: 'Jobs', value: 'jobs' },
+                { label: 'Problem Statements', value: 'problems' },
               ].map((t) => {
                 const isSelected =
                   (t.value === 'ALL' && (!currentType || currentType === 'all')) ||
@@ -892,7 +1041,16 @@ export const OpportunitiesPage: React.FC = () => {
                   <button
                     key={t.value}
                     onClick={() => {
+                      if (t.value === 'problems') {
+                        setActiveTab('PROBLEMS');
+                        const params = new URLSearchParams(searchParams);
+                        params.set('tab', 'PROBLEMS');
+                        setSearchParams(params);
+                        return;
+                      }
+                      setActiveTab('EXPLORE');
                       const params = new URLSearchParams(searchParams);
+                      params.delete('tab');
                       if (t.value === 'ALL') {
                         params.delete('type');
                       } else {
@@ -1402,6 +1560,154 @@ export const OpportunitiesPage: React.FC = () => {
             </div>
           </section>
         </>
+      ) : activeTab === 'PROBLEMS' ? (
+        /* Problem Statements Section (Moved to Opportunities) */
+        <div className="space-y-6">
+          {/* Subhead info */}
+          <div className="card-base p-5 bg-gradient-to-r from-blue-50/50 via-cyan-50/30 to-indigo-50/50 dark:from-blue-950/20 dark:via-cyan-950/10 dark:to-indigo-950/20 border-cyan-200/50 dark:border-cyan-900/40">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-700 dark:text-cyan-400 flex items-center gap-1.5">
+                  <Globe size={13} /> Authoritative Global Challenges &amp; SDGs
+                </span>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                  World-Wide Problem Statements
+                </h2>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  What real-world crisis can you build a startup to solve? Explore verified challenges aggregated from the United Nations, WHO, and World Bank.
+                </p>
+              </div>
+              {user?.role === 'ADMIN' && (
+                <Link
+                  to="/admin/problems/create"
+                  className="btn-primary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold shrink-0"
+                >
+                  <Plus size={14} /> Add Problem
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Filters */}
+          <ProblemFilters
+            search={probSearch}
+            onSearchChange={setProbSearch}
+            selectedCategory={probCategory}
+            onCategoryChange={setProbCategory}
+            selectedRegion={probRegion}
+            onRegionChange={setProbRegion}
+            selectedImpact={probImpact}
+            onImpactChange={setProbImpact}
+            selectedTag={probTag}
+            onTagChange={setProbTag}
+            categories={probCategories}
+            regions={probRegions}
+            tags={probTags}
+            totalResults={problems.length}
+            onReset={() => {
+              setProbSearch('');
+              setProbCategory('');
+              setProbRegion('');
+              setProbImpact('');
+              setProbTag('');
+            }}
+          />
+
+          {/* Problems List */}
+          {probLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((idx) => (
+                <div key={idx} className="h-80 card-base p-6 animate-pulse space-y-4">
+                  <div className="h-5 w-1/3 bg-slate-200 dark:bg-dark-800 rounded" />
+                  <div className="h-5 w-3/4 bg-slate-200 dark:bg-dark-800 rounded" />
+                  <div className="space-y-2">
+                    <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-lg" />
+                    <div className="h-4 w-5/6 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+                    <div className="h-4 w-2/3 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+                  </div>
+                  <div className="h-10 w-full bg-slate-100 dark:bg-slate-800 rounded-xl mt-6" />
+                </div>
+              ))}
+            </div>
+          ) : probError ? (
+            <div className="card-base p-8 text-center space-y-3 border-rose-200 dark:border-rose-900/60 bg-rose-50/30 dark:bg-rose-950/20">
+              <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+                <AlertCircle size={20} />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                Unable to Load Problem Statements
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                {probError}
+              </p>
+              <div className="pt-1">
+                <button
+                  onClick={fetchProblems}
+                  className="btn-primary inline-flex items-center gap-1.5 text-xs py-1.5 px-3"
+                >
+                  <RefreshCw size={13} /> Retry Connection
+                </button>
+              </div>
+            </div>
+          ) : problems.length === 0 ? (
+            Boolean(probSearch.trim() || probCategory || probRegion || probImpact || probTag) ? (
+              <EmptyState
+                icon={Compass}
+                title="No Problem Statements Found"
+                description="Try adjusting your search keywords or clearing filters."
+                actionLabel="Reset All Filters"
+                onAction={() => {
+                  setProbSearch('');
+                  setProbCategory('');
+                  setProbRegion('');
+                  setProbImpact('');
+                  setProbTag('');
+                }}
+              />
+            ) : (
+              <div className="card-base p-8 sm:p-10 text-center space-y-4 border-dashed border-2 border-slate-300 dark:border-dark-700 bg-slate-50/40 dark:bg-dark-850/40">
+                <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center mx-auto border border-brand-200/60 dark:border-brand-900/60">
+                  <Globe2 size={22} />
+                </div>
+                <div className="max-w-xl mx-auto space-y-2">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                    World Challenges Archive
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                    There are currently no active problem statements listed in the archive. Verified global challenges appear here once published.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                  <button
+                    onClick={fetchProblems}
+                    className="btn-secondary inline-flex items-center gap-1.5 text-xs py-2 px-3.5"
+                  >
+                    <RefreshCw size={13} /> Refresh
+                  </button>
+                </div>
+              </div>
+            )
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {problems.map((prob) => (
+                <ProblemCard
+                  key={prob.id}
+                  problem={prob}
+                  onSaveToggle={handleProblemSaveToggle}
+                  onDelete={handleDeleteProblem}
+                  onShare={(p) => setSharingProblem(p)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Share Problem Modal */}
+          <ShareProblemModal
+            isOpen={Boolean(sharingProblem)}
+            problem={sharingProblem}
+            onClose={() => setSharingProblem(null)}
+          />
+        </div>
       ) : (
         /* My Applications Tab */
         <div className="space-y-4">

@@ -58,6 +58,7 @@ router.get('/', optionalAuth, async (req, res) => {
       }),
     ]);
 
+    let supaPostMap = new Map();
     // Always ensure fresh posts from Supabase are synchronized into Prisma
     if (supabaseAdmin) {
       try {
@@ -69,6 +70,7 @@ router.get('/', optionalAuth, async (req, res) => {
 
         if (Array.isArray(supaList) && supaList.length > 0) {
           for (const sp of supaList) {
+            supaPostMap.set(sp.id, sp);
             await ensurePostInPrisma(sp.id);
           }
           [total, posts] = await Promise.all([
@@ -143,12 +145,20 @@ router.get('/', optionalAuth, async (req, res) => {
       saves.forEach((s) => userSaves.add(s.itemId));
     }
 
-    const formatted = posts.map((p) => ({
-      ...p,
-      isLiked: userLikes.has(p.id),
-      userVote: userVotesMap.get(p.id) || null,
-      isSaved: userSaves.has(p.id),
-    }));
+    const formatted = posts.map((p) => {
+      const sp = supaPostMap.get(p.id);
+      return {
+        ...p,
+        problem: sp?.problem || p.problem || null,
+        solution: sp?.solution || p.solution || null,
+        websiteUrl: sp?.website_url || p.websiteUrl || p.links || null,
+        mediaUrl: sp?.media_url || p.mediaUrl || p.images || null,
+        mediaType: sp?.media_type || p.mediaType || null,
+        isLiked: userLikes.has(p.id),
+        userVote: userVotesMap.get(p.id) || null,
+        isSaved: userSaves.has(p.id),
+      };
+    });
 
     return res.json({
       posts: formatted,
@@ -164,11 +174,26 @@ router.get('/', optionalAuth, async (req, res) => {
 // POST /api/posts
 router.post('/', requireAuth, async (req, res) => {
   try {
-    const { postType = 'UPDATE', title, content, startupId, images, links } = req.body;
+    const {
+      postType = 'UPDATE',
+      title,
+      content,
+      startupId,
+      images,
+      links,
+      problem,
+      solution,
+      websiteUrl,
+      mediaUrl,
+      mediaType,
+    } = req.body;
 
     if (!content || !content.trim()) {
       return res.status(400).json({ error: 'Post content cannot be empty.' });
     }
+
+    const finalLinks = links || websiteUrl || null;
+    const finalImages = images || mediaUrl || null;
 
     const post = await prisma.post.create({
       data: {
@@ -177,8 +202,8 @@ router.post('/', requireAuth, async (req, res) => {
         postType,
         title: title ? title.trim() : null,
         content: content.trim(),
-        images,
-        links,
+        images: finalImages,
+        links: finalLinks,
       },
       include: {
         author: {
@@ -204,8 +229,13 @@ router.post('/', requireAuth, async (req, res) => {
           post_type: postType,
           title: title ? title.trim() : null,
           content: content.trim(),
-          images: images || null,
-          links: links || null,
+          images: finalImages,
+          links: finalLinks,
+          problem: problem ? problem.trim() : null,
+          solution: solution ? solution.trim() : null,
+          website_url: websiteUrl ? websiteUrl.trim() : finalLinks,
+          media_url: mediaUrl ? mediaUrl.trim() : finalImages,
+          media_type: mediaType || null,
           likes_count: 0,
           comments_count: 0,
         }, { onConflict: 'id' });
@@ -216,13 +246,24 @@ router.post('/', requireAuth, async (req, res) => {
 
     return res.status(201).json({
       message: 'Post published!',
-      post: { ...post, isLiked: false, isSaved: false, comments: [] },
+      post: {
+        ...post,
+        problem: problem || null,
+        solution: solution || null,
+        websiteUrl: websiteUrl || finalLinks,
+        mediaUrl: mediaUrl || finalImages,
+        mediaType: mediaType || null,
+        isLiked: false,
+        isSaved: false,
+        comments: [],
+      },
     });
   } catch (error) {
     console.error('Failed to publish post:', error);
     return res.status(500).json({ error: error.message || 'Failed to publish post.' });
   }
 });
+
 
 // Helper to ensure a post exists in Prisma (syncing from Supabase if needed)
 async function ensurePostInPrisma(postId) {
@@ -709,8 +750,285 @@ router.get('/:id/comments', optionalAuth, async (req, res) => {
   }
 });
 
+// ============================================================================
+// PROTOTYPE BUILD TOGETHER PROPOSALS
+// ============================================================================
+
+// POST /api/posts/:id/proposals - Send a "Build Together" proposal to the uploader
+router.post('/:id/proposals', requireAuth, async (req, res) => {
+  try {
+    const { id: prototypeId } = req.params;
+    const { aboutMe, contribution, contactInfo } = req.body;
+
+    if (!aboutMe?.trim() || !contribution?.trim()) {
+      return res.status(400).json({ error: 'Please describe yourself and what you want to do for this prototype.' });
+    }
+
+    // Find the prototype post
+    let post = await prisma.post.findUnique({
+      where: { id: prototypeId },
+      include: { author: { select: { id: true, email: true, profile: true } } },
+    }).catch(() => null);
+
+    if (!post && supabaseAdmin) {
+      const { data } = await supabaseAdmin.from('posts').select('*').eq('id', prototypeId).maybeSingle();
+      if (data) {
+        post = { id: data.id, authorId: data.author_id, title: data.title };
+      }
+    }
+
+    if (!post) {
+      return res.status(404).json({ error: 'Prototype not found.' });
+    }
+
+    const receiverId = post.authorId || post.author_id;
+    if (receiverId === req.user.id) {
+      return res.status(400).json({ error: 'You cannot submit a build together proposal to your own prototype.' });
+    }
+
+    const prototypeTitle = post.title || 'Prototype';
+    let createdProposal = null;
+
+    // 1. Direct Supabase insertion into prototype_proposals table
+    if (supabaseAdmin) {
+      try {
+        const { data: supaProp, error: sErr } = await supabaseAdmin.from('prototype_proposals').insert({
+          prototype_id: prototypeId,
+          sender_id: req.user.id,
+          receiver_id: receiverId,
+          prototype_title: prototypeTitle,
+          about_builder: aboutMe.trim(),
+          contribution: contribution.trim(),
+          contact_info: contactInfo?.trim() || null,
+          status: 'PENDING',
+        }).select().single();
+        if (!sErr && supaProp) {
+          createdProposal = supaProp;
+        }
+      } catch (supaErr) {
+        console.warn('Supabase prototype proposal insert notice:', supaErr?.message);
+      }
+    }
+
+    // 2. Also save to Prisma startup_proposals as relational backup
+    try {
+      await prisma.startupProposal.create({
+        data: {
+          senderId: req.user.id,
+          receiverId,
+          ideaTitle: `[Prototype:${prototypeId}] ${prototypeTitle}`,
+          pitchDescription: JSON.stringify({
+            aboutMe: aboutMe.trim(),
+            contribution: contribution.trim(),
+            contactInfo: contactInfo?.trim() || null,
+            prototypeId,
+          }),
+          proposedRole: 'Prototype Builder',
+          proposedEquity: 'Build Together',
+          status: 'PENDING',
+        },
+      });
+    } catch (prismaErr) {
+      console.warn('Prisma startupProposal backup notice:', prismaErr?.message);
+    }
+
+    // 3. Create notification for the prototype uploader
+    const senderName = req.user.profile?.fullName || req.user.email?.split('@')[0] || 'A builder';
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: receiverId,
+          type: 'PROTOTYPE_PROPOSAL',
+          title: '🔨 Prototype Build Together Proposal!',
+          message: `${senderName} wants to build together on "${prototypeTitle}": ${contribution.slice(0, 100)}${contribution.length > 100 ? '...' : ''}`,
+          link: `/feed?pillar=PROTOTYPES&postId=${prototypeId}`,
+        },
+      });
+    } catch (notifErr) {
+      if (supabaseAdmin) {
+        await supabaseAdmin.from('notifications').insert({
+          user_id: receiverId,
+          type: 'PROTOTYPE_PROPOSAL',
+          title: '🔨 Prototype Build Together Proposal!',
+          message: `${senderName} wants to build together on "${prototypeTitle}": ${contribution.slice(0, 100)}${contribution.length > 100 ? '...' : ''}`,
+          link: `/feed?pillar=PROTOTYPES&postId=${prototypeId}`,
+        }).catch(() => null);
+      }
+    }
+
+    return res.status(201).json({
+      message: 'Proposal submitted successfully!',
+      proposal: createdProposal || {
+        id: Date.now().toString(),
+        prototypeId,
+        senderId: req.user.id,
+        receiverId,
+        prototypeTitle,
+        aboutBuilder: aboutMe.trim(),
+        contribution: contribution.trim(),
+        contactInfo: contactInfo?.trim() || null,
+        status: 'PENDING',
+        createdAt: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error('Failed to submit prototype proposal:', error);
+    return res.status(500).json({ error: error.message || 'Failed to submit proposal.' });
+  }
+});
+
+// GET /api/posts/:id/proposals - Get all proposals for a prototype
+router.get('/:id/proposals', requireAuth, async (req, res) => {
+  try {
+    const { id: prototypeId } = req.params;
+    let proposals = [];
+
+    if (supabaseAdmin) {
+      try {
+        const { data, error } = await supabaseAdmin
+          .from('prototype_proposals')
+          .select('*')
+          .eq('prototype_id', prototypeId)
+          .order('created_at', { ascending: false });
+
+        if (!error && Array.isArray(data) && data.length > 0) {
+          const senderIds = [...new Set(data.map((d) => d.sender_id))];
+          const { data: profiles } = await supabaseAdmin
+            .from('profiles')
+            .select('*')
+            .in('user_id', senderIds);
+          const profMap = new Map((profiles || []).map((p) => [p.user_id, p]));
+
+          proposals = data.map((d) => ({
+            id: d.id,
+            prototypeId: d.prototype_id,
+            senderId: d.sender_id,
+            receiverId: d.receiver_id,
+            prototypeTitle: d.prototype_title,
+            aboutBuilder: d.about_builder,
+            contribution: d.contribution,
+            contactInfo: d.contact_info,
+            status: d.status,
+            createdAt: d.created_at,
+            sender: {
+              id: d.sender_id,
+              profile: profMap.get(d.sender_id) || null,
+            },
+          }));
+        }
+      } catch (supaErr) {
+        console.warn('Supabase prototype proposals fetch notice:', supaErr?.message);
+      }
+    }
+
+    // Fallback to Prisma startup_proposals if empty
+    if (proposals.length === 0) {
+      const pPrefix = `[Prototype:${prototypeId}]`;
+      const dbProposals = await prisma.startupProposal.findMany({
+        where: {
+          OR: [
+            { ideaTitle: { startsWith: pPrefix } },
+            { pitchDescription: { contains: prototypeId } },
+          ],
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              email: true,
+              profile: { select: { fullName: true, avatar: true, headline: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }).catch(() => []);
+
+      proposals = dbProposals.map((dp) => {
+        let parsed = {};
+        try { parsed = JSON.parse(dp.pitchDescription); } catch {}
+        return {
+          id: dp.id,
+          prototypeId,
+          senderId: dp.senderId,
+          receiverId: dp.receiverId,
+          prototypeTitle: dp.ideaTitle.replace(pPrefix, '').trim(),
+          aboutBuilder: parsed.aboutMe || dp.pitchDescription,
+          contribution: parsed.contribution || '',
+          contactInfo: parsed.contactInfo || null,
+          status: dp.status,
+          createdAt: dp.createdAt,
+          sender: dp.sender,
+        };
+      });
+    }
+
+    return res.json({ proposals });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to retrieve prototype proposals.' });
+  }
+});
+
+// PUT /api/posts/proposals/:proposalId - Update proposal status (ACCEPTED / DECLINED)
+router.put('/proposals/:proposalId', requireAuth, async (req, res) => {
+  try {
+    const { proposalId } = req.params;
+    const { status = 'ACCEPTED' } = req.body;
+
+    let updated = null;
+
+    if (supabaseAdmin) {
+      try {
+        const { data } = await supabaseAdmin
+          .from('prototype_proposals')
+          .update({ status, updated_at: new Date().toISOString() })
+          .eq('id', proposalId)
+          .select()
+          .single();
+        if (data) updated = data;
+      } catch (sErr) {}
+    }
+
+    // Also update in Prisma if present
+    try {
+      await prisma.startupProposal.update({
+        where: { id: proposalId },
+        data: { status },
+      });
+    } catch (pErr) {}
+
+    return res.json({ message: `Proposal status marked as ${status}`, proposal: updated });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to update proposal.' });
+  }
+});
+
+// GET /api/posts/proposals/stats - Get proposal counts for the current user's prototypes
+router.get('/proposals/stats', requireAuth, async (req, res) => {
+  try {
+    const counts = {};
+    if (supabaseAdmin) {
+      try {
+        const { data } = await supabaseAdmin
+          .from('prototype_proposals')
+          .select('prototype_id')
+          .eq('receiver_id', req.user.id);
+        if (Array.isArray(data)) {
+          data.forEach((p) => {
+            counts[p.prototype_id] = (counts[p.prototype_id] || 0) + 1;
+          });
+        }
+      } catch (sErr) {}
+    }
+
+    return res.json({ counts });
+  } catch (error) {
+    return res.json({ counts: {} });
+  }
+});
+
 // DELETE /api/posts/:id
 router.delete('/:id', requireAuth, async (req, res) => {
+
   try {
     const { id } = req.params;
     let post = await prisma.post.findUnique({ where: { id } }).catch(() => null);

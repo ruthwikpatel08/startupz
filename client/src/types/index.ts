@@ -233,11 +233,17 @@ export interface Post {
   author?: User;
   startupId?: string | null;
   startup?: Startup | null;
-  postType: 'UPDATE' | 'LAUNCH' | 'MILESTONE' | 'FUNDING' | 'HIRING' | 'COFOUNDER' | 'ADVICE' | 'ACHIEVEMENT' | 'EXECUTION' | 'DRAWBACK' | 'DRAWBACKS' | 'EVENT' | string;
+  postType: 'UPDATE' | 'LAUNCH' | 'MILESTONE' | 'FUNDING' | 'HIRING' | 'COFOUNDER' | 'ADVICE' | 'ACHIEVEMENT' | 'EXECUTION' | 'DRAWBACK' | 'DRAWBACKS' | 'EVENT' | 'PROTOTYPE' | string;
   title?: string | null;
   content: string;
   images?: string | null;
   links?: string | null;
+  problem?: string | null;
+  solution?: string | null;
+  websiteUrl?: string | null;
+  mediaUrl?: string | null;
+  mediaType?: 'image' | 'video' | string | null;
+  proposalsCount?: number;
   visibility?: 'PUBLIC' | 'CONNECTIONS' | string;
   likesCount: number;
   commentsCount: number;
@@ -250,6 +256,23 @@ export interface Post {
   updatedAt?: string;
   comments?: Comment[];
 }
+
+export interface PrototypeProposal {
+  id: string;
+  prototypeId: string;
+  senderId: string;
+  sender?: User;
+  receiverId: string;
+  receiver?: User;
+  prototypeTitle: string;
+  aboutBuilder: string;
+  contribution: string;
+  contactInfo?: string | null;
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 
 export interface Comment {
   id: string;
