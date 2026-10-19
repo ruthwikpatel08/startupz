@@ -1824,7 +1824,7 @@ export const ProfilePage: React.FC = () => {
                   : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-700'
               }`}
             >
-              🌟 Executions ({executionsCount})
+              🌟 Describes ({executionsCount})
             </button>
             <button
               type="button"

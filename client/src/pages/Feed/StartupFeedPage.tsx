@@ -1076,9 +1076,9 @@ export const StartupFeedPage: React.FC = () => {
   ).length;
 
   const executionFilters = [
-    { id: 'ALL', label: 'All Executions' },
+    { id: 'ALL', label: 'All Describes' },
     { id: 'MY_SHARES', label: user ? `🌟 My Shares (${mySharesCount})` : '🌟 My Shares' },
-    { id: 'EXECUTION', label: '🌟 Execution' },
+    { id: 'EXECUTION', label: '🌟 Describes' },
     { id: 'DRAWBACK', label: '⚠️ Drawbacks' },
     { id: 'LAUNCH', label: '🚀 Product Launch' },
     { id: 'EXPERIENCE', label: '📖 Experience' },
@@ -1093,7 +1093,7 @@ export const StartupFeedPage: React.FC = () => {
   ];
 
   const executionComposerTypes = [
-    { id: 'EXECUTION', label: '🌟 Execution' },
+    { id: 'EXECUTION', label: '🌟 Describes' },
     { id: 'DRAWBACK', label: '⚠️ Drawbacks' },
     { id: 'LAUNCH', label: '🚀 Product Launch' },
     { id: 'EXPERIENCE', label: '📖 Experience' },
@@ -1108,7 +1108,7 @@ export const StartupFeedPage: React.FC = () => {
 
   const postTypes = [
     { key: 'ALL', label: 'All Updates' },
-    { key: 'EXECUTION', label: '🌟 Executions' },
+    { key: 'EXECUTION', label: '🌟 Describes' },
     { key: 'DRAWBACK', label: '⚠️ Drawbacks' },
     { key: 'LAUNCH', label: '🚀 Product Launch' },
     { key: 'EXPERIENCE', label: '📖 Experiences' },
@@ -1149,7 +1149,7 @@ export const StartupFeedPage: React.FC = () => {
 
   const formatPostTypeLabel = (type: string) => {
     const upper = (type || '').toUpperCase();
-    if (upper === 'ACHIEVEMENT' || upper === 'EXECUTION') return 'EXECUTION';
+    if (upper === 'ACHIEVEMENT' || upper === 'EXECUTION') return 'DESCRIBES';
     if (upper === 'DRAWBACK' || upper === 'DRAWBACKS') return 'DRAWBACKS';
     if (upper === 'LAUNCH') return 'PRODUCT LAUNCH';
     return type || 'UPDATE';
@@ -1158,12 +1158,12 @@ export const StartupFeedPage: React.FC = () => {
   return (
     <div className="w-full max-w-full xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6 min-w-0 overflow-x-hidden">
       <SEO
-        title="Startup Feed — Executions, Ideas & Updates | HookZ"
-        description="Follow real-time startup executions, drawbacks, breakthrough ideas, problem solutions, and founder updates across the HookZ ecosystem."
+        title="Startup Feed — Describes, Ideas & Updates | HookZ"
+        description="Follow real-time startup describes, drawbacks, breakthrough ideas, problem solutions, and founder updates across the HookZ ecosystem."
         canonicalPath="/feed"
         breadcrumbs={[{ name: 'Feed', path: '/feed' }]}
       />
-      <h1 className="sr-only">Startup Feed — Real-Time Executions, Ideas & Updates | HookZ</h1>
+      <h1 className="sr-only">Startup Feed — Real-Time Describes, Ideas & Updates | HookZ</h1>
       {/* Toast notifications */}
       {successToast && (
         <div className="fixed top-18 right-6 z-50 p-4 rounded-xl bg-emerald-600 text-white shadow-modal text-xs font-semibold flex items-center gap-2.5 animate-in fade-in slide-in-from-top-3 max-w-md">
@@ -1180,7 +1180,7 @@ export const StartupFeedPage: React.FC = () => {
 
       {/* 3 Core Pillars Header (Fixed on mobile view, no sliding) */}
       <div className="grid grid-cols-3 gap-1.5 sm:gap-3 w-full">
-        {/* 1. Executions */}
+        {/* 1. Describes */}
         <button
           type="button"
           onClick={() => handlePillarChange('ACHIEVEMENTS')}
@@ -1192,7 +1192,7 @@ export const StartupFeedPage: React.FC = () => {
         >
           <Award size={16} className="text-amber-500 shrink-0" />
           <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
-            Executions
+            Describes
           </span>
           {activePillar === 'ACHIEVEMENTS' && (
             <span className="w-1.5 h-1.5 rounded-full bg-brand-600 shrink-0 hidden sm:block" />
@@ -1245,13 +1245,13 @@ export const StartupFeedPage: React.FC = () => {
           {activePillar === 'IDEAS' && <Rocket size={18} className="text-brand-600 dark:text-brand-400 shrink-0" />}
           {activePillar === 'PROTOTYPES' && <Boxes size={18} className="text-cyan-500 shrink-0" />}
           <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-            {activePillar === 'ACHIEVEMENTS' && 'Executions'}
+            {activePillar === 'ACHIEVEMENTS' && 'Describes'}
             {activePillar === 'IDEAS' && 'Startup Ideas'}
             {activePillar === 'PROTOTYPES' && 'Prototypes & Early Samples'}
           </h2>
         </div>
         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-          {activePillar === 'ACHIEVEMENTS' && 'See what others executed across achievements, drawbacks, product launches, and experiences.'}
+          {activePillar === 'ACHIEVEMENTS' && 'See what others describe across achievements, drawbacks, product launches, and experiences.'}
           {activePillar === 'IDEAS' && 'Work on their ideas to build — discover concepts, pitch synergies, or find dedicated co-founders.'}
           {activePillar === 'PROTOTYPES' && 'Explore early sample builds, interactive websites, and demo videos (<60s). Click "Build Together" to collaborate on turning samples into live products.'}
         </p>
@@ -1290,7 +1290,7 @@ export const StartupFeedPage: React.FC = () => {
                 className="flex-1 text-left px-3.5 py-2 rounded-md bg-slate-50 dark:bg-dark-850 hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-500 text-xs font-normal border border-slate-200/80 dark:border-dark-700/80 transition-colors"
               >
                 {activePillar === 'ACHIEVEMENTS'
-                  ? 'Share an execution, drawback, product launch, or experience...'
+                  ? 'Share what you describe, drawback, product launch, or experience...'
                   : 'Share a startup idea, early concept, or seek co-founders...'}
               </button>
             )}
@@ -1324,7 +1324,7 @@ export const StartupFeedPage: React.FC = () => {
                 onChange={(e) => setPostTitle(e.target.value)}
                 placeholder={
                   activePillar === 'ACHIEVEMENTS'
-                    ? 'Execution or experience headline (optional)'
+                    ? 'Describe or experience headline (optional)'
                     : 'Startup idea title or concept name (optional)'
                 }
                 className="input-base w-full px-3 py-2 text-xs"
@@ -1336,7 +1336,7 @@ export const StartupFeedPage: React.FC = () => {
                 onChange={(e) => setPostContent(e.target.value)}
                 placeholder={
                   activePillar === 'ACHIEVEMENTS'
-                    ? 'Describe your execution, metrics reached, drawbacks encountered, lessons learned, or new product features...'
+                    ? 'Describe your progress, metrics reached, drawbacks encountered, lessons learned, or new product features...'
                     : 'Describe your startup idea, problem it solves, target users, or co-founder criteria...'
                 }
                 rows={4}
@@ -1473,23 +1473,23 @@ export const StartupFeedPage: React.FC = () => {
           icon={Share2}
           title={
             filterType === 'MY_SHARES' || filterType === 'MY_ACHIEVEMENTS'
-              ? "You haven't posted any executions yet"
+              ? "You haven't posted any describes yet"
               : filterType === 'MY_IDEAS'
               ? "You haven't posted any startup ideas yet"
               : activePillar === 'ACHIEVEMENTS'
-              ? "No executions published yet"
+              ? "No describes published yet"
               : "No idea posts found"
           }
           description={
             filterType === 'MY_SHARES' || filterType === 'MY_ACHIEVEMENTS'
-              ? "Share your executions, drawbacks, product launches, or experiences with the community."
+              ? "Share your describes, drawbacks, product launches, or experiences with the community."
               : filterType === 'MY_IDEAS'
               ? "Publish a new startup concept or problem to gather feedback and find builders."
               : activePillar === 'ACHIEVEMENTS'
-              ? "Be the first to share an execution, drawback, or product launch."
+              ? "Be the first to share what you describe, drawback, or product launch."
               : "Share an early idea, concept proposal, or seek co-founders to build together."
           }
-          actionLabel={activePillar === 'ACHIEVEMENTS' ? "Share Execution" : "Post an Idea"}
+          actionLabel={activePillar === 'ACHIEVEMENTS' ? "Share Describes" : "Post an Idea"}
           onAction={() => setComposerOpen(true)}
         />
       ) : (
