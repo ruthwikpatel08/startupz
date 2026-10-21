@@ -21,6 +21,11 @@ export async function main() {
   const userMap = new Map();
 
   for (const acc of demoAccounts) {
+    if ((acc.role === 'ADMIN' || acc.isAdmin) && process.env.NODE_ENV === 'production') {
+      console.log('🔒 Production mode: skipping default admin account seed.');
+      continue;
+    }
+
     let createdUser = await prisma.user.findUnique({
       where: { email: acc.email },
       include: { profile: true },

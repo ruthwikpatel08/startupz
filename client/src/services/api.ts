@@ -198,6 +198,7 @@ export const api = {
   register: (payload: any) => request<any>('/auth/register', { method: 'POST', body: JSON.stringify(payload) }),
   login: (payload: any) => request<any>('/auth/login', { method: 'POST', body: JSON.stringify(payload) }),
   googleAuth: (payload: any) => request<any>('/auth/google', { method: 'POST', body: JSON.stringify(payload) }),
+  logout: () => request<any>('/auth/logout', { method: 'POST' }),
   syncAuth: (payload: any) => request<any>('/auth/sync', { method: 'POST', body: JSON.stringify(payload) }),
   getMe: () => request<any>('/auth/me'),
   forgotPassword: (emailOrPayload: any) => {

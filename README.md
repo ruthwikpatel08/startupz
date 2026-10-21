@@ -131,7 +131,8 @@ All demo accounts share the password: **`Password123!`**
 | **Marketer** | David Kim | `david.kim@growthscale.co` | `Password123!` |
 | **Investor** | Elena Rostova | `elena.investor@apexventures.vc` | `Password123!` |
 | **Mentor** | Alex Vance | `alex.chen@scaleup.vc` | `Password123!` |
-| **Admin** | Security Admin | `admin@startupz.com` | `Password123!` |
+
+> 🔒 **Security Notice**: Platform administrators are explicitly designated using the `ADMIN_EMAILS` server environment variable. No default administrator credentials exist in production.
 
 > 💡 **Tip**: On the [Login Page](http://localhost:5173/login), you can click any of the 1-click demo buttons to sign in instantly.
 

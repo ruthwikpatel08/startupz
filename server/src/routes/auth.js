@@ -2,13 +2,35 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../db.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, revokeToken } from '../middleware/auth.js';
+import { JWT_SECRET } from '../config/jwt.js';
+import {
+  authLoginLimiter,
+  authRegisterLimiter,
+  authPasswordResetLimiter,
+  authSyncLimiter,
+} from '../middleware/rateLimiter.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'startupz_super_secret_jwt_key_2026_modern_startup_network';
+
+const ALLOWED_USER_ROLES = new Set([
+  'FOUNDER',
+  'COFOUNDER',
+  'INVESTOR',
+  'MENTOR',
+  'DEVELOPER',
+  'DESIGNER',
+  'MARKETER',
+  'STUDENT',
+]);
+
+function sanitizeUserRole(role) {
+  const upper = String(role || '').toUpperCase().trim();
+  return ALLOWED_USER_ROLES.has(upper) ? upper : 'FOUNDER';
+}
 
 // POST /api/auth/register
-router.post('/register', async (req, res) => {
+router.post('/register', authRegisterLimiter, async (req, res) => {
   try {
     const { fullName, email, password, role = 'FOUNDER', headline, location } = req.body;
 
@@ -31,16 +53,17 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const initialAvatar = null;
+    const safeRole = sanitizeUserRole(role);
 
     const user = await prisma.user.create({
       data: {
         email: emailNormalized,
         password: hashedPassword,
-        role: role.toUpperCase(),
+        role: safeRole,
         profile: {
           create: {
             fullName: fullName.trim(),
-            headline: headline || `${role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()} | Startup Enthusiast`,
+            headline: headline || `${safeRole.charAt(0).toUpperCase() + safeRole.slice(1).toLowerCase()} | Startup Enthusiast`,
             location: location || 'Global / Remote',
             avatar: initialAvatar,
             openTo: role.toUpperCase() === 'FOUNDER' 
@@ -79,13 +102,18 @@ router.post('/register', async (req, res) => {
 });
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', authLoginLimiter, async (req, res) => {
   try {
     const { email, identifier: rawId, password } = req.body;
     let identifier = (email || rawId || '').trim().toLowerCase();
 
     if (!identifier || !password) {
       return res.status(400).json({ error: 'Email, Gmail, or username and password are required.' });
+    }
+
+    // Strict validation against PostgREST filter injection & syntax corruption (SEC-08)
+    if (!/^[a-zA-Z0-9_.@+-]{1,100}$/.test(identifier)) {
+      return res.status(401).json({ error: 'Invalid email, username, or password.' });
     }
 
     if (identifier.endsWith('@gmail')) {
@@ -109,10 +137,21 @@ router.post('/login', async (req, res) => {
     // 2. Fallback to Supabase profiles to resolve email if not directly found
     if (!user && supabaseAdmin) {
       try {
+        const safeIdentifier = identifier.replace(/[^a-zA-Z0-9_.@+-]/g, '');
+        const safeUsername = cleanUsername.replace(/[^a-zA-Z0-9_]/g, '');
+
+        const orFilters = [
+          `email.ilike.${safeIdentifier}`,
+          `email.ilike.${safeIdentifier}@gmail.com`,
+        ];
+        if (safeUsername) {
+          orFilters.push(`username.ilike.${safeUsername}`);
+        }
+
         const { data: matchedProfiles } = await supabaseAdmin
           .from('profiles')
           .select('email, username')
-          .or(`email.ilike.${identifier},email.ilike.${identifier}@gmail.com,username.ilike.${cleanUsername}`)
+          .or(orFilters.join(','))
           .limit(1);
 
         if (matchedProfiles && matchedProfiles.length > 0 && matchedProfiles[0].email) {
@@ -152,19 +191,88 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// POST /api/auth/google
-router.post('/google', async (req, res) => {
+// POST /api/auth/google - Authenticate using verified Google or Supabase token (SEC-07)
+router.post('/google', authLoginLimiter, async (req, res) => {
   try {
-    const { email, fullName, name, avatar, googleId } = req.body;
-    const userEmail = (email || '').trim().toLowerCase();
-    const displayName = fullName || name || (userEmail ? userEmail.split('@')[0] : 'Startup Founder');
+    const { idToken, credential, supabaseToken, accessToken, email, fullName, name, avatar } = req.body;
+    let verifiedEmail = null;
+    let verifiedName = fullName || name || null;
+    let verifiedAvatar = avatar || null;
 
-    if (!userEmail) {
-      return res.status(400).json({ error: 'Valid Google email is required.' });
+    // 1. Verify Google ID token if provided (SEC-07: Mandatory Audience, Issuer, Expiry, and Signature Validation)
+    const tokenToVerify = idToken || credential;
+    if (tokenToVerify && typeof tokenToVerify === 'string') {
+      const googleClientId = process.env.GOOGLE_CLIENT_ID;
+      if (!googleClientId) {
+        console.error('SEC-07: GOOGLE_CLIENT_ID environment variable is missing.');
+        return res.status(500).json({ error: 'Server configuration error: GOOGLE_CLIENT_ID is not configured.' });
+      }
+
+      try {
+        const googleRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(tokenToVerify)}`);
+        if (!googleRes.ok) {
+          return res.status(401).json({ error: 'Invalid or forged Google authentication token.' });
+        }
+
+        const gData = await googleRes.json();
+        
+        // Audience validation is strictly mandatory (SEC-07)
+        if (gData.aud !== googleClientId) {
+          return res.status(401).json({ error: 'Google authentication failed: Token audience does not match this application.' });
+        }
+
+        // Issuer verification
+        const validIssuers = ['accounts.google.com', 'https://accounts.google.com'];
+        if (!validIssuers.includes(gData.iss)) {
+          return res.status(401).json({ error: 'Google authentication failed: Invalid token issuer.' });
+        }
+
+        // Expiration check
+        const nowSec = Math.floor(Date.now() / 1000);
+        if (!gData.exp || Number(gData.exp) < nowSec) {
+          return res.status(401).json({ error: 'Google authentication token has expired.' });
+        }
+
+        // Verified identity check
+        if ((gData.email_verified !== 'true' && gData.email_verified !== true) || !gData.email) {
+          return res.status(401).json({ error: 'Google account email is not verified.' });
+        }
+
+        verifiedEmail = gData.email.toLowerCase().trim();
+        if (gData.name) verifiedName = gData.name;
+        if (gData.picture) verifiedAvatar = gData.picture;
+      } catch (gErr) {
+        console.error('Google token verification error:', gErr.message);
+        return res.status(401).json({ error: 'Failed to verify Google authentication token.' });
+      }
     }
 
+    // 2. Fallback: Verify Supabase Auth token if Google OAuth was completed via Supabase client
+    const supaToken = supabaseToken || accessToken;
+    if (!verifiedEmail && supaToken && supabaseAdmin) {
+      try {
+        const { data: supaAuth, error: supaErr } = await supabaseAdmin.auth.getUser(supaToken);
+        if (!supaErr && supaAuth?.user?.email) {
+          verifiedEmail = supaAuth.user.email.toLowerCase().trim();
+          verifiedName = supaAuth.user.user_metadata?.full_name || supaAuth.user.user_metadata?.name || verifiedName;
+          verifiedAvatar = supaAuth.user.user_metadata?.avatar_url || supaAuth.user.user_metadata?.picture || verifiedAvatar;
+        }
+      } catch (sErr) {
+        console.warn('Supabase token verification error:', sErr.message);
+      }
+    }
+
+    // Cryptographic validation failure: reject unverified requests (SEC-07)
+    if (!verifiedEmail) {
+      return res.status(401).json({
+        error: 'Invalid or missing Google authentication token. Please complete authentication through Google.',
+      });
+    }
+
+    const displayName = verifiedName || verifiedEmail.split('@')[0];
+
     let user = await prisma.user.findUnique({
-      where: { email: userEmail },
+      where: { email: verifiedEmail },
       include: { profile: true },
     });
 
@@ -174,7 +282,7 @@ router.post('/google', async (req, res) => {
 
       user = await prisma.user.create({
         data: {
-          email: userEmail,
+          email: verifiedEmail,
           password: generatedPassword,
           role: 'FOUNDER',
           isVerified: true,
@@ -225,7 +333,7 @@ router.post('/google', async (req, res) => {
 });
 
 // POST /api/auth/sync - Ensure any logged-in real user is saved in DB and receives a valid token
-router.post('/sync', async (req, res) => {
+router.post('/sync', authSyncLimiter, async (req, res) => {
   try {
     const { id, email, fullName, role = 'FOUNDER', headline, location, bio, avatar, skills, username, password } = req.body;
     const cleanEmail = (email || '').trim().toLowerCase();
@@ -234,7 +342,7 @@ router.post('/sync', async (req, res) => {
     }
 
     const cleanName = fullName || cleanEmail.split('@')[0];
-    const upperRole = String(role).toUpperCase();
+    const safeRole = sanitizeUserRole(role); // Prevent privilege escalation to ADMIN (SEC-02)
 
     let user = await prisma.user.findFirst({
       where: {
@@ -255,14 +363,14 @@ router.post('/sync', async (req, res) => {
           id: id || undefined,
           email: cleanEmail,
           password: generatedPassword,
-          role: upperRole,
+          role: safeRole,
           isVerified: true,
-          verificationBadge: cleanEmail.includes('admin') ? 'Platform Admin' : 'Verified Member',
+          verificationBadge: 'Verified Member',
           profile: {
             create: {
               fullName: cleanName,
               username: username || cleanEmail.split('@')[0],
-              headline: headline || `${upperRole.charAt(0) + upperRole.slice(1).toLowerCase()} | Startup Builder`,
+              headline: headline || `${safeRole.charAt(0) + safeRole.slice(1).toLowerCase()} | Startup Builder`,
               location: location || 'Remote',
               bio: bio || null,
               skills: skills || null,
@@ -283,10 +391,11 @@ router.post('/sync', async (req, res) => {
         }).catch(() => null);
       }
 
-      if (user.role !== upperRole && upperRole) {
+      // Only update role if valid non-admin role and user is not currently an admin
+      if (user.role !== safeRole && safeRole !== 'ADMIN' && user.role !== 'ADMIN') {
         await prisma.user.update({
           where: { id: user.id },
-          data: { role: upperRole },
+          data: { role: safeRole },
         }).catch(() => null);
       }
 
@@ -375,34 +484,50 @@ router.get('/me', requireAuth, async (req, res) => {
 });
 
 // POST /api/auth/forgot-password
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', authPasswordResetLimiter, async (req, res) => {
   const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({ error: 'Please enter your registered email address.' });
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'Please enter a valid registered email address.' });
   }
 
   const user = await prisma.user.findUnique({
     where: { email: email.trim().toLowerCase() },
   });
 
+  // Token is bound to current password state: once changed, token becomes permanently invalid (SEC-09)
+  const passHash = user && user.password ? user.password.slice(-10) : 'initial';
+  const resetToken = user
+    ? jwt.sign({ email: user.email, purpose: 'password_reset', passHash }, JWT_SECRET, { expiresIn: '15m' })
+    : null;
+
   return res.json({
-    message: 'If an account exists with this email, a password reset link has been dispatched.',
-    resetToken: user ? Buffer.from(user.email).toString('base64') : null,
+    message: 'If an account exists with this email, password reset instructions have been generated.',
+    resetToken,
   });
 });
 
-// POST /api/auth/reset-password
-router.post('/reset-password', async (req, res) => {
+// POST /api/auth/reset-password - Single-use token validation & session revocation (SEC-09)
+router.post('/reset-password', authPasswordResetLimiter, async (req, res) => {
   const { token, newPassword } = req.body;
   if (!token || !newPassword || newPassword.length < 6) {
     return res.status(400).json({ error: 'Invalid request or password too short (min 6 characters).' });
   }
 
   try {
-    const email = Buffer.from(token, 'base64').toString('utf-8');
-    const user = await prisma.user.findUnique({ where: { email } });
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (!decoded || decoded.purpose !== 'password_reset' || !decoded.email || !decoded.passHash) {
+      return res.status(400).json({ error: 'Invalid or expired password reset link.' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: decoded.email.trim().toLowerCase() } });
     if (!user) {
       return res.status(400).json({ error: 'Invalid or expired password reset link.' });
+    }
+
+    // Verify token has not already been used (state check) (SEC-09)
+    const currentPassHash = user.password ? user.password.slice(-10) : 'initial';
+    if (decoded.passHash !== currentPassHash) {
+      return res.status(400).json({ error: 'This password reset link has already been used. Please request a new one.' });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -411,10 +536,23 @@ router.post('/reset-password', async (req, res) => {
       data: { password: hashedPassword },
     });
 
+    // Invalidate reset token immediately (SEC-09)
+    revokeToken(token);
+
     return res.json({ message: 'Password reset successful! You can now log in with your new password.' });
   } catch (err) {
-    return res.status(400).json({ error: 'Failed to reset password.' });
+    return res.status(400).json({ error: 'Invalid or expired password reset link.' });
   }
+});
+
+// POST /api/auth/logout - Revokes current session token on the server (SEC-11)
+router.post('/logout', requireAuth, (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice(7).trim();
+    revokeToken(token);
+  }
+  return res.json({ message: 'Logged out successfully and session revoked.' });
 });
 
 // POST /api/auth/verify-email
@@ -428,7 +566,7 @@ router.post('/verify-email', requireAuth, async (req, res) => {
 });
 
 // POST /api/auth/set-password (sets or updates password for Google/OAuth/new users)
-router.post('/set-password', requireAuth, async (req, res) => {
+router.post('/set-password', requireAuth, authPasswordResetLimiter, async (req, res) => {
   try {
     const { password } = req.body;
     if (!password || password.length < 6) {

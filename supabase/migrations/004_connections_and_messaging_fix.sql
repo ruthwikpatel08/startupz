@@ -3,6 +3,16 @@
 -- Migration: 004_connections_and_messaging_fix.sql
 -- ==============================================================================
 
+-- 0. Ensure profiles and users have required columns before syncing auth.users
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS username TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS username_changed_at TIMESTAMPTZ;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS auth_provider TEXT DEFAULT 'email';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS username_changed_at TIMESTAMPTZ;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS role_change_count INT DEFAULT 0;
+
+CREATE INDEX IF NOT EXISTS idx_profiles_username ON public.profiles(username);
+
 -- 1. Ensure all auth.users have records in public.users and public.profiles
 INSERT INTO public.users (id, email, password, role, is_verified, verification_badge, is_suspended, is_admin, created_at, updated_at)
 SELECT 

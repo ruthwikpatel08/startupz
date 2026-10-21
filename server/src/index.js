@@ -38,17 +38,86 @@ const PORT = process.env.PORT || 5000;
 // Trust immediate reverse proxy (Render load balancer) for safe req.ip resolution
 app.set('trust proxy', 1);
 
-app.use(cors({
-  origin: true,
+// Disable technology fingerprinting
+app.disable('x-powered-by');
+
+// Baseline security headers (anti-clickjacking, MIME sniffing protection, XSS filter)
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  // Enforce HTTPS & HSTS when running in production behind reverse proxies (Render, Vercel, Cloudflare)
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    const proto = req.headers['x-forwarded-proto'];
+    if (proto && proto !== 'https') {
+      return res.redirect(301, `https://${req.headers.host}${req.url}`);
+    }
+  }
+
+  next();
+});
+
+// CORS Configuration with strict allowlist (SEC-05)
+const explicitAllowedOrigins = new Set([
+  'https://hookz.in',
+  'https://www.hookz.in',
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5000',
+  ...(process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',').map((s) => s.trim().replace(/\/+$/, '')) : []),
+].filter(Boolean));
+
+function isAllowedOrigin(origin) {
+  if (!origin) return true; // Allow non-browser requests (same-origin, curl, server-to-server)
+  const normalized = origin.trim().replace(/\/+$/, '');
+  if (explicitAllowedOrigins.has(normalized)) return true;
+  try {
+    const url = new URL(normalized);
+    // Allow Vercel preview environments specifically for HookZ / StartupZ projects
+    if (url.hostname.endsWith('.vercel.app') && (url.hostname.includes('hookz') || url.hostname.includes('startupz'))) {
+      return true;
+    }
+  } catch {}
+  return false;
+}
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (isAllowedOrigin(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
   credentials: true,
-}));
-app.options('*', cors());
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-admin-maintenance-secret', 'x-admin-secret'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-app.use('/uploads', express.static(path.resolve(__dirname, '../public/uploads')));
-app.use('/uploads', express.static(path.resolve('public/uploads')));
+
+// Serve uploads with strict sandboxing and content-type isolation (SEC-04)
+const uploadStaticOptions = {
+  setHeaders: (res, filePath) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; sandbox");
+    const ext = path.extname(filePath).toLowerCase();
+    if (!['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext)) {
+      res.setHeader('Content-Disposition', 'attachment');
+    }
+  },
+};
+app.use('/uploads', express.static(path.resolve(__dirname, '../public/uploads'), uploadStaticOptions));
+app.use('/uploads', express.static(path.resolve('public/uploads'), uploadStaticOptions));
 
 // Health Check / Keep-Alive (Optimized for cron pings & minimal response size)
 app.all(['/api/health', '/health'], (req, res) => {
@@ -82,8 +151,12 @@ app.get('/api/health/db', async (req, res) => {
   }
 });
 
-// Database Auto-Init & Seed Endpoint (can be called remotely to bootstrap database)
+// Database Maintenance Endpoint: Requires authenticated maintenance secret (SEC-03)
 app.get('/api/health/db/init', async (req, res) => {
+  if (!isAuthorizedMaintenanceRequest(req)) {
+    return res.status(403).json({ error: 'Unauthorized maintenance operation. Valid maintenance secret required.' });
+  }
+
   try {
     await ensureDatabaseReady();
     const userCount = await prisma.user.count();
@@ -91,7 +164,7 @@ app.get('/api/health/db/init', async (req, res) => {
     const problemCount = prisma.problem ? await prisma.problem.count().catch(() => 0) : 0;
     res.json({
       status: 'ok',
-      message: 'Database schema pushed and seeded successfully.',
+      message: 'Database schema verified successfully.',
       userCount,
       startupCount,
       problemCount,
@@ -260,13 +333,17 @@ async function ensureDatabaseReady() {
     await prisma.problem.count();
     console.log('✅ Database connected and verified.');
   } catch (err) {
-    console.log('⚠️ Database uninitialized or schema update needed. Running prisma db push & generate...');
-    try {
-      execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
-      execSync('npx prisma generate', { stdio: 'inherit' });
-      console.log('✅ Database schema pushed and client generated successfully.');
-    } catch (pushErr) {
-      console.error('Failed to run prisma db push automatically:', pushErr.message);
+    console.log('⚠️ Database uninitialized or schema update needed.');
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('Production database schema mismatch detected. Schema changes must be applied via safe migration scripts rather than automated push.');
+    } else {
+      try {
+        execSync('npx prisma db push', { stdio: 'inherit' });
+        execSync('npx prisma generate', { stdio: 'inherit' });
+        console.log('✅ Local database schema pushed and client generated successfully.');
+      } catch (pushErr) {
+        console.error('Failed to run prisma db push automatically:', pushErr.message);
+      }
     }
   }
 

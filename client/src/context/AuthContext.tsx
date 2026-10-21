@@ -290,10 +290,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    */
   const logout = useCallback(async (): Promise<void> => {
     try {
-      await supabase.auth.signOut();
+      // 1. Revoke active JWT session on backend server (SEC-11)
+      await api.logout().catch((apiErr) => {
+        console.warn('Backend token revocation warning:', apiErr?.message || apiErr);
+      });
+      // 2. Sign out from Supabase client
+      await supabase.auth.signOut().catch((sErr) => {
+        console.warn('Supabase signOut warning:', sErr?.message || sErr);
+      });
     } catch (err) {
-      console.warn('StartupZ Auth: signOut error:', err);
+      console.warn('StartupZ Auth: logout error:', err);
     } finally {
+      // 3. Reliably wipe local credentials and caches regardless of network outcome
       setUser(null);
       setSession(null);
       setToken(null);
@@ -335,7 +343,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isVerified: true,
       verificationBadge: 'Verified via Google',
       isSuspended: false,
-      isAdmin: cleanEmail.includes('admin') || cleanEmail === 'ruthwikpatel08@gmail.com' || cleanEmail === 'gokulvamshi@hookz.in' || cleanEmail === 'gokulvamshi@gmail.com' || cleanEmail === 'admin@startupz.com',
+      isAdmin: cleanEmail === 'ruthwikpatel08@gmail.com' || cleanEmail === 'gokulvamshi@hookz.in' || cleanEmail === 'gokulvamshi@gmail.com',
       createdAt: new Date().toISOString(),
       profile: {
         id: userId,

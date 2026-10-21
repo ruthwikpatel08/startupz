@@ -2,14 +2,65 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../db.js';
 import { fetchSupabaseProfile, supabaseAdmin } from '../supabase.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'startupz_super_secret_jwt_key_2026_modern_startup_network';
+import { JWT_SECRET } from '../config/jwt.js';
 
-function enrichAdminFlag(user) {
-  if (!user) return user;
-  const email = (user.email || '').toLowerCase().trim();
-  if (['ruthwikpatel08@gmail.com', 'gokulvamshi@hookz.in', 'gokulvamshi@gmail.com', 'admin@startupz.com'].includes(email)) {
-    user.isAdmin = true;
+// Revoked tokens store with TTL-based automated pruning (SEC-11)
+const revokedTokens = new Map(); // token -> expiryMs
+
+export function revokeToken(token) {
+  if (!token || typeof token !== 'string') return;
+  try {
+    const decoded = jwt.decode(token);
+    const expiryMs = decoded?.exp ? decoded.exp * 1000 : Date.now() + 7 * 24 * 60 * 60 * 1000;
+    revokedTokens.set(token, expiryMs);
+  } catch {
+    revokedTokens.set(token, Date.now() + 24 * 60 * 60 * 1000);
   }
+}
+
+export function isTokenRevoked(token) {
+  if (!token || typeof token !== 'string') return false;
+  const expiryMs = revokedTokens.get(token);
+  if (!expiryMs) return false;
+  if (Date.now() > expiryMs) {
+    revokedTokens.delete(token);
+    return false;
+  }
+  return true;
+}
+
+// Periodic cleanup of expired revoked tokens
+const pruneTimer = setInterval(() => {
+  const now = Date.now();
+  for (const [t, exp] of revokedTokens.entries()) {
+    if (now > exp) revokedTokens.delete(t);
+  }
+}, 15 * 60 * 1000);
+pruneTimer.unref();
+
+export function enrichAdminFlag(user) {
+  if (!user) return user;
+  // Explicit database role check (SEC-02)
+  if (user.role === 'ADMIN' || user.isAdmin === true) {
+    user.isAdmin = true;
+    return user;
+  }
+
+  // Explicit environment variable allowlist (ADMIN_EMAILS=user1@domain.com,user2@domain.com)
+  const adminEnv = process.env.ADMIN_EMAILS;
+  if (adminEnv && user.email) {
+    const allowlist = adminEnv
+      .toLowerCase()
+      .split(',')
+      .map((e) => e.trim())
+      .filter(Boolean);
+    if (allowlist.includes(user.email.toLowerCase().trim())) {
+      user.isAdmin = true;
+      return user;
+    }
+  }
+
+  user.isAdmin = false;
   return user;
 }
 
@@ -46,6 +97,7 @@ async function enrichWithSupabaseProfile(user) {
  */
 export async function resolveUserFromToken(token, req = null) {
   if (!token || typeof token !== 'string' || token === 'anon') return null;
+  if (isTokenRevoked(token)) return null;
 
   // 1. Try StartupZ internal JWT verification (cryptographically verified with JWT_SECRET)
   try {
