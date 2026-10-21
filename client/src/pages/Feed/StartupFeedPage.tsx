@@ -46,7 +46,11 @@ import {
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 
 const LOCAL_POSTS_KEY = 'startupz_user_persisted_posts';
-const LOCAL_DELETED_KEY = 'startupz_user_deleted_post_ids';
+
+// Clean up any legacy deleted post tombstones so user data is never suppressed
+try {
+  localStorage.removeItem('startupz_user_deleted_post_ids');
+} catch {}
 
 const getLocalPersistedPosts = (): any[] => {
   try {
@@ -64,22 +68,10 @@ const saveLocalPersistedPost = (newPost: any) => {
   } catch {}
 };
 
-const getLocalDeletedIds = (): Set<string> => {
-  try {
-    const raw = localStorage.getItem(LOCAL_DELETED_KEY);
-    return raw ? new Set(JSON.parse(raw)) : new Set();
-  } catch {
-    return new Set();
-  }
-};
-
 const markPostDeletedLocally = (postId: string) => {
   try {
     const currentPosts = getLocalPersistedPosts().filter((p) => p.id !== postId);
     localStorage.setItem(LOCAL_POSTS_KEY, JSON.stringify(currentPosts));
-    const deletedIds = getLocalDeletedIds();
-    deletedIds.add(postId);
-    localStorage.setItem(LOCAL_DELETED_KEY, JSON.stringify(Array.from(deletedIds)));
   } catch {}
 };
 
@@ -90,7 +82,12 @@ export const StartupFeedPage: React.FC = () => {
   const location = useLocation();
   const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
 
-  const [activePillar, setActivePillar] = useState<'ACHIEVEMENTS' | 'IDEAS' | 'PROTOTYPES'>('ACHIEVEMENTS');
+  const tabParam = searchParams.get('pillar') || searchParams.get('tab');
+  const [activePillar, setActivePillar] = useState<'ACHIEVEMENTS' | 'IDEAS' | 'PROTOTYPES'>(() => {
+    const p = (tabParam || '').toUpperCase();
+    if (p === 'IDEAS' || p === 'PROTOTYPES') return p;
+    return 'ACHIEVEMENTS';
+  });
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('ALL');
@@ -178,6 +175,9 @@ export const StartupFeedPage: React.FC = () => {
   const handlePillarChange = (pillar: 'ACHIEVEMENTS' | 'IDEAS' | 'PROTOTYPES') => {
     setActivePillar(pillar);
     setFilterType('ALL');
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('pillar', pillar);
+    navigate({ search: newParams.toString() }, { replace: true });
     if (pillar === 'ACHIEVEMENTS') {
       setPostType('EXECUTION');
     } else if (pillar === 'IDEAS') {
@@ -194,7 +194,6 @@ export const StartupFeedPage: React.FC = () => {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const res = await api.getPosts();
       let savedPostIds = new Set<string>();
       try {
         const rawSaved = localStorage.getItem('startupz_saved_items');
@@ -226,36 +225,32 @@ export const StartupFeedPage: React.FC = () => {
         } catch {}
       }
 
-      const deletedIds = getLocalDeletedIds();
-      const localPersisted = getLocalPersistedPosts().filter((p) => !deletedIds.has(p.id));
+      let loadedList: any[] = [];
+      try {
+        const res = await api.getPosts();
+        if (res?.posts && Array.isArray(res.posts) && res.posts.length > 0) {
+          loadedList = res.posts.map((p: any) => {
+            const isLiked = p.isLiked ?? userLikedIds.has(p.id);
+            const uVote = p.userVote || userVoteMap[p.id] || (isLiked ? 'up' : null);
+            if (uVote) {
+              userVoteMap[p.id] = uVote;
+            }
 
-      const mergePersistedPosts = (loadedList: any[]) => {
-        const withoutDeleted = (loadedList || []).filter((p) => !deletedIds.has(p.id));
-        const loadedIds = new Set(withoutDeleted.map((p) => p.id));
-        const missingLocal = localPersisted.filter((lp) => !loadedIds.has(lp.id));
-        return [...missingLocal, ...withoutDeleted];
-      };
+            return {
+              ...p,
+              likesCount: p.likesCount ?? 0,
+              commentsCount: p.commentsCount ?? 0,
+              isLiked: Boolean(isLiked),
+              isSaved: savedPostIds.has(p.id) || p.isSaved || false,
+            };
+          });
+        }
+      } catch (apiErr) {
+        console.warn('Backend API getPosts failed, attempting direct Supabase query:', apiErr);
+      }
 
-      if (res?.posts && res.posts.length > 0) {
-        const mapped = res.posts.map((p: any) => {
-          const isLiked = p.isLiked ?? userLikedIds.has(p.id);
-          const uVote = p.userVote || userVoteMap[p.id] || (isLiked ? 'up' : null);
-          if (uVote) {
-            userVoteMap[p.id] = uVote;
-          }
-
-          return {
-            ...p,
-            likesCount: p.likesCount ?? 0,
-            commentsCount: p.commentsCount ?? 0,
-            isLiked: Boolean(isLiked),
-            isSaved: savedPostIds.has(p.id) || p.isSaved || false,
-          };
-        });
-        setPosts(mergePersistedPosts(mapped));
-        setUserVotes((prev) => ({ ...prev, ...userVoteMap }));
-      } else {
-        // Fallback: direct Supabase select if backend is empty
+      // Direct Supabase select fallback if backend API is offline, sleeping, or empty
+      if (loadedList.length === 0) {
         const { data: supaPosts, error } = await supabase
           .from('posts')
           .select('*')
@@ -270,7 +265,7 @@ export const StartupFeedPage: React.FC = () => {
             .in('user_id', authorIds);
           const profMap = new Map((profiles || []).map((pr) => [pr.user_id, pr]));
 
-          const formatted = supaPosts.map((p) => {
+          loadedList = supaPosts.map((p) => {
             const pr = profMap.get(p.author_id);
             const isLiked = userLikedIds.has(p.id);
             const uVote = userVoteMap[p.id] || (isLiked ? 'up' : null);
@@ -310,19 +305,17 @@ export const StartupFeedPage: React.FC = () => {
               },
             };
           });
-          setPosts(mergePersistedPosts(formatted as any));
-          setUserVotes((prev) => ({ ...prev, ...userVoteMap }));
-        } else if (res?.posts) {
-          const fallbackMapped = res.posts.map((p: any) => ({
-            ...p,
-            isLiked: userLikedIds.has(p.id) || p.isLiked || false,
-            isSaved: savedPostIds.has(p.id) || p.isSaved || false,
-          }));
-          setPosts(mergePersistedPosts(fallbackMapped));
-        } else if (localPersisted.length > 0) {
-          setPosts(localPersisted);
         }
       }
+
+      // Merge local drafts that are not yet returned by backend/Supabase
+      const localPersisted = getLocalPersistedPosts();
+      const loadedIds = new Set(loadedList.map((p) => p.id));
+      const missingLocal = localPersisted.filter((lp) => !loadedIds.has(lp.id));
+      const finalPosts = [...missingLocal, ...loadedList];
+
+      setPosts(finalPosts);
+      setUserVotes((prev) => ({ ...prev, ...userVoteMap }));
     } catch (err) {
       console.error('Failed to load feed posts:', err);
     } finally {
@@ -422,7 +415,8 @@ export const StartupFeedPage: React.FC = () => {
       }
       return (
         ACHIEVEMENT_POST_TYPES.has(rawType) ||
-        rawType === 'UPDATE'
+        rawType === 'UPDATE' ||
+        !IDEA_POST_TYPES.has(rawType)
       );
     }
 

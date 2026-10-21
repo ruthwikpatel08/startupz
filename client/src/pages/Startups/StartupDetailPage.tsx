@@ -56,7 +56,74 @@ export const StartupDetailPage: React.FC = () => {
     if (!id) return;
     const fetchStartup = async () => {
       try {
-        const data = await api.getStartup(id);
+        let data: any = null;
+        try {
+          data = await api.getStartup(id);
+        } catch (apiErr) {
+          console.warn('api.getStartup failed, trying direct Supabase query:', apiErr);
+        }
+
+        // Direct Supabase fallback
+        if (!data) {
+          const { data: supaStartup } = await supabase
+            .from('startups')
+            .select('*')
+            .eq('id', id)
+            .maybeSingle();
+
+          if (supaStartup) {
+            const { data: founderProf } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', supaStartup.founder_id)
+              .maybeSingle();
+
+            data = {
+              id: supaStartup.id,
+              founderId: supaStartup.founder_id,
+              name: supaStartup.name,
+              logo: supaStartup.logo,
+              oneLineDescription: supaStartup.one_line_description,
+              problem: supaStartup.problem,
+              solution: supaStartup.solution,
+              targetCustomers: supaStartup.target_customers,
+              industry: supaStartup.industry,
+              businessModel: supaStartup.business_model,
+              stage: supaStartup.stage,
+              location: supaStartup.location,
+              requiredSkills: supaStartup.required_skills,
+              fundingStatus: supaStartup.funding_status,
+              fundingRequired: supaStartup.funding_required,
+              currentTraction: supaStartup.current_traction,
+              website: supaStartup.website,
+              demoLink: supaStartup.demo_link,
+              pitchDeckUrl: supaStartup.pitch_deck_url,
+              images: supaStartup.images,
+              visibility: supaStartup.visibility,
+              isConfidential: supaStartup.is_confidential,
+              isVerified: supaStartup.is_verified,
+              likesCount: supaStartup.likes_count || 0,
+              viewsCount: supaStartup.views_count || 0,
+              createdAt: supaStartup.created_at,
+              updatedAt: supaStartup.updated_at,
+              founder: {
+                id: supaStartup.founder_id,
+                email: founderProf?.email || '',
+                role: founderProf?.preferred_role || 'FOUNDER',
+                profile: founderProf
+                  ? {
+                      fullName: founderProf.full_name,
+                      avatar: founderProf.avatar,
+                      headline: founderProf.headline,
+                      location: founderProf.location,
+                      bio: founderProf.bio,
+                      skills: founderProf.skills,
+                    }
+                  : null,
+              },
+            };
+          }
+        }
         setStartup(data);
       } catch (err) {
         console.error(err);
@@ -132,9 +199,6 @@ export const StartupDetailPage: React.FC = () => {
       await api.deleteStartup(startup.id).catch(() => null);
       try {
         await supabase.from('posts').delete().eq('startup_id', startup.id);
-        if (startup.name) {
-          await supabase.from('posts').delete().ilike('title', `%${startup.name}%`);
-        }
         await supabase.from('startup_opportunities').delete().eq('startup_id', startup.id);
         await supabase.from('startups').delete().eq('id', startup.id);
       } catch (err) {

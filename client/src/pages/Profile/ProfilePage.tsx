@@ -860,20 +860,17 @@ export const ProfilePage: React.FC = () => {
       // Merge any local persisted posts authored by this user
       try {
         const rawLocal = localStorage.getItem('startupz_user_persisted_posts');
-        const rawDel = localStorage.getItem('startupz_user_deleted_post_ids');
-        const delSet = new Set(rawDel ? JSON.parse(rawDel) : []);
         if (rawLocal) {
           const localPosts: any[] = JSON.parse(rawLocal);
           const postMap = new Map(postsList.map((p: any) => [p.id, p]));
           localPosts
-            .filter((lp: any) => (lp.authorId === authorId || lp.author?.id === authorId) && !delSet.has(lp.id))
+            .filter((lp: any) => lp.authorId === authorId || lp.author?.id === authorId)
             .forEach((lp: any) => {
               if (!postMap.has(lp.id)) {
                 postsList.unshift(lp);
               }
             });
         }
-        postsList = postsList.filter((p: any) => !delSet.has(p.id));
       } catch {}
 
       postsList.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -901,10 +898,6 @@ export const ProfilePage: React.FC = () => {
           const list: any[] = JSON.parse(rawLocal);
           localStorage.setItem('startupz_user_persisted_posts', JSON.stringify(list.filter((p) => p.id !== postId)));
         }
-        const rawDel = localStorage.getItem('startupz_user_deleted_post_ids');
-        const delSet = new Set(rawDel ? JSON.parse(rawDel) : []);
-        delSet.add(postId);
-        localStorage.setItem('startupz_user_deleted_post_ids', JSON.stringify(Array.from(delSet)));
       } catch {}
       setUserPosts((prev) => prev.filter((p) => p.id !== postId));
     } catch (err) {

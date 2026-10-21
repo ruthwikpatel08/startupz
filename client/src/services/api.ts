@@ -46,14 +46,10 @@ const REAL_ACCOUNT_EMAILS = [
 
 export function isDemoRecord(item: any): boolean {
   if (!item) return false;
-  // Projects created by users must NEVER be filtered
-  if (item.creator || item.creatorId || item.roles || item.techStack) {
-    return false;
-  }
 
-  // Startups created by users must NEVER be filtered
-  if (item.founderId || (item.founder && item.founder.id)) {
-    const founderEmail = item.founder?.email?.toLowerCase() || '';
+  // Posts created by users must NEVER be filtered unless author explicitly matches a seed demo email
+  if (item.authorId || item.author) {
+    const authorEmail = (item.author?.email || '').toLowerCase();
     const seedDemoIdentifiers = [
       'admin@startupz.com',
       'sarah.chen@aiagri.io',
@@ -64,24 +60,43 @@ export function isDemoRecord(item: any): boolean {
       'elena.investor@apexventures.vc',
       'dr.aravind@healthventures.in',
     ];
-    if (seedDemoIdentifiers.some((id) => founderEmail.includes(id))) {
+    if (authorEmail && seedDemoIdentifiers.includes(authorEmail)) {
       return true;
     }
     return false;
   }
 
-  // Items created by users should never be filtered unless marked with demo banner
-  const str = JSON.stringify(item).toLowerCase();
-  if (str.includes('[demo account]') || str.includes('demo presentation account')) {
-    return true;
-  }
-
-  // Real registered users must never be filtered
-  if (REAL_ACCOUNT_EMAILS.some((email) => str.includes(email.toLowerCase()))) {
+  // Projects created by users must NEVER be filtered
+  if (item.creator || item.creatorId || item.roles || item.techStack) {
     return false;
   }
 
-  // Strictly filter only the specific demo presentation seed accounts
+  // Startups created by users must NEVER be filtered unless founder explicitly matches a seed demo email
+  if (item.founderId || (item.founder && item.founder.id)) {
+    const founderEmail = (item.founder?.email || '').toLowerCase();
+    const seedDemoIdentifiers = [
+      'admin@startupz.com',
+      'sarah.chen@aiagri.io',
+      'marcus.dev@codeflow.dev',
+      'david.kim@hyperbuild.co',
+      'maya.design@pixelcraft.studio',
+      'priya.growth@marketscale.io',
+      'elena.investor@apexventures.vc',
+      'dr.aravind@healthventures.in',
+    ];
+    if (founderEmail && seedDemoIdentifiers.includes(founderEmail)) {
+      return true;
+    }
+    return false;
+  }
+
+  // Real registered users must never be filtered
+  const email = (item.email || '').toLowerCase();
+  if (email && REAL_ACCOUNT_EMAILS.some((rEmail) => rEmail.toLowerCase() === email)) {
+    return false;
+  }
+
+  // Strictly filter only the specific demo presentation seed accounts by exact email
   const seedDemoIdentifiers = [
     'admin@startupz.com',
     'sarah.chen@aiagri.io',
@@ -92,7 +107,16 @@ export function isDemoRecord(item: any): boolean {
     'elena.investor@apexventures.vc',
     'dr.aravind@healthventures.in',
   ];
-  return seedDemoIdentifiers.some((id) => str.includes(id));
+  if (email && seedDemoIdentifiers.includes(email)) {
+    return true;
+  }
+
+  const nameOrHeadline = `${item.fullName || item.name || ''} ${item.headline || ''}`.toLowerCase();
+  if (nameOrHeadline.includes('[demo account]') || nameOrHeadline.includes('demo presentation account')) {
+    return true;
+  }
+
+  return false;
 }
 
 function sanitizeData(data: any): any {

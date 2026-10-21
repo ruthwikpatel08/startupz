@@ -67,8 +67,58 @@ export const BusinessPage: React.FC = () => {
   useEffect(() => {
     const loadStartups = async () => {
       try {
-        const res = await api.getStartups('limit=6');
-        setStartups(res.startups || []);
+        let startupList: Startup[] = [];
+        try {
+          const res = await api.getStartups('limit=6');
+          if (res?.startups && Array.isArray(res.startups) && res.startups.length > 0) {
+            startupList = res.startups;
+          }
+        } catch (apiErr) {
+          console.warn('Backend API getStartups failed, loading from Supabase:', apiErr);
+        }
+
+        // Direct Supabase fallback if backend API is offline, sleeping, or empty
+        if (startupList.length === 0) {
+          const { data: supaStartups, error } = await supabase
+            .from('startups')
+            .select('*')
+            .eq('visibility', 'PUBLIC')
+            .order('created_at', { ascending: false })
+            .limit(6);
+
+          if (!error && supaStartups && supaStartups.length > 0) {
+            startupList = supaStartups.map((s: any) => ({
+              id: s.id,
+              founderId: s.founder_id,
+              name: s.name,
+              logo: s.logo,
+              oneLineDescription: s.one_line_description,
+              problem: s.problem,
+              solution: s.solution,
+              targetCustomers: s.target_customers,
+              industry: s.industry,
+              businessModel: s.business_model,
+              stage: s.stage,
+              location: s.location,
+              requiredSkills: s.required_skills,
+              fundingStatus: s.funding_status,
+              fundingRequired: s.funding_required,
+              currentTraction: s.current_traction,
+              website: s.website,
+              demoLink: s.demo_link,
+              pitchDeckUrl: s.pitch_deck_url,
+              images: s.images,
+              visibility: s.visibility,
+              isConfidential: s.is_confidential,
+              isVerified: s.is_verified,
+              likesCount: s.likes_count || 0,
+              viewsCount: s.views_count || 0,
+              createdAt: s.created_at,
+              updatedAt: s.updated_at,
+            }));
+          }
+        }
+        setStartups(startupList);
       } catch (err) {
         console.error('Failed to load startups:', err);
       } finally {
@@ -76,6 +126,18 @@ export const BusinessPage: React.FC = () => {
       }
     };
     loadStartups();
+
+    // Realtime sync for newly added startups
+    const startupsChannel = supabase
+      .channel('business-page-startups-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'startups' }, () => {
+        loadStartups();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(startupsChannel);
+    };
   }, []);
 
   useEffect(() => {

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../context/AuthContext';
 import {
   Rocket,
   ShieldAlert,
@@ -18,6 +20,7 @@ import { SEO } from '../../components/common/SEO';
 
 export const CreateStartupPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [name, setName] = useState('');
   const [logo, setLogo] = useState('');
@@ -80,53 +83,100 @@ export const CreateStartupPage: React.FC = () => {
     setError(null);
 
     try {
-      const res = await api.createStartup({
-        name,
-        logo: logo || undefined,
-        oneLineDescription,
-        problem,
-        solution,
-        targetCustomers,
-        industry,
-        businessModel,
-        stage,
-        location,
-        requiredSkills,
-        fundingStatus,
-        fundingRequired,
-        currentTraction,
-        website,
-        demoLink,
-        pitchDeckUrl,
-        visibility,
-        isConfidential,
-        // Separate Forms: Internships and Jobs
-        internshipData: offerInternship
-          ? {
-              enabled: true,
-              role: internshipRole,
-              workplaceType: internshipWorkplaceType,
-              compensation: internshipCompensation,
-              durationType: internshipDurationType,
-              customDays: internshipCustomDays,
-              description: internshipDescription,
-            }
-          : null,
-        jobData: offerJob
-          ? {
-              enabled: true,
-              role: jobRole,
-              workplaceType: jobWorkplaceType,
-              compensation: jobCompensation,
-              durationType: jobDurationType,
-              customDays: jobCustomDays,
-              description: jobDescription,
-            }
-          : null,
-        hiringType: offerInternship && offerJob ? 'BOTH' : offerInternship ? 'INTERNSHIP' : offerJob ? 'JOB' : 'NONE',
-      });
+      let createdStartupId: string | null = null;
+      try {
+        const res = await api.createStartup({
+          name,
+          logo: logo || undefined,
+          oneLineDescription,
+          problem,
+          solution,
+          targetCustomers,
+          industry,
+          businessModel,
+          stage,
+          location,
+          requiredSkills,
+          fundingStatus,
+          fundingRequired,
+          currentTraction,
+          website,
+          demoLink,
+          pitchDeckUrl,
+          visibility,
+          isConfidential,
+          // Separate Forms: Internships and Jobs
+          internshipData: offerInternship
+            ? {
+                enabled: true,
+                role: internshipRole,
+                workplaceType: internshipWorkplaceType,
+                compensation: internshipCompensation,
+                durationType: internshipDurationType,
+                customDays: internshipCustomDays,
+                description: internshipDescription,
+              }
+            : null,
+          jobData: offerJob
+            ? {
+                enabled: true,
+                role: jobRole,
+                workplaceType: jobWorkplaceType,
+                compensation: jobCompensation,
+                durationType: jobDurationType,
+                customDays: jobCustomDays,
+                description: jobDescription,
+              }
+            : null,
+          hiringType: offerInternship && offerJob ? 'BOTH' : offerInternship ? 'INTERNSHIP' : offerJob ? 'JOB' : 'NONE',
+        });
+        if (res?.startup?.id) {
+          createdStartupId = res.startup.id;
+        }
+      } catch (apiErr) {
+        console.warn('Backend API createStartup failed, attempting direct Supabase insert:', apiErr);
+      }
 
-      navigate(`/startups/${res.startup.id}`);
+      // Direct Supabase fallback
+      if (!createdStartupId && user?.id) {
+        const { data: supaNew, error: supaErr } = await supabase
+          .from('startups')
+          .insert({
+            founder_id: user.id,
+            name: name.trim(),
+            logo: logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(name.trim())}`,
+            one_line_description: oneLineDescription.trim(),
+            problem: problem.trim(),
+            solution: solution.trim(),
+            target_customers: targetCustomers || null,
+            industry,
+            business_model: businessModel || null,
+            stage: stage || 'Idea',
+            location: location || user.profile?.location || 'Remote',
+            required_skills: requiredSkills || null,
+            funding_status: fundingStatus || 'Bootstrapped',
+            funding_required: fundingRequired || null,
+            current_traction: currentTraction || null,
+            website: website || null,
+            demo_link: demoLink || null,
+            pitch_deck_url: pitchDeckUrl || null,
+            visibility: visibility || 'PUBLIC',
+            is_confidential: Boolean(isConfidential),
+          })
+          .select()
+          .single();
+
+        if (supaErr) throw supaErr;
+        if (supaNew?.id) {
+          createdStartupId = supaNew.id;
+        }
+      }
+
+      if (createdStartupId) {
+        navigate(`/startups/${createdStartupId}`);
+      } else {
+        throw new Error('Failed to create startup venture.');
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to create startup venture.');
     } finally {

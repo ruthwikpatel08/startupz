@@ -100,8 +100,67 @@ export const ExploreStartupsPage: React.FC = () => {
       if (fundingStatus !== 'ALL') params.append('fundingStatus', fundingStatus);
       if (location) params.append('location', location);
 
-      const res = await api.getStartups(params.toString());
-      const clean = (res.startups || []).filter((s: any) => !isDemoRecord(s));
+      let clean: Startup[] = [];
+      try {
+        const res = await api.getStartups(params.toString());
+        clean = (res.startups || []).filter((s: any) => !isDemoRecord(s));
+      } catch (apiErr) {
+        console.warn('api.getStartups failed, trying direct Supabase query:', apiErr);
+      }
+
+      // Supabase direct fallback if backend API is sleeping, offline, or returns empty
+      if (clean.length === 0) {
+        let query = supabase.from('startups').select('*').eq('visibility', 'PUBLIC');
+        if (industry && industry !== 'ALL') {
+          query = query.ilike('industry', `%${industry}%`);
+        }
+        if (stage && stage !== 'ALL') {
+          query = query.eq('stage', stage);
+        }
+        if (fundingStatus && fundingStatus !== 'ALL') {
+          query = query.eq('funding_status', fundingStatus);
+        }
+        if (location) {
+          query = query.ilike('location', `%${location}%`);
+        }
+        if (search) {
+          query = query.or(`name.ilike.%${search}%,one_line_description.ilike.%${search}%,problem.ilike.%${search}%,solution.ilike.%${search}%`);
+        }
+
+        const { data: supaStartups, error: sbErr } = await query.order('created_at', { ascending: false }).limit(50);
+        if (!sbErr && supaStartups && supaStartups.length > 0) {
+          clean = supaStartups.map((s: any) => ({
+            id: s.id,
+            founderId: s.founder_id,
+            name: s.name,
+            logo: s.logo,
+            oneLineDescription: s.one_line_description,
+            problem: s.problem,
+            solution: s.solution,
+            targetCustomers: s.target_customers,
+            industry: s.industry,
+            businessModel: s.business_model,
+            stage: s.stage,
+            location: s.location,
+            requiredSkills: s.required_skills,
+            fundingStatus: s.funding_status,
+            fundingRequired: s.funding_required,
+            currentTraction: s.current_traction,
+            website: s.website,
+            demoLink: s.demo_link,
+            pitchDeckUrl: s.pitch_deck_url,
+            images: s.images,
+            visibility: s.visibility,
+            isConfidential: s.is_confidential,
+            isVerified: s.is_verified,
+            likesCount: s.likes_count || 0,
+            viewsCount: s.views_count || 0,
+            createdAt: s.created_at,
+            updatedAt: s.updated_at,
+          }));
+        }
+      }
+
       setStartups(clean);
       if (!search && industry === 'ALL' && stage === 'ALL' && fundingStatus === 'ALL' && !location && clean.length > 0) {
         cachedStartupsList = clean;
@@ -264,7 +323,6 @@ export const ExploreStartupsPage: React.FC = () => {
       await api.deleteStartup(id).catch(() => null);
       try {
         await supabase.from('posts').delete().eq('startup_id', id);
-        await supabase.from('posts').delete().ilike('title', `%${name}%`);
         await supabase.from('startup_opportunities').delete().eq('startup_id', id);
         await supabase.from('startups').delete().eq('id', id);
       } catch (cleanErr) {
