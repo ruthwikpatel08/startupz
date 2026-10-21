@@ -55,11 +55,6 @@ export const QuickLoginModal: React.FC<QuickLoginModalProps> = ({
     }
   };
 
-  const handleQuickFill = (id: string) => {
-    setIdentifier(id);
-    setPassword('Password123!');
-    setError(null);
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
@@ -217,35 +212,6 @@ export const QuickLoginModal: React.FC<QuickLoginModalProps> = ({
             </button>
           </form>
 
-          {/* Quick test accounts for real accounts */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-            <span className="text-[10px] text-slate-400 font-medium block mb-1">
-              Quick Accounts:
-            </span>
-            <div className="flex flex-wrap gap-1">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('ruthwikpatel08@gmail.com')}
-                className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono transition-colors"
-              >
-                ruthwikpatel08@gmail.com
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('legacyplayer04@gmail.com')}
-                className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono transition-colors"
-              >
-                legacyplayer04@gmail.com
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('lavanyadav0206@gmail.com')}
-                className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono transition-colors"
-              >
-                lavanyadav0206@gmail.com
-              </button>
-            </div>
-          </div>
 
           <div className="pt-1 text-center text-xs text-slate-500 dark:text-slate-400">
             Don't have an account?{' '}

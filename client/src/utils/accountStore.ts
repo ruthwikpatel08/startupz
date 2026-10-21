@@ -6,8 +6,4 @@
  * Passwords are never stored in browser storage.
  */
 
-export const BUILTIN_DEMO_EMAILS = [
-  'ruthwikpatel08@gmail.com',
-  'legacyplayer04@gmail.com',
-  'lavanyadav0206@gmail.com',
-];
+export const BUILTIN_DEMO_EMAILS: string[] = [];

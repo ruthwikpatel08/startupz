@@ -38,11 +38,6 @@ function buildQuery(params?: any): string {
   return qs ? `?${qs}` : '';
 }
 
-const REAL_ACCOUNT_EMAILS = [
-  'ruthwikpatel08@gmail.com',
-  'legacyplayer04@gmail.com',
-  'lavanyadav0206@gmail.com',
-];
 
 export function isDemoRecord(item: any): boolean {
   if (!item) return false;
@@ -90,12 +85,8 @@ export function isDemoRecord(item: any): boolean {
     return false;
   }
 
-  // Real registered users must never be filtered
-  const email = (item.email || '').toLowerCase();
-  if (email && REAL_ACCOUNT_EMAILS.some((rEmail) => rEmail.toLowerCase() === email)) {
-    return false;
-  }
 
+  const email = (item.email || '').toLowerCase();
   // Strictly filter only the specific demo presentation seed accounts by exact email
   const seedDemoIdentifiers = [
     'admin@startupz.com',
