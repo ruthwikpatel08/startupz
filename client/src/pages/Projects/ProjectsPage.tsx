@@ -101,6 +101,40 @@ export const SOLUTION_MAX = 500;
 
 const INITIAL_PROJECTS: BuilderProject[] = [];
 
+export const isCurrentUserMatch = (
+  target: { userId?: string | null; id?: string | null; fullName?: string | null; email?: string | null } | null | undefined,
+  currentUser: any
+): boolean => {
+  if (!target || !currentUser) return false;
+  const targetId = String(target.userId || target.id || '').trim().toLowerCase();
+  const currentId = String(currentUser.id || '').trim().toLowerCase();
+
+  // 1. Direct ID match
+  if (targetId && currentId && targetId === currentId) return true;
+
+  // 2. Check local aliases from stored user or session
+  try {
+    const rawStored = localStorage.getItem('startupz_user');
+    if (rawStored) {
+      const stored = JSON.parse(rawStored);
+      const storedId = String(stored.id || '').trim().toLowerCase();
+      if (storedId && (targetId === storedId || currentId === storedId)) return true;
+    }
+  } catch {}
+
+  // 3. Email match (case-insensitive)
+  const targetEmail = String(target.email || '').trim().toLowerCase();
+  const currentEmail = String(currentUser.email || '').trim().toLowerCase();
+  if (targetEmail && currentEmail && targetEmail === currentEmail) return true;
+
+  // 4. Exact full name match (case-insensitive, length >= 2)
+  const targetName = String(target.fullName || '').trim().toLowerCase();
+  const currentName = String(currentUser.profile?.fullName || currentUser.fullName || currentUser.email?.split('@')[0] || '').trim().toLowerCase();
+  if (targetName && currentName && targetName === currentName && targetName.length >= 2) return true;
+
+  return false;
+};
+
 export const syncProjectGroup = (project: BuilderProject) => {
   try {
     const raw = localStorage.getItem('startupz_project_groups');
@@ -108,7 +142,7 @@ export const syncProjectGroup = (project: BuilderProject) => {
     const groupId = `proj-group-${project.id}`;
     const existingIdx = groups.findIndex((g) => g.id === groupId);
 
-    const members = [
+    const rawMembers = [
       {
         userId: project.creator.userId,
         fullName: project.creator.fullName,
@@ -124,6 +158,14 @@ export const syncProjectGroup = (project: BuilderProject) => {
           role: r.roleName,
         })),
     ];
+
+    const seenMemberKeys = new Set<string>();
+    const members = rawMembers.filter((m) => {
+      const key = String(m.userId || m.fullName).toLowerCase();
+      if (seenMemberKeys.has(key)) return false;
+      seenMemberKeys.add(key);
+      return true;
+    });
 
     const groupObj = {
       id: groupId,
@@ -330,6 +372,7 @@ export const ProjectsPage: React.FC = () => {
     setProjects(updated);
     try {
       localStorage.setItem('startupz_builder_projects', JSON.stringify(updated));
+      localStorage.setItem('startupz_projects', JSON.stringify(updated));
     } catch {}
   };
 
@@ -526,6 +569,11 @@ export const ProjectsPage: React.FC = () => {
     };
     window.addEventListener('global_entity_deleted', handleLocalDelete);
 
+    const handleProjectsUpdated = () => {
+      fetchServerProjects();
+    };
+    window.addEventListener('startupz_projects_updated', handleProjectsUpdated);
+
     // Auto-refresh when switching back to this tab or mobile device wakes up
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
@@ -535,11 +583,20 @@ export const ProjectsPage: React.FC = () => {
     document.addEventListener('visibilitychange', handleVisibility);
     window.addEventListener('focus', handleVisibility);
 
+    // Periodic 10s background sync
+    const pollInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchServerProjects();
+      }
+    }, 10000);
+
     return () => {
       isMounted = false;
+      clearInterval(pollInterval);
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('focus', handleVisibility);
       window.removeEventListener('global_entity_deleted', handleLocalDelete);
+      window.removeEventListener('startupz_projects_updated', handleProjectsUpdated);
       supabase.removeChannel(syncChannel);
       supabase.removeChannel(dataChannel);
       supabase.removeChannel(dbChannel);
@@ -683,7 +740,17 @@ export const ProjectsPage: React.FC = () => {
         console.warn('Supabase connections fetch in modal notice:', sErr);
       }
 
-      setConnectionsList(Array.from(connMap.values()));
+      // Deduplicate by normalized fullName
+      const seenNames = new Set<string>();
+      const deduplicated: { id: string; fullName: string; avatar?: string | null; headline?: string }[] = [];
+      for (const conn of connMap.values()) {
+        const key = conn.fullName.trim().toLowerCase();
+        if (!seenNames.has(key)) {
+          seenNames.add(key);
+          deduplicated.push(conn);
+        }
+      }
+      setConnectionsList(deduplicated);
     } catch (err) {
       console.warn('Error fetching connections:', err);
       setConnectionsList([]);
@@ -699,12 +766,14 @@ export const ProjectsPage: React.FC = () => {
     targetName: string,
     targetAvatar?: string | null
   ) => {
+    let apiHandled = false;
     try {
-      await api.assignProjectRole(projectId, roleId, {
+      const res = await api.assignProjectRole(projectId, roleId, {
         targetUserId,
         targetFullName: targetName,
         targetAvatar: targetAvatar || undefined,
       }).catch(() => null);
+      if (res) apiHandled = true;
     } catch (err) {}
 
     const project = projects.find((p) => p.id === projectId);
@@ -713,21 +782,24 @@ export const ProjectsPage: React.FC = () => {
     const projTitle = project?.title || 'Project';
     const leadName = user?.profile?.fullName || 'Project Lead';
 
-    // Insert real-time notification into Supabase for target connection
-    try {
-      await supabase.from('notifications').insert({
-        user_id: targetUserId,
-        sender_id: user?.id,
-        type: 'PROJECT_ROLE_INVITE',
-        title: `Role Assignment: ${roleName} in ${projTitle} 🎯`,
-        message: `${leadName} assigned you the role "${roleName}" in project "${projTitle}". Accept or decline to join the team!`,
-        link: `/projects?roleInvite=${roleId}&projectId=${projectId}`,
-        is_read: false,
-      });
-    } catch {}
+    // Only insert a Supabase notification if the backend API did not handle it
+    if (!apiHandled) {
+      try {
+        await supabase.from('notifications').insert({
+          user_id: targetUserId,
+          sender_id: user?.id,
+          type: 'PROJECT_ROLE_INVITE',
+          title: `Role Assignment: ${roleName} in ${projTitle} 🎯`,
+          message: `${leadName} assigned you the role "${roleName}" in project "${projTitle}". Accept or decline to join the team!`,
+          link: `/projects?roleInvite=${roleId}&projectId=${projectId}`,
+          is_read: false,
+        });
+      } catch {}
+    }
 
     try {
       window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
+      window.dispatchEvent(new CustomEvent('startupz_projects_updated'));
     } catch {}
 
     const updated = projects.map((p) => {
@@ -763,8 +835,10 @@ export const ProjectsPage: React.FC = () => {
   };
 
   const handleSendRoleInvite = async (projectId: string, roleId: string, targetUserId: string, targetName: string) => {
+    let apiHandled = false;
     try {
-      await api.inviteProjectRole(projectId, roleId, targetUserId).catch(() => null);
+      const res = await api.inviteProjectRole(projectId, roleId, targetUserId).catch(() => null);
+      if (res) apiHandled = true;
     } catch (err) {}
 
     const project = projects.find((p) => p.id === projectId);
@@ -773,20 +847,24 @@ export const ProjectsPage: React.FC = () => {
     const projTitle = project?.title || 'Project';
     const leadName = user?.profile?.fullName || 'Project Lead';
 
-    try {
-      await supabase.from('notifications').insert({
-        user_id: targetUserId,
-        sender_id: user?.id,
-        type: 'PROJECT_ROLE_INVITE',
-        title: `Role Invitation: ${roleName} in ${projTitle} 🎯`,
-        message: `${leadName} invited you to join "${projTitle}" as ${roleName}. Accept or decline to join the team!`,
-        link: `/projects?roleInvite=${roleId}&projectId=${projectId}`,
-        is_read: false,
-      });
-    } catch {}
+    // Only insert a Supabase notification if the backend API did not handle it
+    if (!apiHandled) {
+      try {
+        await supabase.from('notifications').insert({
+          user_id: targetUserId,
+          sender_id: user?.id,
+          type: 'PROJECT_ROLE_INVITE',
+          title: `Role Invitation: ${roleName} in ${projTitle} 🎯`,
+          message: `${leadName} invited you to join "${projTitle}" as ${roleName}. Accept or decline to join the team!`,
+          link: `/projects?roleInvite=${roleId}&projectId=${projectId}`,
+          is_read: false,
+        });
+      } catch {}
+    }
 
     try {
       window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
+      window.dispatchEvent(new CustomEvent('startupz_projects_updated'));
     } catch {}
 
     const updated = projects.map((p) => {
@@ -823,8 +901,12 @@ export const ProjectsPage: React.FC = () => {
 
   const handleRespondInvite = async (projectId: string, roleId: string, action: 'ACCEPT' | 'DECLINE') => {
     if (!user) return;
+    let backendProject: BuilderProject | null = null;
     try {
-      await api.respondProjectInvite(projectId, roleId, action).catch(() => null);
+      const res = await api.respondProjectInvite(projectId, roleId, action).catch(() => null);
+      if (res && res.project) {
+        backendProject = res.project;
+      }
     } catch (err) {}
 
     const userName = user.profile?.fullName || user.email?.split('@')[0] || 'Builder';
@@ -854,48 +936,65 @@ export const ProjectsPage: React.FC = () => {
 
     try {
       window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
+      window.dispatchEvent(new CustomEvent('startupz_projects_updated'));
     } catch {}
 
-    const updated = projects.map((p) => {
-      if (p.id === projectId) {
-        const nextRoles = p.roles.map((r) => {
-          if (r.id === roleId) {
-            if (action === 'ACCEPT') {
-              return {
-                ...r,
-                status: 'ASSIGNED' as const,
-                assignedTo: {
-                  userId: user.id,
-                  fullName: userName,
-                  avatar: user.profile?.avatar || null,
-                },
-                invitedUser: null,
-              };
-            } else {
-              return {
-                ...r,
-                status: 'OPEN' as const,
-                assignedTo: null,
-                invitedUser: null,
-              };
+    let updated: BuilderProject[];
+    if (backendProject) {
+      updated = projects.map((p) => (p.id === backendProject!.id ? backendProject! : p));
+      if (!updated.some((p) => p.id === backendProject!.id)) {
+        updated.unshift(backendProject);
+      }
+      if (action === 'ACCEPT') {
+        syncProjectGroup(backendProject);
+        const allFilled = backendProject.roles.every((r) => r.status === 'ASSIGNED');
+        if (allFilled && backendProject.visibility === 'PUBLIC') {
+          triggeredCompletion = true;
+          completedProject = backendProject;
+        }
+      }
+    } else {
+      updated = projects.map((p) => {
+        if (p.id === projectId) {
+          const nextRoles = p.roles.map((r) => {
+            if (r.id === roleId) {
+              if (action === 'ACCEPT') {
+                return {
+                  ...r,
+                  status: 'ASSIGNED' as const,
+                  assignedTo: {
+                    userId: user.id,
+                    fullName: userName,
+                    avatar: user.profile?.avatar || null,
+                  },
+                  invitedUser: null,
+                };
+              } else {
+                return {
+                  ...r,
+                  status: 'OPEN' as const,
+                  assignedTo: null,
+                  invitedUser: null,
+                };
+              }
+            }
+            return r;
+          });
+
+          const updatedProj = { ...p, roles: nextRoles };
+          if (action === 'ACCEPT') {
+            syncProjectGroup(updatedProj);
+            const allFilled = nextRoles.every((r) => r.status === 'ASSIGNED');
+            if (allFilled && p.visibility === 'PUBLIC') {
+              triggeredCompletion = true;
+              completedProject = updatedProj;
             }
           }
-          return r;
-        });
-
-        const updatedProj = { ...p, roles: nextRoles };
-        if (action === 'ACCEPT') {
-          syncProjectGroup(updatedProj);
-          const allFilled = nextRoles.every((r) => r.status === 'ASSIGNED');
-          if (allFilled && p.visibility === 'PUBLIC') {
-            triggeredCompletion = true;
-            completedProject = updatedProj;
-          }
+          return updatedProj;
         }
-        return updatedProj;
-      }
-      return p;
-    });
+        return p;
+      });
+    }
 
     saveProjects(updated);
 
@@ -1483,7 +1582,7 @@ export const ProjectsPage: React.FC = () => {
   };
 
   const filteredProjects = projects.filter((p) => {
-    // Visibility check: Private projects only visible to creator, lead, or assigned members
+    // Visibility check: Private projects only visible to creator, lead, or assigned/invited members
     if (p.visibility === 'PRIVATE') {
       if (!user) return false;
       if (user.isAdmin) return true;
@@ -1492,19 +1591,22 @@ export const ProjectsPage: React.FC = () => {
         [user.id, user.profile?.id, user.profile?.userId].filter(Boolean).map(String)
       );
       const creatorId = String(p.creator?.userId || (p as any).creatorId || '');
-      const isCreator = Boolean(creatorId && userIds.has(creatorId));
+      const isCreator = Boolean(creatorId && userIds.has(creatorId)) || isCurrentUserMatch(p.creator, user);
 
       const isMember = Array.isArray(p.roles) && p.roles.some((r) => {
         if (r.status !== 'ASSIGNED' || !r.assignedTo) return false;
-        const assignedId = String(r.assignedTo.userId || (r.assignedTo as any).id || '');
-        return Boolean(assignedId && userIds.has(assignedId));
+        return isCurrentUserMatch(r.assignedTo, user);
+      });
+
+      const isInvited = Array.isArray(p.roles) && p.roles.some((r) => {
+        if (r.status !== 'INVITED' || !r.invitedUser) return false;
+        return isCurrentUserMatch(r.invitedUser, user);
       });
 
       const isLead = Array.isArray(p.roles) && p.roles.some((r) => {
         const isLeadRole = (r.roleName || '').toLowerCase().includes('lead') || (r as any).isLead;
         if (!isLeadRole || !r.assignedTo) return false;
-        const assignedId = String(r.assignedTo.userId || (r.assignedTo as any).id || '');
-        return Boolean(assignedId && userIds.has(assignedId));
+        return isCurrentUserMatch(r.assignedTo, user);
       });
 
       const userEmail = (user.email || '').toLowerCase().trim();
@@ -1525,7 +1627,7 @@ export const ProjectsPage: React.FC = () => {
                 userFullName === r.assignedTo.fullName.trim().toLowerCase()
             )));
 
-      if (!isCreator && !isMember && !isLead && !emailMatches && !nameMatches) {
+      if (!isCreator && !isMember && !isInvited && !isLead && !emailMatches && !nameMatches) {
         return false;
       }
     }
@@ -1535,7 +1637,10 @@ export const ProjectsPage: React.FC = () => {
       if (!hasOpen) return false;
     }
     if (filterTab === 'my_projects') {
-      const isMine = p.creator.userId === user?.id || p.roles.some((r) => r.assignedTo?.userId === user?.id);
+      const isMine =
+        isCurrentUserMatch(p.creator, user) ||
+        p.roles.some((r) => r.status === 'ASSIGNED' && isCurrentUserMatch(r.assignedTo, user)) ||
+        p.roles.some((r) => r.status === 'INVITED' && isCurrentUserMatch(r.invitedUser, user));
       if (!isMine) return false;
     }
     if (searchQuery.trim()) {
@@ -1669,14 +1774,13 @@ export const ProjectsPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-5 min-w-0">
           {filteredProjects.map((project) => {
-            const creatorUserId = project.creator?.userId || (project.creator as any)?.id || (project as any)?.creatorId || (project as any)?.creator_id;
-            const projectLeadUserId = project.roles.find((r) => r.roleName === 'Project Lead')?.assignedTo?.userId;
-            const isCreator = Boolean(user?.id && (user.id === creatorUserId || user.isAdmin));
-            const isProjectLead = Boolean(user?.id && (user.id === projectLeadUserId || isCreator || user.isAdmin));
+            const isCreator = Boolean(user && (isCurrentUserMatch(project.creator, user) || user.isAdmin));
+            const leadRole = project.roles.find((r) => (r.roleName || '').toLowerCase().includes('lead') || (r as any).isLead);
+            const isProjectLead = Boolean(user && (isCurrentUserMatch(leadRole?.assignedTo, user) || isCreator || user.isAdmin));
             const isAcceptedMember = Boolean(
-              user?.id &&
+              user &&
               Array.isArray(project.roles) &&
-              project.roles.some((r) => r.status === 'ASSIGNED' && r.assignedTo?.userId === user.id)
+              project.roles.some((r) => r.status === 'ASSIGNED' && isCurrentUserMatch(r.assignedTo, user))
             );
             const openRolesCount = project.roles.filter((r) => r.status === 'OPEN').length;
             const pendingRolesCount = project.roles.filter((r) => r.status === 'PENDING').length;
@@ -1856,8 +1960,9 @@ export const ProjectsPage: React.FC = () => {
                       {project.roles.map((role) => {
                         const isAssigned = role.status === 'ASSIGNED';
                         const isInvited = role.status === 'INVITED';
-                        const isMyAssignedRole = isAssigned && role.assignedTo?.userId === user?.id;
-                        const isMyInvitedRole = isInvited && role.invitedUser?.userId === user?.id;
+                        const isMyAssignedRole = isAssigned && isCurrentUserMatch(role.assignedTo, user);
+                        const isMyInvitedRole = isInvited && isCurrentUserMatch(role.invitedUser, user);
+                        const isTargetHighlightedRole = searchParams.get('roleInvite') === role.id;
 
                         const declinedList = Array.isArray(role.declinedApplicantIds) ? role.declinedApplicantIds : [];
                         const rawApplicants = Array.isArray(role.pendingApplicants) && role.pendingApplicants.length > 0
@@ -1874,7 +1979,10 @@ export const ProjectsPage: React.FC = () => {
                         return (
                           <div
                             key={role.id}
+                            id={`role-${role.id}`}
                             className={`p-2.5 rounded-xl border text-xs flex flex-col gap-2 transition-colors min-w-0 overflow-hidden break-words ${
+                              isTargetHighlightedRole ? 'ring-2 ring-brand-500 shadow-md ' : ''
+                            }${
                               isAssigned
                                 ? 'bg-slate-50/70 dark:bg-dark-850/40 border-slate-200/60 dark:border-dark-800'
                                 : hasApplicants

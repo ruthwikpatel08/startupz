@@ -114,11 +114,32 @@ export const NotificationsDropdown: React.FC = () => {
 
           if (supaNotifs && supaNotifs.length > 0) {
             for (const sn of supaNotifs) {
-              const alreadyInList = list.some(
-                (item) =>
-                  item.id === sn.id ||
-                  (item.title === sn.title && item.message === sn.message)
-              );
+              const isRoleInviteSn = sn.type === 'PROJECT_ROLE_INVITE' || sn.type === 'PROJECT_INVITE';
+              const snParams = isRoleInviteSn && sn.link && sn.link.includes('?')
+                ? new URLSearchParams(sn.link.split('?')[1])
+                : null;
+              const snRoleId = snParams?.get('roleInvite');
+
+              const alreadyInList = list.some((item) => {
+                if (item.id === sn.id) return true;
+                if (item.title === sn.title && item.message === sn.message) return true;
+                if (isRoleInviteSn && (item.type === 'PROJECT_ROLE_INVITE' || item.type === 'PROJECT_INVITE')) {
+                  if (item.link && item.link.includes('?')) {
+                    const itemParams = new URLSearchParams(item.link.split('?')[1]);
+                    const itemRoleId = itemParams.get('roleInvite');
+                    if (snRoleId && itemRoleId && snRoleId === itemRoleId) return true;
+                  }
+                  if (item.message && sn.message) {
+                    const cleanItem = item.message.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                    const cleanSn = sn.message.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+                    if (cleanItem.length > 20 && (cleanItem.includes(cleanSn.slice(0, 25)) || cleanSn.includes(cleanItem.slice(0, 25)))) {
+                      return true;
+                    }
+                  }
+                }
+                return false;
+              });
+
               if (!alreadyInList) {
                 const sProf = sn.sender_id ? senderProfilesCacheRef.current.get(sn.sender_id) : null;
                 list.push({
@@ -237,6 +258,22 @@ export const NotificationsDropdown: React.FC = () => {
 
       // Filter out direct messages: direct messages belong exclusively in the Messages icon bar
       list = list.filter((n) => n.type !== 'NEW_MESSAGE');
+
+      // Deduplicate role invite notifications so they are never displayed twice
+      const seenRoleInviteIds = new Set<string>();
+      list = list.filter((n) => {
+        if (n.type === 'PROJECT_ROLE_INVITE' || n.type === 'PROJECT_INVITE') {
+          if (n.link && n.link.includes('?')) {
+            const pms = new URLSearchParams(n.link.split('?')[1]);
+            const rId = pms.get('roleInvite');
+            if (rId) {
+              if (seenRoleInviteIds.has(rId)) return false;
+              seenRoleInviteIds.add(rId);
+            }
+          }
+        }
+        return true;
+      });
 
       unread = list.filter((n) => !n.isRead).length;
 
@@ -595,18 +632,18 @@ export const NotificationsDropdown: React.FC = () => {
         const queryPart = notif.link.split('?')[1];
         const params = new URLSearchParams(queryPart);
         projectId = params.get('projectId');
-        roleId = params.get('roleInvite');
+        roleId = params.get('roleInvite') || params.get('roleId');
       }
 
       // Fallback: look through stored projects for a role invited to current user
-      const rawProjects = localStorage.getItem('startupz_projects');
+      const rawProjects = localStorage.getItem('startupz_builder_projects') || localStorage.getItem('startupz_projects');
       let projectsList: any[] = rawProjects ? JSON.parse(rawProjects) : [];
       if (!projectId || !roleId) {
         for (const p of projectsList) {
           const matchingRole = (p.roles || []).find(
             (r: any) =>
               r.invitedUser?.userId === user?.id ||
-              (r.status === 'INVITED' && r.invitedUser?.fullName === user?.profile?.fullName)
+              (r.status === 'INVITED' && r.invitedUser?.fullName?.toLowerCase() === user?.profile?.fullName?.toLowerCase())
           );
           if (matchingRole) {
             projectId = p.id;
@@ -617,8 +654,12 @@ export const NotificationsDropdown: React.FC = () => {
       }
 
       // 2. Call backend respondProjectInvite
+      let updatedProjectFromServer: any = null;
       if (projectId && roleId) {
-        await api.respondProjectInvite(projectId, roleId, action).catch(() => null);
+        const res = await api.respondProjectInvite(projectId, roleId, action).catch(() => null);
+        if (res && res.project) {
+          updatedProjectFromServer = res.project;
+        }
       }
 
       // 3. Update local project storage
@@ -627,7 +668,20 @@ export const NotificationsDropdown: React.FC = () => {
       let targetRoleName = 'Role';
       let creatorId: string | null = null;
 
-      if (projectId && roleId) {
+      if (updatedProjectFromServer) {
+        targetProjectTitle = updatedProjectFromServer.title || 'Project';
+        creatorId = updatedProjectFromServer.creator?.userId || updatedProjectFromServer.creatorId;
+        const matchingRole = (updatedProjectFromServer.roles || []).find((r: any) => r.id === roleId);
+        if (matchingRole) {
+          targetRoleName = matchingRole.roleName;
+        }
+        const idx = projectsList.findIndex((p) => p.id === updatedProjectFromServer.id);
+        if (idx >= 0) {
+          projectsList[idx] = updatedProjectFromServer;
+        } else {
+          projectsList.unshift(updatedProjectFromServer);
+        }
+      } else if (projectId && roleId) {
         projectsList = projectsList.map((p) => {
           if (p.id === projectId) {
             targetProjectTitle = p.title || 'Project';
@@ -657,40 +711,45 @@ export const NotificationsDropdown: React.FC = () => {
               }
               return r;
             });
-            const updatedProj = { ...p, roles: updatedRoles };
-            if (action === 'ACCEPT') {
-              // Add user to project group chat in localStorage
-              try {
-                const rawGroups = localStorage.getItem('startupz_project_groups');
-                const groups: any[] = rawGroups ? JSON.parse(rawGroups) : [];
-                const grpIdx = groups.findIndex(
-                  (g) => g.projectId === projectId || g.id === `proj-group-${projectId}`
-                );
-                if (grpIdx >= 0) {
-                  const grp = groups[grpIdx];
-                  if (!grp.members.some((m: any) => (m.userId || m.id) === user?.id)) {
-                    grp.members.push({
-                      id: user?.id,
-                      userId: user?.id,
-                      fullName: userName,
-                      avatar: user?.profile?.avatar || null,
-                      role: targetRoleName,
-                    });
-                    localStorage.setItem('startupz_project_groups', JSON.stringify(groups));
-                  }
-                }
-              } catch {}
-            }
-            return updatedProj;
+            return { ...p, roles: updatedRoles };
           }
           return p;
         });
+      }
+
+      // Save to BOTH local storage keys for seamless cross-page sync
+      try {
+        localStorage.setItem('startupz_builder_projects', JSON.stringify(projectsList));
         localStorage.setItem('startupz_projects', JSON.stringify(projectsList));
+      } catch {}
+
+      if (action === 'ACCEPT' && projectId) {
+        // Add user to project group chat in localStorage
+        try {
+          const rawGroups = localStorage.getItem('startupz_project_groups');
+          const groups: any[] = rawGroups ? JSON.parse(rawGroups) : [];
+          const grpIdx = groups.findIndex(
+            (g) => g.projectId === projectId || g.id === `proj-group-${projectId}`
+          );
+          if (grpIdx >= 0) {
+            const grp = groups[grpIdx];
+            if (!grp.members.some((m: any) => (m.userId || m.id) === user?.id)) {
+              grp.members.push({
+                id: user?.id,
+                userId: user?.id,
+                fullName: userName,
+                avatar: user?.profile?.avatar || null,
+                role: targetRoleName,
+              });
+              localStorage.setItem('startupz_project_groups', JSON.stringify(groups));
+            }
+          }
+        } catch {}
       }
 
       // 4. Mark this notification as read in Supabase and backend
       try {
-        await api.markNotificationAsRead(notif.id);
+        await api.markNotificationAsRead(notif.id).catch(() => null);
       } catch {}
       try {
         await supabase.from('notifications').update({ is_read: true }).eq('id', notif.id);
@@ -714,18 +773,22 @@ export const NotificationsDropdown: React.FC = () => {
         } catch {}
       }
 
-      // 6. Update UI notification state
+      // 6. Update UI notification state (mark all matching notifications for this role invite)
       setNotifications((prev) =>
-        prev.map((n) =>
-          n.id === notif.id
-            ? {
-                ...n,
-                isRead: true,
-                _actionStatus: action === 'ACCEPT' ? 'ACCEPTED' : 'DECLINED',
-                title: action === 'ACCEPT' ? 'Role Accepted! 🎯' : 'Role Declined',
-              }
-            : n
-        )
+        prev.map((n) => {
+          const isThisOrDuplicate =
+            n.id === notif.id ||
+            (n.type === 'PROJECT_ROLE_INVITE' && Boolean(roleId && n.link && n.link.includes(roleId)));
+          if (isThisOrDuplicate) {
+            return {
+              ...n,
+              isRead: true,
+              _actionStatus: action === 'ACCEPT' ? 'ACCEPTED' : 'DECLINED',
+              title: action === 'ACCEPT' ? 'Role Accepted! 🎯' : 'Role Declined',
+            };
+          }
+          return n;
+        })
       );
       setUnreadCount((c) => Math.max(0, c - 1));
 
