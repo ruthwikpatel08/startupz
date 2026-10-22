@@ -98,7 +98,15 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'x-admin-maintenance-secret', 'x-admin-secret'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'x-user-id',
+    'x-user-email',
+    'x-admin-maintenance-secret',
+    'x-admin-secret',
+  ],
 };
 
 app.use(cors(corsOptions));

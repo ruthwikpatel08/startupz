@@ -154,6 +154,16 @@ export const OpportunitiesPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Failed to load problems:', err);
+      try {
+        const raw = sessionStorage.getItem('startupz_cached_problems');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setProblems(parsed);
+            return;
+          }
+        }
+      } catch {}
       setProbError(err?.message || 'Unable to retrieve problem statements.');
     } finally {
       setProbLoading(false);

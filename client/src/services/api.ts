@@ -1,3 +1,9 @@
+import {
+  getFilteredFallbackProblems,
+  findFallbackProblem,
+  getFallbackProblemMeta,
+} from '../data/fallbackProblems';
+
 const getApiBase = (): string => {
   let envUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
   if (envUrl) {
@@ -16,17 +22,9 @@ const API_BASE = getApiBase();
 
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem('startupz_token');
-  const userJson = localStorage.getItem('startupz_user');
   const headers: Record<string, string> = {};
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-  }
-  if (userJson) {
-    try {
-      const u = JSON.parse(userJson);
-      if (u?.id) headers['x-user-id'] = u.id;
-      if (u?.email) headers['x-user-email'] = u.email;
-    } catch {}
   }
   return headers;
 }
@@ -170,29 +168,40 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
       ...((options.headers as Record<string, string>) || {}),
     };
 
-    try {
-      const response = await fetch(`${API_BASE}${endpoint}`, {
-        ...options,
-        headers,
-      });
+    const maxRetries = isGet ? 2 : 0;
+    let attempt = 0;
 
-      const data = await response.json().catch(() => ({}));
+    while (true) {
+      try {
+        const response = await fetch(`${API_BASE}${endpoint}`, {
+          ...options,
+          headers,
+        });
 
-      if (!response.ok) {
-        const errorMsg = data.message || data.error || `HTTP error ${response.status}`;
-        throw new Error(errorMsg);
-      }
+        const data = await response.json().catch(() => ({}));
 
-      const sanitized = sanitizeData(data) as T;
-      if (isGet) {
-        getResponseCache.set(cacheKey, { data: sanitized, expiresAt: Date.now() + GET_CACHE_TTL });
+        if (!response.ok) {
+          const errorMsg = data.message || data.error || `HTTP error ${response.status}`;
+          throw new Error(errorMsg);
+        }
+
+        const sanitized = sanitizeData(data) as T;
+        if (isGet) {
+          getResponseCache.set(cacheKey, { data: sanitized, expiresAt: Date.now() + GET_CACHE_TTL });
+        }
+        return sanitized;
+      } catch (err: any) {
+        attempt++;
+        const isNetworkError = err.name === 'TypeError' && (err.message || '').includes('fetch');
+        if (isNetworkError && attempt <= maxRetries) {
+          await new Promise((r) => setTimeout(r, attempt * 1200));
+          continue;
+        }
+        if (isNetworkError) {
+          throw new Error('Cloud backend is waking up or updating. Please wait 10-20 seconds or use Continue with Google.');
+        }
+        throw err;
       }
-      return sanitized;
-    } catch (err: any) {
-      if (err.name === 'TypeError' && (err.message || '').includes('fetch')) {
-        throw new Error('Cloud backend is waking up or updating. Please wait 10-20 seconds or use Continue with Google.');
-      }
-      throw err;
     }
   };
 
@@ -490,10 +499,49 @@ export const api = {
     request<any>(`/admin/reports/${id}`, { method: 'PUT', body: JSON.stringify({ status }) }),
 
   // WORLD-WIDE PROBLEM STATEMENTS
-  getProblems: (params?: any) => request<any>(`/problems${buildQuery(params)}`),
-  getProblem: (id: string) => request<any>(`/problems/${id}`),
-  getProblemById: (id: string) => request<any>(`/problems/${id}`),
-  getProblemMeta: () => request<any>('/problems/meta'),
+  getProblems: async (params?: any) => {
+    try {
+      const res = await request<any>(`/problems${buildQuery(params)}`);
+      if (Array.isArray(res) && res.length > 0) return res;
+      if (res?.problems && Array.isArray(res.problems) && res.problems.length > 0) return res;
+      if (!params || (!params.search && !params.category && !params.region && !params.tag && !params.impact)) {
+        return getFilteredFallbackProblems(params);
+      }
+      return res || { problems: [], total: 0 };
+    } catch (err) {
+      console.warn('Live problems API unavailable, serving curated fallback challenges:', err);
+      return getFilteredFallbackProblems(params);
+    }
+  },
+  getProblem: async (id: string) => {
+    try {
+      return await request<any>(`/problems/${id}`);
+    } catch (err) {
+      const fallback = findFallbackProblem(id);
+      if (fallback) return fallback;
+      throw err;
+    }
+  },
+  getProblemById: async (id: string) => {
+    try {
+      return await request<any>(`/problems/${id}`);
+    } catch (err) {
+      const fallback = findFallbackProblem(id);
+      if (fallback) return fallback;
+      throw err;
+    }
+  },
+  getProblemMeta: async () => {
+    try {
+      const res = await request<any>('/problems/meta');
+      if (res && (res.categories?.length || res.regions?.length || res.tags?.length)) {
+        return res;
+      }
+      return getFallbackProblemMeta();
+    } catch (err) {
+      return getFallbackProblemMeta();
+    }
+  },
   createProblem: (payload: any) => request<any>('/problems', { method: 'POST', body: JSON.stringify(payload) }),
   updateProblem: (id: string, payload: any) => request<any>(`/problems/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteProblem: (id: string) => request<any>(`/problems/${id}`, { method: 'DELETE' }),

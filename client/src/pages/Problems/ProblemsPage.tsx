@@ -169,7 +169,12 @@ export const ProblemsPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Failed to load problems:', err);
-      setError(err?.message || 'Unable to retrieve problem statements from the challenges server.');
+      const fallbackList = getInitialProblems();
+      if (fallbackList.length > 0) {
+        setProblems(fallbackList);
+      } else {
+        setError(err?.message || 'Unable to retrieve problem statements from the challenges server.');
+      }
     } finally {
       setLoading(false);
     }
