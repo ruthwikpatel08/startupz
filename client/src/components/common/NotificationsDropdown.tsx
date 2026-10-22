@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { api } from '../../services/api';
+import { api, clearApiCache } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { supabase, fetchUserConnections, invalidateUserConnectionsCache, resolveUserIdToUUID, isUUID } from '../../lib/supabase';
 import { Avatar } from './Avatar';
@@ -643,6 +643,8 @@ export const NotificationsDropdown: React.FC = () => {
           const matchingRole = (p.roles || []).find(
             (r: any) =>
               r.invitedUser?.userId === user?.id ||
+              r.invitedUser?.prismaId === user?.id ||
+              r.invitedUser?.supaUuid === user?.id ||
               (r.status === 'INVITED' && r.invitedUser?.fullName?.toLowerCase() === user?.profile?.fullName?.toLowerCase())
           );
           if (matchingRole) {
@@ -653,9 +655,36 @@ export const NotificationsDropdown: React.FC = () => {
         }
       }
 
+      // Deep API fallback if local storage did not have the invited role
+      if (!projectId || !roleId) {
+        try {
+          const fresh = await api.getProjects().catch(() => null);
+          if (fresh && Array.isArray(fresh.projects)) {
+            projectsList = fresh.projects;
+            for (const p of projectsList) {
+              const matchingRole = (p.roles || []).find(
+                (r: any) =>
+                  (r.status === 'INVITED' || r.invitedUser) &&
+                  (r.invitedUser?.userId === user?.id ||
+                   r.invitedUser?.prismaId === user?.id ||
+                   r.invitedUser?.supaUuid === user?.id ||
+                   (user?.profile?.fullName && r.invitedUser?.fullName?.toLowerCase() === user.profile.fullName.toLowerCase()) ||
+                   (user?.email && r.invitedUser?.email?.toLowerCase() === user.email.toLowerCase()))
+              );
+              if (matchingRole) {
+                projectId = p.id;
+                roleId = matchingRole.id;
+                break;
+              }
+            }
+          }
+        } catch {}
+      }
+
       // 2. Call backend respondProjectInvite
       let updatedProjectFromServer: any = null;
       if (projectId && roleId) {
+        clearApiCache();
         const res = await api.respondProjectInvite(projectId, roleId, action).catch(() => null);
         if (res && res.project) {
           updatedProjectFromServer = res.project;
@@ -812,6 +841,7 @@ export const NotificationsDropdown: React.FC = () => {
       setUnreadCount((c) => Math.max(0, c - 1));
 
       try {
+        clearApiCache();
         window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
         window.dispatchEvent(new CustomEvent('startupz_projects_updated'));
         supabase.channel('global-projects-sync-channel').send({

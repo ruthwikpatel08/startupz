@@ -30,7 +30,7 @@ import {
 import { SEO } from '../../components/common/SEO';
 import { Avatar } from '../../components/common/Avatar';
 import { ShareModal, ShareItemData } from '../../components/common/ShareModal';
-import { api } from '../../services/api';
+import { api, clearApiCache } from '../../services/api';
 import {
   supabase,
   fetchUserConnections,
@@ -505,6 +505,7 @@ export const ProjectsPage: React.FC = () => {
     let isMounted = true;
     const fetchServerProjects = async () => {
       try {
+        clearApiCache();
         let serverList: BuilderProject[] | null = null;
         const res = await api.getProjects().catch(() => null);
         if (res && Array.isArray(res.projects)) {
@@ -646,6 +647,7 @@ export const ProjectsPage: React.FC = () => {
         handleRemoteProjectDelete(payload);
       })
       .on('broadcast', { event: 'project_updated' }, () => {
+        clearApiCache();
         fetchServerProjects();
       })
       .subscribe();
@@ -656,6 +658,7 @@ export const ProjectsPage: React.FC = () => {
         handleRemoteProjectDelete(payload);
       })
       .on('broadcast', { event: 'project_updated' }, () => {
+        clearApiCache();
         fetchServerProjects();
       })
       .subscribe();
@@ -664,6 +667,7 @@ export const ProjectsPage: React.FC = () => {
     const dbChannel = supabase
       .channel('projects-db-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
+        clearApiCache();
         fetchServerProjects();
       })
       .subscribe();
@@ -676,6 +680,7 @@ export const ProjectsPage: React.FC = () => {
     window.addEventListener('global_entity_deleted', handleLocalDelete);
 
     const handleProjectsUpdated = () => {
+      clearApiCache();
       fetchServerProjects();
     };
     window.addEventListener('startupz_projects_updated', handleProjectsUpdated);
@@ -1007,6 +1012,7 @@ export const ProjectsPage: React.FC = () => {
 
   const handleRespondInvite = async (projectId: string, roleId: string, action: 'ACCEPT' | 'DECLINE') => {
     if (!user) return;
+    clearApiCache();
     let backendProject: BuilderProject | null = null;
     try {
       const res = await api.respondProjectInvite(projectId, roleId, action).catch(() => null);
@@ -1922,6 +1928,25 @@ export const ProjectsPage: React.FC = () => {
             const pendingRolesCount = project.roles.filter((r) => r.status === 'PENDING').length;
             const allFilled = project.roles.every((r) => r.status === 'ASSIGNED');
 
+            const memberIds = new Set<string>();
+            const projCreatorId = String(project.creator?.userId || (project as any)?.creatorId || '').trim();
+            if (projCreatorId) {
+              memberIds.add(projCreatorId.toLowerCase());
+            } else if (project.creator?.fullName) {
+              memberIds.add(String(project.creator.fullName).trim().toLowerCase());
+            }
+            (project.roles || []).forEach((r) => {
+              if (r.status === 'ASSIGNED' && r.assignedTo) {
+                const uid = String(r.assignedTo.userId || (r.assignedTo as any)?.id || '').trim();
+                if (uid) {
+                  memberIds.add(uid.toLowerCase());
+                } else if (r.assignedTo.fullName) {
+                  memberIds.add(String(r.assignedTo.fullName).trim().toLowerCase());
+                }
+              }
+            });
+            const totalMembersCount = Math.max(1, memberIds.size);
+
             return (
               <div
                 key={project.id}
@@ -1951,6 +1976,15 @@ export const ProjectsPage: React.FC = () => {
                       >
                         {project.visibility === 'PUBLIC' ? <Globe size={10} /> : <Lock size={10} />}
                         <span>{project.visibility === 'PUBLIC' ? 'Public' : 'Private'}</span>
+                      </span>
+
+                      {/* Total Members Count Badge */}
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700 shrink-0"
+                        title={`${totalMembersCount} team member${totalMembersCount > 1 ? 's' : ''} in this project`}
+                      >
+                        <Users size={11} className="text-brand-600 dark:text-brand-400" />
+                        <span>{totalMembersCount} {totalMembersCount === 1 ? 'Member' : 'Members'}</span>
                       </span>
 
                       {/* Creator / Team Lead Visibility Switcher */}
@@ -2085,7 +2119,7 @@ export const ProjectsPage: React.FC = () => {
                   <div className="space-y-2 pt-1">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                        <Users size={14} className="text-brand-600" /> Team Roles Split:
+                        <Users size={14} className="text-brand-600" /> Team Roles Split ({totalMembersCount} {totalMembersCount === 1 ? 'member' : 'members'}):
                       </span>
                       <span className="text-[11px] text-slate-400">
                         {openRolesCount > 0 ? `${openRolesCount} role(s) open` : allFilled ? 'All roles filled ✓' : 'In progress'}

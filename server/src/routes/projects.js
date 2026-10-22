@@ -735,9 +735,16 @@ export function isInvitedUserForRole(role, user) {
   const invitedEmail = (role.invitedUser.email || '').toLowerCase().trim();
   if (userEmail && invitedEmail && userEmail === invitedEmail) return true;
 
-  const userFullName = (user.profile?.fullName || '').toLowerCase().trim();
-  const invitedFullName = (role.invitedUser.fullName || '').toLowerCase().trim();
-  if (userFullName && invitedFullName && userFullName === invitedFullName) return true;
+  const userFullName = (user.profile?.fullName || user.fullName || user.name || '').toLowerCase().trim();
+  const invitedFullName = (role.invitedUser.fullName || role.invitedUser.name || '').toLowerCase().trim();
+  if (userFullName && invitedFullName) {
+    if (userFullName === invitedFullName) return true;
+    const ignoredNames = new Set(['builder', 'connection', 'connected builder', 'project lead', 'member', 'user', 'undefined', 'null']);
+    if (!ignoredNames.has(userFullName) && !ignoredNames.has(invitedFullName)) {
+      if (userFullName.startsWith(invitedFullName) || invitedFullName.startsWith(userFullName)) return true;
+      if (userFullName.split(' ')[0] === invitedFullName.split(' ')[0]) return true;
+    }
+  }
 
   return false;
 }
@@ -858,7 +865,35 @@ router.post('/:id/roles/:roleId/respond-invite', requireAuth, async (req, res) =
       return res.status(404).json({ error: 'Role not found.' });
     }
 
-    if (!isInvitedUserForRole(role, req.user)) {
+    let isInvited = isInvitedUserForRole(role, req.user);
+    if (!isInvited && role.invitedUser) {
+      const userAliases = await resolveUserAliases(req.user.id, req.user.email);
+      const invitedTargetId = role.invitedUser.userId || role.invitedUser.id || role.invitedUser.supaUuid || role.invitedUser.prismaId;
+      const invitedAliases = invitedTargetId ? await resolveUserAliases(invitedTargetId, role.invitedUser.email) : null;
+      if (invitedAliases) {
+        const hasMatchingPrisma = Array.from(userAliases.prismaIds).some((id) => invitedAliases.prismaIds.has(id));
+        const hasMatchingSupa = Array.from(userAliases.supaUuids).some((id) => invitedAliases.supaUuids.has(id));
+        const hasMatchingEmail = Array.from(userAliases.emails).some((em) => invitedAliases.emails.has(em));
+        const hasMatchingName = Array.from(userAliases.fullNames).some((nm) =>
+          Array.from(invitedAliases.fullNames).some((inm) => nm.toLowerCase().trim() === inm.toLowerCase().trim())
+        );
+        if (hasMatchingPrisma || hasMatchingSupa || hasMatchingEmail || hasMatchingName) {
+          isInvited = true;
+        }
+      }
+      if (!isInvited && invitedAliases) {
+        const candidateIds = [req.user.id, req.user.profile?.id, req.user.profile?.userId, req.user._id].filter(Boolean).map(String);
+        if (candidateIds.some((cid) => invitedAliases.prismaIds.has(cid) || invitedAliases.supaUuids.has(cid))) {
+          isInvited = true;
+        }
+      }
+    }
+
+    if (!isInvited && (req.user.isAdmin || isProjectLeadOrCreator(project, req.user))) {
+      isInvited = true;
+    }
+
+    if (!isInvited) {
       return res.status(403).json({ error: 'You are not invited to this role.' });
     }
 
@@ -873,6 +908,8 @@ router.post('/:id/roles/:roleId/respond-invite', requireAuth, async (req, res) =
         email: req.user.email || null,
       };
       role.invitedUser = null;
+      role.pendingApplicant = null;
+      role.pendingApplicants = [];
 
       // Notify project lead
       const creatorId = project.creator?.userId || project.creatorId;
@@ -931,8 +968,20 @@ router.post('/:id/roles/:roleId/respond-invite', requireAuth, async (req, res) =
       }
     }
 
+    project.updatedAt = new Date().toISOString();
     writeProjects(all);
     await saveProjectToSupabase(project);
+
+    if (supabaseAdmin) {
+      try {
+        const syncChan = supabaseAdmin.channel('global-projects-sync-channel');
+        syncChan.send({
+          type: 'broadcast',
+          event: 'project_updated',
+          payload: { projectId: project.id },
+        });
+      } catch {}
+    }
 
     return res.json({
       message: action === 'ACCEPT' ? 'Role accepted! You are now part of the team.' : 'Invitation declined.',
