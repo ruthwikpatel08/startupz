@@ -545,7 +545,7 @@ export const OnboardingPage: React.FC = () => {
               style={{ marginTop: 2, cursor: 'pointer' }}
             />
             <span>
-              [LEGAL REVIEW REQUIRED] I explicitly consent to HookZ processing and displaying my skills, university/college, and builder details on the student &amp; startup directory for peer matchmaking, hackathon teaming, and opportunities pursuant to the Digital Personal Data Protection (DPDP) Act 2023. <span style={{ color: '#ef4444', fontWeight: 'bold' }}>*</span>
+              I explicitly consent to HookZ processing and displaying my skills, university/college, and builder details on the student &amp; startup directory for peer matchmaking, hackathon teaming, and opportunities pursuant to the Digital Personal Data Protection (DPDP) Act 2023. <span style={{ color: '#ef4444', fontWeight: 'bold' }}>*</span>
             </span>
           </label>
         </div>

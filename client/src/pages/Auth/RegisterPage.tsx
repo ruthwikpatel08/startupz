@@ -562,7 +562,7 @@ export const RegisterPage: React.FC = () => {
                   className="mt-0.5 rounded-sm border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer shrink-0"
                 />
                 <span className="leading-relaxed">
-                  [LEGAL REVIEW REQUIRED] I have read and agree to the{' '}
+                  I have read and agree to the{' '}
                   <Link to="/terms" target="_blank" className="font-semibold text-brand-600 hover:underline">
                     Terms of Service
                   </Link>{' '}

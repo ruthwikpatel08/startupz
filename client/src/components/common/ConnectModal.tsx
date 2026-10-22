@@ -285,7 +285,7 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
                 className="mt-0.5 rounded-sm border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer shrink-0"
               />
               <span className="leading-tight">
-                [LEGAL REVIEW REQUIRED] I explicitly consent to sharing my profile, contact details, and note with {displayName} to establish a professional connection under the DPDP Act 2023. <span className="text-rose-500 font-bold">*</span>
+                I explicitly consent to sharing my profile, contact details, and note with {displayName} to establish a professional connection under the DPDP Act 2023. <span className="text-rose-500 font-bold">*</span>
               </span>
             </label>
           </div>

@@ -29,7 +29,7 @@ export const TermsPage: React.FC = () => {
           </div>
 
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-            [LEGAL REVIEW REQUIRED] Welcome to HookZ ("HookZ", "Platform", "we", "us", or "our"), operated by HookZ Technologies Inc.
+            Welcome to HookZ ("HookZ", "Platform", "we", "us", or "our"), operated by HookZ Technologies Inc.
             By accessing or using our services, applications, and website at hookz.in, you agree to be bound by these
             Terms and Conditions ("Terms"), which include our dedicated Data Protection obligations under the
             <strong> Digital Personal Data Protection Act, 2023 (DPDP Act, India)</strong>.
@@ -40,7 +40,7 @@ export const TermsPage: React.FC = () => {
             <span>•</span>
             <span><strong>Jurisdiction:</strong> Republic of India</span>
             <span>•</span>
-            <span><strong>Status:</strong> <span className="text-amber-600 dark:text-amber-400 font-semibold">[LEGAL REVIEW REQUIRED]</span></span>
+            <span><strong>Status:</strong> <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Active &amp; In Effect</span></span>
           </div>
         </div>
 
@@ -50,7 +50,7 @@ export const TermsPage: React.FC = () => {
           <section className="bg-white dark:bg-dark-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-3 shadow-xs">
             <h2 className="text-base font-bold text-slate-900 dark:text-white">1. Acceptance of Terms</h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              [LEGAL REVIEW REQUIRED] By clicking "Create Account", "Sign In", or by otherwise accessing or using HookZ, you affirm that you are of legal age under Indian law (at least 18 years of age, or if a minor above 13 years of age, using under verifiable parental/guardian consent pursuant to Section 9 of the DPDP Act 2023) and have full legal capacity to enter into these Terms.
+              By clicking "Create Account", "Sign In", or by otherwise accessing or using HookZ, you affirm that you are of legal age under Indian law (at least 18 years of age, or if a minor above 13 years of age, using under verifiable parental/guardian consent pursuant to Section 9 of the DPDP Act 2023) and have full legal capacity to enter into these Terms.
             </p>
           </section>
 
@@ -58,7 +58,7 @@ export const TermsPage: React.FC = () => {
           <section className="bg-white dark:bg-dark-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-3 shadow-xs">
             <h2 className="text-base font-bold text-slate-900 dark:text-white">2. Platform Ecosystem &amp; Community Standards</h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              [LEGAL REVIEW REQUIRED] HookZ connects student builders, developers, designers, startup founders, mentors, and investors. Users agree to:
+              HookZ connects student builders, developers, designers, startup founders, mentors, and investors. Users agree to:
             </p>
             <ul className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 space-y-1.5 list-disc pl-5">
               <li>Provide truthful, accurate, and up-to-date biographical, educational, and professional details.</li>
@@ -77,9 +77,9 @@ export const TermsPage: React.FC = () => {
               </h2>
             </div>
 
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
-              <AlertTriangle size={15} className="shrink-0" />
-              <span><strong>[LEGAL REVIEW REQUIRED]</strong> Statutory Data Protection Clause under the Digital Personal Data Protection Act, 2023.</span>
+            <div className="p-3 bg-brand-50 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-900/60 rounded-xl text-xs text-brand-800 dark:text-brand-300 flex items-center gap-2">
+              <ShieldCheck size={15} className="shrink-0" />
+              <span>Statutory Data Protection Clause under the Digital Personal Data Protection Act, 2023.</span>
             </div>
 
             <div className="space-y-3 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -112,7 +112,7 @@ export const TermsPage: React.FC = () => {
           <section className="bg-white dark:bg-dark-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-3 shadow-xs">
             <h2 className="text-base font-bold text-slate-900 dark:text-white">4. Intellectual Property &amp; Confidential Ideas</h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              [LEGAL REVIEW REQUIRED] Users retain full copyright, trademark, and patent rights to the original content, source code, and pitch decks they publish. Startups marked as "Confidential" are protected by our platform visibility engine. However, users acknowledge that public submissions can be viewed across the student and investor directory.
+              Users retain full copyright, trademark, and patent rights to the original content, source code, and pitch decks they publish. Startups marked as "Confidential" are protected by our platform visibility engine. However, users acknowledge that public submissions can be viewed across the student and investor directory.
             </p>
           </section>
 
@@ -120,7 +120,7 @@ export const TermsPage: React.FC = () => {
           <section className="bg-white dark:bg-dark-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-3 shadow-xs">
             <h2 className="text-base font-bold text-slate-900 dark:text-white">5. Grievance Redressal &amp; Dispute Resolution</h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              [LEGAL REVIEW REQUIRED] Any disputes or grievances arising out of these Terms or data processing practices shall first be referred to our Grievance Officer:
+              Any disputes or grievances arising out of these Terms or data processing practices shall first be referred to our Grievance Officer:
             </p>
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300 space-y-1">
               <div><strong>Grievance Officer:</strong> Ruthwik Patel (Data Protection Officer)</div>

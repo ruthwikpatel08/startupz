@@ -86,7 +86,6 @@ Pursuant to Section 8(6) of the DPDP Act 2023, the DPO transmits the official in
 *Must be submitted via the designated DPBI digital portal or official intimation email within 72 hours.*
 
 ```text
-[LEGAL REVIEW REQUIRED]
 FORM OF INTIMATION OF PERSONAL DATA BREACH
 TO THE DATA PROTECTION BOARD OF INDIA
 (Under Section 8(6) of the Digital Personal Data Protection Act, 2023)
@@ -142,7 +141,6 @@ TO THE DATA PROTECTION BOARD OF INDIA
 *Dispatched directly to the registered email address of every affected user.*
 
 ```text
-[LEGAL REVIEW REQUIRED]
 Subject: [Important Security Advisory] Notice of Personal Data Incident regarding your HookZ Account
 
 Dear [User Name],

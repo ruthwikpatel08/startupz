@@ -2080,7 +2080,7 @@ export const OpportunitiesPage: React.FC = () => {
                         className="mt-0.5 rounded-sm border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer shrink-0"
                       />
                       <span>
-                        [LEGAL REVIEW REQUIRED] I explicitly consent to transmitting my application note, resume, and profile details to the founders of {selectedOpp.startup?.name || 'this startup'} for recruitment evaluation under the DPDP Act 2023. <span className="text-rose-500 font-bold">*</span>
+                        I explicitly consent to transmitting my application note, resume, and profile details to the founders of {selectedOpp.startup?.name || 'this startup'} for recruitment evaluation under the DPDP Act 2023. <span className="text-rose-500 font-bold">*</span>
                       </span>
                     </label>
                   </div>

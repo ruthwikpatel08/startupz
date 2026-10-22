@@ -186,7 +186,7 @@ export const DSARPage: React.FC = () => {
           </div>
 
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-            [LEGAL REVIEW REQUIRED] Under Chapter III of India's <strong>Digital Personal Data Protection Act, 2023</strong>,
+            Under Chapter III of India's <strong>Digital Personal Data Protection Act, 2023</strong>,
             you have legal rights regarding your digital personal data. Use this portal to export your personal data,
             request corrections, withdraw consent, delete your account, or register a statutory nominee.
           </p>
@@ -269,7 +269,7 @@ export const DSARPage: React.FC = () => {
                 Confirm Permanent Data Erasure?
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                [LEGAL REVIEW REQUIRED] This action is irreversible. All your profile information, startup listings, applications, connections, and chat records will be permanently removed pursuant to your Right to Erasure under Section 12 of the DPDP Act 2023.
+                This action is irreversible. All your profile information, startup listings, applications, connections, and chat records will be permanently removed pursuant to your Right to Erasure under Section 12 of the DPDP Act 2023.
               </p>
               <div className="flex items-center gap-3 pt-2">
                 <button
@@ -515,7 +515,7 @@ export const DSARPage: React.FC = () => {
                     className="mt-0.5 rounded-sm border-slate-300 text-brand-600 focus:ring-brand-500"
                   />
                   <span>
-                    [LEGAL REVIEW REQUIRED] I affirm that I am the Data Principal associated with the above email address (or an authorized representative) and submit this statutory request under the Digital Personal Data Protection Act, 2023.
+                    I affirm that I am the Data Principal associated with the above email address (or an authorized representative) and submit this statutory request under the Digital Personal Data Protection Act, 2023.
                   </span>
                 </label>
               </div>

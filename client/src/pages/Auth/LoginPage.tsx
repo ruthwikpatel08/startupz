@@ -337,7 +337,7 @@ export const LoginPage: React.FC = () => {
             </button>
 
             <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center pt-2 leading-relaxed">
-              [LEGAL REVIEW REQUIRED] By signing in, you acknowledge that your personal data is processed pursuant to our{' '}
+              By signing in, you acknowledge that your personal data is processed pursuant to our{' '}
               <Link to="/privacy" target="_blank" className="text-brand-600 dark:text-brand-400 font-semibold hover:underline">
                 Privacy Notice
               </Link>{' '}

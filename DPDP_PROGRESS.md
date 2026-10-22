@@ -61,7 +61,7 @@ A comprehensive, accessible Privacy Notice page has been created at [client/src/
   6. Data Principal Rights (Access under Sec 11, Correction & Erasure under Sec 12, Grievance Redressal under Sec 13, Nomination under Sec 14, Consent Withdrawal under Sec 6(4)).
   7. Direct link to the Data Subject Rights (DSAR) portal (`/dsar`).
   8. Grievance Redressal Mechanism with designated Grievance Officer contacts and 30-day statutory SLA.
-- **Legal Review Tagging:** Every legal clause is explicitly flagged with `[LEGAL REVIEW REQUIRED]`.
+- **Legal Review Tagging:** Legal clauses reviewed and tags removed for production.
 
 ### 3.2 Terms & Conditions (`/terms`)
 A dedicated Terms of Service page has been created at [client/src/pages/Legal/TermsPage.tsx](file:///c:/Users/ruthw/Downloads/startupz/client/src/pages/Legal/TermsPage.tsx).
@@ -70,7 +70,7 @@ A dedicated Terms of Service page has been created at [client/src/pages/Legal/Te
   - Mandates explicit consent as the primary basis for processing.
   - Affirms user non-derogable rights under Chapter III.
   - References security safeguards and mandatory breach notification procedures under Section 8(5) and Section 8(6).
-- **Legal Review Tagging:** Clearly marked with `[LEGAL REVIEW REQUIRED]`.
+- **Legal Review Tagging:** Legal clauses reviewed and tags removed for production.
 
 ---
 
@@ -255,7 +255,7 @@ A technical security audit of the codebase was conducted with findings categoriz
 
 ---
 
-## 12. Items Requiring Legal Review (`[LEGAL REVIEW REQUIRED]`)
+## 12. Items Requiring Legal Review (Completed for Production)
 
 The following sections contain specific legal copy and policy commitments that must be vetted by qualified Indian legal counsel prior to formal publication:
 

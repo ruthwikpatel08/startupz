@@ -144,7 +144,7 @@ export const CookieConsentBanner: React.FC = () => {
 
         {/* Descriptive Body */}
         <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-          [LEGAL REVIEW REQUIRED] We use essential storage to secure your session and deliver platform features. With your explicit opt-in consent, we also process non-essential analytics and performance data. Non-essential trackers remain strictly gated until you opt in.
+          We use essential storage to secure your session and deliver platform features. With your explicit opt-in consent, we also process non-essential analytics and performance data. Non-essential trackers remain strictly gated until you opt in.
         </p>
 
         {/* Granular Preferences Accordion */}

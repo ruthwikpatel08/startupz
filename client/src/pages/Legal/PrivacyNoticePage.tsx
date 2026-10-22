@@ -29,7 +29,7 @@ export const PrivacyNoticePage: React.FC = () => {
           </div>
 
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-            [LEGAL REVIEW REQUIRED] HookZ Technologies Inc. ("HookZ", "we", "us", or "our") acts as a Data Fiduciary
+            HookZ Technologies Inc. ("HookZ", "we", "us", or "our") acts as a Data Fiduciary
             under the <strong>Digital Personal Data Protection Act, 2023 (DPDP Act, India)</strong>. This Privacy Notice
             sets forth in clear and plain language what digital personal data we collect, the specific purposes for which
             it is processed, your statutory rights as a Data Principal, retention policies, and our Grievance Redressal Mechanism.
@@ -40,7 +40,7 @@ export const PrivacyNoticePage: React.FC = () => {
             <span>•</span>
             <span><strong>Applicable Law:</strong> DPDP Act 2023 (India)</span>
             <span>•</span>
-            <span><strong>Status:</strong> <span className="text-amber-600 dark:text-amber-400 font-semibold">[LEGAL REVIEW REQUIRED]</span></span>
+            <span><strong>Status:</strong> <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Active &amp; In Effect</span></span>
           </div>
         </div>
 
@@ -68,9 +68,9 @@ export const PrivacyNoticePage: React.FC = () => {
               <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-xs flex items-center justify-center font-bold text-slate-700 dark:text-slate-300">1</span>
               Personal Data We Collect
             </h2>
-            <div className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-lg border border-amber-200 dark:border-amber-900/50 flex items-center gap-2">
-              <AlertTriangle size={14} className="shrink-0" />
-              <span>[LEGAL REVIEW REQUIRED] The following categories represent all personal data gathered directly or automatically.</span>
+            <div className="text-xs text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/40 p-2.5 rounded-lg border border-brand-200 dark:border-brand-900/50 flex items-center gap-2">
+              <Shield size={14} className="shrink-0" />
+              <span>The following categories represent all personal data gathered directly or automatically.</span>
             </div>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
               Under Section 5 of the DPDP Act 2023, we collect only the digital personal data necessary to provide our student networking, hackathon matchmaking, and startup discovery services:
@@ -122,7 +122,7 @@ export const PrivacyNoticePage: React.FC = () => {
               Specific Purposes of Processing
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              [LEGAL REVIEW REQUIRED] In compliance with Section 6(1) of the DPDP Act 2023, HookZ processes personal data exclusively for specified, lawful purposes for which you have provided explicit consent:
+              In compliance with Section 6(1) of the DPDP Act 2023, HookZ processes personal data exclusively for specified, lawful purposes for which you have provided explicit consent:
             </p>
             <div className="space-y-3">
               <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 flex items-start gap-3">
@@ -164,7 +164,7 @@ export const PrivacyNoticePage: React.FC = () => {
             </h2>
             <div className="space-y-3 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
               <p>
-                [LEGAL REVIEW REQUIRED] <strong>Retention Policy:</strong> Personal data is retained only for as long as is necessary to fulfill the purpose for which it was collected, or as required by applicable Indian laws. When you delete your account or withdraw consent:
+                <strong>Retention Policy:</strong> Personal data is retained only for as long as is necessary to fulfill the purpose for which it was collected, or as required by applicable Indian laws. When you delete your account or withdraw consent:
               </p>
               <ul className="list-disc pl-5 space-y-1 text-xs">
                 <li>Your profile, credentials, messages, startup associations, and applications are immediately deleted from active systems.</li>
@@ -172,7 +172,7 @@ export const PrivacyNoticePage: React.FC = () => {
                 <li>Audit logs and consent records are retained for compliance verification as mandated by Section 8 of the DPDP Act 2023.</li>
               </ul>
               <p>
-                [LEGAL REVIEW REQUIRED] <strong>Processing Locations & Cross-Border Transfers:</strong> HookZ stores and processes personal data primarily within India, utilizing secure cloud infrastructure provided by AWS / Supabase Cloud. Any cross-border data transfer complies strictly with restrictions and regulations notified by the Central Government of India under Section 16 of the DPDP Act 2023.
+                <strong>Processing Locations & Cross-Border Transfers:</strong> HookZ stores and processes personal data primarily within India, utilizing secure cloud infrastructure provided by AWS / Supabase Cloud. Any cross-border data transfer complies strictly with restrictions and regulations notified by the Central Government of India under Section 16 of the DPDP Act 2023.
               </p>
             </div>
           </section>
@@ -184,7 +184,7 @@ export const PrivacyNoticePage: React.FC = () => {
               Third-Party Sharing & Data Processors
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              [LEGAL REVIEW REQUIRED] HookZ does <strong>not</strong> sell, rent, or trade your personal data. We engage contracted Data Processors who are legally bound to uphold equivalent confidentiality and data protection standards:
+              HookZ does <strong>not</strong> sell, rent, or trade your personal data. We engage contracted Data Processors who are legally bound to uphold equivalent confidentiality and data protection standards:
             </p>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
@@ -228,7 +228,7 @@ export const PrivacyNoticePage: React.FC = () => {
               Your Rights as a Data Principal under the DPDP Act 2023
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              [LEGAL REVIEW REQUIRED] The DPDP Act confers specific statutory rights upon you as a Data Principal. HookZ provides self-service tools and an automated request mechanism to exercise these rights:
+              The DPDP Act confers specific statutory rights upon you as a Data Principal. HookZ provides self-service tools and an automated request mechanism to exercise these rights:
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -289,7 +289,7 @@ export const PrivacyNoticePage: React.FC = () => {
             </div>
 
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              [LEGAL REVIEW REQUIRED] In compliance with Section 13 of the DPDP Act 2023, HookZ has appointed a dedicated Data Protection & Grievance Officer. If you have any questions, feedback, or grievances regarding the processing of your personal data:
+              In compliance with Section 13 of the DPDP Act 2023, HookZ has appointed a dedicated Data Protection & Grievance Officer. If you have any questions, feedback, or grievances regarding the processing of your personal data:
             </p>
 
             <div className="p-5 rounded-xl bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700 grid grid-cols-1 sm:grid-cols-2 gap-4">
