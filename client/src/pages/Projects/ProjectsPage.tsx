@@ -877,14 +877,17 @@ export const ProjectsPage: React.FC = () => {
     targetName: string,
     targetAvatar?: string | null
   ) => {
-    let apiHandled = false;
+    clearApiCache();
+    let backendProject: BuilderProject | null = null;
     try {
       const res = await api.assignProjectRole(projectId, roleId, {
         targetUserId,
         targetFullName: targetName,
         targetAvatar: targetAvatar || undefined,
       }).catch(() => null);
-      if (res) apiHandled = true;
+      if (res && res.project) {
+        backendProject = res.project;
+      }
     } catch (err) {}
 
     const project = projects.find((p) => p.id === projectId);
@@ -893,56 +896,76 @@ export const ProjectsPage: React.FC = () => {
     const projTitle = project?.title || 'Project';
     const leadName = user?.profile?.fullName || 'Project Lead';
 
-    // Only insert a Supabase notification if the backend API did not handle it
-    if (!apiHandled) {
-      try {
-        await supabase.from('notifications').insert({
-          user_id: targetUserId,
-          sender_id: user?.id,
-          type: 'PROJECT_ROLE_INVITE',
-          title: `Role Assignment: ${roleName} in ${projTitle} 🎯`,
-          message: `${leadName} assigned you the role "${roleName}" in project "${projTitle}". Accept or decline to join the team!`,
-          link: `/projects?roleInvite=${roleId}&projectId=${projectId}`,
-          is_read: false,
-        });
-      } catch {}
-    }
-
+    // Notify connection that they have been assigned to the role
     try {
-      window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
-      window.dispatchEvent(new CustomEvent('startupz_projects_updated'));
+      await supabase.from('notifications').insert({
+        user_id: targetUserId,
+        sender_id: user?.id,
+        type: 'PROJECT_ROLE_ASSIGNED',
+        title: `Role Assigned: ${roleName} in ${projTitle} 🎉`,
+        message: `${leadName} assigned you to the role "${roleName}" in project "${projTitle}"!`,
+        link: `/projects`,
+        is_read: false,
+      });
     } catch {}
 
-    const updated = projects.map((p) => {
-      if (p.id === projectId) {
-        return {
-          ...p,
-          roles: p.roles.map((r) => {
+    try {
+      clearApiCache();
+      window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
+      window.dispatchEvent(new CustomEvent('startupz_projects_updated'));
+      supabase.channel('global-projects-sync-channel').send({
+        type: 'broadcast',
+        event: 'project_updated',
+        payload: { projectId },
+      }).catch(() => null);
+    } catch {}
+
+    let updated: BuilderProject[];
+    if (backendProject) {
+      const matchProject = (p: BuilderProject) =>
+        p.id === backendProject!.id ||
+        (Boolean(p.title && backendProject!.title && p.title.trim().toLowerCase() === backendProject!.title.trim().toLowerCase()) &&
+         Boolean(p.creator?.userId && backendProject!.creator?.userId && p.creator.userId === backendProject!.creator.userId));
+
+      const exists = projects.some(matchProject);
+      if (exists) {
+        updated = projects.map((p) => (matchProject(p) ? backendProject! : p));
+      } else {
+        updated = [backendProject, ...projects];
+      }
+      updated = deduplicateProjectsList(updated);
+      syncProjectGroup(backendProject);
+    } else {
+      updated = projects.map((p) => {
+        if (p.id === projectId) {
+          const nextRoles = p.roles.map((r) => {
             if (r.id === roleId) {
               return {
                 ...r,
-                status: 'INVITED' as const,
-                invitedUser: {
+                status: 'ASSIGNED' as const,
+                assignedTo: {
                   userId: targetUserId,
                   fullName: targetName,
                   avatar: targetAvatar || null,
-                  invitedAt: 'Just now',
                 },
-                assignedTo: null,
+                invitedUser: null,
                 pendingApplicant: null,
                 pendingApplicants: [],
               };
             }
             return r;
-          }),
-        };
-      }
-      return p;
-    });
+          });
+          const updatedProj = { ...p, roles: nextRoles };
+          syncProjectGroup(updatedProj);
+          return updatedProj;
+        }
+        return p;
+      });
+    }
 
     saveProjects(updated);
     setAssignModalRole(null);
-    showToast(`Role assignment sent to ${targetName}! Once they accept, the role will be filled.`);
+    showToast(`Role "${roleName}" successfully assigned to ${targetName}!`);
   };
 
   const handleSendRoleInvite = async (projectId: string, roleId: string, targetUserId: string, targetName: string) => {
@@ -2902,21 +2925,6 @@ export const ProjectsPage: React.FC = () => {
                           title="Directly assign this role to connection"
                         >
                           Assign Role
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleSendRoleInvite(
-                              assignModalRole.projectId,
-                              assignModalRole.roleId,
-                              conn.id,
-                              conn.fullName
-                            )
-                          }
-                          className="btn-secondary !py-1 !px-2.5 !text-xs font-medium cursor-pointer"
-                          title="Send role invitation request"
-                        >
-                          Invite
                         </button>
                       </div>
                     </div>

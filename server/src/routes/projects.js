@@ -1155,34 +1155,31 @@ router.post('/:id/roles/:roleId/assign', requireAuth, async (req, res) => {
     const targetEmail = Array.from(targetAliases.emails)[0] || null;
     const leadName = req.user.profile?.fullName || 'Project Lead';
 
-    // Do NOT auto-assign: Put in INVITED state pending user's accept or decline
-    role.status = 'INVITED';
-    role.invitedUser = {
+    // Directly assign connection to role as requested by lead
+    role.status = 'ASSIGNED';
+    role.assignedTo = {
       userId: targetUserId,
-      prismaId: targetPrismaId,
-      supaUuid: targetSupaUuid,
       fullName: targetName,
-      email: targetEmail,
       avatar,
-      invitedAt: new Date().toISOString(),
+      email: targetEmail,
     };
-    role.assignedTo = null;
+    role.invitedUser = null;
     role.pendingApplicant = null;
     role.pendingApplicants = [];
 
-    const inviteLink = `/projects?roleInvite=${role.id}&projectId=${project.id}`;
-    const inviteTitle = `Role Assignment: ${role.roleName} in ${project.title} 🎯`;
-    const inviteMsg = `${leadName} assigned you the role "${role.roleName}" in project "${project.title}". Accept or decline to join the team!`;
+    const notifTitle = `Role Assigned: ${role.roleName} in ${project.title} 🎉`;
+    const notifMsg = `${leadName} assigned you to the role "${role.roleName}" in project "${project.title}"!`;
+    const notifLink = `/projects`;
 
-    // Send notification to connection with Accept / Decline invitation
+    // Send notification to connection
     await prisma.notification.create({
       data: {
         userId: targetPrismaId,
         senderId: req.user.id,
-        type: 'PROJECT_ROLE_INVITE',
-        title: inviteTitle,
-        message: inviteMsg,
-        link: inviteLink,
+        type: 'PROJECT_ROLE_ASSIGNED',
+        title: notifTitle,
+        message: notifMsg,
+        link: notifLink,
       },
     }).catch((e) => console.warn('Prisma assign notif warning:', e.message));
 
@@ -1190,18 +1187,31 @@ router.post('/:id/roles/:roleId/assign', requireAuth, async (req, res) => {
       await supabaseAdmin.from('notifications').insert({
         user_id: targetSupaUuid,
         sender_id: req.user.id,
-        type: 'PROJECT_ROLE_INVITE',
-        title: inviteTitle,
-        message: inviteMsg,
-        link: inviteLink,
+        type: 'PROJECT_ROLE_ASSIGNED',
+        title: notifTitle,
+        message: notifMsg,
+        link: notifLink,
         is_read: false,
       }).catch((e) => console.warn('Supabase assign notif warning:', e.message));
     }
 
+    project.updatedAt = new Date().toISOString();
     writeProjects(all);
     await saveProjectToSupabase(project);
+
+    if (supabaseAdmin) {
+      try {
+        const syncChan = supabaseAdmin.channel('global-projects-sync-channel');
+        syncChan.send({
+          type: 'broadcast',
+          event: 'project_updated',
+          payload: { projectId: project.id },
+        });
+      } catch {}
+    }
+
     return res.json({
-      message: `Role assignment sent to ${targetName}! Once they accept, the role will be filled.`,
+      message: `Role "${role.roleName}" successfully assigned to ${targetName}!`,
       project,
     });
   } catch (error) {
