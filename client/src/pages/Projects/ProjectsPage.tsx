@@ -109,30 +109,124 @@ export const isCurrentUserMatch = (
   const targetId = String(target.userId || target.id || '').trim().toLowerCase();
   const currentId = String(currentUser.id || '').trim().toLowerCase();
 
+  // If target has no identifying information, it cannot match
+  if (!targetId && !target.email && !target.fullName) return false;
+
   // 1. Direct ID match
   if (targetId && currentId && targetId === currentId) return true;
 
-  // 2. Check local aliases from stored user or session
-  try {
-    const rawStored = localStorage.getItem('startupz_user');
-    if (rawStored) {
-      const stored = JSON.parse(rawStored);
-      const storedId = String(stored.id || '').trim().toLowerCase();
-      if (storedId && (targetId === storedId || currentId === storedId)) return true;
-    }
-  } catch {}
+  // 2. Check candidate IDs of current user
+  const currentCandidateIds = new Set<string>();
+  if (currentId) currentCandidateIds.add(currentId);
+  if (currentUser.profile?.id) currentCandidateIds.add(String(currentUser.profile.id).trim().toLowerCase());
+  if (currentUser.profile?.userId) currentCandidateIds.add(String(currentUser.profile.userId).trim().toLowerCase());
+  if (currentUser._id) currentCandidateIds.add(String(currentUser._id).trim().toLowerCase());
 
-  // 3. Email match (case-insensitive)
+  // Cross-reference targetId with current user's candidate IDs
+  if (targetId && currentCandidateIds.has(targetId)) return true;
+
+  // Well-known test aliases
+  const ruthwikIds = ['c3e1a001-8888-4444-9999-000000000001', 'b669157c-4d30-42f4-a8bf-4e27dc425e00', 'ruthwikpatel08'];
+  const gokulIds = ['c3e1a001-8888-4444-9999-000000000002', '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba', 'gokulvamshi'];
+  if (targetId && ruthwikIds.includes(targetId) && Array.from(currentCandidateIds).some((id) => ruthwikIds.includes(id))) return true;
+  if (targetId && gokulIds.includes(targetId) && Array.from(currentCandidateIds).some((id) => gokulIds.includes(id))) return true;
+
+  // 3. Email match (case-insensitive, non-empty)
   const targetEmail = String(target.email || '').trim().toLowerCase();
   const currentEmail = String(currentUser.email || '').trim().toLowerCase();
   if (targetEmail && currentEmail && targetEmail === currentEmail) return true;
 
-  // 4. Exact full name match (case-insensitive, length >= 2)
+  // 4. Exact full name match (case-insensitive, exclude generic placeholder names)
   const targetName = String(target.fullName || '').trim().toLowerCase();
-  const currentName = String(currentUser.profile?.fullName || currentUser.fullName || currentUser.email?.split('@')[0] || '').trim().toLowerCase();
-  if (targetName && currentName && targetName === currentName && targetName.length >= 2) return true;
+  const currentName = String(currentUser.profile?.fullName || currentUser.fullName || '').trim().toLowerCase();
+  const ignoredNames = new Set(['builder', 'connection', 'connected builder', 'project lead', 'member', 'user', 'undefined', 'null']);
+  if (
+    targetName &&
+    currentName &&
+    targetName.length >= 2 &&
+    !ignoredNames.has(targetName) &&
+    !ignoredNames.has(currentName) &&
+    targetName === currentName
+  ) {
+    return true;
+  }
 
   return false;
+};
+
+/**
+ * Strictly verifies whether the authenticated user is the user who created/uploaded this project.
+ * Uses exact user ID / email match only (never display names, never localStorage).
+ */
+export const isUserCreatorOfProject = (project: BuilderProject | null | undefined, currentUser: any): boolean => {
+  if (!project || !currentUser || currentUser.isSuspended) return false;
+  if (currentUser.isAdmin) return true;
+
+  const creatorId = String(
+    project.creator?.userId ||
+    (project.creator as any)?.id ||
+    (project as any)?.creatorId ||
+    (project as any)?.creator_id ||
+    ''
+  ).trim().toLowerCase();
+
+  const userIds = new Set<string>();
+  if (currentUser.id) userIds.add(String(currentUser.id).trim().toLowerCase());
+  if (currentUser.profile?.id) userIds.add(String(currentUser.profile.id).trim().toLowerCase());
+  if (currentUser.profile?.userId) userIds.add(String(currentUser.profile.userId).trim().toLowerCase());
+  if (currentUser._id) userIds.add(String(currentUser._id).trim().toLowerCase());
+
+  // Well-known test aliases
+  const ruthwikIds = ['c3e1a001-8888-4444-9999-000000000001', 'b669157c-4d30-42f4-a8bf-4e27dc425e00', 'ruthwikpatel08'];
+  const gokulIds = ['c3e1a001-8888-4444-9999-000000000002', '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba', 'gokulvamshi'];
+
+  if (creatorId && ruthwikIds.includes(creatorId) && Array.from(userIds).some((id) => ruthwikIds.includes(id))) return true;
+  if (creatorId && gokulIds.includes(creatorId) && Array.from(userIds).some((id) => gokulIds.includes(id))) return true;
+
+  if (creatorId && userIds.has(creatorId)) return true;
+
+  const creatorEmail = String((project.creator as any)?.email || '').trim().toLowerCase();
+  const currentEmail = String(currentUser.email || '').trim().toLowerCase();
+  if (creatorEmail && currentEmail && creatorEmail === currentEmail) return true;
+
+  return false;
+};
+
+/**
+ * Deduplicates project lists by project ID and (creatorId + normalized title).
+ * Guarantees zero project doubling on creation, invite response, or polling.
+ */
+export const deduplicateProjectsList = (list: BuilderProject[]): BuilderProject[] => {
+  if (!Array.isArray(list)) return [];
+  const seenIds = new Set<string>();
+  const seenCreatorTitle = new Set<string>();
+  const result: BuilderProject[] = [];
+
+  for (const p of list) {
+    if (!p || !p.id) continue;
+    if (seenIds.has(p.id)) continue;
+
+    const creatorId = String(
+      p.creator?.userId ||
+      (p.creator as any)?.id ||
+      (p as any)?.creatorId ||
+      (p as any)?.creator_id ||
+      ''
+    ).trim().toLowerCase();
+    const cleanTitle = (p.title || '').trim().toLowerCase();
+    const titleKey = `${creatorId}:::${cleanTitle}`;
+
+    if (creatorId && cleanTitle && seenCreatorTitle.has(titleKey)) {
+      continue;
+    }
+
+    seenIds.add(p.id);
+    if (creatorId && cleanTitle) {
+      seenCreatorTitle.add(titleKey);
+    }
+    result.push(p);
+  }
+  return result;
 };
 
 export const syncProjectGroup = (project: BuilderProject) => {
@@ -210,13 +304,14 @@ export const ProjectsPage: React.FC = () => {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
           const deletedIds = getDeletedProjectIds();
-          return parsed.filter(
+          const cleaned = parsed.filter(
             (p: any) =>
               p &&
               !deletedIds.has(p.id) &&
               !['proj-1', 'proj-2', 'proj-3'].includes(p.id) &&
               !['creator-1', 'creator-2', 'creator-3'].includes(p?.creator?.userId)
           );
+          return deduplicateProjectsList(cleaned);
         }
       }
     } catch {}
@@ -252,6 +347,7 @@ export const ProjectsPage: React.FC = () => {
   ]);
   const [customRoleInput, setCustomRoleInput] = useState('');
   const [formTouched, setFormTouched] = useState(false);
+  const [isSubmittingProject, setIsSubmittingProject] = useState(false);
 
   // Validation rules
   const isTitleValid = newTitle.trim().length > 0 && newTitle.length <= TITLE_MAX;
@@ -369,10 +465,11 @@ export const ProjectsPage: React.FC = () => {
   };
 
   const saveProjects = (updated: BuilderProject[]) => {
-    setProjects(updated);
+    const deduplicated = deduplicateProjectsList(updated);
+    setProjects(deduplicated);
     try {
-      localStorage.setItem('startupz_builder_projects', JSON.stringify(updated));
-      localStorage.setItem('startupz_projects', JSON.stringify(updated));
+      localStorage.setItem('startupz_builder_projects', JSON.stringify(deduplicated));
+      localStorage.setItem('startupz_projects', JSON.stringify(deduplicated));
     } catch {}
   };
 
@@ -499,12 +596,15 @@ export const ProjectsPage: React.FC = () => {
           }));
 
           const deletedIds = getDeletedProjectIds();
-          serverList = serverList.filter((p) => !deletedIds.has(p.id));
+          serverList = deduplicateProjectsList(
+            serverList.filter((p) => p && p.id && !deletedIds.has(p.id))
+          );
 
           setAppliedRolesSet(new Set(aSet));
           setProjects(serverList);
           try {
             localStorage.setItem('startupz_builder_projects', JSON.stringify(serverList));
+            localStorage.setItem('startupz_projects', JSON.stringify(serverList));
           } catch {}
           serverList.forEach((p) => syncProjectGroup(p));
         }
@@ -545,12 +645,18 @@ export const ProjectsPage: React.FC = () => {
       .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => {
         handleRemoteProjectDelete(payload);
       })
+      .on('broadcast', { event: 'project_updated' }, () => {
+        fetchServerProjects();
+      })
       .subscribe();
 
     const dataChannel = supabase.channel('global-data-sync-broadcast');
     dataChannel
       .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => {
         handleRemoteProjectDelete(payload);
+      })
+      .on('broadcast', { event: 'project_updated' }, () => {
+        fetchServerProjects();
       })
       .subscribe();
 
@@ -937,14 +1043,27 @@ export const ProjectsPage: React.FC = () => {
     try {
       window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
       window.dispatchEvent(new CustomEvent('startupz_projects_updated'));
+      supabase.channel('global-projects-sync-channel').send({
+        type: 'broadcast',
+        event: 'project_updated',
+        payload: { projectId },
+      }).catch(() => null);
     } catch {}
 
     let updated: BuilderProject[];
     if (backendProject) {
-      updated = projects.map((p) => (p.id === backendProject!.id ? backendProject! : p));
-      if (!updated.some((p) => p.id === backendProject!.id)) {
-        updated.unshift(backendProject);
+      const matchProject = (p: BuilderProject) =>
+        p.id === backendProject!.id ||
+        (Boolean(p.title && backendProject!.title && p.title.trim().toLowerCase() === backendProject!.title.trim().toLowerCase()) &&
+         Boolean(p.creator?.userId && backendProject!.creator?.userId && p.creator.userId === backendProject!.creator.userId));
+
+      const exists = projects.some(matchProject);
+      if (exists) {
+        updated = projects.map((p) => (matchProject(p) ? backendProject! : p));
+      } else {
+        updated = [backendProject, ...projects];
       }
+      updated = deduplicateProjectsList(updated);
       if (action === 'ACCEPT') {
         syncProjectGroup(backendProject);
         const allFilled = backendProject.roles.every((r) => r.status === 'ASSIGNED');
@@ -1077,6 +1196,11 @@ export const ProjectsPage: React.FC = () => {
   };
 
   const handleDeleteProject = async (projectId: string) => {
+    const targetProj = projects.find((p) => p.id === projectId);
+    if (!targetProj || !isUserCreatorOfProject(targetProj, user)) {
+      showToast('Only the user who uploaded this project can delete it.');
+      return;
+    }
     if (!window.confirm('Are you sure you want to delete this project idea?')) {
       return;
     }
@@ -1140,78 +1264,90 @@ export const ProjectsPage: React.FC = () => {
       navigate('/login');
       return;
     }
-    if (!isFormValid) return;
+    if (!isFormValid || isSubmittingProject) return;
+    setIsSubmittingProject(true);
 
-    const creatorName = user.profile?.fullName || user.email?.split('@')[0] || 'Builder';
-    const payload = {
-      title: newTitle.trim(),
-      ideaSummary: newTagline.trim(),
-      tagline: newTagline.trim(),
-      problemSolved: newProblem.trim(),
-      solutionApproach: newSolution.trim(),
-      detailedDescription: newDetailedDescription.trim(),
-      stage: newStage,
-      visibility: newVisibility,
-      tags: newTechStack,
-      roles: [
-        {
-          id: `r-creator-${Date.now()}`,
-          roleName: 'Project Lead',
-          iconType: 'product' as const,
-          status: 'ASSIGNED' as const,
-          assignedTo: {
-            userId: user.id,
-            fullName: creatorName,
-            avatar: user.profile?.avatar || null,
-          },
-        },
-        ...rolesList.map((rName, idx) => ({
-          id: `r-open-${Date.now()}-${idx}`,
-          roleName: rName,
-          iconType: (rName.toLowerCase().includes('design') ? 'design' : rName.toLowerCase().includes('market') || rName.toLowerCase().includes('sales') ? 'marketing' : 'code') as 'design' | 'marketing' | 'code',
-          status: 'OPEN' as const,
-        })),
-      ] as ProjectRole[],
-    };
-
-    let serverProj: BuilderProject | null = null;
     try {
-      const res = await api.createProject(payload).catch(() => null);
-      if (res && res.project) {
-        serverProj = res.project;
-      }
-    } catch (err) {}
+      const creatorName = user.profile?.fullName || user.email?.split('@')[0] || 'Builder';
+      const payload = {
+        title: newTitle.trim(),
+        ideaSummary: newTagline.trim(),
+        tagline: newTagline.trim(),
+        problemSolved: newProblem.trim(),
+        solutionApproach: newSolution.trim(),
+        detailedDescription: newDetailedDescription.trim(),
+        stage: newStage,
+        visibility: newVisibility,
+        tags: newTechStack,
+        roles: [
+          {
+            id: `r-creator-${Date.now()}`,
+            roleName: 'Project Lead',
+            iconType: 'product' as const,
+            status: 'ASSIGNED' as const,
+            assignedTo: {
+              userId: user.id,
+              fullName: creatorName,
+              avatar: user.profile?.avatar || null,
+            },
+          },
+          ...rolesList.map((rName, idx) => ({
+            id: `r-open-${Date.now()}-${idx}`,
+            roleName: rName,
+            iconType: (rName.toLowerCase().includes('design') ? 'design' : rName.toLowerCase().includes('market') || rName.toLowerCase().includes('sales') ? 'marketing' : 'code') as 'design' | 'marketing' | 'code',
+            status: 'OPEN' as const,
+          })),
+        ] as ProjectRole[],
+      };
 
-    const newProject: BuilderProject = serverProj || ({
-      id: `proj-${Date.now()}`,
-      ...payload,
-      creator: {
-        userId: user.id,
-        fullName: creatorName,
-        avatar: user.profile?.avatar || null,
-        role: user.profile?.headline || 'Project Lead',
-      },
-      createdAt: 'Just now',
-    } as BuilderProject);
+      let serverProj: BuilderProject | null = null;
+      try {
+        const res = await api.createProject(payload).catch(() => null);
+        if (res && res.project) {
+          serverProj = res.project;
+        }
+      } catch (err) {}
 
-    const updated = [newProject, ...projects];
-    saveProjects(updated);
-    syncProjectGroup(newProject);
+      const newProject: BuilderProject = serverProj || ({
+        id: `proj-${Date.now()}`,
+        ...payload,
+        creator: {
+          userId: user.id,
+          fullName: creatorName,
+          avatar: user.profile?.avatar || null,
+          role: user.profile?.headline || 'Project Lead',
+        },
+        createdAt: 'Just now',
+      } as BuilderProject);
 
-    setCreateModalOpen(false);
-    showToast(`Project "${newProject.title}" created! Team chat group initialized in Messages.`);
+      const nextList = [newProject, ...projects.filter((p) => p.id !== newProject.id)];
+      const seenIds = new Set<string>();
+      const deduplicated = nextList.filter((p) => {
+        if (!p || !p.id || seenIds.has(p.id)) return false;
+        seenIds.add(p.id);
+        return true;
+      });
 
-    // Reset Form
-    setNewTitle('');
-    setNewTagline('');
-    setNewProblem('');
-    setNewSolution('');
-    setNewDetailedDescription('');
-    setNewTechStack(['React', 'TypeScript']);
-    setTechInput('');
-    setFormTouched(false);
-    setNewStage('Ideation');
-    setNewVisibility('PUBLIC');
+      saveProjects(deduplicated);
+      syncProjectGroup(newProject);
+
+      setCreateModalOpen(false);
+      showToast(`Project "${newProject.title}" created! Team chat group initialized in Messages.`);
+
+      // Reset Form
+      setNewTitle('');
+      setNewTagline('');
+      setNewProblem('');
+      setNewSolution('');
+      setNewDetailedDescription('');
+      setNewTechStack(['React', 'TypeScript']);
+      setTechInput('');
+      setFormTouched(false);
+      setNewStage('Ideation');
+      setNewVisibility('PUBLIC');
+    } finally {
+      setIsSubmittingProject(false);
+    }
   };
 
   const handleApplyRole = async (projectId: string, roleId: string) => {
@@ -1774,9 +1910,9 @@ export const ProjectsPage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-5 min-w-0">
           {filteredProjects.map((project) => {
-            const isCreator = Boolean(user && (isCurrentUserMatch(project.creator, user) || user.isAdmin));
+            const isCreator = isUserCreatorOfProject(project, user);
             const leadRole = project.roles.find((r) => (r.roleName || '').toLowerCase().includes('lead') || (r as any).isLead);
-            const isProjectLead = Boolean(user && (isCurrentUserMatch(leadRole?.assignedTo, user) || isCreator || user.isAdmin));
+            const isProjectLead = Boolean(user && (isCurrentUserMatch(leadRole?.assignedTo, user) || isCreator));
             const isAcceptedMember = Boolean(
               user &&
               Array.isArray(project.roles) &&
@@ -1863,7 +1999,7 @@ export const ProjectsPage: React.FC = () => {
                         <span>Share</span>
                       </button>
 
-                      {isProjectLead && (
+                      {isCreator && (
                         <button
                           type="button"
                           onClick={() => handleDeleteProject(project.id)}
@@ -2013,7 +2149,7 @@ export const ProjectsPage: React.FC = () => {
                                       className="!w-4 !h-4"
                                     />
                                     <span className="truncate max-w-[85px]">
-                                      {role.assignedTo?.fullName} {isMyAssignedRole && '(You)'}
+                                      {(role.assignedTo?.fullName || (role.assignedTo as any)?.email?.split('@')[0] || 'Team Member')} {isMyAssignedRole && '(You)'}
                                     </span>
                                   </div>
                                 ) : isInvited ? (

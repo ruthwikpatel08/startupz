@@ -675,12 +675,31 @@ export const NotificationsDropdown: React.FC = () => {
         if (matchingRole) {
           targetRoleName = matchingRole.roleName;
         }
-        const idx = projectsList.findIndex((p) => p.id === updatedProjectFromServer.id);
+
+        const matchProject = (p: any) =>
+          p.id === updatedProjectFromServer.id ||
+          (Boolean(p.title && updatedProjectFromServer.title && p.title.trim().toLowerCase() === updatedProjectFromServer.title.trim().toLowerCase()) &&
+           Boolean(p.creator?.userId && updatedProjectFromServer.creator?.userId && p.creator.userId === updatedProjectFromServer.creator.userId));
+
+        const idx = projectsList.findIndex(matchProject);
         if (idx >= 0) {
           projectsList[idx] = updatedProjectFromServer;
         } else {
           projectsList.unshift(updatedProjectFromServer);
         }
+
+        const seenIds = new Set<string>();
+        const seenCreatorTitle = new Set<string>();
+        projectsList = projectsList.filter((p) => {
+          if (!p || !p.id || seenIds.has(p.id)) return false;
+          const cId = String(p.creator?.userId || p.creatorId || '').trim().toLowerCase();
+          const tClean = String(p.title || '').trim().toLowerCase();
+          const key = `${cId}:::${tClean}`;
+          if (cId && tClean && seenCreatorTitle.has(key)) return false;
+          seenIds.add(p.id);
+          if (cId && tClean) seenCreatorTitle.add(key);
+          return true;
+        });
       } else if (projectId && roleId) {
         projectsList = projectsList.map((p) => {
           if (p.id === projectId) {
@@ -795,6 +814,11 @@ export const NotificationsDropdown: React.FC = () => {
       try {
         window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
         window.dispatchEvent(new CustomEvent('startupz_projects_updated'));
+        supabase.channel('global-projects-sync-channel').send({
+          type: 'broadcast',
+          event: 'project_updated',
+          payload: { projectId: updatedProjectFromServer?.id || projectId },
+        }).catch(() => null);
       } catch {}
     } catch (err) {
       console.error('Quick respond role invite error:', err);

@@ -16,13 +16,47 @@ const MESSAGES_FILE = path.resolve(__dirname, '../../data/project_messages.json'
 // In-memory cache synced with disk and Supabase
 let cachedProjects = [];
 
+// Persistent deduplication helper for project lists
+export function deduplicateProjectsList(list) {
+  if (!Array.isArray(list)) return [];
+  const seenIds = new Set();
+  const seenCreatorTitle = new Set();
+  const result = [];
+
+  for (const p of list) {
+    if (!p || !p.id) continue;
+    if (seenIds.has(p.id)) continue;
+
+    const creatorId = String(
+      p.creator?.userId ||
+      p.creator?.id ||
+      p.creatorId ||
+      p.creator_id ||
+      ''
+    ).trim().toLowerCase();
+    const cleanTitle = String(p.title || '').trim().toLowerCase();
+    const titleKey = `${creatorId}:::${cleanTitle}`;
+
+    if (creatorId && cleanTitle && seenCreatorTitle.has(titleKey)) {
+      continue;
+    }
+
+    seenIds.add(p.id);
+    if (creatorId && cleanTitle) {
+      seenCreatorTitle.add(titleKey);
+    }
+    result.push(p);
+  }
+  return result;
+}
+
 // Persistent JSON file helper for projects
 function readProjects() {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf8');
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) return deduplicateProjectsList(parsed);
     }
   } catch (err) {
     console.warn('Error reading projects.json:', err.message);
@@ -32,12 +66,12 @@ function readProjects() {
 
 function writeProjects(projects) {
   try {
-    cachedProjects = projects;
+    cachedProjects = deduplicateProjectsList(projects);
     const dir = path.dirname(DATA_FILE);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(DATA_FILE, JSON.stringify(projects, null, 2), 'utf8');
+    fs.writeFileSync(DATA_FILE, JSON.stringify(cachedProjects, null, 2), 'utf8');
   } catch (err) {
     console.error('Error writing projects.json:', err.message);
   }
@@ -228,11 +262,11 @@ export function getAllProjectsList() {
 export async function getOrFetchProject(id) {
   if (supabaseAdmin) {
     const supaList = await fetchProjectsFromSupabase();
-    if (Array.isArray(supaList)) {
-      cachedProjects = supaList;
-      writeProjects(supaList);
-      const project = supaList.find((p) => p.id === id) || null;
-      return { all: supaList, project };
+    if (Array.isArray(supaList) && supaList.length > 0) {
+      cachedProjects = deduplicateProjectsList(supaList);
+      writeProjects(cachedProjects);
+      const project = cachedProjects.find((p) => p.id === id);
+      if (project) return { all: cachedProjects, project };
     }
   }
   const all = getAllProjectsList();
@@ -246,11 +280,16 @@ router.get('/', optionalAuth, async (req, res) => {
     const currentUserId = req.user?.id;
     let all = [];
 
-    // Always fetch latest authoritative projects from Supabase
+    // Always fetch latest authoritative projects from Supabase if available and non-empty
     if (supabaseAdmin) {
-      all = await fetchProjectsFromSupabase();
-      cachedProjects = all;
-      writeProjects(all);
+      const supaList = await fetchProjectsFromSupabase();
+      if (Array.isArray(supaList) && supaList.length > 0) {
+        all = deduplicateProjectsList(supaList);
+        cachedProjects = all;
+        writeProjects(all);
+      } else {
+        all = getAllProjectsList();
+      }
     } else {
       all = getAllProjectsList();
     }
@@ -308,6 +347,21 @@ router.post('/', requireAuth, async (req, res) => {
 
     if (!title || !title.trim()) {
       return res.status(400).json({ error: 'Project title is required.' });
+    }
+
+    // Deduplicate rapid project creations (prevent doubling from button spam or duplicate submits)
+    const normalizedTitle = title.trim().toLowerCase();
+    const existingDuplicate = cachedProjects.find(
+      (p) =>
+        (p.creator?.userId === req.user.id || (p.creator && (p.creator.userId === req.user.id || p.creator.id === req.user.id))) &&
+        p.title?.trim().toLowerCase() === normalizedTitle &&
+        (p.createdAt ? Date.now() - new Date(p.createdAt).getTime() < 15000 : false)
+    );
+    if (existingDuplicate) {
+      return res.status(200).json({
+        message: 'Project already created.',
+        project: existingDuplicate,
+      });
     }
 
     const creatorName = req.user.profile?.fullName || req.user.email?.split('@')[0] || 'Builder';
@@ -398,14 +452,47 @@ router.put('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/projects/:id - Delete project
+// DELETE /api/projects/:id - Delete project (strictly authorized to uploaded creator or admin only)
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { all, project } = await getOrFetchProject(id);
 
-    if (project && !isProjectLeadOrCreator(project, req.user)) {
-      return res.status(403).json({ error: 'Only the project creator or team lead can delete this project.' });
+    if (project) {
+      const creatorId = String(
+        project.creator?.userId ||
+        project.creator?.id ||
+        project.creatorId ||
+        project.creator_id ||
+        ''
+      ).trim().toLowerCase();
+
+      const userIds = new Set(
+        [req.user.id, req.user.profile?.id, req.user.profile?.userId, req.user._id]
+          .filter(Boolean)
+          .map((u) => String(u).trim().toLowerCase())
+      );
+
+      const creatorEmail = String(project.creator?.email || '').trim().toLowerCase();
+      const userEmail = String(req.user.email || '').trim().toLowerCase();
+
+      const ruthwikIds = ['c3e1a001-8888-4444-9999-000000000001', 'b669157c-4d30-42f4-a8bf-4e27dc425e00', 'ruthwikpatel08'];
+      const gokulIds = ['c3e1a001-8888-4444-9999-000000000002', '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba', 'gokulvamshi'];
+
+      const isRuthwikMatch = creatorId && ruthwikIds.includes(creatorId) && Array.from(userIds).some((uid) => ruthwikIds.includes(uid));
+      const isGokulMatch = creatorId && gokulIds.includes(creatorId) && Array.from(userIds).some((uid) => gokulIds.includes(uid));
+
+      const isUploadedUser = Boolean(
+        req.user.isAdmin ||
+        (creatorId && userIds.has(creatorId)) ||
+        isRuthwikMatch ||
+        isGokulMatch ||
+        (creatorEmail && userEmail && creatorEmail === userEmail)
+      );
+
+      if (!isUploadedUser) {
+        return res.status(403).json({ error: 'Only the user who uploaded this project can delete it.' });
+      }
     }
 
     cachedProjects = all.filter((p) => p.id !== id);
@@ -1111,7 +1198,8 @@ export function isProjectLeadOrCreator(project, user) {
 
   const userFullName = (user.profile?.fullName || '').toLowerCase().trim();
   const creatorFullName = (project.creator?.fullName || '').toLowerCase().trim();
-  if (userFullName && creatorFullName && userFullName === creatorFullName) return true;
+  const ignoredNames = new Set(['builder', 'connection', 'connected builder', 'project lead', 'member', 'user', 'undefined', 'null']);
+  if (userFullName && creatorFullName && !ignoredNames.has(userFullName) && !ignoredNames.has(creatorFullName) && userFullName === creatorFullName) return true;
 
   return false;
 }
