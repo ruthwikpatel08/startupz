@@ -28,6 +28,9 @@ export const OnboardingPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  // DPDP Explicit Profile Processing Consent (un-ticked by default)
+  const [consentProfileDiscovery, setConsentProfileDiscovery] = useState(false);
+
   // Student fields
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const [year, setYear] = useState('');
@@ -83,6 +86,29 @@ export const OnboardingPage: React.FC = () => {
       setSaving(false);
       return;
     }
+
+    if (!consentProfileDiscovery) {
+      setError('Please review and confirm consent for profile directory processing under the DPDP Act 2023.');
+      setSaving(false);
+      return;
+    }
+
+    // Record consent under DPDP Act 2023 Section 6
+    fetch('/api/consent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localStorage.getItem('startupz_token') ? { 'Authorization': `Bearer ${localStorage.getItem('startupz_token')}` } : {}),
+      },
+      body: JSON.stringify({
+        userId: user.id,
+        userEmail: user.email,
+        purpose: 'PROFILE_DIRECTORY_AND_MATCHMAKING',
+        consentVersion: '1.0',
+        status: 'GRANTED',
+        details: 'User consented to public builder directory listing and skills matchmaking during onboarding',
+      }),
+    }).catch(() => null);
 
     try {
       // 1. Update password in Supabase Auth & backend database
@@ -509,9 +535,24 @@ export const OnboardingPage: React.FC = () => {
           </div>
         )}
 
+        {/* DPDP Act 2023 Explicit Consent Checkbox */}
+        <div style={{ margin: '16px 0', padding: '12px 14px', background: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', fontSize: 12, color: '#334155', lineHeight: 1.5 }}>
+            <input
+              type="checkbox"
+              checked={consentProfileDiscovery}
+              onChange={(e) => setConsentProfileDiscovery(e.target.checked)}
+              style={{ marginTop: 2, cursor: 'pointer' }}
+            />
+            <span>
+              [LEGAL REVIEW REQUIRED] I explicitly consent to HookZ processing and displaying my skills, university/college, and builder details on the student &amp; startup directory for peer matchmaking, hackathon teaming, and opportunities pursuant to the Digital Personal Data Protection (DPDP) Act 2023. <span style={{ color: '#ef4444', fontWeight: 'bold' }}>*</span>
+            </span>
+          </label>
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <button style={btnSecondary} onClick={() => setStep(2)}>← Back</button>
-          <button style={btnPrimary} disabled={saving} onClick={handleFinish}>
+          <button style={btnPrimary} disabled={saving || !consentProfileDiscovery} onClick={handleFinish}>
             {saving ? 'Saving...' : 'Finish & Go to HookZ →'}
           </button>
         </div>

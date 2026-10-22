@@ -238,6 +238,7 @@ export const OpportunitiesPage: React.FC = () => {
   const [selectedOpp, setSelectedOpp] = useState<StartupOpportunity | null>(null);
   const [coverLetter, setCoverLetter] = useState('');
   const [resumeUrl, setResumeUrl] = useState('');
+  const [applyConsent, setApplyConsent] = useState(false);
   const [applying, setApplying] = useState(false);
   const [applySuccess, setApplySuccess] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
@@ -849,11 +850,34 @@ export const OpportunitiesPage: React.FC = () => {
       return;
     }
     if (!selectedOpp) return;
+
+    if (!applyConsent) {
+      setApplyError('Please check the consent box to authorize sending your candidacy details to the startup founder under the DPDP Act 2023.');
+      return;
+    }
+
     setApplying(true);
     setApplyError(null);
 
     const oppId = selectedOpp.id;
     const now = new Date().toISOString();
+
+    // Log explicit candidate consent to backend
+    fetch('/api/consent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localStorage.getItem('startupz_token') ? { 'Authorization': `Bearer ${localStorage.getItem('startupz_token')}` } : {}),
+      },
+      body: JSON.stringify({
+        userId: user.id,
+        userEmail: user.email,
+        purpose: 'OPPORTUNITY_APPLICATION_DATA_SHARING',
+        consentVersion: '1.0',
+        status: 'GRANTED',
+        details: `User consented to transmitting resume and application note to startup ${selectedOpp.startup?.name || selectedOpp.startupId}`,
+      }),
+    }).catch(() => null);
 
     try {
       // 1. Submit via Express API
@@ -2046,6 +2070,21 @@ export const OpportunitiesPage: React.FC = () => {
                     </div>
                   )}
 
+                  {/* DPDP Act 2023 Explicit Consent Checkbox */}
+                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800">
+                    <label className="flex items-start gap-2 cursor-pointer text-[11px] text-slate-600 dark:text-slate-400 select-none">
+                      <input
+                        type="checkbox"
+                        checked={applyConsent}
+                        onChange={(e) => setApplyConsent(e.target.checked)}
+                        className="mt-0.5 rounded-sm border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer shrink-0"
+                      />
+                      <span>
+                        [LEGAL REVIEW REQUIRED] I explicitly consent to transmitting my application note, resume, and profile details to the founders of {selectedOpp.startup?.name || 'this startup'} for recruitment evaluation under the DPDP Act 2023. <span className="text-rose-500 font-bold">*</span>
+                      </span>
+                    </label>
+                  </div>
+
                   <div className="flex items-center justify-end gap-2 pt-1">
                     <button
                       type="button"
@@ -2056,7 +2095,7 @@ export const OpportunitiesPage: React.FC = () => {
                     </button>
                     <button
                       type="submit"
-                      disabled={applying}
+                      disabled={applying || !applyConsent}
                       className="btn-primary inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium cursor-pointer"
                     >
                       <Send size={12} />

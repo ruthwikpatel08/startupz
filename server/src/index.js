@@ -28,6 +28,8 @@ import aiRoutes from './routes/ai.js';
 import failedStartupRoutes from './routes/failedStartups.js';
 import problemsRoutes, { checkAndRefreshWeeklyProblems } from './routes/problems.js';
 import projectsRoutes from './routes/projects.js';
+import consentRoutes from './routes/consent.js';
+import dsarRoutes from './routes/dsar.js';
 
 import { execSync } from 'child_process';
 import { prisma } from './db.js';
@@ -47,6 +49,8 @@ app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
 
   // Enforce HTTPS & HSTS when running in production behind reverse proxies (Render, Vercel, Cloudflare)
   if (process.env.NODE_ENV === 'production') {
@@ -243,6 +247,8 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/failed-startups', failedStartupRoutes);
 app.use('/api/problems', problemsRoutes);
 app.use('/api/projects', projectsRoutes);
+app.use('/api/consent', consentRoutes);
+app.use('/api/dsar', dsarRoutes);
 
 // Error Handler
 app.use((err, req, res, next) => {
