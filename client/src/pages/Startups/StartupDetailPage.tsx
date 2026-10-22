@@ -112,13 +112,13 @@ export const StartupDetailPage: React.FC = () => {
                 role: founderProf?.preferred_role || 'FOUNDER',
                 profile: founderProf
                   ? {
-                      fullName: founderProf.full_name,
-                      avatar: founderProf.avatar,
-                      headline: founderProf.headline,
-                      location: founderProf.location,
-                      bio: founderProf.bio,
-                      skills: founderProf.skills,
-                    }
+                    fullName: founderProf.full_name,
+                    avatar: founderProf.avatar,
+                    headline: founderProf.headline,
+                    location: founderProf.location,
+                    bio: founderProf.bio,
+                    skills: founderProf.skills,
+                  }
                   : null,
               },
             };
@@ -453,10 +453,10 @@ export const StartupDetailPage: React.FC = () => {
           ...(startup.logo ? { logo: startup.logo } : {}),
         }}
       />
-      
+
       {/* 1. HERO HEADER */}
       <div className="card-base p-4 sm:p-7 space-y-5 sm:space-y-6 overflow-hidden">
-        
+
         {/* Founder Controls Banner for Mobile & Desktop */}
         {isOwner && (
           <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl bg-brand-50/80 dark:bg-brand-950/50 border border-brand-200 dark:border-brand-900/60">
@@ -514,11 +514,10 @@ export const StartupDetailPage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleFollow}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                startup.isFollowed
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${startup.isFollowed
                   ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                   : 'btn-primary'
-              }`}
+                }`}
             >
               <UserCheck size={14} />
               <span>{startup.isFollowed ? 'Following' : 'Follow Startup'}</span>
@@ -529,11 +528,10 @@ export const StartupDetailPage: React.FC = () => {
 
             <button
               onClick={handleLike}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors border ${
-                startup.isLiked
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors border ${startup.isLiked
                   ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 border-rose-200 dark:border-rose-900'
                   : 'bg-white dark:bg-dark-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:text-rose-500'
-              }`}
+                }`}
             >
               <Heart size={14} fill={startup.isLiked ? 'currentColor' : 'none'} />
               <span>{startup.likesCount}</span>
@@ -541,11 +539,10 @@ export const StartupDetailPage: React.FC = () => {
 
             <button
               onClick={handleSave}
-              className={`p-2 rounded-md transition-colors border ${
-                startup.isSaved
+              className={`p-2 rounded-md transition-colors border ${startup.isSaved
                   ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 border-brand-200 dark:border-brand-900'
                   : 'bg-white dark:bg-dark-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:text-brand-600'
-              }`}
+                }`}
               title="Save Startup"
             >
               <Bookmark size={14} fill={startup.isSaved ? 'currentColor' : 'none'} />
@@ -659,10 +656,10 @@ export const StartupDetailPage: React.FC = () => {
 
       {/* 2. MAIN PROBLEM / SOLUTION / DETAILS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Left Column (2 Cols): Problem, Solution, Traction */}
         <div className="lg:col-span-2 space-y-5">
-          
+
           {/* Problem Statement Card */}
           <div className="card-base p-5 sm:p-6 space-y-3">
             <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-semibold text-xs uppercase tracking-wider">
@@ -753,11 +750,10 @@ export const StartupDetailPage: React.FC = () => {
                         <div className="flex items-center gap-2 flex-wrap">
                           <h5 className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white">{opp.role}</h5>
                           <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                              isIntern
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${isIntern
                                 ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/60'
                                 : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/60'
-                            }`}
+                              }`}
                           >
                             {isIntern ? 'Internship' : 'Job Position'}
                           </span>
@@ -830,7 +826,7 @@ export const StartupDetailPage: React.FC = () => {
 
         {/* Right Column: Founder Card & Team */}
         <div className="space-y-5">
-          
+
           {/* Founder Card */}
           <div className="card-base p-5 sm:p-6 space-y-4">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
@@ -976,11 +972,10 @@ export const StartupDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setEditTab('details')}
-                className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-                  editTab === 'details'
+                className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${editTab === 'details'
                     ? 'border-brand-600 text-brand-600 dark:text-brand-400'
                     : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-                }`}
+                  }`}
               >
                 <Rocket size={13} />
                 <span>Startup Details</span>
@@ -988,11 +983,10 @@ export const StartupDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setEditTab('internship')}
-                className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-                  editTab === 'internship'
+                className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${editTab === 'internship'
                     ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
                     : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-                }`}
+                  }`}
               >
                 <GraduationCap size={13} />
                 <span>Internships</span>
@@ -1005,11 +999,10 @@ export const StartupDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setEditTab('job')}
-                className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
-                  editTab === 'job'
+                className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${editTab === 'job'
                     ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
                     : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-                }`}
+                  }`}
               >
                 <Briefcase size={13} />
                 <span>Jobs</span>
@@ -1324,22 +1317,20 @@ export const StartupDetailPage: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => setInternshipDurationType('Permanent')}
-                                className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-                                  internshipDurationType === 'Permanent'
+                                className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${internshipDurationType === 'Permanent'
                                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
                                     : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-indigo-300'
-                                }`}
+                                  }`}
                               >
                                 Permanent
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setInternshipDurationType('Custom')}
-                                className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-                                  internshipDurationType === 'Custom'
+                                className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${internshipDurationType === 'Custom'
                                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
                                     : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-indigo-300'
-                                }`}
+                                  }`}
                               >
                                 Custom Days
                               </button>
@@ -1358,11 +1349,10 @@ export const StartupDetailPage: React.FC = () => {
                                   key={days}
                                   type="button"
                                   onClick={() => setInternshipCustomDays(String(days))}
-                                  className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition-all cursor-pointer ${
-                                    internshipCustomDays === String(days)
+                                  className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition-all cursor-pointer ${internshipCustomDays === String(days)
                                       ? 'bg-indigo-600 text-white border-indigo-600'
                                       : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700'
-                                  }`}
+                                    }`}
                                 >
                                   {days}d
                                 </button>
@@ -1495,22 +1485,20 @@ export const StartupDetailPage: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => setJobDurationType('Permanent')}
-                                className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-                                  jobDurationType === 'Permanent'
+                                className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${jobDurationType === 'Permanent'
                                     ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
                                     : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-emerald-300'
-                                }`}
+                                  }`}
                               >
                                 Permanent
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setJobDurationType('Custom')}
-                                className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
-                                  jobDurationType === 'Custom'
+                                className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${jobDurationType === 'Custom'
                                     ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
                                     : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-emerald-300'
-                                }`}
+                                  }`}
                               >
                                 Custom Days
                               </button>
@@ -1529,11 +1517,10 @@ export const StartupDetailPage: React.FC = () => {
                                   key={days}
                                   type="button"
                                   onClick={() => setJobCustomDays(String(days))}
-                                  className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition-all cursor-pointer ${
-                                    jobCustomDays === String(days)
+                                  className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition-all cursor-pointer ${jobCustomDays === String(days)
                                       ? 'bg-emerald-600 text-white border-emerald-600'
                                       : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700'
-                                  }`}
+                                    }`}
                                 >
                                   {days}d
                                 </button>

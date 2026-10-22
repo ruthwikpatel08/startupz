@@ -42,6 +42,10 @@ export const RegisterPage: React.FC = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // DPDP Explicit Consent State (un-ticked by default)
+  const [agreeTermsAndPrivacy, setAgreeTermsAndPrivacy] = useState(false);
+  const [agreeMarketing, setAgreeMarketing] = useState(false);
+
   // Email confirmation state
   const [verificationRequired, setVerificationRequired] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
@@ -112,6 +116,10 @@ export const RegisterPage: React.FC = () => {
     setError(null);
 
     // Form validations
+    if (!agreeTermsAndPrivacy) {
+      setError('You must read and agree to the Terms of Service and Privacy Notice to create an account under the DPDP Act 2023.');
+      return;
+    }
     if (password.length < 6) {
       setError('Password must be at least 6 characters long.');
       return;
@@ -128,6 +136,33 @@ export const RegisterPage: React.FC = () => {
     const finalRole = role === 'OTHER' && cleanCustomRole ? `Other: ${cleanCustomRole}` : role;
     const finalHeadline = headline.trim();
     const finalLocation = location.trim() || 'Remote';
+
+    // Log explicit consent asynchronously to backend
+    fetch('/api/consent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userEmail: normalizedEmail,
+        purpose: 'TERMS_AND_PRIVACY_NOTICE',
+        consentVersion: '1.0',
+        status: 'GRANTED',
+        details: 'User accepted Terms and Privacy Notice during registration under DPDP Act 2023',
+      }),
+    }).catch(() => null);
+
+    if (agreeMarketing) {
+      fetch('/api/consent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userEmail: normalizedEmail,
+          purpose: 'MARKETING_COMMUNICATIONS',
+          consentVersion: '1.0',
+          status: 'GRANTED',
+          details: 'User consented to hackathon announcements and platform opportunities',
+        }),
+      }).catch(() => null);
+    }
 
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({
@@ -516,9 +551,45 @@ export const RegisterPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Explicit Purpose-Specific Consent Checkboxes (DPDP Act 2023 Compliance) */}
+            <div className="pt-2 pb-1 space-y-2.5 text-xs text-slate-600 border-t border-slate-100">
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  required
+                  checked={agreeTermsAndPrivacy}
+                  onChange={(e) => setAgreeTermsAndPrivacy(e.target.checked)}
+                  className="mt-0.5 rounded-sm border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer shrink-0"
+                />
+                <span className="leading-relaxed">
+                  [LEGAL REVIEW REQUIRED] I have read and agree to the{' '}
+                  <Link to="/terms" target="_blank" className="font-semibold text-brand-600 hover:underline">
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link to="/privacy" target="_blank" className="font-semibold text-brand-600 hover:underline">
+                    Privacy Notice
+                  </Link>
+                  , and give explicit consent for HookZ to process my digital personal data for account creation and platform services under the DPDP Act 2023. <span className="text-rose-500 font-bold">*</span>
+                </span>
+              </label>
+
+              <label className="flex items-start gap-2.5 cursor-pointer select-none text-slate-500">
+                <input
+                  type="checkbox"
+                  checked={agreeMarketing}
+                  onChange={(e) => setAgreeMarketing(e.target.checked)}
+                  className="mt-0.5 rounded-sm border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer shrink-0"
+                />
+                <span className="leading-relaxed text-[11px]">
+                  (Optional) I consent to receiving communications regarding relevant hackathons, startup opportunities, and builder announcements.
+                </span>
+              </label>
+            </div>
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !agreeTermsAndPrivacy}
               className="w-full py-2.5 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm hover:shadow-md transition-all inline-flex items-center justify-center gap-2 disabled:opacity-50 mt-2 cursor-pointer"
             >
               {loading ? (

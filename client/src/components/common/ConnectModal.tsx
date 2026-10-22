@@ -30,6 +30,7 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [consentShareProfile, setConsentShareProfile] = useState(false);
 
   if (!activeUser) return null;
 
@@ -90,6 +91,28 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
       setError('You cannot connect with your own profile.');
       return;
     }
+
+    if (!consentShareProfile) {
+      setError('Please check the consent box to authorize sharing your contact and profile details under the DPDP Act 2023.');
+      return;
+    }
+
+    // Log explicit consent
+    fetch('/api/consent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(localStorage.getItem('startupz_token') ? { 'Authorization': `Bearer ${localStorage.getItem('startupz_token')}` } : {}),
+      },
+      body: JSON.stringify({
+        userId: currentUser.id,
+        userEmail: currentUser.email,
+        purpose: 'PEER_CONNECTION_DATA_SHARING',
+        consentVersion: '1.0',
+        status: 'GRANTED',
+        details: `User consented to sharing profile details with user ${displayName}`,
+      }),
+    }).catch(() => null);
 
     setLoading(true);
     setError(null);
@@ -252,6 +275,21 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
             </div>
           )}
 
+          {/* Explicit DPDP Consent */}
+          <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700">
+            <label className="flex items-start gap-2 cursor-pointer text-[11px] text-slate-600 dark:text-slate-300 select-none">
+              <input
+                type="checkbox"
+                checked={consentShareProfile}
+                onChange={(e) => setConsentShareProfile(e.target.checked)}
+                className="mt-0.5 rounded-sm border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer shrink-0"
+              />
+              <span className="leading-tight">
+                [LEGAL REVIEW REQUIRED] I explicitly consent to sharing my profile, contact details, and note with {displayName} to establish a professional connection under the DPDP Act 2023. <span className="text-rose-500 font-bold">*</span>
+              </span>
+            </label>
+          </div>
+
           <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
@@ -262,7 +300,7 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !consentShareProfile}
               className="btn-primary"
             >
               <Send size={13} />

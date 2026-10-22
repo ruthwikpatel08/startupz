@@ -8,6 +8,7 @@ import { MobileBottomBar } from './components/common/MobileBottomBar';
 import { Footer } from './components/common/Footer';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { NewUserCategoryModal } from './components/auth/NewUserCategoryModal';
+import { CookieConsentBanner } from './components/common/CookieConsentBanner';
 
 
 // Eager Core Pages (Auth & Landing)
@@ -78,6 +79,9 @@ const ManageProblemsPage = lazyPage(() => import('./pages/Admin/ManageProblemsPa
 const ProblemFormPage = lazyPage(() => import('./pages/Admin/ProblemFormPage'), 'ProblemFormPage');
 const MembershipsPage = lazyPage(() => import('./pages/Memberships/MembershipsPage'), 'MembershipsPage');
 const OnboardingPage = lazyPage(() => import('./pages/Onboarding/OnboardingPage'), 'OnboardingPage');
+const PrivacyNoticePage = lazyPage(() => import('./pages/Legal/PrivacyNoticePage'), 'PrivacyNoticePage');
+const TermsPage = lazyPage(() => import('./pages/Legal/TermsPage'), 'TermsPage');
+const DSARPage = lazyPage(() => import('./pages/Legal/DSARPage'), 'DSARPage');
 const NotFoundPage = lazyPage(() => import('./pages/NotFound/NotFoundPage'), 'NotFoundPage');
 
 const PageLoader: React.FC = () => (
@@ -201,6 +205,13 @@ const AppContent: React.FC = () => {
                 <Route path="/search" element={<GlobalSearchPage />} />
                 <Route path="/memberships" element={<MembershipsPage />} />
 
+                {/* DPDP Act 2023 Compliance & Legal Pages */}
+                <Route path="/privacy" element={<PrivacyNoticePage />} />
+                <Route path="/privacy-notice" element={<PrivacyNoticePage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/dsar" element={<DSARPage />} />
+                <Route path="/data-rights" element={<DSARPage />} />
+
                 {/* Video Meeting Room */}
                 <Route
                   path="/meeting/:roomCode"
@@ -300,6 +311,7 @@ const AppContent: React.FC = () => {
         </main>
       </div>
       <MobileBottomBar />
+      <CookieConsentBanner />
     </div>
   );
 };

@@ -51,6 +51,8 @@ model User {
   receivedProposals   StartupProposal[]     @relation("ReceivedProposals")
   startupFollows      StartupFollow[]
   createdProblems     Problem[]             @relation("UserProblems")
+  consentLogs         ConsentLog[]
+  dsarRequests        DSARRequest[]
 }
 
 model Profile {
@@ -491,5 +493,36 @@ model ProblemTag {
   tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([problemId, tagId])
+}
+
+model ConsentLog {
+  id             String    @id @default(uuid())
+  userId         String?
+  user           User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userEmail      String?
+  purpose        String
+  consentVersion String    @default("1.0")
+  status         String    @default("GRANTED") // GRANTED, REVOKED, WITHDRAWN, ESSENTIAL_ONLY
+  ipAddress      String?
+  userAgent      String?
+  details        String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model DSARRequest {
+  id             String    @id @default(uuid())
+  userId         String?
+  user           User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  fullName       String
+  email          String
+  requestType    String    // ACCESS, CORRECTION, ERASURE, CONSENT_WITHDRAWAL, NOMINATION
+  details        String
+  nomineeDetails String?
+  status         String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, REJECTED
+  responseNotes  String?
+  resolvedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
 
