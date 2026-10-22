@@ -877,26 +877,60 @@ export const ProjectsPage: React.FC = () => {
     targetName: string,
     targetAvatar?: string | null
   ) => {
-    clearApiCache();
-    let backendProject: BuilderProject | null = null;
-    try {
-      const res = await api.assignProjectRole(projectId, roleId, {
-        targetUserId,
-        targetFullName: targetName,
-        targetAvatar: targetAvatar || undefined,
-      }).catch(() => null);
-      if (res && res.project) {
-        backendProject = res.project;
-      }
-    } catch (err) {}
-
     const project = projects.find((p) => p.id === projectId);
     const role = project?.roles.find((r) => r.id === roleId);
     const roleName = role?.roleName || assignModalRole?.roleName || 'Role';
     const projTitle = project?.title || 'Project';
     const leadName = user?.profile?.fullName || 'Project Lead';
 
-    // Notify connection that they have been assigned to the role
+    // 1. Immediately update local state
+    const updated = projects.map((p) => {
+      if (p.id === projectId) {
+        const nextRoles = p.roles.map((r) => {
+          if (r.id === roleId) {
+            return {
+              ...r,
+              status: 'ASSIGNED' as const,
+              assignedTo: {
+                userId: targetUserId,
+                fullName: targetName,
+                avatar: targetAvatar || null,
+              },
+              invitedUser: null,
+              pendingApplicant: null,
+              pendingApplicants: [],
+            };
+          }
+          return r;
+        });
+        const updatedProj = { ...p, roles: nextRoles };
+        syncProjectGroup(updatedProj);
+        return updatedProj;
+      }
+      return p;
+    });
+
+    saveProjects(updated);
+    setAssignModalRole(null);
+    showToast(`Role "${roleName}" successfully assigned to ${targetName}!`);
+
+    // 2. Direct Supabase sync so cloud database reflects assignment immediately
+    try {
+      const projToSync = updated.find((p) => p.id === projectId);
+      if (projToSync) {
+        const { error: sbErr } = await supabase.from('projects').update({
+          roles: projToSync.roles,
+          updated_at: new Date().toISOString(),
+        }).eq('id', projectId);
+        if (sbErr) {
+          console.warn('Supabase direct assign update error:', sbErr);
+        }
+      }
+    } catch (sbErr) {
+      console.warn('Supabase direct assign sync notice:', sbErr);
+    }
+
+    // 3. Notify connection via Supabase
     try {
       await supabase.from('notifications').insert({
         user_id: targetUserId,
@@ -909,6 +943,21 @@ export const ProjectsPage: React.FC = () => {
       });
     } catch {}
 
+    // 4. Background sync with backend API
+    clearApiCache();
+    try {
+      const res = await api.assignProjectRole(projectId, roleId, {
+        targetUserId,
+        targetFullName: targetName,
+        targetAvatar: targetAvatar || undefined,
+      }).catch(() => null);
+      if (res && res.project) {
+        setProjects((prev) => prev.map((p) => (p.id === projectId ? res.project : p)));
+        syncProjectGroup(res.project);
+      }
+    } catch (err) {}
+
+    // 5. Broadcast real-time updates and trigger UI refresh
     try {
       clearApiCache();
       window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
@@ -919,53 +968,6 @@ export const ProjectsPage: React.FC = () => {
         payload: { projectId },
       }).catch(() => null);
     } catch {}
-
-    let updated: BuilderProject[];
-    if (backendProject) {
-      const matchProject = (p: BuilderProject) =>
-        p.id === backendProject!.id ||
-        (Boolean(p.title && backendProject!.title && p.title.trim().toLowerCase() === backendProject!.title.trim().toLowerCase()) &&
-         Boolean(p.creator?.userId && backendProject!.creator?.userId && p.creator.userId === backendProject!.creator.userId));
-
-      const exists = projects.some(matchProject);
-      if (exists) {
-        updated = projects.map((p) => (matchProject(p) ? backendProject! : p));
-      } else {
-        updated = [backendProject, ...projects];
-      }
-      updated = deduplicateProjectsList(updated);
-      syncProjectGroup(backendProject);
-    } else {
-      updated = projects.map((p) => {
-        if (p.id === projectId) {
-          const nextRoles = p.roles.map((r) => {
-            if (r.id === roleId) {
-              return {
-                ...r,
-                status: 'ASSIGNED' as const,
-                assignedTo: {
-                  userId: targetUserId,
-                  fullName: targetName,
-                  avatar: targetAvatar || null,
-                },
-                invitedUser: null,
-                pendingApplicant: null,
-                pendingApplicants: [],
-              };
-            }
-            return r;
-          });
-          const updatedProj = { ...p, roles: nextRoles };
-          syncProjectGroup(updatedProj);
-          return updatedProj;
-        }
-        return p;
-      });
-    }
-
-    saveProjects(updated);
-    setAssignModalRole(null);
-    showToast(`Role "${roleName}" successfully assigned to ${targetName}!`);
   };
 
   const handleSendRoleInvite = async (projectId: string, roleId: string, targetUserId: string, targetName: string) => {
@@ -1035,14 +1037,6 @@ export const ProjectsPage: React.FC = () => {
 
   const handleRespondInvite = async (projectId: string, roleId: string, action: 'ACCEPT' | 'DECLINE') => {
     if (!user) return;
-    clearApiCache();
-    let backendProject: BuilderProject | null = null;
-    try {
-      const res = await api.respondProjectInvite(projectId, roleId, action).catch(() => null);
-      if (res && res.project) {
-        backendProject = res.project;
-      }
-    } catch (err) {}
 
     const userName = user.profile?.fullName || user.email?.split('@')[0] || 'Builder';
     let triggeredCompletion = false;
@@ -1052,7 +1046,77 @@ export const ProjectsPage: React.FC = () => {
     const targetRole = targetProj?.roles.find((r) => r.id === roleId);
     const leadId = targetProj?.creator?.userId || (targetProj as any)?.creatorId;
 
-    // Notify project lead via Supabase
+    // 1. Immediately update local state
+    const updated = projects.map((p) => {
+      if (p.id === projectId) {
+        const nextRoles = p.roles.map((r) => {
+          if (r.id === roleId) {
+            if (action === 'ACCEPT') {
+              return {
+                ...r,
+                status: 'ASSIGNED' as const,
+                assignedTo: {
+                  userId: user.id,
+                  fullName: userName,
+                  avatar: user.profile?.avatar || null,
+                },
+                invitedUser: null,
+              };
+            } else {
+              return {
+                ...r,
+                status: 'OPEN' as const,
+                assignedTo: null,
+                invitedUser: null,
+              };
+            }
+          }
+          return r;
+        });
+
+        const updatedProj = { ...p, roles: nextRoles };
+        if (action === 'ACCEPT') {
+          syncProjectGroup(updatedProj);
+          const allFilled = nextRoles.every((r) => r.status === 'ASSIGNED');
+          if (allFilled && p.visibility === 'PUBLIC') {
+            triggeredCompletion = true;
+            completedProject = updatedProj;
+          }
+        }
+        return updatedProj;
+      }
+      return p;
+    });
+
+    saveProjects(updated);
+
+    if (action === 'ACCEPT') {
+      if (triggeredCompletion && completedProject) {
+        setRoleCompletionModal(completedProject);
+      } else {
+        showToast('Role accepted! You are now part of the project team and added to project chat.');
+      }
+    } else {
+      showToast('Role invitation declined.');
+    }
+
+    // 2. Direct Supabase sync so cloud database reflects acceptance immediately
+    try {
+      const projToSync = updated.find((p) => p.id === projectId);
+      if (projToSync) {
+        const { error: sbErr } = await supabase.from('projects').update({
+          roles: projToSync.roles,
+          updated_at: new Date().toISOString(),
+        }).eq('id', projectId);
+        if (sbErr) {
+          console.warn('Supabase respond invite sync error:', sbErr);
+        }
+      }
+    } catch (sbErr) {
+      console.warn('Supabase respond invite sync notice:', sbErr);
+    }
+
+    // 3. Notify project lead via Supabase
     try {
       if (leadId && leadId !== user.id) {
         await supabase.from('notifications').insert({
@@ -1069,7 +1133,19 @@ export const ProjectsPage: React.FC = () => {
       }
     } catch {}
 
+    // 4. Background sync with backend API
+    clearApiCache();
     try {
+      const res = await api.respondProjectInvite(projectId, roleId, action).catch(() => null);
+      if (res && res.project) {
+        setProjects((prev) => prev.map((p) => (p.id === projectId ? res.project : p)));
+        syncProjectGroup(res.project);
+      }
+    } catch (err) {}
+
+    // 5. Broadcast real-time updates
+    try {
+      clearApiCache();
       window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
       window.dispatchEvent(new CustomEvent('startupz_projects_updated'));
       supabase.channel('global-projects-sync-channel').send({
@@ -1078,83 +1154,6 @@ export const ProjectsPage: React.FC = () => {
         payload: { projectId },
       }).catch(() => null);
     } catch {}
-
-    let updated: BuilderProject[];
-    if (backendProject) {
-      const matchProject = (p: BuilderProject) =>
-        p.id === backendProject!.id ||
-        (Boolean(p.title && backendProject!.title && p.title.trim().toLowerCase() === backendProject!.title.trim().toLowerCase()) &&
-         Boolean(p.creator?.userId && backendProject!.creator?.userId && p.creator.userId === backendProject!.creator.userId));
-
-      const exists = projects.some(matchProject);
-      if (exists) {
-        updated = projects.map((p) => (matchProject(p) ? backendProject! : p));
-      } else {
-        updated = [backendProject, ...projects];
-      }
-      updated = deduplicateProjectsList(updated);
-      if (action === 'ACCEPT') {
-        syncProjectGroup(backendProject);
-        const allFilled = backendProject.roles.every((r) => r.status === 'ASSIGNED');
-        if (allFilled && backendProject.visibility === 'PUBLIC') {
-          triggeredCompletion = true;
-          completedProject = backendProject;
-        }
-      }
-    } else {
-      updated = projects.map((p) => {
-        if (p.id === projectId) {
-          const nextRoles = p.roles.map((r) => {
-            if (r.id === roleId) {
-              if (action === 'ACCEPT') {
-                return {
-                  ...r,
-                  status: 'ASSIGNED' as const,
-                  assignedTo: {
-                    userId: user.id,
-                    fullName: userName,
-                    avatar: user.profile?.avatar || null,
-                  },
-                  invitedUser: null,
-                };
-              } else {
-                return {
-                  ...r,
-                  status: 'OPEN' as const,
-                  assignedTo: null,
-                  invitedUser: null,
-                };
-              }
-            }
-            return r;
-          });
-
-          const updatedProj = { ...p, roles: nextRoles };
-          if (action === 'ACCEPT') {
-            syncProjectGroup(updatedProj);
-            const allFilled = nextRoles.every((r) => r.status === 'ASSIGNED');
-            if (allFilled && p.visibility === 'PUBLIC') {
-              triggeredCompletion = true;
-              completedProject = updatedProj;
-            }
-          }
-          return updatedProj;
-        }
-        return p;
-      });
-    }
-
-    saveProjects(updated);
-
-    if (action === 'ACCEPT') {
-      if (triggeredCompletion && completedProject) {
-        setRoleCompletionModal(completedProject);
-      } else {
-        showToast('Role accepted! You are now part of the project team and added to project chat.');
-      }
-    } else {
-      showToast('Role invitation declined.');
-    }
   };
 
   const handleCancelInvite = (projectId: string, roleId: string) => {

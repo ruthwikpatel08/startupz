@@ -771,6 +771,19 @@ export const NotificationsDropdown: React.FC = () => {
         localStorage.setItem('startupz_projects', JSON.stringify(projectsList));
       } catch {}
 
+      // Direct Supabase sync so cloud database reflects role update immediately
+      try {
+        const projToSync = projectsList.find((p) => p.id === projectId);
+        if (projToSync && projectId) {
+          await supabase.from('projects').update({
+            roles: projToSync.roles,
+            updated_at: new Date().toISOString(),
+          }).eq('id', projectId);
+        }
+      } catch (sbErr) {
+        console.warn('Supabase notif respond invite sync notice:', sbErr);
+      }
+
       if (action === 'ACCEPT' && projectId) {
         // Add user to project group chat in localStorage
         try {
