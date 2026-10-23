@@ -60,6 +60,7 @@ export const NotificationsDropdown: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  const [toastNotif, setToastNotif] = useState<NotificationItem | null>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const isFetchingRef = useRef(false);
@@ -84,12 +85,23 @@ export const NotificationsDropdown: React.FC = () => {
       if (user.id) {
         try {
           const userUuid = await resolveUserIdToUUID(user.id);
-          const lookupUserUuid = userUuid || user.id;
-          const { data: supaNotifs } = await supabase
-            .from('notifications')
-            .select('*')
-            .eq('user_id', lookupUserUuid)
-            .order('created_at', { ascending: false });
+          const allUserIds = Array.from(
+            new Set([
+              user.id,
+              userUuid,
+              (user as any)._id,
+              user.profile?.userId,
+              user.profile?.id,
+            ].filter(Boolean))
+          ) as string[];
+
+          let query = supabase.from('notifications').select('*');
+          if (allUserIds.length === 1) {
+            query = query.eq('user_id', allUserIds[0]);
+          } else {
+            query = query.in('user_id', allUserIds);
+          }
+          const { data: supaNotifs } = await query.order('created_at', { ascending: false });
 
           // Gather all sender IDs from both backend notifications and supaNotifs
           const allSenderIds = [
@@ -306,20 +318,50 @@ export const NotificationsDropdown: React.FC = () => {
     const setupRealtime = async () => {
       try {
         const userUuid = isUUID(user.id) ? user.id : await resolveUserIdToUUID(user.id);
-        const targetUserId = userUuid || user.id;
+        const allUserIds = Array.from(
+          new Set([
+            user.id,
+            userUuid,
+            (user as any)._id,
+            user.profile?.userId,
+            user.profile?.id,
+          ].filter(Boolean))
+        ) as string[];
 
         channel = supabase
-          .channel(`notifications_realtime_${targetUserId}`)
+          .channel(`notifications_realtime_${user.id}`)
           .on(
             'postgres_changes',
             {
               event: '*',
               schema: 'public',
               table: 'notifications',
-              filter: `user_id=eq.${targetUserId}`,
             },
-            () => {
-              fetchNotifications();
+            (payload: any) => {
+              const targetUid = payload.new?.user_id || payload.old?.user_id;
+              if (
+                targetUid &&
+                allUserIds.some((uid) => String(uid).toLowerCase() === String(targetUid).toLowerCase())
+              ) {
+                fetchNotifications();
+
+                // On new incoming notification (INSERT), show instant floating toast
+                if (payload.eventType === 'INSERT' && payload.new) {
+                  const n = payload.new;
+                  setToastNotif({
+                    id: n.id,
+                    userId: n.user_id,
+                    senderId: n.sender_id,
+                    type: n.type,
+                    title: n.title,
+                    message: n.message,
+                    link: n.link,
+                    isRead: false,
+                    createdAt: n.created_at,
+                  });
+                  setTimeout(() => setToastNotif((curr) => (curr?.id === n.id ? null : curr)), 6000);
+                }
+              }
             }
           )
           .subscribe();
@@ -343,14 +385,21 @@ export const NotificationsDropdown: React.FC = () => {
     const handleNotifsUpdated = () => {
       fetchNotifications();
     };
+    const handleOpenNotifs = () => {
+      setIsOpen(true);
+      fetchNotifications();
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('startupz_notifications_updated', handleNotifsUpdated);
+    window.addEventListener('startupz_open_notifications', handleOpenNotifs);
 
     return () => {
       clearInterval(interval);
       if (channel) supabase.removeChannel(channel);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('startupz_notifications_updated', handleNotifsUpdated);
+      window.removeEventListener('startupz_open_notifications', handleOpenNotifs);
     };
   }, [user?.id]);
 
@@ -918,7 +967,43 @@ export const NotificationsDropdown: React.FC = () => {
   if (!user) return null;
 
   return (
-    <div ref={dropdownRef} className="relative inline-block text-left">
+    <>
+      {/* Realtime Floating In-App Toast for Mobile & Desktop */}
+      {toastNotif && (
+        <div
+          onClick={() => {
+            handleNotificationClick(toastNotif);
+            setToastNotif(null);
+          }}
+          className="fixed top-16 left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-50 bg-white dark:bg-dark-900 border border-brand-500/50 shadow-modal rounded-xl p-3 flex items-start gap-3 cursor-pointer animate-in slide-in-from-top-3 duration-200"
+        >
+          <div className="w-8 h-8 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0 mt-0.5">
+            {toastNotif.type.includes('LIKE') || toastNotif.type.includes('UPVOTE') ? (
+              <Heart size={16} fill="currentColor" />
+            ) : toastNotif.type.includes('COMMENT') ? (
+              <MessageSquare size={16} />
+            ) : (
+              <Bell size={16} />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{toastNotif.title}</p>
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-2 leading-tight">{toastNotif.message}</p>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setToastNotif(null);
+            }}
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      <div ref={dropdownRef} className="relative inline-block text-left">
       {/* Bell Trigger Button */}
       <button
         type="button"
@@ -1314,6 +1399,7 @@ export const NotificationsDropdown: React.FC = () => {
           </div>
         </>
       )}
-    </div>
+      </div>
+    </>
   );
 };

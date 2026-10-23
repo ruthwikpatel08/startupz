@@ -375,20 +375,24 @@ export const StartupFeedPage: React.FC = () => {
   const isMyPost = (p: any): boolean => {
     if (!user || !p) return false;
 
-    // 1. Direct device persisted post check (guarantees immediate match for posts uploaded on this device)
-    try {
-      const persisted = getLocalPersistedPosts();
-      if (p.id && persisted.some((lp: any) => lp.id === p.id)) {
-        return true;
-      }
-    } catch {}
-
     const currentId = user.id ? String(user.id).trim().toLowerCase() : '';
     const userIds = new Set<string>();
     if (currentId) userIds.add(currentId);
     if (user.profile?.id) userIds.add(String(user.profile.id).trim().toLowerCase());
     if (user.profile?.userId) userIds.add(String(user.profile.userId).trim().toLowerCase());
     if ((user as any)._id) userIds.add(String((user as any)._id).trim().toLowerCase());
+
+    // 1. Direct device persisted post check (guarantees immediate match for posts uploaded by THIS user on this device)
+    try {
+      const persisted = getLocalPersistedPosts();
+      const match = persisted.find((lp: any) => lp.id === p.id);
+      if (match) {
+        const lpAuthorId = String(match.authorId || match.author_id || match.author?.id || '').trim().toLowerCase();
+        if (lpAuthorId && (lpAuthorId === currentId || userIds.has(lpAuthorId))) {
+          return true;
+        }
+      }
+    } catch {}
 
     // 2. Cached backend synced user ID from localStorage
     try {
