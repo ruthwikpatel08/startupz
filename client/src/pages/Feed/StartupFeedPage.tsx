@@ -1195,54 +1195,54 @@ export const StartupFeedPage: React.FC = () => {
 
   const executionFilters = [
     { id: 'ALL', label: 'All Describes' },
-    { id: 'MY_SHARES', label: user ? `🌟 My Shares (${mySharesCount})` : '🌟 My Shares' },
-    { id: 'EXECUTION', label: '🌟 Describes' },
-    { id: 'DRAWBACK', label: '⚠️ Drawbacks' },
-    { id: 'LAUNCH', label: '🚀 Product Launch' },
-    { id: 'EXPERIENCE', label: '📖 Experience' },
+    { id: 'MY_SHARES', label: user ? `My Shares (${mySharesCount})` : 'My Shares' },
+    { id: 'EXECUTION', label: 'Describes' },
+    { id: 'DRAWBACK', label: 'Drawbacks' },
+    { id: 'LAUNCH', label: 'Product Launch' },
+    { id: 'EXPERIENCE', label: 'Experience' },
   ];
 
   const ideaFilters = [
     { id: 'ALL', label: 'All Ideas' },
-    { id: 'MY_IDEAS', label: user ? `💡 My Ideas (${myIdeasCount})` : '💡 My Ideas' },
-    { id: 'IDEA', label: '💡 Ideas' },
-    { id: 'ADVICE', label: '💬 Advice' },
-    { id: 'HIRING', label: '💼 Hiring' },
+    { id: 'MY_IDEAS', label: user ? `My Ideas (${myIdeasCount})` : 'My Ideas' },
+    { id: 'IDEA', label: 'Ideas' },
+    { id: 'ADVICE', label: 'Advice' },
+    { id: 'HIRING', label: 'Hiring' },
   ];
 
   const prototypeFilters = [
     { id: 'ALL', label: 'All Prototypes' },
-    { id: 'MY_PROTOTYPES', label: user ? `🛠️ My Prototypes (${myPrototypesCount})` : '🛠️ My Prototypes' },
+    { id: 'MY_PROTOTYPES', label: user ? `My Prototypes (${myPrototypesCount})` : 'My Prototypes' },
     { id: 'WEBSITES', label: 'Live Websites' },
     { id: 'VIDEOS', label: 'Demo Videos' },
   ];
 
   const executionComposerTypes = [
-    { id: 'EXECUTION', label: '🌟 Describes' },
-    { id: 'DRAWBACK', label: '⚠️ Drawbacks' },
-    { id: 'LAUNCH', label: '🚀 Product Launch' },
-    { id: 'EXPERIENCE', label: '📖 Experience' },
+    { id: 'EXECUTION', label: 'Describes' },
+    { id: 'DRAWBACK', label: 'Drawbacks' },
+    { id: 'LAUNCH', label: 'Product Launch' },
+    { id: 'EXPERIENCE', label: 'Experience' },
   ];
 
   const ideaComposerTypes = [
-    { id: 'IDEA', label: '💡 Idea' },
-    { id: 'COFOUNDER', label: '🤝 Co-Founder' },
-    { id: 'ADVICE', label: '💬 Advice' },
-    { id: 'HIRING', label: '💼 Hiring Talent' },
+    { id: 'IDEA', label: 'Idea' },
+    { id: 'COFOUNDER', label: 'Co-Founder' },
+    { id: 'ADVICE', label: 'Advice' },
+    { id: 'HIRING', label: 'Hiring Talent' },
   ];
 
   const postTypes = [
     { key: 'ALL', label: 'All Updates' },
-    { key: 'EXECUTION', label: '🌟 Describes' },
-    { key: 'DRAWBACK', label: '⚠️ Drawbacks' },
-    { key: 'LAUNCH', label: '🚀 Product Launch' },
-    { key: 'EXPERIENCE', label: '📖 Experiences' },
-    { key: 'IDEA', label: '💡 Ideas' },
-    { key: 'UPDATE', label: '🚀 Updates' },
-    { key: 'COFOUNDER', label: '🤝 Co-Founder' },
-    { key: 'HIRING', label: '💼 Hiring' },
-    { key: 'FUNDING', label: '💰 Funding' },
-    { key: 'ADVICE', label: '💬 Advice' },
+    { key: 'EXECUTION', label: 'Describes' },
+    { key: 'DRAWBACK', label: 'Drawbacks' },
+    { key: 'LAUNCH', label: 'Product Launch' },
+    { key: 'EXPERIENCE', label: 'Experiences' },
+    { key: 'IDEA', label: 'Ideas' },
+    { key: 'UPDATE', label: 'Updates' },
+    { key: 'COFOUNDER', label: 'Co-Founder' },
+    { key: 'HIRING', label: 'Hiring' },
+    { key: 'FUNDING', label: 'Funding' },
+    { key: 'ADVICE', label: 'Advice' },
   ];
 
   const getPostTypeBadge = (type: string) => {
@@ -1352,20 +1352,6 @@ export const StartupFeedPage: React.FC = () => {
             Prototypes
           </span>
         </button>
-      </div>
-
-      {/* Active Category Header Banner (Clean, compact section header) */}
-      <div className="px-3.5 py-2.5 rounded-lg bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-white/[0.06] flex items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 min-w-0">
-          {activePillar === 'ACHIEVEMENTS' && <Award size={15} className="text-amber-500 shrink-0" />}
-          {activePillar === 'IDEAS' && <Rocket size={15} className="text-brand-600 dark:text-brand-400 shrink-0" />}
-          {activePillar === 'PROTOTYPES' && <Boxes size={15} className="text-cyan-500 shrink-0" />}
-          <p className="text-slate-600 dark:text-slate-300 font-medium truncate">
-            {activePillar === 'ACHIEVEMENTS' && 'Describes: Achievements, drawbacks, product launches, and lessons learned.'}
-            {activePillar === 'IDEAS' && 'Startup Ideas: Early concepts, problem statements, and co-founder synergies.'}
-            {activePillar === 'PROTOTYPES' && 'Prototypes: Early sample builds, live interactive demos, and video showcases.'}
-          </p>
-        </div>
       </div>
 
 

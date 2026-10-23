@@ -431,21 +431,22 @@ export const LandingPage: React.FC = () => {
                     return (
                       <div
                         key={p.user_id || p.id || p.email}
-                        className="card-base p-4 flex flex-col justify-between h-full min-w-0 space-y-3.5"
+                        className="card-base p-4 flex flex-col justify-between h-full min-w-0"
                       >
-                        <div className="space-y-2.5">
-                          <div className="flex items-start gap-3 w-full min-w-0">
+                        <div>
+                          {/* TOP HEADER ROW: Avatar + Name & Username ONLY */}
+                          <div className="flex items-center gap-3 w-full min-w-0">
                             <Avatar
                               src={p.avatar}
                               name={displayName}
                               size="lg"
-                              className="shrink-0 mt-0.5"
+                              className="w-11 h-11 shrink-0"
                             />
-                            <div className="flex-1 min-w-0">
-                              {/* Line 1: User's Full Name ONLY (never collides with badge) */}
+                            <div className="min-w-0 flex-1">
+                              {/* Line 1: User's Full Name */}
                               <Link
                                 to={profileUrl}
-                                className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-[#F8FAFC] hover:text-brand-600 transition-colors truncate block"
+                                className="text-[15px] font-semibold text-slate-900 dark:text-[#F8FAFC] hover:text-brand-600 transition-colors truncate block"
                               >
                                 {displayName}
                               </Link>
@@ -454,61 +455,51 @@ export const LandingPage: React.FC = () => {
                               <p className="text-xs text-slate-500 dark:text-slate-400 font-normal truncate mt-0.5">
                                 @{username}
                               </p>
-
-                              {/* Line 3: Active Builder badge & headline in a consistent row */}
-                              <div className="flex items-center gap-1.5 flex-wrap mt-1.5 min-w-0">
-                                <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shrink-0">
-                                  <Sparkles size={10} className="text-brand-600 dark:text-brand-400" />
-                                  <span>Active Builder</span>
-                                </span>
-                                {p.headline && (
-                                  <span className="text-xs text-slate-600 dark:text-slate-300 truncate max-w-[130px]" title={p.headline}>
-                                    {p.headline}
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Line 4: Location & Commitment */}
-                              <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 mt-1">
-                                <span className="flex items-center gap-1">
-                                  <MapPin size={11} /> {p.location || 'Remote'}
-                                </span>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">
-                                  <Clock size={11} /> Full-time
-                                </span>
-                              </div>
                             </div>
                           </div>
 
-                          {/* One-Line Bio with normalized height */}
-                          <div className="min-h-[32px] pt-0.5">
-                            {(p.one_line_bio || p.oneLineBio) ? (
-                              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug">
-                                {p.one_line_bio || p.oneLineBio}
-                              </p>
-                            ) : (
-                              <p className="text-xs text-slate-400 dark:text-slate-500 italic line-clamp-1">
-                                Specialist available for collaborations
-                              </p>
-                            )}
+                          {/* FULL-WIDTH CARD BODY (Spans 100% of card width) */}
+                          {/* Consolidated Badges Row: RoleBadge + Active Builder */}
+                          <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
+                            <RoleBadge role={displayRole} size="sm" />
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shrink-0">
+                              <Sparkles size={10} className="text-brand-600 dark:text-brand-400" />
+                              <span>Active Builder</span>
+                            </span>
+                          </div>
+
+                          {/* Location & Availability Row */}
+                          <div className="mt-3 flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400 w-full">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                              <MapPin size={12} className="shrink-0 text-slate-400 dark:text-slate-500" />
+                              <span className="truncate" title={p.location || 'Remote'}>
+                                {p.location || 'Remote'}
+                              </span>
+                            </div>
+                            <div className="shrink-0 whitespace-nowrap flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                              <Clock size={12} className="shrink-0 text-slate-400 dark:text-slate-500" />
+                              <span className="whitespace-nowrap">Full-time</span>
+                            </div>
+                          </div>
+
+                          {/* Single Bio / Headline Block (Rendered strictly once!) */}
+                          <div className="mt-2.5 min-h-[32px]">
+                            <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                              {p.one_line_bio || p.oneLineBio || p.headline || 'Specialist available for collaborations'}
+                            </p>
                           </div>
                         </div>
 
                         {/* Card Footer with mt-auto for row-level horizontal alignment */}
-                        <div className="pt-3 mt-auto border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between flex-wrap gap-2">
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <RoleBadge role={displayRole} size="sm" />
-                          </div>
+                        <div className="pt-3 mt-3 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2">
+                          <Link
+                            to={profileUrl}
+                            className="btn-tertiary !text-xs !py-1 !px-2 rounded-lg"
+                          >
+                            View Profile
+                          </Link>
 
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <Link
-                              to={profileUrl}
-                              className="btn-tertiary !text-xs !py-1 !px-2 rounded-lg"
-                            >
-                              View Profile
-                            </Link>
-
                             {/* Startup Connection (Pitch) Button */}
                             <button
                               onClick={() => handlePitchClick(targetUserObj)}

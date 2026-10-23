@@ -347,19 +347,6 @@ export const BusinessPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Active Category Header Banner (Clean, compact section header) */}
-      <div className="px-3.5 py-2.5 rounded-lg bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-white/[0.06] flex items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 min-w-0">
-          {activeTab === 'startups' && <Compass size={15} className="text-brand-600 dark:text-brand-400 shrink-0" />}
-          {activeTab === 'network' && <Users size={15} className="text-purple-600 dark:text-purple-400 shrink-0" />}
-          {activeTab === 'graveyard' && <Skull size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />}
-          <p className="text-slate-600 dark:text-slate-300 font-medium truncate">
-            {activeTab === 'startups' && 'Startups: Explore innovative ventures and disruptive products in the ecosystem.'}
-            {activeTab === 'network' && 'Founders & Network: Verified founders, co-founders & tech talent available for collaborations.'}
-            {activeTab === 'graveyard' && 'Graveyard: Real startup post-mortems, honest breakdowns, and key learnings.'}
-          </p>
-        </div>
-      </div>
 
       {/* 1. Featured Startups Section (Direct view when entering Business) */}
       {activeTab === 'startups' && (
