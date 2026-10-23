@@ -442,24 +442,33 @@ export const LandingPage: React.FC = () => {
                               className="shrink-0 mt-0.5"
                             />
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-1.5 flex-wrap min-w-0">
-                                <Link
-                                  to={profileUrl}
-                                  className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-[#F8FAFC] hover:text-brand-600 transition-colors truncate"
-                                >
-                                  {displayName}
-                                </Link>
-                                <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 shrink-0">
-                                  <Sparkles size={10} className="text-brand-600 dark:text-brand-400" />
-                                  <span>Active Builder</span>
-                                </span>
-                              </div>
+                              {/* Line 1: User's Full Name ONLY (never collides with badge) */}
+                              <Link
+                                to={profileUrl}
+                                className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-[#F8FAFC] hover:text-brand-600 transition-colors truncate block"
+                              >
+                                {displayName}
+                              </Link>
+
+                              {/* Line 2: @username directly underneath */}
                               <p className="text-xs text-slate-500 dark:text-slate-400 font-normal truncate mt-0.5">
                                 @{username}
                               </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5 min-h-[18px]">
-                                {p.headline || 'Community Member'}
-                              </p>
+
+                              {/* Line 3: Active Builder badge & headline in a consistent row */}
+                              <div className="flex items-center gap-1.5 flex-wrap mt-1.5 min-w-0">
+                                <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shrink-0">
+                                  <Sparkles size={10} className="text-brand-600 dark:text-brand-400" />
+                                  <span>Active Builder</span>
+                                </span>
+                                {p.headline && (
+                                  <span className="text-xs text-slate-600 dark:text-slate-300 truncate max-w-[130px]" title={p.headline}>
+                                    {p.headline}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Line 4: Location & Commitment */}
                               <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 mt-1">
                                 <span className="flex items-center gap-1">
                                   <MapPin size={11} /> {p.location || 'Remote'}

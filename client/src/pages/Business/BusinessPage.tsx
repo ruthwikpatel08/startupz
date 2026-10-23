@@ -303,11 +303,11 @@ export const BusinessPage: React.FC = () => {
           onClick={() => handleTabChange('startups')}
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activeTab === 'startups'
-              ? 'bg-slate-900 text-white dark:bg-[#1E293B] dark:text-[#F8FAFC] border-slate-900 dark:border-slate-700 shadow-xs font-semibold'
+              ? 'bg-indigo-50/80 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800/60 shadow-xs font-semibold'
               : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
-          <Compass size={15} className={`shrink-0 ${activeTab === 'startups' ? 'text-brand-400' : 'text-slate-400'}`} />
+          <Compass size={15} className={`shrink-0 ${activeTab === 'startups' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
           <span className="text-xs sm:text-[13px] truncate">
             Startups
           </span>
@@ -319,11 +319,11 @@ export const BusinessPage: React.FC = () => {
           onClick={() => handleTabChange('network')}
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activeTab === 'network'
-              ? 'bg-slate-900 text-white dark:bg-[#1E293B] dark:text-[#F8FAFC] border-slate-900 dark:border-slate-700 shadow-xs font-semibold'
+              ? 'bg-indigo-50/80 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800/60 shadow-xs font-semibold'
               : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
-          <Users size={15} className={`shrink-0 ${activeTab === 'network' ? 'text-purple-400' : 'text-slate-400'}`} />
+          <Users size={15} className={`shrink-0 ${activeTab === 'network' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
           <span className="text-xs sm:text-[13px] truncate">
             <span className="sm:hidden">Network</span>
             <span className="hidden sm:inline">Founders & Network</span>
@@ -336,11 +336,11 @@ export const BusinessPage: React.FC = () => {
           onClick={() => handleTabChange('graveyard')}
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activeTab === 'graveyard'
-              ? 'bg-slate-900 text-white dark:bg-[#1E293B] dark:text-[#F8FAFC] border-slate-900 dark:border-slate-700 shadow-xs font-semibold'
+              ? 'bg-rose-50/80 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-900/60 shadow-xs font-semibold'
               : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
-          <Skull size={15} className={`shrink-0 ${activeTab === 'graveyard' ? 'text-rose-400' : 'text-slate-400'}`} />
+          <Skull size={15} className={`shrink-0 ${activeTab === 'graveyard' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}`} />
           <span className="text-xs sm:text-[13px] truncate">
             Graveyard
           </span>

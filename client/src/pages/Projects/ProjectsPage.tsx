@@ -1845,10 +1845,16 @@ export const ProjectsPage: React.FC = () => {
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-white/[0.08] text-brand-300 text-[11px] font-medium border border-white/10">
             <Rocket size={12} /> Pre-Establishment Builder Workspace
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#F8FAFC]">
+          <h1
+            className="text-2xl sm:text-3xl font-bold tracking-tight !text-[#F8FAFC]"
+            style={{ color: '#F8FAFC' }}
+          >
             Projects: Collaborate on Ideas
           </h1>
-          <p className="text-xs sm:text-sm text-[#CBD5E1] leading-relaxed font-normal">
+          <p
+            className="text-xs sm:text-sm !text-[#CBD5E1] leading-relaxed font-normal"
+            style={{ color: '#CBD5E1' }}
+          >
             Have an idea before officially incorporating a startup? Create a project, choose to publish it public or keep it private, split roles with your team, and chat together in your project group.
           </p>
         </div>
@@ -1979,133 +1985,79 @@ export const ProjectsPage: React.FC = () => {
                 }`}
               >
                 <div className="space-y-3 min-w-0">
-                  
-                  {/* Card Header: Grouped Status Badges (Left) vs Subtle Action Buttons (Right) */}
-                  <div className="flex items-center justify-between gap-3 flex-wrap min-w-0 pb-1">
-                    {/* Status Badges Group (Left) */}
-                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/[0.08] shrink-0">
-                        {project.stage}
-                      </span>
+                  {/* Card Top: Title & Status Badges */}
+                  <div className="space-y-2 min-w-0">
+                    <div className="flex items-start justify-between gap-3 flex-wrap min-w-0">
+                      <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white leading-snug break-words">
+                        {project.title}
+                      </h3>
 
-                      {/* Visibility Badge */}
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border shrink-0 ${
-                          project.visibility === 'PUBLIC'
-                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.08]'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08]'
-                        }`}
-                      >
-                        {project.visibility === 'PUBLIC' ? <Globe size={10} className="text-emerald-500" /> : <Lock size={10} />}
-                        <span>{project.visibility === 'PUBLIC' ? 'Public' : 'Private'}</span>
-                      </span>
+                      {/* Status Badges Group */}
+                      <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/[0.08] shrink-0">
+                          {project.stage}
+                        </span>
 
-                      {/* Total Members Count Badge */}
-                      <span
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/[0.08] shrink-0"
-                        title={`${totalMembersCount} team member${totalMembersCount > 1 ? 's' : ''} in this project`}
-                      >
-                        <Users size={11} className="text-slate-400" />
-                        <span>{totalMembersCount} {totalMembersCount === 1 ? 'Member' : 'Members'}</span>
-                      </span>
-
-                      {/* Creator / Team Lead Visibility Switcher */}
-                      {isProjectLead && (
-                        <button
-                          type="button"
-                          onClick={() => handleToggleVisibility(project.id, project.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC')}
-                          className="text-[11px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 underline ml-0.5 shrink-0 cursor-pointer transition-colors"
-                          title="Click to toggle visibility"
+                        {/* Visibility Badge */}
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border shrink-0 ${
+                            project.visibility === 'PUBLIC'
+                              ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.08]'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08]'
+                          }`}
                         >
-                          Switch to {project.visibility === 'PUBLIC' ? 'Private' : 'Public'}
-                        </button>
-                      )}
+                          {project.visibility === 'PUBLIC' ? <Globe size={10} className="text-emerald-500" /> : <Lock size={10} />}
+                          <span>{project.visibility === 'PUBLIC' ? 'Public' : 'Private'}</span>
+                        </span>
+
+                        {/* Total Members Count Badge */}
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/[0.08] shrink-0"
+                          title={`${totalMembersCount} team member${totalMembersCount > 1 ? 's' : ''} in this project`}
+                        >
+                          <Users size={11} className="text-slate-400" />
+                          <span>{totalMembersCount} {totalMembersCount === 1 ? 'Member' : 'Members'}</span>
+                        </span>
+
+                        {/* Creator / Team Lead Visibility Switcher */}
+                        {isProjectLead && (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleVisibility(project.id, project.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC')}
+                            className="text-[11px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 underline ml-0.5 shrink-0 cursor-pointer transition-colors"
+                            title="Click to toggle visibility"
+                          >
+                            Switch to {project.visibility === 'PUBLIC' ? 'Private' : 'Public'}
+                          </button>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Actions Group (Right) */}
-                    <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-                      {/* Team Chat Link: strictly visible ONLY to project lead and accepted members */}
-                      {(isProjectLead || isAcceptedMember) && (
-                        <Link
-                          to={`/messages?projectGroupId=proj-group-${project.id}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/40 border border-brand-200/60 dark:border-brand-900/60 hover:bg-brand-100 transition-colors shrink-0"
-                          title="Open project group team chat"
+                    {/* Idea Summary / Description */}
+                    {project.ideaSummary && (
+                      <div className="min-w-0 break-words">
+                        <p
+                          className={`text-xs text-slate-600 dark:text-slate-300 leading-relaxed break-words ${
+                            expandedProjectText[project.id + '-idea'] ? '' : 'line-clamp-2 sm:line-clamp-3'
+                          }`}
                         >
-                          <MessageSquare size={12} />
-                          <span>Team Chat</span>
-                        </Link>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => handleBookmarkToggle(project.id, project.title)}
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer shrink-0 ${
-                          savedProjectIds.has(project.id)
-                            ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-800 dark:border-slate-700'
-                            : 'bg-white dark:bg-[#0F1624] text-slate-500 border-slate-200/80 dark:border-white/[0.08] dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50'
-                        }`}
-                        title={savedProjectIds.has(project.id) ? 'Remove from Saved' : 'Save Project'}
-                      >
-                        <Bookmark size={12} className={savedProjectIds.has(project.id) ? 'fill-current' : ''} />
-                        <span>{savedProjectIds.has(project.id) ? 'Saved' : 'Save'}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShareModalItem({
-                            title: project.title,
-                            url: `/projects?projectId=${project.id}#project-${project.id}`,
-                            description: project.ideaSummary || project.problemSolved || 'Collaboration project on HookZ',
-                            type: 'project',
-                          })
-                        }
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#0F1624] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 transition-colors cursor-pointer shrink-0"
-                        title="Share project with connections"
-                      >
-                        <Share2 size={12} />
-                        <span>Share</span>
-                      </button>
-
-                      {isCreator && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteProject(project.id)}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-900/40 hover:bg-rose-100 transition-colors cursor-pointer shrink-0"
-                          title="Delete this project"
-                        >
-                          <Trash2 size={12} />
-                          <span>Delete</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Title & Idea */}
-                  <div className="min-w-0 break-words">
-                    <h3 className="font-bold text-base text-slate-900 dark:text-white leading-snug break-words">
-                      {project.title}
-                    </h3>
-                    <p
-                      className={`text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed break-words ${
-                        expandedProjectText[project.id + '-idea'] ? '' : 'line-clamp-2 sm:line-clamp-3'
-                      }`}
-                    >
-                      {project.ideaSummary}
-                    </p>
-                    {project.ideaSummary && (project.ideaSummary.length > 90 || project.ideaSummary.split('\n').length > 2) && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpandedProjectText((prev) => ({
-                            ...prev,
-                            [project.id + '-idea']: !prev[project.id + '-idea'],
-                          }))
-                        }
-                        className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline pt-0.5 cursor-pointer inline-flex items-center gap-0.5"
-                      >
-                        {expandedProjectText[project.id + '-idea'] ? 'Show less' : '...more'}
-                      </button>
+                          {project.ideaSummary}
+                        </p>
+                        {(project.ideaSummary.length > 90 || project.ideaSummary.split('\n').length > 2) && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedProjectText((prev) => ({
+                                ...prev,
+                                [project.id + '-idea']: !prev[project.id + '-idea'],
+                              }))
+                            }
+                            className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline pt-0.5 cursor-pointer inline-flex items-center gap-0.5"
+                          >
+                            {expandedProjectText[project.id + '-idea'] ? 'Show less' : '...more'}
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -2375,28 +2327,82 @@ export const ProjectsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Card Footer: Creator info & chat */}
-                <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
+                {/* Card Footer: Creator info & Action buttons */}
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between gap-3 text-xs flex-wrap">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Avatar
                       src={project.creator.avatar}
                       name={project.creator.fullName}
                       size="xs"
-                      className="!w-6 !h-6"
+                      className="!w-6 !h-6 shrink-0"
                     />
                     <div className="min-w-0">
                       <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">
                         {project.creator.fullName}
                       </p>
                       <p className="text-[10px] text-slate-400 truncate">
-                        {project.creator.role}
+                        {project.creator.role ? `${project.creator.role} • ` : ''}{project.createdAt}
                       </p>
                     </div>
                   </div>
 
-                  <span className="text-[10px] text-slate-400">
-                    {project.createdAt}
-                  </span>
+                  {/* Action Buttons: Team Chat, Save, Share, Delete */}
+                  <div className="flex items-center gap-1.5 shrink-0 ml-auto flex-wrap">
+                    {/* Team Chat Link: strictly visible ONLY to project lead and accepted members */}
+                    {(isProjectLead || isAcceptedMember) && (
+                      <Link
+                        to={`/messages?projectGroupId=proj-group-${project.id}`}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/40 border border-brand-200/60 dark:border-brand-900/60 hover:bg-brand-100 transition-colors shrink-0"
+                        title="Open project group team chat"
+                      >
+                        <MessageSquare size={12} />
+                        <span>Team Chat</span>
+                      </Link>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => handleBookmarkToggle(project.id, project.title)}
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer shrink-0 ${
+                        savedProjectIds.has(project.id)
+                          ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-800 dark:border-slate-700'
+                          : 'bg-white dark:bg-[#0F1624] text-slate-600 border-slate-200/80 dark:border-white/[0.08] dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50'
+                      }`}
+                      title={savedProjectIds.has(project.id) ? 'Remove from Saved' : 'Save Project'}
+                    >
+                      <Bookmark size={12} className={savedProjectIds.has(project.id) ? 'fill-current' : ''} />
+                      <span>{savedProjectIds.has(project.id) ? 'Saved' : 'Save'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShareModalItem({
+                          title: project.title,
+                          url: `/projects?projectId=${project.id}#project-${project.id}`,
+                          description: project.ideaSummary || project.problemSolved || 'Collaboration project on HookZ',
+                          type: 'project',
+                        })
+                      }
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 transition-colors cursor-pointer shrink-0"
+                      title="Share project with connections"
+                    >
+                      <Share2 size={12} />
+                      <span>Share</span>
+                    </button>
+
+                    {isCreator && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteProject(project.id)}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-900/40 hover:bg-rose-100 transition-colors cursor-pointer shrink-0"
+                        title="Delete this project"
+                      >
+                        <Trash2 size={12} />
+                        <span>Delete</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );

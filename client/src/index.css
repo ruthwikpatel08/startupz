@@ -90,12 +90,12 @@ html:not(.dark) a {
   font-weight: 500;
 }
 
-html:not(.dark) h1,
-html:not(.dark) h2,
-html:not(.dark) h3,
-html:not(.dark) h4,
-html:not(.dark) h5,
-html:not(.dark) h6 {
+html:not(.dark) h1:not([class*="text-white"]):not([class*="text-["]):not([class*="text-brand"]),
+html:not(.dark) h2:not([class*="text-white"]):not([class*="text-["]):not([class*="text-brand"]),
+html:not(.dark) h3:not([class*="text-white"]):not([class*="text-["]):not([class*="text-brand"]),
+html:not(.dark) h4:not([class*="text-white"]):not([class*="text-["]):not([class*="text-brand"]),
+html:not(.dark) h5:not([class*="text-white"]):not([class*="text-["]):not([class*="text-brand"]),
+html:not(.dark) h6:not([class*="text-white"]):not([class*="text-["]):not([class*="text-brand"]) {
   font-weight: 700;
   color: #0F172A;
 }
