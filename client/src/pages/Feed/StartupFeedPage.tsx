@@ -1304,82 +1304,68 @@ export const StartupFeedPage: React.FC = () => {
       )}
 
       {/* 3 Core Pillars Header (Fixed on mobile view, no sliding) */}
-      <div className="grid grid-cols-3 gap-1.5 sm:gap-3 w-full">
+      <div className="grid grid-cols-3 gap-2 sm:gap-2.5 w-full">
         {/* 1. Describes */}
         <button
           type="button"
           onClick={() => handlePillarChange('ACHIEVEMENTS')}
-          className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 ${
+          className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activePillar === 'ACHIEVEMENTS'
-              ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
-              : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
+              ? 'bg-slate-900 text-white dark:bg-[#1E293B] dark:text-[#F8FAFC] border-slate-900 dark:border-slate-700 shadow-xs font-semibold'
+              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
-          <Award size={16} className="text-amber-500 shrink-0" />
-          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+          <Award size={15} className={`shrink-0 ${activePillar === 'ACHIEVEMENTS' ? 'text-amber-400' : 'text-slate-400'}`} />
+          <span className="text-xs sm:text-[13px] truncate">
             Describes
           </span>
-          {activePillar === 'ACHIEVEMENTS' && (
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-600 shrink-0 hidden sm:block" />
-          )}
         </button>
 
         {/* 2. Ideas */}
         <button
           type="button"
           onClick={() => handlePillarChange('IDEAS')}
-          className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 ${
+          className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activePillar === 'IDEAS'
-              ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
-              : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
+              ? 'bg-slate-900 text-white dark:bg-[#1E293B] dark:text-[#F8FAFC] border-slate-900 dark:border-slate-700 shadow-xs font-semibold'
+              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
-          <Rocket size={16} className="text-brand-600 dark:text-brand-400 shrink-0" />
-          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+          <Rocket size={15} className={`shrink-0 ${activePillar === 'IDEAS' ? 'text-brand-400' : 'text-slate-400'}`} />
+          <span className="text-xs sm:text-[13px] truncate">
             Ideas
           </span>
-          {activePillar === 'IDEAS' && (
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-600 shrink-0 hidden sm:block" />
-          )}
         </button>
 
         {/* 3. Prototypes */}
         <button
           type="button"
           onClick={() => handlePillarChange('PROTOTYPES')}
-          className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 ${
+          className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activePillar === 'PROTOTYPES'
-              ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
-              : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
+              ? 'bg-slate-900 text-white dark:bg-[#1E293B] dark:text-[#F8FAFC] border-slate-900 dark:border-slate-700 shadow-xs font-semibold'
+              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
-          <Boxes size={16} className="text-cyan-500 shrink-0" />
-          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+          <Boxes size={15} className={`shrink-0 ${activePillar === 'PROTOTYPES' ? 'text-cyan-400' : 'text-slate-400'}`} />
+          <span className="text-xs sm:text-[13px] truncate">
             Prototypes
           </span>
-          {activePillar === 'PROTOTYPES' && (
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-600 shrink-0 hidden sm:block" />
-          )}
         </button>
       </div>
 
-      {/* Active Category Header Banner (Displays category caption on the page at top) */}
-      <div className="card-base p-3.5 sm:p-4 bg-gradient-to-r from-slate-50 via-white to-white dark:from-dark-900 dark:via-dark-900 dark:to-dark-850 border border-slate-200/80 dark:border-dark-800 transition-colors">
-        <div className="flex items-center gap-2 mb-1">
-          {activePillar === 'ACHIEVEMENTS' && <Award size={18} className="text-amber-500 shrink-0" />}
-          {activePillar === 'IDEAS' && <Rocket size={18} className="text-brand-600 dark:text-brand-400 shrink-0" />}
-          {activePillar === 'PROTOTYPES' && <Boxes size={18} className="text-cyan-500 shrink-0" />}
-          <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-            {activePillar === 'ACHIEVEMENTS' && 'Describes'}
-            {activePillar === 'IDEAS' && 'Startup Ideas'}
-            {activePillar === 'PROTOTYPES' && 'Prototypes & Early Samples'}
-          </h2>
+      {/* Active Category Header Banner (Clean, compact section header) */}
+      <div className="px-3.5 py-2.5 rounded-lg bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-white/[0.06] flex items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 min-w-0">
+          {activePillar === 'ACHIEVEMENTS' && <Award size={15} className="text-amber-500 shrink-0" />}
+          {activePillar === 'IDEAS' && <Rocket size={15} className="text-brand-600 dark:text-brand-400 shrink-0" />}
+          {activePillar === 'PROTOTYPES' && <Boxes size={15} className="text-cyan-500 shrink-0" />}
+          <p className="text-slate-600 dark:text-slate-300 font-medium truncate">
+            {activePillar === 'ACHIEVEMENTS' && 'Describes: Achievements, drawbacks, product launches, and lessons learned.'}
+            {activePillar === 'IDEAS' && 'Startup Ideas: Early concepts, problem statements, and co-founder synergies.'}
+            {activePillar === 'PROTOTYPES' && 'Prototypes: Early sample builds, live interactive demos, and video showcases.'}
+          </p>
         </div>
-        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-          {activePillar === 'ACHIEVEMENTS' && 'See what others describe across achievements, drawbacks, product launches, and experiences.'}
-          {activePillar === 'IDEAS' && 'Work on their ideas to build — discover concepts, pitch synergies, or find dedicated co-founders.'}
-          {activePillar === 'PROTOTYPES' && 'Explore early sample builds, interactive websites, and demo videos (<60s). Click "Build Together" to collaborate on turning samples into live products.'}
-        </p>
       </div>
 
 
@@ -1551,10 +1537,10 @@ export const StartupFeedPage: React.FC = () => {
             key={item.id}
             type="button"
             onClick={() => setFilterType(item.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
               filterType === item.id
-                ? 'bg-brand-600 text-white shadow-sm'
-                : 'bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-dark-700'
+                ? 'bg-slate-900 text-white dark:bg-[#1E293B] dark:text-[#F8FAFC] shadow-xs'
+                : 'bg-white dark:bg-[#0F1624] border border-slate-200/80 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40'
             }`}
           >
             {item.label}

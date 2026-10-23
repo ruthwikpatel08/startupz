@@ -1108,13 +1108,13 @@ export const OpportunitiesPage: React.FC = () => {
           {/* Filters Bar */}
           <div className="card-base p-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
             <div className="relative">
-              <Search size={15} className="absolute left-3 top-2.5 text-slate-400" />
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search roles, skills, startups..."
-                className="input-base w-full pl-9 pr-3 py-2 text-xs"
+                className="w-full h-10 pl-10 pr-3.5 text-sm rounded-lg bg-white dark:bg-[#0F1624] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors"
               />
             </div>
 
@@ -1122,7 +1122,7 @@ export const OpportunitiesPage: React.FC = () => {
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="input-base w-full py-2 px-3 text-xs"
+                className="w-full h-10 px-3 text-sm rounded-lg bg-white dark:bg-[#0F1624] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors cursor-pointer"
               >
                 {roles.map((r) => (
                   <option key={r} value={r}>
@@ -1136,7 +1136,7 @@ export const OpportunitiesPage: React.FC = () => {
               <select
                 value={workplaceType}
                 onChange={(e) => setWorkplaceType(e.target.value)}
-                className="input-base w-full py-2 px-3 text-xs"
+                className="w-full h-10 px-3 text-sm rounded-lg bg-white dark:bg-[#0F1624] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors cursor-pointer"
               >
                 {workplaces.map((w) => (
                   <option key={w} value={w}>
@@ -1150,7 +1150,7 @@ export const OpportunitiesPage: React.FC = () => {
               <select
                 value={commitment}
                 onChange={(e) => setCommitment(e.target.value)}
-                className="input-base w-full py-2 px-3 text-xs"
+                className="w-full h-10 px-3 text-sm rounded-lg bg-white dark:bg-[#0F1624] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors cursor-pointer"
               >
                 {commitments.map((c) => (
                   <option key={c} value={c}>
@@ -1242,20 +1242,20 @@ export const OpportunitiesPage: React.FC = () => {
                   <div className="space-y-3">
                     {/* Header: Role & Startup info */}
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
                         <img
                           src={opp.startup?.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${opp.startup?.name}`}
                           alt=""
-                          className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-dark-700 shrink-0"
+                          className="w-10 h-10 rounded-lg object-cover border border-slate-200/80 dark:border-white/[0.08] shrink-0 mt-0.5"
                         />
-                        <div>
-                          <h3 className="font-semibold text-sm text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-sm text-slate-900 dark:text-[#F8FAFC] group-hover:text-brand-600 transition-colors truncate">
                             {opp.role}
                           </h3>
                           <Link
                             to={`/startups/${opp.startup?.id}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="text-xs font-medium text-slate-500 hover:text-brand-600 block transition-colors"
+                            className="text-xs font-medium text-slate-500 hover:text-brand-600 block transition-colors truncate mt-0.5"
                           >
                             {opp.startup?.name} • {opp.startup?.stage}
                           </Link>
@@ -1264,15 +1264,15 @@ export const OpportunitiesPage: React.FC = () => {
 
                       <div className="flex items-center gap-1.5 shrink-0">
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                          className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${
                             isIntern
-                              ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/60'
-                              : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/60'
+                              ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/[0.08]'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/[0.08]'
                           }`}
                         >
                           {isIntern ? 'Internship' : 'Job'}
                         </span>
-                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-dark-700/60">
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-white/[0.08]">
                           {opp.workplaceType}
                         </span>
                       </div>
@@ -1284,17 +1284,18 @@ export const OpportunitiesPage: React.FC = () => {
                     </p>
 
                     {/* Compensation & Meta */}
-                    <div className="flex flex-wrap items-center gap-2.5 text-xs text-slate-500 pt-0.5">
-                      <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
-                        <DollarSign size={13} /> {opp.compensation}
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 pt-0.5">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-white/[0.06]">
+                        <DollarSign size={11} className="text-slate-500" />
+                        <span>{opp.compensation}</span>
                       </span>
                       <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <Clock size={13} /> {opp.commitment}
+                      <span className="flex items-center gap-1 text-[11px]">
+                        <Clock size={12} /> {opp.commitment}
                       </span>
                       <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <MapPin size={13} /> {opp.location}
+                      <span className="flex items-center gap-1 text-[11px]">
+                        <MapPin size={12} /> {opp.location}
                       </span>
                     </div>
 

@@ -52,7 +52,7 @@ export const Sidebar: React.FC = () => {
   const isOpportunitiesActive = location.pathname.startsWith('/opportunities');
 
   return (
-    <aside className="hidden lg:flex flex-col w-60 xl:w-64 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-dark-900 fixed left-0 top-14 bottom-0 h-[calc(100vh-3.5rem)] py-4 px-3 select-none z-30 transition-colors overflow-y-auto">
+    <aside className="hidden lg:flex flex-col w-60 xl:w-64 shrink-0 border-r border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#0F1624] fixed left-0 top-14 bottom-0 h-[calc(100vh-3.5rem)] py-4 px-3 select-none z-30 transition-colors overflow-y-auto">
       
       {/* Primary 5 Tools Vertical Nav */}
       <div className="space-y-1.5">

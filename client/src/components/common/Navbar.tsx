@@ -184,7 +184,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-40 w-full bg-white dark:bg-dark-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
+      <header className="fixed top-0 left-0 right-0 z-40 w-full bg-white dark:bg-[#0F1624] border-b border-slate-200/80 dark:border-white/[0.08] transition-colors">
         <div className="w-full px-2.5 sm:px-6 lg:px-6">
           <div className="flex items-center justify-between h-14 gap-2 sm:gap-4 w-full">
             

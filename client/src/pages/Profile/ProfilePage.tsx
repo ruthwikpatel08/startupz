@@ -2304,7 +2304,7 @@ export const ProfilePage: React.FC = () => {
         <div className="card-base overflow-hidden w-full max-w-full min-w-0">
           
           {/* Cover Section */}
-          <div className="h-44 sm:h-52 relative overflow-hidden bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700">
+          <div className="h-44 sm:h-52 relative overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-b border-white/10">
             {p.coverImage ? (
               <img
                 src={p.coverImage}
@@ -2313,7 +2313,7 @@ export const ProfilePage: React.FC = () => {
                 decoding="async"
               />
             ) : (
-              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
+              <div className="absolute inset-0 opacity-25 bg-[radial-gradient(rgba(255,255,255,0.15)_1px,transparent_1px)] [background-size:20px_20px]" />
             )}
 
             <div className="absolute top-4 right-4 flex items-center gap-1.5 sm:gap-2 z-10 flex-wrap justify-end max-w-[calc(100%-1.5rem)]">
@@ -2360,7 +2360,7 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* Profile Header Row with solid white background so details never overlap cover image */}
-          <div className="px-4 sm:px-8 pb-6 pt-3 relative bg-white dark:bg-dark-900 border-t border-slate-100 dark:border-dark-800 w-full max-w-full overflow-visible z-10">
+          <div className="px-4 sm:px-8 pb-6 pt-3 relative bg-white dark:bg-[#0F1624] border-t border-slate-100 dark:border-white/[0.06] w-full max-w-full overflow-visible z-10">
             <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mb-6 w-full min-w-0">
               
               {/* Profile Photo */}
@@ -2371,10 +2371,10 @@ export const ProfilePage: React.FC = () => {
                       src={avatar!}
                       alt={displayName}
                       decoding="async"
-                      className="w-full h-full rounded-full object-cover border-4 border-white dark:border-dark-900 shadow-md bg-white"
+                      className="w-full h-full rounded-full object-cover border-4 border-white dark:border-[#0F1624] shadow-md bg-white"
                     />
                   ) : (
-                    <div className="w-full h-full rounded-full border-4 border-white dark:border-dark-900 shadow-md bg-brand-600 text-white flex flex-col items-center justify-center font-bold">
+                    <div className="w-full h-full rounded-full border-4 border-white dark:border-[#0F1624] shadow-md bg-brand-600 text-white flex flex-col items-center justify-center font-bold">
                       <span className="text-2xl sm:text-3xl font-extrabold tracking-wider">{initials}</span>
                     </div>
                   )}
@@ -2384,7 +2384,7 @@ export const ProfilePage: React.FC = () => {
                         type="button"
                         onClick={() => handleRemovePhoto('avatar')}
                         disabled={isRemovingPhoto}
-                        className="p-2 rounded-full bg-rose-600 hover:bg-rose-700 text-white shadow-md transition-all cursor-pointer disabled:opacity-50 border-2 border-white dark:border-dark-900 flex items-center justify-center"
+                        className="w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-900 text-white/90 hover:text-white backdrop-blur-md border border-white/20 shadow-md transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center"
                         title="Delete profile photo"
                         aria-label="Delete profile photo"
                       >
@@ -2393,11 +2393,11 @@ export const ProfilePage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleRequestGalleryPermission('avatar')}
-                        className="p-2 rounded-full bg-brand-600 hover:bg-brand-700 text-white shadow-md transition-all cursor-pointer border-2 border-white dark:border-dark-900 flex items-center justify-center"
+                        className="w-8 h-8 rounded-full bg-slate-900/80 hover:bg-slate-900 text-white/90 hover:text-white backdrop-blur-md border border-white/20 shadow-md transition-all cursor-pointer flex items-center justify-center"
                         title="Change profile photo"
                         aria-label="Change profile photo"
                       >
-                        <Camera size={14} />
+                        <Camera size={13} />
                       </button>
                     </div>
                   )}
@@ -2594,24 +2594,24 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* Profile Statistics Row (ONLY Connections & Verified Skills, REMOVED Startups Created) */}
-            <div className="pt-4 border-t border-slate-100 dark:border-dark-800 grid grid-cols-2 gap-4 text-left">
+            <div className="pt-4 border-t border-slate-100 dark:border-white/[0.06] grid grid-cols-2 gap-4 text-left">
               <button
                 onClick={handleOpenConnectionsModal}
-                className="group text-left cursor-pointer"
+                className="group text-left cursor-pointer transition-colors"
               >
-                <div className="text-2xl font-bold text-slate-900 dark:text-white group-hover:text-brand-600 transition-colors">
+                <div className="text-lg font-semibold text-slate-900 dark:text-[#F8FAFC] group-hover:text-brand-600 transition-colors">
                   {connectionsCount}
                 </div>
-                <div className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 group-hover:text-brand-600 transition-colors">
+                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5 group-hover:text-brand-600 transition-colors">
                   Connections
                 </div>
               </button>
 
-              <div className="border-l border-slate-100 dark:border-dark-800 pl-6">
-                <div className="text-2xl font-bold text-slate-900 dark:text-white">
+              <div className="border-l border-slate-100 dark:border-white/[0.06] pl-6">
+                <div className="text-lg font-semibold text-slate-900 dark:text-[#F8FAFC]">
                   {skillsList.length}
                 </div>
-                <div className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">
+                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">
                   Verified Skills
                 </div>
               </div>

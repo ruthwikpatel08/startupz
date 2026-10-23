@@ -431,60 +431,71 @@ export const LandingPage: React.FC = () => {
                     return (
                       <div
                         key={p.user_id || p.id || p.email}
-                        className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-subtle transition-colors flex flex-col justify-between space-y-3"
+                        className="card-base p-4 flex flex-col justify-between h-full min-w-0 space-y-3.5"
                       >
                         <div className="space-y-2.5">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                              <Avatar
-                                src={p.avatar}
-                                name={displayName}
-                                size="lg"
-                              />
-                              <div>
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <Link
-                                    to={profileUrl}
-                                    className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
-                                  >
-                                    {displayName}
-                                  </Link>
-                                  <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
-                                    @{username}
-                                  </span>
-                                  <VerificationBadge badge="Active Builder" isVerified={true} size="sm" />
-                                </div>
-                                <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{p.headline}</p>
-                                <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
-                                  <span className="flex items-center gap-1">
-                                    <MapPin size={11} /> {p.location || 'Remote'}
-                                  </span>
-                                  <span>•</span>
-                                  <span className="flex items-center gap-1">
-                                    <Clock size={11} /> Full-time
-                                  </span>
-                                </div>
+                          <div className="flex items-start gap-3 w-full min-w-0">
+                            <Avatar
+                              src={p.avatar}
+                              name={displayName}
+                              size="lg"
+                              className="shrink-0 mt-0.5"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-1.5 flex-wrap min-w-0">
+                                <Link
+                                  to={profileUrl}
+                                  className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-[#F8FAFC] hover:text-brand-600 transition-colors truncate"
+                                >
+                                  {displayName}
+                                </Link>
+                                <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 shrink-0">
+                                  <Sparkles size={10} className="text-brand-600 dark:text-brand-400" />
+                                  <span>Active Builder</span>
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-normal truncate mt-0.5">
+                                @{username}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5 min-h-[18px]">
+                                {p.headline || 'Community Member'}
+                              </p>
+                              <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                                <span className="flex items-center gap-1">
+                                  <MapPin size={11} /> {p.location || 'Remote'}
+                                </span>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                  <Clock size={11} /> Full-time
+                                </span>
                               </div>
                             </div>
                           </div>
 
-                          {/* One-Line Bio */}
-                          {(p.one_line_bio || p.oneLineBio) && (
-                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-2 pt-0.5">
-                              {p.one_line_bio || p.oneLineBio}
-                            </p>
-                          )}
+                          {/* One-Line Bio with normalized height */}
+                          <div className="min-h-[32px] pt-0.5">
+                            {(p.one_line_bio || p.oneLineBio) ? (
+                              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 line-clamp-2 leading-snug">
+                                {p.one_line_bio || p.oneLineBio}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-slate-400 dark:text-slate-500 italic line-clamp-1">
+                                Specialist available for collaborations
+                              </p>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
-                          <div className="flex items-center gap-1.5">
+                        {/* Card Footer with mt-auto for row-level horizontal alignment */}
+                        <div className="pt-3 mt-auto border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             <RoleBadge role={displayRole} size="sm" />
                           </div>
 
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             <Link
                               to={profileUrl}
-                              className="btn-tertiary !text-xs !py-1 !px-2"
+                              className="btn-tertiary !text-xs !py-1 !px-2 rounded-lg"
                             >
                               View Profile
                             </Link>
@@ -492,7 +503,7 @@ export const LandingPage: React.FC = () => {
                             {/* Startup Connection (Pitch) Button */}
                             <button
                               onClick={() => handlePitchClick(targetUserObj)}
-                              className="btn-secondary !text-xs !py-1 !px-2.5 flex items-center gap-1"
+                              className="btn-secondary !text-xs !py-1 !px-2.5 rounded-lg flex items-center gap-1 cursor-pointer"
                               title="Propose Co-Founding a Startup"
                             >
                               <Rocket size={12} /> Pitch
@@ -500,17 +511,17 @@ export const LandingPage: React.FC = () => {
 
                             {/* User Connection Button */}
                             {connStatus === 'ACCEPTED' ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                                 <Check size={12} /> Connected
                               </span>
                             ) : connStatus === 'PENDING' ? (
-                              <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
+                              <span className="px-2.5 py-1 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
                                 Pending
                               </span>
                             ) : (
                               <button
                                 onClick={() => handleConnectClick(targetUserObj)}
-                                className="btn-primary !text-xs !py-1 !px-2.5 flex items-center gap-1"
+                                className="btn-primary !text-xs !py-1 !px-2.5 rounded-lg flex items-center gap-1 cursor-pointer"
                               >
                                 <UserPlus size={12} /> Connect
                               </button>

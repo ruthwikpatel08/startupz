@@ -164,7 +164,7 @@ const AppContent: React.FC = () => {
   const isMessagesPage = location.pathname.startsWith('/messages');
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-[#F8F9FB] transition-colors selection:bg-brand-600 selection:text-white relative w-full max-w-full overflow-x-hidden">
+    <div className={`min-h-screen flex flex-col ${isPublicLanding ? 'bg-white dark:bg-[#0B0F17]' : 'bg-[#F8FAFC] dark:bg-[#090D16]'} text-slate-900 dark:text-[#F8FAFC] transition-colors selection:bg-brand-600 selection:text-white relative w-full max-w-full overflow-x-hidden`}>
       {!isPublicLanding && <Navbar />}
       <NewUserCategoryModal />
       <div className={`flex-1 flex w-full max-w-full min-w-0 overflow-x-hidden ${isPublicLanding ? '' : 'pt-14'}`}>

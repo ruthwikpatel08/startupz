@@ -296,83 +296,69 @@ export const BusinessPage: React.FC = () => {
       <h1 className="sr-only">Business & Innovation Opportunities | HookZ</h1>
       
       {/* 3 Core Business Pillars Header (Fixed on mobile view, no sliding) */}
-      <div className="grid grid-cols-3 gap-1.5 sm:gap-3.5 w-full">
+      <div className="grid grid-cols-3 gap-2 sm:gap-2.5 w-full">
         {/* 1. Startups Pillar */}
         <button
           type="button"
           onClick={() => handleTabChange('startups')}
-          className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 ${
+          className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activeTab === 'startups'
-              ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 ring-2 ring-brand-500/20 shadow-sm'
-              : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
+              ? 'bg-slate-900 text-white dark:bg-[#1E293B] dark:text-[#F8FAFC] border-slate-900 dark:border-slate-700 shadow-xs font-semibold'
+              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
-          <Compass size={16} className="text-brand-600 dark:text-brand-400 shrink-0" />
-          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+          <Compass size={15} className={`shrink-0 ${activeTab === 'startups' ? 'text-brand-400' : 'text-slate-400'}`} />
+          <span className="text-xs sm:text-[13px] truncate">
             Startups
           </span>
-          {activeTab === 'startups' && (
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-600 shrink-0 hidden sm:block" />
-          )}
         </button>
 
         {/* 2. Founders & Network Pillar */}
         <button
           type="button"
           onClick={() => handleTabChange('network')}
-          className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 ${
+          className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activeTab === 'network'
-              ? 'bg-purple-50/90 dark:bg-purple-950/50 border-purple-500 ring-2 ring-purple-500/20 shadow-sm'
-              : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
+              ? 'bg-slate-900 text-white dark:bg-[#1E293B] dark:text-[#F8FAFC] border-slate-900 dark:border-slate-700 shadow-xs font-semibold'
+              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
-          <Users size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />
-          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+          <Users size={15} className={`shrink-0 ${activeTab === 'network' ? 'text-purple-400' : 'text-slate-400'}`} />
+          <span className="text-xs sm:text-[13px] truncate">
             <span className="sm:hidden">Network</span>
             <span className="hidden sm:inline">Founders & Network</span>
           </span>
-          {activeTab === 'network' && (
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0 hidden sm:block" />
-          )}
         </button>
 
         {/* 3. Graveyard Pillar */}
         <button
           type="button"
           onClick={() => handleTabChange('graveyard')}
-          className={`py-2.5 px-2 sm:py-3.5 sm:px-4 rounded-xl border text-center transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 ${
+          className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activeTab === 'graveyard'
-              ? 'bg-rose-50/90 dark:bg-rose-950/50 border-rose-500 ring-2 ring-rose-500/20 shadow-sm'
-              : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700'
+              ? 'bg-slate-900 text-white dark:bg-[#1E293B] dark:text-[#F8FAFC] border-slate-900 dark:border-slate-700 shadow-xs font-semibold'
+              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
-          <Skull size={16} className="text-rose-600 dark:text-rose-400 shrink-0" />
-          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+          <Skull size={15} className={`shrink-0 ${activeTab === 'graveyard' ? 'text-rose-400' : 'text-slate-400'}`} />
+          <span className="text-xs sm:text-[13px] truncate">
             Graveyard
           </span>
-          {activeTab === 'graveyard' && (
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0 hidden sm:block" />
-          )}
         </button>
       </div>
 
-      {/* Active Category Header Banner (Displays category caption on the page at top) */}
-      <div className="card-base p-3.5 sm:p-4 bg-gradient-to-r from-slate-50 via-white to-white dark:from-dark-900 dark:via-dark-900 dark:to-dark-850 border border-slate-200/80 dark:border-dark-800 transition-colors">
-        <div className="flex items-center gap-2 mb-1">
-          {activeTab === 'startups' && <Compass size={18} className="text-brand-600 dark:text-brand-400 shrink-0" />}
-          {activeTab === 'network' && <Users size={18} className="text-purple-600 dark:text-purple-400 shrink-0" />}
-          {activeTab === 'graveyard' && <Skull size={18} className="text-rose-600 dark:text-rose-400 shrink-0" />}
-          <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-            {activeTab === 'startups' && 'Startups & Ventures'}
-            {activeTab === 'network' && 'Founders & Professional Network'}
-            {activeTab === 'graveyard' && 'Startup Graveyard & Post-Mortems'}
-          </h2>
+      {/* Active Category Header Banner (Clean, compact section header) */}
+      <div className="px-3.5 py-2.5 rounded-lg bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-white/[0.06] flex items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 min-w-0">
+          {activeTab === 'startups' && <Compass size={15} className="text-brand-600 dark:text-brand-400 shrink-0" />}
+          {activeTab === 'network' && <Users size={15} className="text-purple-600 dark:text-purple-400 shrink-0" />}
+          {activeTab === 'graveyard' && <Skull size={15} className="text-rose-600 dark:text-rose-400 shrink-0" />}
+          <p className="text-slate-600 dark:text-slate-300 font-medium truncate">
+            {activeTab === 'startups' && 'Startups: Explore innovative ventures and disruptive products in the ecosystem.'}
+            {activeTab === 'network' && 'Founders & Network: Verified founders, co-founders & tech talent available for collaborations.'}
+            {activeTab === 'graveyard' && 'Graveyard: Real startup post-mortems, honest breakdowns, and key learnings.'}
+          </p>
         </div>
-        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-          {activeTab === 'startups' && 'Explore innovative ventures, customer-backed initiatives, and disruptive products building in the ecosystem.'}
-          {activeTab === 'network' && 'Verified founders, co-founders, advisors & tech talent available for collaborations, equity, and partnerships.'}
-          {activeTab === 'graveyard' && 'Real startup post-mortems, honest post-mortem breakdowns, and key learnings to build resilient ventures.'}
-        </p>
       </div>
 
       {/* 1. Featured Startups Section (Direct view when entering Business) */}
