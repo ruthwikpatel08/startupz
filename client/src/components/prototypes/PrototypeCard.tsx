@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
-import { supabase } from '../../lib/supabase';
+import { supabase, resolveUserIdToUUID, isUUID } from '../../lib/supabase';
 import { Post, Comment } from '../../types';
 import { Avatar } from '../common/Avatar';
 import { VerificationBadge } from '../common/Badge';
@@ -85,8 +85,38 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
 
   // Author check
   const author = post.author;
-  const authorId = post.authorId || author?.id;
-  const isAuthor = Boolean(user?.id) && (user?.id === authorId || user?.id === author?.id);
+  const authorId = post.authorId || (post as any).author_id || author?.id;
+  const isAuthor = Boolean(user) && Boolean(
+    (user?.id && (String(user.id).toLowerCase() === String(authorId).toLowerCase() || String(user.id).toLowerCase() === String(author?.id).toLowerCase())) ||
+    (user?.profile?.userId && String(user.profile.userId).toLowerCase() === String(authorId).toLowerCase()) ||
+    (user?.email && author?.email && String(user.email).toLowerCase() === String(author.email).toLowerCase())
+  );
+
+  const sendPrototypeNotification = async (type: 'POST_LIKE' | 'POST_COMMENT', title: string, message: string) => {
+    if (!user) return;
+    const authorTargetId = post.authorId || (post as any).author_id || post.author?.id;
+    if (!authorTargetId || isAuthor) return;
+
+    try {
+      const authorUuid = isUUID(authorTargetId) ? authorTargetId : await resolveUserIdToUUID(authorTargetId);
+      const senderUuid = isUUID(user.id) ? user.id : await resolveUserIdToUUID(user.id);
+      if (!authorUuid || authorUuid === senderUuid) return;
+
+      await supabase.from('notifications').insert({
+        user_id: authorUuid,
+        sender_id: senderUuid || user.id,
+        type,
+        title,
+        message,
+        link: `/feed?pillar=PROTOTYPES&postId=${post.id}#post-${post.id}`,
+        is_read: false,
+      });
+
+      window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
+    } catch (err) {
+      console.warn('Prototype notification notice:', err);
+    }
+  };
 
   // Social interactions state
   const [isLiked, setIsLiked] = useState<boolean>(Boolean(post.isLiked));
@@ -192,6 +222,13 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
           await supabase
             .from('likes')
             .upsert({ user_id: user.id, post_id: post.id, vote_type: 'UP' }, { onConflict: 'user_id,post_id' });
+
+          const myName = user.profile?.fullName || user.email?.split('@')[0] || 'Someone';
+          sendPrototypeNotification(
+            'POST_LIKE',
+            'Liked your prototype ❤️',
+            `${myName} liked your prototype "${post.title || 'Prototype'}".`
+          );
         } else {
           await supabase
             .from('likes')
@@ -303,6 +340,13 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
       if (createdComment) {
         setComments((prev) => [createdComment, ...prev]);
         setCommentsCount((prev) => prev + 1);
+
+        const myName = user.profile?.fullName || user.email?.split('@')[0] || 'Someone';
+        sendPrototypeNotification(
+          'POST_COMMENT',
+          'New Comment on your prototype 💬',
+          `${myName} commented on your prototype "${post.title || 'Prototype'}": "${content.slice(0, 50)}..."`
+        );
       }
     } catch (err) {
       console.error('Failed to post comment:', err);

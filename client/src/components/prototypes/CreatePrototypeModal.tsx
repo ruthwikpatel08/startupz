@@ -286,6 +286,8 @@ export const CreatePrototypeModal: React.FC<CreatePrototypeModalProps> = ({
         newPost.websiteUrl = cleanWebsite || null;
         newPost.mediaUrl = uploadedMediaUrl || null;
         newPost.mediaType = mediaType || null;
+        newPost.authorId = user.id;
+        newPost.author_id = user.id;
         if (!newPost.author) {
           newPost.author = {
             id: user.id,
@@ -295,6 +297,10 @@ export const CreatePrototypeModal: React.FC<CreatePrototypeModalProps> = ({
             verificationBadge: user.verificationBadge,
             profile: user.profile,
           };
+        } else {
+          newPost.author.id = user.id;
+          if (!newPost.author.email) newPost.author.email = user.email;
+          if (!newPost.author.profile) newPost.author.profile = user.profile;
         }
       }
 

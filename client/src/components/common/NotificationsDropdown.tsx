@@ -296,15 +296,44 @@ export const NotificationsDropdown: React.FC = () => {
     }
   };
 
-  // Initial load and periodic poll every 60 seconds (pauses when browser tab is hidden)
+  // Initial load, real-time subscription, and periodic poll
   useEffect(() => {
     if (!user?.id) return;
     fetchNotifications();
 
+    let channel: any = null;
+
+    const setupRealtime = async () => {
+      try {
+        const userUuid = isUUID(user.id) ? user.id : await resolveUserIdToUUID(user.id);
+        const targetUserId = userUuid || user.id;
+
+        channel = supabase
+          .channel(`notifications_realtime_${targetUserId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${targetUserId}`,
+            },
+            () => {
+              fetchNotifications();
+            }
+          )
+          .subscribe();
+      } catch (err) {
+        console.warn('Realtime notifications subscription notice:', err);
+      }
+    };
+
+    setupRealtime();
+
     const interval = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
       fetchNotifications();
-    }, 60000);
+    }, 15000);
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
@@ -319,6 +348,7 @@ export const NotificationsDropdown: React.FC = () => {
 
     return () => {
       clearInterval(interval);
+      if (channel) supabase.removeChannel(channel);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('startupz_notifications_updated', handleNotifsUpdated);
     };
@@ -1004,7 +1034,7 @@ export const NotificationsDropdown: React.FC = () => {
                 const isAccepted = n.type === 'CONNECTION_ACCEPTED' || n.type === 'PROPOSAL_ACCEPTED' || n.type === 'PROJECT_INVITE_ACCEPTED';
                 const isProjectMsg = n.type === 'PROJECT_MESSAGE';
                 const isMessage = n.type === 'NEW_MESSAGE' || n.type === 'MESSAGE';
-                const isLike = n.type === 'POST_LIKE' || n.type === 'LIKE';
+                const isLike = n.type === 'POST_LIKE' || n.type === 'LIKE' || n.type === 'POST_UPVOTE';
                 const isComment = n.type === 'POST_COMMENT' || n.type === 'COMMENT';
 
                 const senderName =

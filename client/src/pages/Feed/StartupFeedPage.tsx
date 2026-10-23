@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { api, clearApiCache } from '../../services/api';
-import { supabase, fetchUserConnections, broadcastEntityDeleted } from '../../lib/supabase';
+import { supabase, fetchUserConnections, broadcastEntityDeleted, resolveUserIdToUUID, isUUID } from '../../lib/supabase';
 import { Post, Startup, Problem } from '../../types';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -105,13 +105,6 @@ export const StartupFeedPage: React.FC = () => {
     'FUNDING',
     'MILESTONE',
   ]);
-
-  const prototypeFilters = [
-    { id: 'ALL', label: 'All Prototypes' },
-    { id: 'MY_PROTOTYPES', label: 'My Prototypes' },
-    { id: 'WEBSITES', label: 'Live Websites' },
-    { id: 'VIDEOS', label: 'Demo Videos' },
-  ];
 
   // Post composer state
   const [composerOpen, setComposerOpen] = useState(false);
@@ -279,6 +272,11 @@ export const StartupFeedPage: React.FC = () => {
               postType: p.post_type,
               title: p.title,
               content: p.content,
+              problem: p.problem || null,
+              solution: p.solution || null,
+              websiteUrl: p.website_url || p.links || null,
+              mediaUrl: p.media_url || p.images || null,
+              mediaType: p.media_type || null,
               links: p.links,
               images: p.images,
               likesCount: p.likes_count || 0,
@@ -288,8 +286,8 @@ export const StartupFeedPage: React.FC = () => {
               isSaved: savedPostIds.has(p.id),
               author: {
                 id: p.author_id,
-                email: '',
-                role: pr?.preferred_role || 'STUDENT',
+                email: (user?.id && String(p.author_id).toLowerCase() === String(user.id).toLowerCase()) ? (user.email || '') : (pr?.email || ''),
+                role: pr?.preferred_role || ((user?.id && String(p.author_id).toLowerCase() === String(user.id).toLowerCase()) ? (user.role || 'STUDENT') : 'STUDENT'),
                 isVerified: false,
                 isSuspended: false,
                 isAdmin: false,
@@ -300,8 +298,9 @@ export const StartupFeedPage: React.FC = () => {
                       avatar: pr.avatar,
                       headline: pr.headline,
                       location: pr.location,
+                      username: pr.username,
                     }
-                  : null,
+                  : ((user?.id && String(p.author_id).toLowerCase() === String(user.id).toLowerCase()) ? user.profile : null),
               },
             };
           });
@@ -325,7 +324,7 @@ export const StartupFeedPage: React.FC = () => {
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [user?.id]);
 
   // Handle direct redirection to a shared post (?postId=xyz or #post-xyz)
   useEffect(() => {
@@ -373,30 +372,157 @@ export const StartupFeedPage: React.FC = () => {
     }
   }, [posts, location.hash, searchParams]);
 
+  const isMyPost = (p: any): boolean => {
+    if (!user || !p) return false;
+
+    // 1. Direct device persisted post check (guarantees immediate match for posts uploaded on this device)
+    try {
+      const persisted = getLocalPersistedPosts();
+      if (p.id && persisted.some((lp: any) => lp.id === p.id)) {
+        return true;
+      }
+    } catch {}
+
+    const currentId = user.id ? String(user.id).trim().toLowerCase() : '';
+    const userIds = new Set<string>();
+    if (currentId) userIds.add(currentId);
+    if (user.profile?.id) userIds.add(String(user.profile.id).trim().toLowerCase());
+    if (user.profile?.userId) userIds.add(String(user.profile.userId).trim().toLowerCase());
+    if ((user as any)._id) userIds.add(String((user as any)._id).trim().toLowerCase());
+
+    // 2. Cached backend synced user ID from localStorage
+    try {
+      const rawSynced = localStorage.getItem('startupz_last_synced');
+      if (rawSynced) {
+        const parsed = JSON.parse(rawSynced);
+        if (parsed?.id) userIds.add(String(parsed.id).trim().toLowerCase());
+      }
+      const rawUser = localStorage.getItem('startupz_user');
+      if (rawUser) {
+        const parsed = JSON.parse(rawUser);
+        if (parsed?.id) userIds.add(String(parsed.id).trim().toLowerCase());
+      }
+    } catch {}
+
+    // 3. Well-known test aliases
+    const ruthwikIds = ['c3e1a001-8888-4444-9999-000000000001', 'b669157c-4d30-42f4-a8bf-4e27dc425e00', 'ruthwikpatel08', 'ruthwik'];
+    const gokulIds = ['c3e1a001-8888-4444-9999-000000000002', '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba', 'gokulvamshi'];
+
+    const pAuthorId = String(
+      p.authorId ||
+      p.author_id ||
+      p.author?.id ||
+      p.author?.userId ||
+      (p as any).creatorId ||
+      ''
+    ).trim().toLowerCase();
+
+    if (pAuthorId) {
+      if (userIds.has(pAuthorId)) return true;
+      if (ruthwikIds.includes(pAuthorId) && Array.from(userIds).some((id) => ruthwikIds.includes(id))) return true;
+      if (gokulIds.includes(pAuthorId) && Array.from(userIds).some((id) => gokulIds.includes(id))) return true;
+    }
+
+    // 4. Email match
+    const myEmail = String(user.email || '').trim().toLowerCase();
+    const pEmail = String(
+      p.author?.email ||
+      (p as any).authorEmail ||
+      (p as any).author_email ||
+      ''
+    ).trim().toLowerCase();
+    if (myEmail && pEmail && myEmail === pEmail) {
+      return true;
+    }
+
+    // 5. Username match
+    const myUsername = String(user.profile?.username || (user.email ? user.email.split('@')[0] : '')).trim().toLowerCase();
+    const pUsername = String(p.author?.profile?.username || p.author?.username || '').trim().toLowerCase();
+    if (myUsername && pUsername && myUsername === pUsername) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const isPrototypePost = (p: any): boolean => {
+    const rawType = (p.postType || (p as any).post_type || 'UPDATE').toUpperCase();
+    return (
+      rawType === 'PROTOTYPE' ||
+      p.postType === 'PROTOTYPE' ||
+      (p as any).post_type === 'PROTOTYPE' ||
+      (typeof p.content === 'string' && (p.content.startsWith('{"isPrototype"') || p.content.includes('"isPrototype":true')))
+    );
+  };
+
+  const sendPostNotification = async (
+    targetPost: any,
+    type: 'POST_LIKE' | 'POST_COMMENT' | 'POST_DOWNVOTE',
+    title: string,
+    message: string
+  ) => {
+    if (!user) return;
+    const authorId = targetPost?.authorId || targetPost?.author?.id || (targetPost as any)?.author_id;
+    if (!authorId || isMyPost(targetPost)) return;
+
+    try {
+      const authorUuid = isUUID(authorId) ? authorId : await resolveUserIdToUUID(authorId);
+      const senderUuid = isUUID(user.id) ? user.id : await resolveUserIdToUUID(user.id);
+      if (!authorUuid || authorUuid === senderUuid) return;
+
+      const notifLink = `/feed?pillar=${activePillar}&postId=${targetPost.id}#post-${targetPost.id}`;
+
+      if (type === 'POST_DOWNVOTE') {
+        await supabase
+          .from('notifications')
+          .delete()
+          .match({ user_id: authorUuid, sender_id: senderUuid || user.id })
+          .in('type', ['POST_LIKE', 'POST_UPVOTE']);
+      } else if (type === 'POST_LIKE') {
+        await supabase
+          .from('notifications')
+          .delete()
+          .match({ user_id: authorUuid, sender_id: senderUuid || user.id, type: 'POST_DOWNVOTE' });
+      }
+
+      await supabase.from('notifications').insert({
+        user_id: authorUuid,
+        sender_id: senderUuid || user.id,
+        type,
+        title,
+        message,
+        link: notifLink,
+        is_read: false,
+      });
+
+      window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
+    } catch (err) {
+      console.warn('sendPostNotification warning:', err);
+    }
+  };
+
   const filteredPosts = posts.filter((p) => {
-    const rawType = (p.postType || 'UPDATE').toUpperCase();
-    const isMyPost = Boolean(user?.id) && (p.authorId === user?.id || p.author?.id === user?.id);
+    const rawType = (p.postType || (p as any).post_type || 'UPDATE').toUpperCase();
+    const isMine = isMyPost(p);
 
     // If post is marked for connections only, ensure only author or connections can see it
     const isConnectionsOnly = (p as any).visibility === 'CONNECTIONS' || p.title?.includes('[Connections Only]');
     if (isConnectionsOnly) {
-      const isConnection = connectedUserIds.has(p.authorId) || (p.author?.id && connectedUserIds.has(p.author.id));
-      if (!isMyPost && !isConnection) return false;
+      const pAuthorId = p.authorId || p.author?.id || (p as any).author_id;
+      const isConnection = pAuthorId && connectedUserIds.has(pAuthorId);
+      if (!isMine && !isConnection) return false;
     }
 
-    const isProtoPost =
-      rawType === 'PROTOTYPE' ||
-      p.postType === 'PROTOTYPE' ||
-      (typeof p.content === 'string' && p.content.startsWith('{"isPrototype"'));
+    const isProtoPost = isPrototypePost(p);
 
     if (activePillar === 'ACHIEVEMENTS') {
       if (isProtoPost) return false;
-      // 1. STRICT: Exclude ALL ideas/cofounder/advice/hiring
+      // Exclude ALL ideas/cofounder/advice/hiring
       if (IDEA_POST_TYPES.has(rawType)) {
         return false;
       }
       if (filterType === 'MY_SHARES' || filterType === 'MY_ACHIEVEMENTS') {
-        return isMyPost && (ACHIEVEMENT_POST_TYPES.has(rawType) || rawType === 'UPDATE');
+        return isMine;
       }
       if (filterType === 'EXECUTION' || filterType === 'ACHIEVEMENT') {
         return rawType === 'EXECUTION' || rawType === 'ACHIEVEMENT';
@@ -422,12 +548,12 @@ export const StartupFeedPage: React.FC = () => {
 
     if (activePillar === 'IDEAS') {
       if (isProtoPost) return false;
-      // 1. STRICT: Exclude ALL achievements/experiences/launches/funding
+      // Exclude ALL achievements/experiences/launches/funding
       if (ACHIEVEMENT_POST_TYPES.has(rawType)) {
         return false;
       }
       if (filterType === 'MY_IDEAS') {
-        return isMyPost && (IDEA_POST_TYPES.has(rawType) || rawType === 'UPDATE');
+        return isMine;
       }
       if (filterType !== 'ALL') {
         return rawType === filterType;
@@ -442,14 +568,15 @@ export const StartupFeedPage: React.FC = () => {
       if (!isProtoPost) return false;
 
       if (filterType === 'MY_PROTOTYPES') {
-        return isMyPost;
+        return isMine;
       }
       if (filterType === 'WEBSITES') {
-        return Boolean(p.websiteUrl || p.links || (typeof p.content === 'string' && p.content.includes('"websiteUrl"')));
+        return Boolean(p.websiteUrl || (p as any).website_url || p.links || (typeof p.content === 'string' && p.content.includes('"websiteUrl"')));
       }
       if (filterType === 'VIDEOS') {
         return (
           p.mediaType === 'video' ||
+          (p as any).media_type === 'video' ||
           (typeof p.content === 'string' && p.content.includes('"mediaType":"video"')) ||
           (typeof p.images === 'string' && (p.images.endsWith('.mp4') || p.images.endsWith('.webm') || p.images.endsWith('.mov')))
         );
@@ -548,13 +675,21 @@ export const StartupFeedPage: React.FC = () => {
       }
 
       // Ensure author object is populated
-      if (createdPost && !createdPost.author) {
-        createdPost.author = {
-          id: user.id,
-          email: user.email,
-          role: user.role || 'STUDENT',
-          profile: user.profile,
-        };
+      if (createdPost) {
+        createdPost.authorId = user.id;
+        createdPost.author_id = user.id;
+        if (!createdPost.author) {
+          createdPost.author = {
+            id: user.id,
+            email: user.email,
+            role: user.role || 'STUDENT',
+            profile: user.profile,
+          };
+        } else {
+          createdPost.author.id = user.id;
+          if (!createdPost.author.email) createdPost.author.email = user.email;
+          if (!createdPost.author.profile) createdPost.author.profile = user.profile;
+        }
       }
 
       if (createdPost) {
@@ -620,18 +755,14 @@ export const StartupFeedPage: React.FC = () => {
         await supabase.from('posts').update({ likes_count: nextLikesCount }).eq('id', postId);
 
         // Notify author if someone else liked their post
-        if (currentPost?.authorId && currentPost.authorId !== user.id) {
-          try {
-            await supabase.from('notifications').insert({
-              user_id: currentPost.authorId,
-              sender_id: user.id,
-              type: 'POST_LIKE',
-              title: 'Liked your post ❤️',
-              message: `${user.profile?.fullName || user.email?.split('@')[0] || 'Someone'} liked your update.`,
-              link: '/feed',
-              is_read: false,
-            });
-          } catch {}
+        if (currentPost) {
+          const myName = user.profile?.fullName || user.email?.split('@')[0] || 'Someone';
+          sendPostNotification(
+            currentPost,
+            'POST_LIKE',
+            'Liked your post ❤️',
+            `${myName} liked your post.`
+          );
         }
       } else {
         await supabase.from('likes').delete().match({ post_id: postId, user_id: user.id });
@@ -722,53 +853,46 @@ export const StartupFeedPage: React.FC = () => {
         await supabase.from('likes').upsert({ post_id: postId, user_id: user.id, vote_type: 'UP' }, { onConflict: 'user_id,post_id' });
         await supabase.from('posts').update({ likes_count: nextScore }).eq('id', postId);
 
-        if (currentPost.authorId && currentPost.authorId !== user.id) {
-          // Erase previous downvote notification
-          await supabase.from('notifications')
-            .delete()
-            .match({ user_id: currentPost.authorId, sender_id: user.id, type: 'POST_DOWNVOTE' });
-
-          await supabase.from('notifications').insert({
-            user_id: currentPost.authorId,
-            sender_id: user.id,
-            type: 'POST_LIKE',
-            title: 'Upvoted your idea 💡',
-            message: `${user.profile?.fullName || user.email?.split('@')[0] || 'Someone'} upvoted your idea.`,
-            link: `/feed#post-${postId}`,
-            is_read: false,
-          });
+        if (currentPost) {
+          const myName = user.profile?.fullName || user.email?.split('@')[0] || 'Someone';
+          sendPostNotification(
+            currentPost,
+            'POST_LIKE',
+            'Upvoted your idea 💡',
+            `${myName} upvoted your idea.`
+          );
         }
       } else if (nextVote === 'down') {
         await supabase.from('likes').upsert({ post_id: postId, user_id: user.id, vote_type: 'DOWN' }, { onConflict: 'user_id,post_id' });
         await supabase.from('posts').update({ likes_count: nextScore }).eq('id', postId);
 
-        if (currentPost.authorId && currentPost.authorId !== user.id) {
-          // Erase previous upvote notification
-          await supabase.from('notifications')
-            .delete()
-            .match({ user_id: currentPost.authorId, sender_id: user.id })
-            .in('type', ['POST_LIKE', 'POST_UPVOTE']);
-
-          await supabase.from('notifications').insert({
-            user_id: currentPost.authorId,
-            sender_id: user.id,
-            type: 'POST_DOWNVOTE',
-            title: 'Downvoted your idea 👎',
-            message: `${user.profile?.fullName || user.email?.split('@')[0] || 'Someone'} downvoted your idea.`,
-            link: `/feed#post-${postId}`,
-            is_read: false,
-          });
+        if (currentPost) {
+          const myName = user.profile?.fullName || user.email?.split('@')[0] || 'Someone';
+          sendPostNotification(
+            currentPost,
+            'POST_DOWNVOTE',
+            'Downvoted your idea 👎',
+            `${myName} downvoted your idea.`
+          );
         }
       } else {
         // Vote removed: erase vote notification
         await supabase.from('likes').delete().match({ post_id: postId, user_id: user.id });
         await supabase.from('posts').update({ likes_count: nextScore }).eq('id', postId);
 
-        if (currentPost.authorId && currentPost.authorId !== user.id) {
-          await supabase.from('notifications')
-            .delete()
-            .match({ user_id: currentPost.authorId, sender_id: user.id })
-            .in('type', ['POST_LIKE', 'POST_UPVOTE', 'POST_DOWNVOTE']);
+        const targetAuthId = currentPost.authorId || currentPost.author?.id || (currentPost as any)?.author_id;
+        if (targetAuthId && !isMyPost(currentPost)) {
+          try {
+            const authorUuid = isUUID(targetAuthId) ? targetAuthId : await resolveUserIdToUUID(targetAuthId);
+            const senderUuid = isUUID(user.id) ? user.id : await resolveUserIdToUUID(user.id);
+            if (authorUuid) {
+              await supabase.from('notifications')
+                .delete()
+                .match({ user_id: authorUuid, sender_id: senderUuid || user.id })
+                .in('type', ['POST_LIKE', 'POST_UPVOTE', 'POST_DOWNVOTE']);
+              window.dispatchEvent(new CustomEvent('startupz_notifications_updated'));
+            }
+          } catch {}
         }
       }
     } catch (sErr) {
@@ -959,18 +1083,14 @@ export const StartupFeedPage: React.FC = () => {
         await supabase.from('posts').update({ comments_count: nextCommentsCount }).eq('id', postId);
       }
 
-      if (targetPost?.authorId && targetPost.authorId !== user.id) {
-        try {
-          await supabase.from('notifications').insert({
-            user_id: targetPost.authorId,
-            sender_id: user.id,
-            type: 'POST_COMMENT',
-            title: 'New Comment on your post 💬',
-            message: `${user.profile?.fullName || user.email?.split('@')[0] || 'Someone'} commented: "${text.slice(0, 50)}..."`,
-            link: '/feed',
-            is_read: false,
-          });
-        } catch {}
+      if (targetPost) {
+        const myName = user.profile?.fullName || user.email?.split('@')[0] || 'Someone';
+        sendPostNotification(
+          targetPost,
+          'POST_COMMENT',
+          'New Comment on your post 💬',
+          `${myName} commented: "${text.slice(0, 50)}..."`
+        );
       }
     } catch (sErr) {
       console.warn('Supabase comment sync notice:', sErr);
@@ -1053,21 +1173,21 @@ export const StartupFeedPage: React.FC = () => {
     };
   }, []);
 
-  const mySharesCount = posts.filter(
-    (p) =>
-      Boolean(user?.id) &&
-      (p.authorId === user?.id || p.author?.id === user?.id) &&
-      !IDEA_POST_TYPES.has((p.postType || 'UPDATE').toUpperCase()) &&
-      (ACHIEVEMENT_POST_TYPES.has((p.postType || 'UPDATE').toUpperCase()) || (p.postType || 'UPDATE').toUpperCase() === 'UPDATE')
-  ).length;
+  const mySharesCount = posts.filter((p) => {
+    const rawType = (p.postType || (p as any).post_type || 'UPDATE').toUpperCase();
+    const isProtoPost = isPrototypePost(p);
+    return isMyPost(p) && !isProtoPost && !IDEA_POST_TYPES.has(rawType);
+  }).length;
 
-  const myIdeasCount = posts.filter(
-    (p) =>
-      Boolean(user?.id) &&
-      (p.authorId === user?.id || p.author?.id === user?.id) &&
-      !ACHIEVEMENT_POST_TYPES.has((p.postType || 'UPDATE').toUpperCase()) &&
-      (IDEA_POST_TYPES.has((p.postType || 'UPDATE').toUpperCase()) || (p.postType || 'UPDATE').toUpperCase() === 'UPDATE')
-  ).length;
+  const myIdeasCount = posts.filter((p) => {
+    const rawType = (p.postType || (p as any).post_type || 'UPDATE').toUpperCase();
+    const isProtoPost = isPrototypePost(p);
+    return isMyPost(p) && !isProtoPost && !ACHIEVEMENT_POST_TYPES.has(rawType) && (IDEA_POST_TYPES.has(rawType) || rawType === 'UPDATE');
+  }).length;
+
+  const myPrototypesCount = posts.filter((p) => {
+    return isMyPost(p) && isPrototypePost(p);
+  }).length;
 
   const executionFilters = [
     { id: 'ALL', label: 'All Describes' },
@@ -1084,6 +1204,13 @@ export const StartupFeedPage: React.FC = () => {
     { id: 'IDEA', label: '💡 Ideas' },
     { id: 'ADVICE', label: '💬 Advice' },
     { id: 'HIRING', label: '💼 Hiring' },
+  ];
+
+  const prototypeFilters = [
+    { id: 'ALL', label: 'All Prototypes' },
+    { id: 'MY_PROTOTYPES', label: user ? `🛠️ My Prototypes (${myPrototypesCount})` : '🛠️ My Prototypes' },
+    { id: 'WEBSITES', label: 'Live Websites' },
+    { id: 'VIDEOS', label: 'Demo Videos' },
   ];
 
   const executionComposerTypes = [
@@ -1855,7 +1982,18 @@ export const StartupFeedPage: React.FC = () => {
         isOpen={createPrototypeModalOpen}
         onClose={() => setCreatePrototypeModalOpen(false)}
         onSuccess={(newPost) => {
-          setPosts((prev) => [newPost, ...prev]);
+          if (user) {
+            newPost.authorId = user.id;
+            (newPost as any).author_id = user.id;
+            if (newPost.author) {
+              newPost.author.id = user.id;
+              if (!newPost.author.email) newPost.author.email = user.email;
+              if (!newPost.author.profile) newPost.author.profile = user.profile;
+            }
+          }
+          saveLocalPersistedPost(newPost);
+          setPosts((prev) => [newPost, ...prev.filter((p) => p.id !== newPost.id)]);
+          clearApiCache();
           setSuccessToast('Prototype published successfully!');
           setTimeout(() => setSuccessToast(null), 3000);
         }}

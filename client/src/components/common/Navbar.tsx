@@ -18,8 +18,6 @@ import {
   Moon,
   Plus,
   Shield,
-  Menu,
-  X,
   LogOut,
   User as UserIcon,
   LayoutDashboard,
@@ -467,18 +465,6 @@ export const Navbar: React.FC = () => {
                   </Link>
                 </div>
               )}
-
-              {/* Mobile Hamburger Button */}
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(!mobileMenuOpen);
-                  setProfileDropdownOpen(false);
-                }}
-                className="lg:hidden p-1.5 rounded-md text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
-                aria-label="Toggle Navigation Menu"
-              >
-                {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
-              </button>
             </div>
           </div>
         </div>
