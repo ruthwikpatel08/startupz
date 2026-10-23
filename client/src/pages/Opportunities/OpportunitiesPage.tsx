@@ -1457,7 +1457,7 @@ export const OpportunitiesPage: React.FC = () => {
                               e.stopPropagation();
                               setSelectedOpp(opp);
                             }}
-                            className="btn-primary inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium cursor-pointer"
+                            className="px-3.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
                           >
                             <Send size={12} /> Apply Now
                           </button>

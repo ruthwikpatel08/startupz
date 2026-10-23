@@ -202,7 +202,7 @@ const CSS = `
   font-weight: 900;
   line-height: 1.05;
   letter-spacing: -2.5px;
-  color: #FFFFFF;
+  color: #FFFFFF !important;
   margin-bottom: 22px;
   position: relative;
   transform: none !important;
@@ -220,6 +220,7 @@ const CSS = `
   cursor: default;
   position: relative;
   transform-style: preserve-3d;
+  color: #FFFFFF !important;
   will-change: transform, filter;
   transition: transform 180ms cubic-bezier(0.25, 1, 0.5, 1),
               filter 180ms ease;
@@ -643,7 +644,7 @@ const CSS = `
 .hlp-root .hlp-footer-cta-title {
   font-size: clamp(28px, 5.5vw, 52px);
   font-weight: 900;
-  color: #FFFFFF;
+  color: #FFFFFF !important;
   letter-spacing: -1.5px;
   margin-bottom: 14px;
 }
@@ -1063,12 +1064,13 @@ export const PublicLandingPage: React.FC = () => {
           </div>
 
           {/* Heading: Entire container stays stationary; individual words pop out in 3D */}
-          <h1 className="hlp-h1" aria-label="Find your team. Build something real.">
+          <h1 className="hlp-h1 !text-white text-white" style={{ color: '#FFFFFF' }} aria-label="Find your team. Build something real.">
             <span className="hlp-h1-line">
               {['Find', 'your', 'team.'].map((word) => (
                 <span
                   key={word}
-                  className="hlp-word"
+                  className="hlp-word !text-white"
+                  style={{ color: '#FFFFFF' }}
                   tabIndex={0}
                   onMouseMove={handleWordMove}
                   onMouseLeave={handleWordLeave}
@@ -1218,7 +1220,7 @@ export const PublicLandingPage: React.FC = () => {
       <div className="hlp-footer-cta">
         <div className="hlp-footer-cta-grid" aria-hidden="true" />
         <div className="hlp-footer-cta-inner hlp-reveal">
-          <h2 className="hlp-footer-cta-title">Ready to find your people?</h2>
+          <h2 className="hlp-footer-cta-title !text-white text-white" style={{ color: '#FFFFFF' }}>Ready to find your people?</h2>
           <p className="hlp-footer-cta-sub">
             Join thousands of students already building on HookZ.
           </p>

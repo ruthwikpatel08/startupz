@@ -494,36 +494,36 @@ export const LandingPage: React.FC = () => {
                         <div className="pt-3 mt-3 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2">
                           <Link
                             to={profileUrl}
-                            className="btn-tertiary !text-xs !py-1 !px-2 rounded-lg"
+                            className="text-xs font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
                           >
-                            View Profile
+                            Profile
                           </Link>
 
                           <div className="flex items-center gap-1.5 shrink-0">
                             {/* Startup Connection (Pitch) Button */}
                             <button
                               onClick={() => handlePitchClick(targetUserObj)}
-                              className="btn-secondary !text-xs !py-1 !px-2.5 rounded-lg flex items-center gap-1 cursor-pointer"
+                              className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-medium transition-colors cursor-pointer"
                               title="Propose Co-Founding a Startup"
                             >
-                              <Rocket size={12} /> Pitch
+                              Pitch
                             </button>
 
                             {/* User Connection Button */}
                             {connStatus === 'ACCEPTED' ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                              <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                                 <Check size={12} /> Connected
                               </span>
                             ) : connStatus === 'PENDING' ? (
-                              <span className="px-2.5 py-1 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                              <span className="px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
                                 Pending
                               </span>
                             ) : (
                               <button
                                 onClick={() => handleConnectClick(targetUserObj)}
-                                className="btn-primary !text-xs !py-1 !px-2.5 rounded-lg flex items-center gap-1 cursor-pointer"
+                                className="px-3.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white text-xs font-semibold transition-colors cursor-pointer"
                               >
-                                <UserPlus size={12} /> Connect
+                                + Connect
                               </button>
                             )}
                           </div>

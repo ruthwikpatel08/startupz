@@ -864,43 +864,43 @@ export const BusinessPage: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <Link
                             to={profileUrl}
-                            className="btn-tertiary !text-xs sm:!text-sm !py-1.5 !px-2.5"
+                            className="text-xs font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
                           >
-                            View Profile
+                            Profile
                           </Link>
 
                           {/* Pitch Button */}
                           <button
                             onClick={() => handlePitchClick(targetUserObj)}
-                            className="btn-secondary !text-xs sm:!text-sm !py-1.5 !px-3 flex items-center gap-1"
+                            className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-medium transition-colors cursor-pointer"
                             title="Propose Co-Founding or Synergy"
                           >
-                            <Rocket size={13} /> Pitch
+                            Pitch
                           </button>
 
                           {/* Connection Button */}
                           {connStatus === 'ACCEPTED' ? (
                             <div className="flex items-center gap-1.5">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
+                              <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
                                 <Check size={12} /> Connected
                               </span>
                               <Link
                                 to={`/messages?user=${f.user_id}`}
-                                className="btn-primary !text-xs sm:!text-sm !py-1.5 !px-2.5 flex items-center gap-1"
+                                className="px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white text-xs font-semibold transition-colors"
                               >
-                                <MessageSquare size={13} /> Chat
+                                Chat
                               </Link>
                             </div>
                           ) : connStatus === 'PENDING' ? (
-                            <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
+                            <span className="px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
                               Pending
                             </span>
                           ) : (
                             <button
                               onClick={() => handleConnectClick(targetUserObj)}
-                              className="btn-primary !text-xs sm:!text-sm !py-1.5 !px-3 flex items-center gap-1"
+                              className="px-3.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white text-xs font-semibold transition-colors cursor-pointer"
                             >
-                              <UserPlus size={13} /> Connect
+                              + Connect
                             </button>
                           )}
                         </div>

@@ -1033,43 +1033,43 @@ export const FindCoFounderPage: React.FC = () => {
                       <>
                         <Link
                           to={`/profile/${cand.id}`}
-                          className="btn-tertiary !text-xs !py-1 !px-2"
+                          className="text-xs font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
                         >
-                          View Profile
+                          Profile
                         </Link>
 
                         {/* Startup Connection Button */}
                         <button
                           onClick={() => setStartupConnectUser(cand)}
-                          className="btn-secondary !text-xs !py-1 !px-2.5 flex items-center gap-1"
+                          className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-medium transition-colors cursor-pointer"
                           title="Propose Co-Founding a Startup"
                         >
-                          <Rocket size={12} /> Pitch
+                          Pitch
                         </button>
 
                         {/* User Connection Button */}
                         {cand.connectionStatus?.status === 'ACCEPTED' ? (
                           <div className="flex items-center gap-1.5">
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
+                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-900">
                               <Check size={12} /> Connected
                             </span>
                             <Link
                               to={`/messages?user=${cand.id}`}
-                              className="btn-primary !text-xs !py-1 !px-2 flex items-center gap-1"
+                              className="px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white text-xs font-semibold transition-colors"
                             >
-                              <MessageSquare size={12} /> Chat
+                              Chat
                             </Link>
                           </div>
                         ) : cand.connectionStatus?.status === 'PENDING' ? (
-                          <span className="px-2.5 py-1 rounded text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
+                          <span className="px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900">
                             Pending
                           </span>
                         ) : (
                           <button
                             onClick={() => setConnectUser(cand)}
-                            className="btn-primary !text-xs !py-1 !px-2.5 flex items-center gap-1"
+                            className="px-3.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white text-xs font-semibold transition-colors cursor-pointer"
                           >
-                            <UserPlus size={12} /> Connect
+                            + Connect
                           </button>
                         )}
                       </>
