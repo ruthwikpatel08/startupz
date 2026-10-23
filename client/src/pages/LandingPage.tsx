@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Rocket,
@@ -19,7 +19,6 @@ import {
   UserPlus,
   Check,
   MapPin,
-  Clock,
 } from 'lucide-react';
 import { AIScoutModal } from '../components/ai/AIScoutModal';
 import { ConnectModal } from '../components/common/ConnectModal';
@@ -97,6 +96,36 @@ export function getProfileRoleAndCategory(profile: any): {
   }
 
   return { role: pref || 'Student', category: 'students' };
+}
+
+export function getPrimarySkill(profile: any): string | null {
+  const raw = profile?.skills || profile?.profile?.skills;
+  if (!raw) return null;
+
+  if (Array.isArray(raw)) {
+    const valid = raw.find((s) => typeof s === 'string' && s.trim().length > 0);
+    return valid ? valid.trim() : null;
+  }
+
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          const valid = parsed.find((s) => typeof s === 'string' && s.trim().length > 0);
+          if (valid) return valid.trim();
+        }
+      } catch {}
+    }
+
+    const first = trimmed.split(',')[0]?.trim().replace(/^["'\[]+|["'\]]+$/g, '');
+    return first && first.length > 0 ? first : null;
+  }
+
+  return null;
 }
 
 export const LandingPage: React.FC = () => {
@@ -314,6 +343,27 @@ export const LandingPage: React.FC = () => {
     setStartupConnectUser(target);
   };
 
+  const isProfileConnected = (profile: any): boolean => {
+    if (!connectionStatusMap || connectionStatusMap.size === 0) return false;
+    const candidateIds = [
+      profile.user_id,
+      profile.id,
+      profile.userId,
+      profile.profile?.userId,
+      profile.profile?.id,
+    ].filter(Boolean).map(String);
+
+    return candidateIds.some((id) => {
+      const status =
+        connectionStatusMap.get(id) ||
+        connectionStatusMap.get(id.toLowerCase());
+      return status === 'ACCEPTED';
+    });
+  };
+
+  const unconnectedProfiles = useMemo(() => {
+    return otherProfiles.filter((p) => !isProfileConnected(p));
+  }, [otherProfiles, connectionStatusMap]);
 
   return (
     <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
@@ -329,9 +379,6 @@ export const LandingPage: React.FC = () => {
           <div className="w-full mb-10">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
               <div>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 text-xs font-semibold border border-brand-200/60 dark:border-brand-900/60 mb-1.5">
-                  <Sparkles size={12} /> Community Talent Showcase
-                </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                   Students, Specialists & Community Talent
                 </h2>
@@ -351,7 +398,7 @@ export const LandingPage: React.FC = () => {
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  All ({otherProfiles.length})
+                  All ({unconnectedProfiles.length})
                 </button>
                 <button
                   type="button"
@@ -362,7 +409,7 @@ export const LandingPage: React.FC = () => {
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  Students ({otherProfiles.filter((p) => p.category === 'students').length})
+                  Students ({unconnectedProfiles.filter((p) => p.category === 'students').length})
                 </button>
                 <button
                   type="button"
@@ -373,13 +420,13 @@ export const LandingPage: React.FC = () => {
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  Others ({otherProfiles.filter((p) => p.category === 'others').length})
+                  Others ({unconnectedProfiles.filter((p) => p.category === 'others').length})
                 </button>
               </div>
             </div>
 
             {(() => {
-              const displayedProfiles = otherProfiles.filter((p) => {
+              const displayedProfiles = unconnectedProfiles.filter((p) => {
                 if (roleFilter === 'students') return p.category === 'students';
                 if (roleFilter === 'others') return p.category === 'others';
                 return true;
@@ -417,6 +464,7 @@ export const LandingPage: React.FC = () => {
                     const username = p.username || (p.email ? p.email.split('@')[0] : displayName.toLowerCase().replace(/\s+/g, '_'));
                     const profileUrl = p.user_id ? `/profile/${p.user_id}` : (p.id ? `/profile/${p.id}` : '/cofounders');
                     const connStatus = p.user_id ? connectionStatusMap.get(p.user_id) : (p.id ? connectionStatusMap.get(p.id) : undefined);
+                    const primarySkill = getPrimarySkill(p);
                     const targetUserObj = {
                       id: p.user_id || p.id,
                       email: p.email || '',
@@ -468,7 +516,7 @@ export const LandingPage: React.FC = () => {
                             </span>
                           </div>
 
-                          {/* Location & Availability Row */}
+                          {/* Location & Skill Row */}
                           <div className="mt-3 flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400 w-full">
                             <div className="flex items-center gap-1.5 min-w-0 flex-1">
                               <MapPin size={12} className="shrink-0 text-slate-400 dark:text-slate-500" />
@@ -476,10 +524,14 @@ export const LandingPage: React.FC = () => {
                                 {p.location || 'Remote'}
                               </span>
                             </div>
-                            <div className="shrink-0 whitespace-nowrap flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                              <Clock size={12} className="shrink-0 text-slate-400 dark:text-slate-500" />
-                              <span className="whitespace-nowrap">Full-time</span>
-                            </div>
+                            {primarySkill ? (
+                              <span
+                                className="shrink-0 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 font-medium truncate max-w-[130px]"
+                                title={primarySkill}
+                              >
+                                {primarySkill}
+                              </span>
+                            ) : null}
                           </div>
 
                           {/* Single Bio / Headline Block (Rendered strictly once!) */}
