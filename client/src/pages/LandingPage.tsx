@@ -374,7 +374,7 @@ export const LandingPage: React.FC = () => {
       />
       {/* 1. ECOSYSTEM DIRECTORY & COMMUNITY */}
       <section className="relative pt-6 pb-16 lg:pt-8 lg:pb-24">
-        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-full px-4 sm:px-6 lg:px-8">
           {/* Community Profiles: Students, Operators, Specialists & Community Members */}
           <div className="w-full mb-10">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -594,7 +594,7 @@ export const LandingPage: React.FC = () => {
 
       {/* 1.5 LATEST PLATFORM UPDATES SECTION */}
       <section className="py-14 bg-slate-50/80 dark:bg-slate-900/40 border-y border-slate-200 dark:border-slate-800">
-        <div className="w-full max-w-7xl xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full max-w-full px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
             <div>
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-800 mb-1.5">

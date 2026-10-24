@@ -1820,7 +1820,7 @@ export const ProjectsPage: React.FC = () => {
   });
 
   return (
-    <div className="w-full max-w-full xl:max-w-7xl 2xl:max-w-[1500px] mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5 sm:space-y-8 min-w-0 overflow-x-hidden">
+    <div className="w-full max-w-full px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5 sm:space-y-8 min-w-0 overflow-x-hidden">
       <SEO
         title="Builder Projects & Collaborative Teams | HookZ"
         description="Discover collaborative builder projects, split roles with teammates, and build real-world products together on HookZ."

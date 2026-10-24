@@ -176,7 +176,7 @@ const AppContent: React.FC = () => {
             !user || isAuthOrMeetingPage ? '' : 'lg:pl-60 xl:pl-64'
           }`}
         >
-          <div className={`flex-1 min-w-0 w-full max-w-full overflow-x-hidden ${!user || isAuthOrMeetingPage ? '' : (isMessagesPage ? 'p-0' : 'px-0 sm:px-2 md:px-4')}`}>
+          <div className={`flex-1 min-w-0 w-full max-w-full overflow-x-hidden ${!user || isAuthOrMeetingPage ? '' : (isMessagesPage ? 'p-0' : 'px-0 sm:px-2 md:px-4 lg:px-0')}`}>
             <React.Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public landing for logged-out users; existing dashboard for logged-in users */}

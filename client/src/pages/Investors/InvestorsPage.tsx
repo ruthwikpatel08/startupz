@@ -186,7 +186,7 @@ export const InvestorsPage: React.FC = () => {
   const industries = ['ALL', 'Artificial Intelligence', 'B2B SaaS', 'AgTech', 'HealthTech', 'FinTech', 'ClimateTech'];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       <SEO
         title="Find Startup Investors | HookZ"
         description="Discover vetted venture funds, syndicates, and angel investors actively backing early-stage startups and student founders on HookZ."

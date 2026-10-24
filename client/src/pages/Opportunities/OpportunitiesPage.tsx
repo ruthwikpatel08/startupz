@@ -973,7 +973,7 @@ export const OpportunitiesPage: React.FC = () => {
   const commitments = ['ALL', 'Internship', 'Full-time', 'Part-time', 'Grant / Fellowship', 'Grant / Incubation', 'National Challenge Grant', 'Contract'];
 
   return (
-    <div className="w-full max-w-full xl:max-w-[1400px] 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 min-w-0 overflow-x-hidden">
+    <div className="w-full max-w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6 min-w-0 overflow-x-hidden">
       <SEO
         title="Startup Opportunities | HookZ"
         description="Join early-stage startups as an intern, founding engineer, design lead, or growth partner. Explore curated startup roles on HookZ."
