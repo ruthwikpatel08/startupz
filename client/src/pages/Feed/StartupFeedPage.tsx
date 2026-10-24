@@ -1311,11 +1311,11 @@ export const StartupFeedPage: React.FC = () => {
           onClick={() => handlePillarChange('ACHIEVEMENTS')}
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activePillar === 'ACHIEVEMENTS'
-              ? 'bg-indigo-50/80 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800/60 shadow-xs font-semibold'
+              ? 'bg-[#50C878] text-white border-[#50C878] dark:bg-[#50C878] dark:text-white dark:border-[#50C878] shadow-xs font-semibold'
               : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
-          <Award size={15} className={`shrink-0 ${activePillar === 'ACHIEVEMENTS' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
+          <Award size={15} className={`shrink-0 ${activePillar === 'ACHIEVEMENTS' ? 'text-white' : 'text-slate-400'}`} />
           <span className="text-xs sm:text-[13px] truncate">
             Describes
           </span>
@@ -1327,11 +1327,11 @@ export const StartupFeedPage: React.FC = () => {
           onClick={() => handlePillarChange('IDEAS')}
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activePillar === 'IDEAS'
-              ? 'bg-indigo-50/80 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800/60 shadow-xs font-semibold'
+              ? 'bg-[#50C878] text-white border-[#50C878] dark:bg-[#50C878] dark:text-white dark:border-[#50C878] shadow-xs font-semibold'
               : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
-          <Rocket size={15} className={`shrink-0 ${activePillar === 'IDEAS' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
+          <Rocket size={15} className={`shrink-0 ${activePillar === 'IDEAS' ? 'text-white' : 'text-slate-400'}`} />
           <span className="text-xs sm:text-[13px] truncate">
             Ideas
           </span>
@@ -1343,11 +1343,11 @@ export const StartupFeedPage: React.FC = () => {
           onClick={() => handlePillarChange('PROTOTYPES')}
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activePillar === 'PROTOTYPES'
-              ? 'bg-indigo-50/80 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800/60 shadow-xs font-semibold'
+              ? 'bg-[#50C878] text-white border-[#50C878] dark:bg-[#50C878] dark:text-white dark:border-[#50C878] shadow-xs font-semibold'
               : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
-          <Boxes size={15} className={`shrink-0 ${activePillar === 'PROTOTYPES' ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}`} />
+          <Boxes size={15} className={`shrink-0 ${activePillar === 'PROTOTYPES' ? 'text-white' : 'text-slate-400'}`} />
           <span className="text-xs sm:text-[13px] truncate">
             Prototypes
           </span>

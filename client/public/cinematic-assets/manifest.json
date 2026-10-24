@@ -1,0 +1,74 @@
+{
+  "pageWidth": 1440,
+  "pageHeight": 1496,
+  "deviceScaleFactor": 2,
+  "capturedAt": "2026-10-20T15:49:43.297Z",
+  "layers": [
+    {
+      "id": "hero_cta",
+      "label": "Hero CTA button",
+      "file": "layer-hero_cta.png",
+      "x": 542.25,
+      "y": 514.625,
+      "width": 222.84375,
+      "height": 52,
+      "padX": 28,
+      "padY": 28
+    },
+    {
+      "id": "hero_heading",
+      "label": "Hero heading",
+      "file": "layer-hero_heading.png",
+      "x": 364,
+      "y": 205.5,
+      "width": 712,
+      "height": 134.375,
+      "padX": 28,
+      "padY": 28
+    },
+    {
+      "id": "feature_tile_0",
+      "label": "Feature tile 0",
+      "file": "layer-feature_tile_0.png",
+      "x": 607.15625,
+      "y": 148,
+      "width": 225.671875,
+      "height": 29.5,
+      "padX": 28,
+      "padY": 28
+    },
+    {
+      "id": "feature_tile_1",
+      "label": "Feature tile 1",
+      "file": "layer-feature_tile_1.png",
+      "x": 584.65625,
+      "y": 626.625,
+      "width": 270.671875,
+      "height": 118.78125,
+      "padX": 28,
+      "padY": 28
+    },
+    {
+      "id": "feature_tile_2",
+      "label": "Feature tile 2",
+      "file": "layer-feature_tile_2.png",
+      "x": 875.328125,
+      "y": 626.625,
+      "width": 270.65625,
+      "height": 118.78125,
+      "padX": 28,
+      "padY": 28
+    },
+    {
+      "id": "feature_tile_3",
+      "label": "Feature tile 3",
+      "file": "layer-feature_tile_3.png",
+      "x": 294,
+      "y": 765.40625,
+      "width": 270.65625,
+      "height": 118.78125,
+      "padX": 28,
+      "padY": 28
+    }
+  ]
+}

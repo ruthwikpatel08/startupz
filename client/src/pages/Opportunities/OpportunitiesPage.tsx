@@ -1054,56 +1054,61 @@ export const OpportunitiesPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Opportunity Type Filter Pills */}
+      {activeTab === 'EXPLORE' || activeTab === 'PROBLEMS' ? (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block">
+            Opportunity Type:
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { label: 'All Opportunities', value: 'ALL' },
+              { label: 'Internships', value: 'internships' },
+              { label: 'Jobs', value: 'jobs' },
+              { label: 'Problem Statements', value: 'problems' },
+            ].map((t) => {
+              const isSelected =
+                (t.value === 'ALL' && activeTab === 'EXPLORE' && (!currentType || currentType === 'all')) ||
+                (t.value === 'problems' && (activeTab === 'PROBLEMS' || currentType === 'problems')) ||
+                (currentType === t.value && activeTab === 'EXPLORE');
+              return (
+                <button
+                  key={t.value}
+                  onClick={() => {
+                    if (t.value === 'problems') {
+                      setActiveTab('PROBLEMS');
+                      const params = new URLSearchParams(searchParams);
+                      params.set('tab', 'PROBLEMS');
+                      params.set('type', 'problems');
+                      setSearchParams(params);
+                      return;
+                    }
+                    setActiveTab('EXPLORE');
+                    const params = new URLSearchParams(searchParams);
+                    params.delete('tab');
+                    if (t.value === 'ALL') {
+                      params.delete('type');
+                    } else {
+                      params.set('type', t.value);
+                    }
+                    setSearchParams(params);
+                  }}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                    isSelected
+                      ? 'bg-[#50C878] text-white border border-[#50C878] shadow-xs'
+                      : 'bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-dark-700'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
       {activeTab === 'EXPLORE' ? (
         <>
-          {/* Opportunity Type Filter Pills */}
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block">
-              Opportunity Type:
-            </label>
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { label: 'All Opportunities', value: 'ALL' },
-                { label: 'Internships', value: 'internships' },
-                { label: 'Jobs', value: 'jobs' },
-                { label: 'Problem Statements', value: 'problems' },
-              ].map((t) => {
-                const isSelected =
-                  (t.value === 'ALL' && (!currentType || currentType === 'all')) ||
-                  currentType === t.value;
-                return (
-                  <button
-                    key={t.value}
-                    onClick={() => {
-                      if (t.value === 'problems') {
-                        setActiveTab('PROBLEMS');
-                        const params = new URLSearchParams(searchParams);
-                        params.set('tab', 'PROBLEMS');
-                        setSearchParams(params);
-                        return;
-                      }
-                      setActiveTab('EXPLORE');
-                      const params = new URLSearchParams(searchParams);
-                      params.delete('tab');
-                      if (t.value === 'ALL') {
-                        params.delete('type');
-                      } else {
-                        params.set('type', t.value);
-                      }
-                      setSearchParams(params);
-                    }}
-                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                      isSelected
-                        ? 'bg-brand-600 text-white shadow-xs'
-                        : 'bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-dark-700'
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
 
           {/* Filters Bar */}
           <div className="card-base p-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
