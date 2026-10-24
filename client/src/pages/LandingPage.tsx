@@ -573,7 +573,7 @@ export const LandingPage: React.FC = () => {
                             ) : (
                               <button
                                 onClick={() => handleConnectClick(targetUserObj)}
-                                className="px-3.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white text-xs font-semibold transition-colors cursor-pointer"
+                                className="px-3.5 py-1.5 rounded-lg bg-[#34a1eb] hover:bg-[#2892d7] text-white text-xs font-semibold transition-colors cursor-pointer"
                               >
                                 + Connect
                               </button>
