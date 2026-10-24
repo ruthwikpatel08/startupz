@@ -133,7 +133,7 @@ export const Sidebar: React.FC = () => {
       <div className="mt-auto pt-4 border-t border-slate-100 dark:border-dark-800 space-y-2">
         <Link
           to="/projects"
-          className="w-full py-2.5 px-3.5 rounded-lg text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 shadow-subtle flex items-center justify-center gap-2 transition-colors"
+          className="w-full py-2.5 px-3.5 rounded-lg text-sm font-semibold text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 border border-[#34a1eb] shadow-subtle flex items-center justify-center gap-2 transition-colors"
         >
           <Plus size={15} />
           <span>New Builder Project</span>

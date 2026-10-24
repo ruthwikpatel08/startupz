@@ -364,7 +364,7 @@ export const BusinessPage: React.FC = () => {
             <div className="flex items-center gap-2 shrink-0">
               <Link
                 to="/startups/create"
-                className="btn-primary !text-xs sm:!text-sm !py-2 !px-3.5 inline-flex items-center gap-1.5"
+                className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg text-xs sm:text-sm py-2 px-3.5 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Plus size={14} /> Post Startup
               </Link>
@@ -387,7 +387,7 @@ export const BusinessPage: React.FC = () => {
             <div className="p-10 text-center card-base space-y-3.5">
               <Compass size={32} className="mx-auto text-slate-400" />
               <p className="text-sm text-slate-500">No startups listed yet. Be the first to launch!</p>
-              <Link to="/startups/create" className="btn-primary !text-xs sm:!text-sm !py-2 !px-4 inline-flex items-center gap-1.5">
+              <Link to="/startups/create" className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg text-xs sm:text-sm py-2 px-4 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer">
                 <Plus size={14} /> Post Startup
               </Link>
             </div>

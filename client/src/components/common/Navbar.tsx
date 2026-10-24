@@ -295,7 +295,7 @@ export const Navbar: React.FC = () => {
                   {/* Post Idea Action Button */}
                   <Link
                     to="/startups/create"
-                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 shadow-subtle transition-colors"
+                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 border border-[#34a1eb] shadow-subtle transition-colors"
                   >
                     <Plus size={13} />
                     <span>Post Idea</span>
@@ -670,7 +670,7 @@ export const Navbar: React.FC = () => {
                   <Link
                     to="/startups/create"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="btn-primary text-center py-1.5 text-xs"
+                    className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-md text-center py-1.5 text-xs font-semibold transition-colors"
                   >
                     + Post Idea
                   </Link>

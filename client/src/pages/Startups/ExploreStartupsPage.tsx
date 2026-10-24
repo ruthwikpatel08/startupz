@@ -366,7 +366,7 @@ export const ExploreStartupsPage: React.FC = () => {
 
         <Link
           to="/startups/create"
-          className="btn-primary inline-flex items-center gap-2 text-xs shrink-0"
+          className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg inline-flex items-center gap-2 text-xs font-semibold py-2 px-3.5 transition-colors shrink-0"
         >
           <Plus size={15} /> Publish Startup Venture
         </Link>
@@ -488,7 +488,7 @@ export const ExploreStartupsPage: React.FC = () => {
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <Link
                 to="/startups/create"
-                className="btn-primary inline-flex items-center gap-2 text-xs"
+                className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg inline-flex items-center gap-2 text-xs font-semibold py-2 px-3.5 transition-colors"
               >
                 <Plus size={14} /> Publish a Startup Venture
               </Link>

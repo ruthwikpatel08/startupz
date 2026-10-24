@@ -1867,7 +1867,7 @@ export const ProjectsPage: React.FC = () => {
             }
             setCreateModalOpen(true);
           }}
-          className="btn-primary !py-2.5 !px-5 whitespace-nowrap self-start md:self-auto cursor-pointer inline-flex items-center gap-2 font-semibold shadow-xs rounded-lg"
+          className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg !py-2.5 !px-5 whitespace-nowrap self-start md:self-auto cursor-pointer inline-flex items-center gap-2 font-semibold shadow-xs transition-colors"
         >
           <Plus size={16} />
           <span>Create Project</span>
@@ -1935,7 +1935,7 @@ export const ProjectsPage: React.FC = () => {
           </p>
           <button
             onClick={() => setCreateModalOpen(true)}
-            className="btn-primary !text-xs !py-1.5 !px-3 inline-flex items-center gap-1"
+            className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg !text-xs !py-1.5 !px-3 inline-flex items-center gap-1 font-semibold transition-colors cursor-pointer"
           >
             <Plus size={13} /> Post First Project
           </button>

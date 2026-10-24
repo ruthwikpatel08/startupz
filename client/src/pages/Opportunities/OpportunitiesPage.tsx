@@ -1047,7 +1047,7 @@ export const OpportunitiesPage: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenCreateModal}
-            className="btn-primary inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl shadow-xs cursor-pointer"
+            className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-xl px-3.5 py-2 text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5 transition-colors"
           >
             <Plus size={14} /> Post Opportunity
           </button>
