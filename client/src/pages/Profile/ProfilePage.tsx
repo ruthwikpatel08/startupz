@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { api } from '../../services/api';
+import { api, clearApiCache } from '../../services/api';
 import { User, Profile } from '../../types';
 import {
   supabase,
@@ -164,6 +164,66 @@ function resizeImageToDataUrl(file: File, maxDimension = 1200, quality = 0.85): 
     reader.onerror = (err) => reject(err);
     reader.readAsDataURL(file);
   });
+}
+
+function syncLocalPostsWithUpdatedProfile(
+  userId: string,
+  newAvatar?: string | null,
+  newFullName?: string | null,
+  newHeadline?: string | null
+) {
+  if (!userId) return;
+  const targetId = String(userId).toLowerCase();
+
+  try {
+    const rawLocal = localStorage.getItem('startupz_local_posts');
+    if (rawLocal) {
+      const list = JSON.parse(rawLocal);
+      if (Array.isArray(list)) {
+        let changed = false;
+        const updated = list.map((lp: any) => {
+          const aId = String(lp.authorId || lp.author_id || lp.author?.id || '').toLowerCase();
+          if (aId === targetId) {
+            changed = true;
+            if (!lp.author) lp.author = { id: userId };
+            if (!lp.author.profile) lp.author.profile = {};
+            if (newAvatar !== undefined) lp.author.profile.avatar = newAvatar;
+            if (newFullName) lp.author.profile.fullName = newFullName;
+            if (newHeadline) lp.author.profile.headline = newHeadline;
+          }
+          return lp;
+        });
+        if (changed) {
+          localStorage.setItem('startupz_local_posts', JSON.stringify(updated));
+        }
+      }
+    }
+  } catch {}
+
+  try {
+    const rawUserPosts = localStorage.getItem('startupz_user_persisted_posts');
+    if (rawUserPosts) {
+      const list = JSON.parse(rawUserPosts);
+      if (Array.isArray(list)) {
+        let changed = false;
+        const updated = list.map((lp: any) => {
+          const aId = String(lp.authorId || lp.author_id || lp.author?.id || '').toLowerCase();
+          if (aId === targetId) {
+            changed = true;
+            if (!lp.author) lp.author = { id: userId };
+            if (!lp.author.profile) lp.author.profile = {};
+            if (newAvatar !== undefined) lp.author.profile.avatar = newAvatar;
+            if (newFullName) lp.author.profile.fullName = newFullName;
+            if (newHeadline) lp.author.profile.headline = newHeadline;
+          }
+          return lp;
+        });
+        if (changed) {
+          localStorage.setItem('startupz_user_persisted_posts', JSON.stringify(updated));
+        }
+      }
+    }
+  } catch {}
 }
 
 export const ProfilePage: React.FC = () => {
@@ -594,6 +654,13 @@ export const ProfilePage: React.FC = () => {
       setProfileUser(updatedUser);
       updateUser(updatedUser);
 
+      clearApiCache();
+      if (targetImageType === 'avatar') {
+        syncLocalPostsWithUpdatedProfile(currentUser.id, photoToSave);
+      }
+      window.dispatchEvent(new CustomEvent('startupz_profile_updated', { detail: updatedUser }));
+      window.dispatchEvent(new CustomEvent('profile_updated', { detail: updatedUser }));
+
       setConfirmPhotoModalOpen(false);
       setPreviewPhotoUrl('');
       setPhotoSavedNotice(
@@ -657,6 +724,13 @@ export const ProfilePage: React.FC = () => {
 
       setProfileUser(updatedUser);
       updateUser(updatedUser);
+
+      clearApiCache();
+      if (type === 'avatar') {
+        syncLocalPostsWithUpdatedProfile(currentUser.id, null);
+      }
+      window.dispatchEvent(new CustomEvent('startupz_profile_updated', { detail: updatedUser }));
+      window.dispatchEvent(new CustomEvent('profile_updated', { detail: updatedUser }));
 
       setPhotoSavedNotice(
         type === 'avatar'
@@ -1648,6 +1722,14 @@ export const ProfilePage: React.FC = () => {
       setPhotoSavedNotice('Profile changes saved successfully!');
       setTimeout(() => setPhotoSavedNotice(null), 4000);
       invalidateFindCoFounderCache();
+      clearApiCache();
+      syncLocalPostsWithUpdatedProfile(
+        currentUser.id,
+        authoritativeUser.profile?.avatar,
+        authoritativeUser.profile?.fullName,
+        authoritativeUser.profile?.headline
+      );
+      window.dispatchEvent(new CustomEvent('startupz_profile_updated', { detail: authoritativeUser }));
       window.dispatchEvent(new CustomEvent('profile_updated', { detail: authoritativeUser }));
     } catch (err: any) {
       setSaveError(err.message || 'Failed to update profile.');

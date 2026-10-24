@@ -311,7 +311,77 @@ export const StartupFeedPage: React.FC = () => {
       const localPersisted = getLocalPersistedPosts();
       const loadedIds = new Set(loadedList.map((p) => p.id));
       const missingLocal = localPersisted.filter((lp) => !loadedIds.has(lp.id));
-      const finalPosts = [...missingLocal, ...loadedList];
+      let finalPosts = [...missingLocal, ...loadedList];
+
+      // Authoritative Supabase profile sync for all post authors so any profile updates (e.g. logo, avatar, headline) reflect on their posts
+      const allAuthorIds = [
+        ...new Set(
+          finalPosts
+            .map((p) => p.authorId || p.author_id || p.author?.id)
+            .filter((id): id is string => Boolean(id) && typeof id === 'string')
+        ),
+      ];
+
+      if (allAuthorIds.length > 0) {
+        try {
+          const { data: freshProfiles } = await supabase
+            .from('profiles')
+            .select('user_id, full_name, avatar, headline, location, username, preferred_role')
+            .in('user_id', allAuthorIds);
+
+          if (Array.isArray(freshProfiles) && freshProfiles.length > 0) {
+            const profMap = new Map(
+              freshProfiles.map((pr) => [String(pr.user_id).toLowerCase(), pr])
+            );
+
+            finalPosts = finalPosts.map((p) => {
+              const aId = String(p.authorId || p.author_id || p.author?.id || '').toLowerCase();
+              const freshPr = profMap.get(aId);
+              if (freshPr) {
+                return {
+                  ...p,
+                  author: {
+                    ...(p.author || { id: p.authorId || aId }),
+                    role: freshPr.preferred_role || p.author?.role,
+                    profile: {
+                      ...(p.author?.profile || {}),
+                      avatar: freshPr.avatar !== undefined ? freshPr.avatar : p.author?.profile?.avatar,
+                      fullName: freshPr.full_name || p.author?.profile?.fullName,
+                      headline: freshPr.headline || p.author?.profile?.headline,
+                      location: freshPr.location || p.author?.profile?.location,
+                      username: freshPr.username || p.author?.profile?.username,
+                    },
+                  } as any,
+                } as Post;
+              }
+              return p;
+            });
+          }
+        } catch (sbErr) {
+          console.warn('Feed profiles refresh notice:', sbErr);
+        }
+      }
+
+      // Synchronize the current user's own posts with their latest user.profile state
+      if (user?.id && user?.profile) {
+        finalPosts = finalPosts.map((p) => {
+          if (isMyPost(p)) {
+            return {
+              ...p,
+              author: {
+                ...(p.author || { id: user.id }),
+                profile: {
+                  ...(p.author?.profile || {}),
+                  avatar: user.profile?.avatar !== undefined ? user.profile.avatar : p.author?.profile?.avatar,
+                  fullName: user.profile?.fullName || p.author?.profile?.fullName,
+                  headline: user.profile?.headline || p.author?.profile?.headline,
+                },
+              } as any,
+            } as Post;
+          }
+          return p;
+        });
+      }
 
       setPosts(finalPosts);
       setUserVotes((prev) => ({ ...prev, ...userVoteMap }));
@@ -324,7 +394,38 @@ export const StartupFeedPage: React.FC = () => {
 
   useEffect(() => {
     fetchPosts();
-  }, [user?.id]);
+
+    // Listen for real-time profile updates across the app to update posts in place
+    const handleProfileUpdated = (e: any) => {
+      const updatedUser = e?.detail || user;
+      if (updatedUser?.profile) {
+        setPosts((prev) =>
+          prev.map((p) => {
+            if (isMyPost(p)) {
+              return {
+                ...p,
+                author: {
+                  ...(p.author || { id: updatedUser.id }),
+                  profile: {
+                    ...(p.author?.profile || {}),
+                    avatar: updatedUser.profile.avatar !== undefined ? updatedUser.profile.avatar : p.author?.profile?.avatar,
+                    fullName: updatedUser.profile.fullName || p.author?.profile?.fullName,
+                    headline: updatedUser.profile.headline || p.author?.profile?.headline,
+                  },
+                } as any,
+              } as Post;
+            }
+            return p;
+          })
+        );
+      }
+    };
+
+    window.addEventListener('startupz_profile_updated', handleProfileUpdated);
+    return () => {
+      window.removeEventListener('startupz_profile_updated', handleProfileUpdated);
+    };
+  }, [user?.id, user?.profile?.avatar]);
 
   // Handle direct redirection to a shared post (?postId=xyz or #post-xyz)
   useEffect(() => {
@@ -1593,9 +1694,11 @@ export const StartupFeedPage: React.FC = () => {
         <div className="space-y-4">
 
           {filteredPosts.map((post) => {
+            const isMe = isMyPost(post);
             const author = post.author;
-            const authorName = author?.profile?.fullName || author?.email || 'Founder';
-            const authorHeadline = author?.profile?.headline || author?.role;
+            const authorAvatar = (isMe && user?.profile?.avatar !== undefined) ? user.profile.avatar : author?.profile?.avatar;
+            const authorName = (isMe && user?.profile?.fullName) || author?.profile?.fullName || author?.email || 'Founder';
+            const authorHeadline = (isMe && user?.profile?.headline) || author?.profile?.headline || author?.role;
             const isCommentsOpen = !!expandedComments[post.id];
 
             const isIdeaPost =
@@ -1629,9 +1732,9 @@ export const StartupFeedPage: React.FC = () => {
                 {/* Post Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <Link to={`/profile/${author?.id}`}>
+                    <Link to={`/profile/${author?.id || user?.id}`}>
                       <Avatar
-                        src={author?.profile?.avatar}
+                        src={authorAvatar}
                         name={authorName}
                         size="md"
                         className="!w-10 !h-10"
@@ -1640,7 +1743,7 @@ export const StartupFeedPage: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <Link
-                          to={`/profile/${author?.id}`}
+                          to={`/profile/${author?.id || user?.id}`}
                           className="font-semibold text-sm text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
                         >
                           {authorName}

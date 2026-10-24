@@ -382,10 +382,16 @@ export const FailedStartupsPage: React.FC = () => {
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {item.solutions.map((sol) => {
+                            const isMe = Boolean(user && sol.author && (
+                              String(user.id).toLowerCase() === String(sol.author.id).toLowerCase() ||
+                              (user.email && sol.author.email && user.email.toLowerCase() === sol.author.email.toLowerCase())
+                            ));
                             const authorName =
+                              (isMe && user?.profile?.fullName) ||
                               sol.author?.profile?.fullName ||
                               sol.author?.email?.split('@')[0] ||
                               'Innovator';
+                            const authorAvatar = (isMe && user?.profile?.avatar !== undefined) ? user.profile.avatar : sol.author?.profile?.avatar;
                             const isUpvoted = upvotedSolutions[sol.id];
 
                             return (
@@ -425,7 +431,7 @@ export const FailedStartupsPage: React.FC = () => {
                                 <div className="pt-2 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-[11px]">
                                   <div className="flex items-center gap-1.5">
                                     <Avatar
-                                      src={sol.author?.profile?.avatar}
+                                      src={authorAvatar}
                                       name={authorName}
                                       size="xs"
                                       className="w-4 h-4"

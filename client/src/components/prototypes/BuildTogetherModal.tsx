@@ -34,10 +34,14 @@ export const BuildTogetherModal: React.FC<BuildTogetherModalProps> = ({
   if (!prototype) return null;
 
   const author = prototype.author;
-  const authorName = author?.profile?.fullName || author?.email?.split('@')[0] || 'the builder';
-  const authorAvatar = author?.profile?.avatar;
-  const authorHeadline = author?.profile?.headline || 'Prototype Creator';
   const authorId = prototype.authorId || author?.id;
+  const isMe = Boolean(user && authorId && (
+    String(user.id).toLowerCase() === String(authorId).toLowerCase() ||
+    (user.email && author?.email && user.email.toLowerCase() === author.email.toLowerCase())
+  ));
+  const authorName = (isMe && user?.profile?.fullName) || author?.profile?.fullName || author?.email?.split('@')[0] || 'the builder';
+  const authorAvatar = (isMe && user?.profile?.avatar !== undefined) ? user.profile.avatar : author?.profile?.avatar;
+  const authorHeadline = (isMe && user?.profile?.headline) || author?.profile?.headline || 'Prototype Creator';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

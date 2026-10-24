@@ -145,6 +145,39 @@ router.get('/', optionalAuth, async (req, res) => {
       saves.forEach((s) => userSaves.add(s.itemId));
     }
 
+    // Authoritatively enrich author profiles from Supabase to ensure fresh avatars, headlines, and names
+    if (supabaseAdmin && posts.length > 0) {
+      try {
+        const authorIds = [...new Set(posts.map((p) => p.authorId || p.author?.id).filter(Boolean))];
+        if (authorIds.length > 0) {
+          const { data: supaProfiles } = await supabaseAdmin
+            .from('profiles')
+            .select('user_id, full_name, avatar, headline, location, username, preferred_role')
+            .in('user_id', authorIds);
+
+          if (Array.isArray(supaProfiles) && supaProfiles.length > 0) {
+            const profMap = new Map(supaProfiles.map((pr) => [String(pr.user_id).toLowerCase(), pr]));
+            for (const p of posts) {
+              const targetId = String(p.authorId || p.author?.id || '').toLowerCase();
+              const spProf = profMap.get(targetId);
+              if (spProf) {
+                if (!p.author) p.author = { id: p.authorId };
+                if (!p.author.profile) p.author.profile = {};
+                if (spProf.avatar !== undefined && spProf.avatar !== null) p.author.profile.avatar = spProf.avatar;
+                if (spProf.full_name) p.author.profile.fullName = spProf.full_name;
+                if (spProf.headline) p.author.profile.headline = spProf.headline;
+                if (spProf.location) p.author.profile.location = spProf.location;
+                if (spProf.username) p.author.profile.username = spProf.username;
+                if (spProf.preferred_role) p.author.role = spProf.preferred_role;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Backend Supabase profile enrichment notice:', err?.message);
+      }
+    }
+
     const formatted = posts.map((p) => {
       const sp = supaPostMap.get(p.id);
       return {
@@ -742,6 +775,29 @@ router.get('/:id/comments', optionalAuth, async (req, res) => {
           };
         });
       }
+    } else if (comments.length > 0 && supabaseAdmin) {
+      try {
+        const authorIds = [...new Set(comments.map((c) => c.authorId || c.author?.id).filter(Boolean))];
+        if (authorIds.length > 0) {
+          const { data: supaProfiles } = await supabaseAdmin
+            .from('profiles')
+            .select('user_id, full_name, avatar, headline')
+            .in('user_id', authorIds);
+          if (Array.isArray(supaProfiles) && supaProfiles.length > 0) {
+            const profMap = new Map(supaProfiles.map((pr) => [String(pr.user_id).toLowerCase(), pr]));
+            for (const c of comments) {
+              const spProf = profMap.get(String(c.authorId || c.author?.id || '').toLowerCase());
+              if (spProf) {
+                if (!c.author) c.author = { id: c.authorId };
+                if (!c.author.profile) c.author.profile = {};
+                if (spProf.avatar !== undefined && spProf.avatar !== null) c.author.profile.avatar = spProf.avatar;
+                if (spProf.full_name) c.author.profile.fullName = spProf.full_name;
+                if (spProf.headline) c.author.profile.headline = spProf.headline;
+              }
+            }
+          }
+        }
+      } catch {}
     }
 
     return res.json({ comments });

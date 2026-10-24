@@ -371,32 +371,42 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
         {/* 1. Header: Author profile & Prototype badge */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <Link to={`/profile/${authorId}`} className="shrink-0 group">
-              <Avatar
-                src={author?.profile?.avatar}
-                name={author?.profile?.fullName || author?.email || 'Builder'}
-                size="md"
-                className="group-hover:ring-2 ring-brand-500 transition-all"
-              />
-            </Link>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <Link
-                  to={`/profile/${authorId}`}
-                  className="font-bold text-sm text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 transition-colors truncate"
-                >
-                  {author?.profile?.fullName || author?.email?.split('@')[0] || 'Early Builder'}
-                </Link>
-                {author?.isVerified && (
-                  <VerificationBadge badge={author.verificationBadge} size="sm" />
-                )}
-                <span className="text-slate-400 dark:text-slate-500 text-xs">•</span>
-                <span className="text-xs text-slate-500 dark:text-slate-400">{timeFormatted}</span>
-              </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                {author?.profile?.headline || 'Startup Builder'}
-              </div>
-            </div>
+            {(() => {
+              const displayAvatar = (isAuthor && user?.profile?.avatar !== undefined) ? user.profile.avatar : author?.profile?.avatar;
+              const displayName = (isAuthor && user?.profile?.fullName) || author?.profile?.fullName || author?.email?.split('@')[0] || 'Early Builder';
+              const displayHeadline = (isAuthor && user?.profile?.headline) || author?.profile?.headline || 'Startup Builder';
+
+              return (
+                <>
+                  <Link to={`/profile/${authorId}`} className="shrink-0 group">
+                    <Avatar
+                      src={displayAvatar}
+                      name={displayName}
+                      size="md"
+                      className="group-hover:ring-2 ring-brand-500 transition-all"
+                    />
+                  </Link>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Link
+                        to={`/profile/${authorId}`}
+                        className="font-bold text-sm text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 transition-colors truncate"
+                      >
+                        {displayName}
+                      </Link>
+                      {author?.isVerified && (
+                        <VerificationBadge badge={author.verificationBadge} size="sm" />
+                      )}
+                      <span className="text-slate-400 dark:text-slate-500 text-xs">•</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">{timeFormatted}</span>
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                      {displayHeadline}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {/* Prototype Badge & Author Actions */}
