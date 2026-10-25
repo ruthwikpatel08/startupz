@@ -231,6 +231,8 @@ export const StartupFeedPage: React.FC = () => {
 
             return {
               ...p,
+              upvotesCount: p.upvotesCount ?? (p.likesCount || 0),
+              downvotesCount: p.downvotesCount ?? 0,
               likesCount: p.likesCount ?? 0,
               commentsCount: p.commentsCount ?? 0,
               isLiked: Boolean(isLiked),
@@ -279,6 +281,8 @@ export const StartupFeedPage: React.FC = () => {
               mediaType: p.media_type || null,
               links: p.links,
               images: p.images,
+              upvotesCount: p.upvotes_count ?? (p.likes_count || 0),
+              downvotesCount: p.downvotes_count ?? 0,
               likesCount: p.likes_count || 0,
               commentsCount: p.comments_count || 0,
               createdAt: p.created_at,
@@ -760,6 +764,8 @@ export const StartupFeedPage: React.FC = () => {
           visibility: postVisibility,
           createdAt: data.created_at || new Date().toISOString(),
           likesCount: 0,
+          upvotesCount: 0,
+          downvotesCount: 0,
           commentsCount: 0,
           isLiked: false,
           isSaved: false,
@@ -891,28 +897,40 @@ export const StartupFeedPage: React.FC = () => {
       ? userVotes[postId]
       : (currentPost.isLiked ? 'up' : null);
 
-    let nextVote: 'up' | 'down' | null = null;
-    let delta = 0;
+    const currentUpvotes = currentPost.upvotesCount ?? Math.max(0, currentPost.likesCount || 0);
+    const currentDownvotes = currentPost.downvotesCount ?? 0;
 
-    if (currentVote === clickedVote) {
-      // Toggle off: remove vote (return to 0 change from base)
-      nextVote = null;
-      delta = clickedVote === 'up' ? -1 : 1;
-    } else if (currentVote === 'up' && clickedVote === 'down') {
-      // Transition from upvoted to downvoted: -2 net transition
-      nextVote = 'down';
-      delta = -2;
-    } else if (currentVote === 'down' && clickedVote === 'up') {
-      // Transition from downvoted to upvoted: +2 net transition
-      nextVote = 'up';
-      delta = 2;
-    } else {
-      // Transition from unselected to clicked vote: +1 or -1
-      nextVote = clickedVote;
-      delta = clickedVote === 'up' ? 1 : -1;
+    let nextVote: 'up' | 'down' | null = null;
+    let nextUpvotes = currentUpvotes;
+    let nextDownvotes = currentDownvotes;
+
+    if (clickedVote === 'up') {
+      if (currentVote === 'up') {
+        nextVote = null;
+        nextUpvotes = Math.max(0, currentUpvotes - 1);
+      } else if (currentVote === 'down') {
+        nextVote = 'up';
+        nextDownvotes = Math.max(0, currentDownvotes - 1);
+        nextUpvotes = currentUpvotes + 1;
+      } else {
+        nextVote = 'up';
+        nextUpvotes = currentUpvotes + 1;
+      }
+    } else if (clickedVote === 'down') {
+      if (currentVote === 'down') {
+        nextVote = null;
+        nextDownvotes = Math.max(0, currentDownvotes - 1);
+      } else if (currentVote === 'up') {
+        nextVote = 'down';
+        nextUpvotes = Math.max(0, currentUpvotes - 1);
+        nextDownvotes = currentDownvotes + 1;
+      } else {
+        nextVote = 'down';
+        nextDownvotes = currentDownvotes + 1;
+      }
     }
 
-    const nextScore = (currentPost.likesCount || 0) + delta;
+    const nextScore = nextUpvotes - nextDownvotes;
 
     // 1. Optimistic UI update
     setUserVotes((prev) => ({ ...prev, [postId]: nextVote }));
@@ -921,6 +939,8 @@ export const StartupFeedPage: React.FC = () => {
         p.id === postId
           ? {
               ...p,
+              upvotesCount: nextUpvotes,
+              downvotesCount: nextDownvotes,
               likesCount: nextScore,
               isLiked: nextVote === 'up',
             }
@@ -956,7 +976,7 @@ export const StartupFeedPage: React.FC = () => {
     try {
       if (nextVote === 'up') {
         await supabase.from('likes').upsert({ post_id: postId, user_id: user.id, vote_type: 'UP' }, { onConflict: 'user_id,post_id' });
-        await supabase.from('posts').update({ likes_count: nextScore }).eq('id', postId);
+        await supabase.from('posts').update({ likes_count: nextScore, upvotes_count: nextUpvotes, downvotes_count: nextDownvotes }).eq('id', postId);
 
         if (currentPost) {
           const myName = user.profile?.fullName || user.email?.split('@')[0] || 'Someone';
@@ -969,7 +989,7 @@ export const StartupFeedPage: React.FC = () => {
         }
       } else if (nextVote === 'down') {
         await supabase.from('likes').upsert({ post_id: postId, user_id: user.id, vote_type: 'DOWN' }, { onConflict: 'user_id,post_id' });
-        await supabase.from('posts').update({ likes_count: nextScore }).eq('id', postId);
+        await supabase.from('posts').update({ likes_count: nextScore, upvotes_count: nextUpvotes, downvotes_count: nextDownvotes }).eq('id', postId);
 
         if (currentPost) {
           const myName = user.profile?.fullName || user.email?.split('@')[0] || 'Someone';
@@ -983,7 +1003,7 @@ export const StartupFeedPage: React.FC = () => {
       } else {
         // Vote removed: erase vote notification
         await supabase.from('likes').delete().match({ post_id: postId, user_id: user.id });
-        await supabase.from('posts').update({ likes_count: nextScore }).eq('id', postId);
+        await supabase.from('posts').update({ likes_count: nextScore, upvotes_count: nextUpvotes, downvotes_count: nextDownvotes }).eq('id', postId);
 
         const targetAuthId = currentPost.authorId || currentPost.author?.id || (currentPost as any)?.author_id;
         if (targetAuthId && !isMyPost(currentPost)) {
@@ -1847,58 +1867,55 @@ export const StartupFeedPage: React.FC = () => {
                 {/* Post Actions Bar */}
                 <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                   <div className="flex items-center gap-3 sm:gap-4">
-                    {/* Reaction: Upvote/Downvote Pill for Ideas, Heart for other feeds */}
+                    {/* Reaction: Upvote / Downvote Pill for Ideas, Heart for other feeds */}
                     {isIdeaPost ? (
                       <div
                         className="inline-flex items-center gap-1 sm:gap-1.5 p-0.5 sm:p-1 rounded-full bg-slate-100/90 dark:bg-dark-800 border border-slate-200/90 dark:border-dark-700 shadow-2xs transition-colors duration-150"
                         role="group"
                         aria-label="Idea post voting"
                       >
-                        {/* Upvote Button (▲) */}
+                        {/* Upvote Button (▲) with upvoted count */}
                         <button
                           type="button"
                           onClick={() => handleVotePost(post.id, 'up')}
-                          aria-label="Upvote idea"
-                          title="Upvote idea"
-                          className={`p-1 sm:p-1.5 rounded-full border transition-all duration-150 flex items-center justify-center cursor-pointer ${
+                          aria-label={`Upvote idea (${post.upvotesCount ?? Math.max(0, post.likesCount || 0)} upvotes)`}
+                          title={`Upvote idea (${post.upvotesCount ?? Math.max(0, post.likesCount || 0)} upvotes)`}
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full border transition-all duration-150 cursor-pointer text-xs ${
                             currentVote === 'up'
-                              ? 'bg-emerald-500 border-emerald-500 text-white shadow-xs'
-                              : 'bg-transparent border-emerald-500/80 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-600'
+                              ? 'bg-emerald-500 border-emerald-500 text-white shadow-xs font-bold'
+                              : 'bg-transparent border-transparent text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-500/40 font-semibold'
                           }`}
                         >
                           <ArrowBigUp
-                            size={14}
-                            className="transition-transform duration-150 active:scale-90"
+                            size={15}
+                            className="transition-transform duration-150 active:scale-90 shrink-0"
                             fill={currentVote === 'up' ? 'currentColor' : 'none'}
                             strokeWidth={currentVote === 'up' ? 1.5 : 2}
                           />
+                          <span className="select-none font-bold">{post.upvotesCount ?? Math.max(0, post.likesCount || 0)}</span>
                         </button>
 
-                        {/* Score Counter */}
-                        <span
-                          className={`text-xs px-1 min-w-[20px] text-center select-none transition-colors duration-150 ${scoreColorClass}`}
-                        >
-                          {netScore}
-                        </span>
+                        <div className="w-[1px] h-3.5 bg-slate-200 dark:bg-dark-700" aria-hidden="true" />
 
-                        {/* Downvote Button (▼) */}
+                        {/* Downvote Button (▼) with downvoted count */}
                         <button
                           type="button"
                           onClick={() => handleVotePost(post.id, 'down')}
-                          aria-label="Downvote idea"
-                          title="Downvote idea"
-                          className={`p-1 sm:p-1.5 rounded-full border transition-all duration-150 flex items-center justify-center cursor-pointer ${
+                          aria-label={`Downvote idea (${post.downvotesCount ?? 0} downvotes)`}
+                          title={`Downvote idea (${post.downvotesCount ?? 0} downvotes)`}
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full border transition-all duration-150 cursor-pointer text-xs ${
                             currentVote === 'down'
-                              ? 'bg-rose-500 border-rose-500 text-white shadow-xs'
-                              : 'bg-transparent border-rose-500/80 dark:border-rose-500 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-600'
+                              ? 'bg-rose-500 border-rose-500 text-white shadow-xs font-bold'
+                              : 'bg-transparent border-transparent text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-500/40 font-semibold'
                           }`}
                         >
                           <ArrowBigDown
-                            size={14}
-                            className="transition-transform duration-150 active:scale-90"
+                            size={15}
+                            className="transition-transform duration-150 active:scale-90 shrink-0"
                             fill={currentVote === 'down' ? 'currentColor' : 'none'}
                             strokeWidth={currentVote === 'down' ? 1.5 : 2}
                           />
+                          <span className="select-none font-bold">{post.downvotesCount ?? 0}</span>
                         </button>
                       </div>
                     ) : (

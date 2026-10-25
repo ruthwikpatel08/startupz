@@ -43,6 +43,8 @@ import {
   X,
   Sparkles,
   ThumbsUp,
+  ArrowBigUp,
+  ArrowBigDown,
   Crown,
   Share2,
   Users,
@@ -913,11 +915,19 @@ export const ProfilePage: React.FC = () => {
                 title: sp.title,
                 content: sp.content,
                 links: sp.links,
+                upvotesCount: sp.upvotes_count ?? (sp.likes_count ?? 0),
+                downvotesCount: sp.downvotes_count ?? 0,
                 likesCount: sp.likes_count ?? 0,
                 commentsCount: sp.comments_count ?? 0,
                 createdAt: sp.created_at,
               });
             } else {
+              if (sp.upvotes_count !== undefined && sp.upvotes_count !== null) {
+                existing.upvotesCount = sp.upvotes_count;
+              }
+              if (sp.downvotes_count !== undefined && sp.downvotes_count !== null) {
+                existing.downvotesCount = sp.downvotes_count;
+              }
               if (sp.likes_count !== undefined && sp.likes_count !== null) {
                 existing.likesCount = sp.likes_count;
               }
@@ -2002,10 +2012,25 @@ export const ProfilePage: React.FC = () => {
                   )}
 
                   <div className="pt-2 border-t border-slate-200/60 dark:border-dark-800 flex items-center gap-4 text-xs text-slate-400">
-                    <span className="flex items-center gap-1">
-                      <ThumbsUp size={12} />
-                      <span>{post.likesCount || 0} likes</span>
-                    </span>
+                    {IDEA_SET.has(pType) ? (
+                      <span className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                          <ArrowBigUp size={14} fill="currentColor" />
+                          <span>{post.upvotesCount ?? Math.max(0, post.likesCount || 0)} upvotes</span>
+                        </span>
+                        {(post.downvotesCount ?? 0) > 0 && (
+                          <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 font-medium">
+                            <ArrowBigDown size={14} fill="currentColor" />
+                            <span>{post.downvotesCount} downvotes</span>
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1">
+                        <ThumbsUp size={12} />
+                        <span>{post.likesCount || 0} likes</span>
+                      </span>
+                    )}
                     <span className="flex items-center gap-1">
                       <MessageSquare size={12} />
                       <span>{post.commentsCount || 0} comments</span>

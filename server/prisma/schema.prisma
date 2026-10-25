@@ -194,6 +194,8 @@ model Post {
   images        String?
   links         String?
   likesCount    Int       @default(0)
+  upvotesCount  Int       @default(0)
+  downvotesCount Int      @default(0)
   commentsCount Int       @default(0)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

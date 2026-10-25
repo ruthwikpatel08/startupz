@@ -187,6 +187,8 @@ router.get('/', optionalAuth, async (req, res) => {
         websiteUrl: sp?.website_url || p.websiteUrl || p.links || null,
         mediaUrl: sp?.media_url || p.mediaUrl || p.images || null,
         mediaType: sp?.media_type || p.mediaType || null,
+        upvotesCount: sp?.upvotes_count ?? p.upvotesCount ?? (p.likesCount || 0),
+        downvotesCount: sp?.downvotes_count ?? p.downvotesCount ?? 0,
         isLiked: userLikes.has(p.id),
         userVote: userVotesMap.get(p.id) || null,
         isSaved: userSaves.has(p.id),
@@ -307,14 +309,21 @@ async function ensurePostInPrisma(postId) {
         try {
           const { data: supaCounts } = await supabaseAdmin
             .from('posts')
-            .select('likes_count, comments_count')
+            .select('likes_count, comments_count, upvotes_count, downvotes_count')
             .eq('id', postId)
             .maybeSingle();
-          if (supaCounts && (supaCounts.likes_count !== post.likesCount || supaCounts.comments_count !== post.commentsCount)) {
+          if (supaCounts && (
+            supaCounts.likes_count !== post.likesCount ||
+            supaCounts.comments_count !== post.commentsCount ||
+            (supaCounts.upvotes_count !== undefined && supaCounts.upvotes_count !== post.upvotesCount) ||
+            (supaCounts.downvotes_count !== undefined && supaCounts.downvotes_count !== post.downvotesCount)
+          )) {
             post = await prisma.post.update({
               where: { id: postId },
               data: {
                 likesCount: supaCounts.likes_count ?? post.likesCount,
+                upvotesCount: supaCounts.upvotes_count ?? post.upvotesCount,
+                downvotesCount: supaCounts.downvotes_count ?? post.downvotesCount,
                 commentsCount: supaCounts.comments_count ?? post.commentsCount,
               },
             }).catch(() => post);
@@ -378,6 +387,8 @@ async function ensurePostInPrisma(postId) {
         images: supaPost.images || null,
         links: supaPost.links || null,
         likesCount: supaPost.likes_count || 0,
+        upvotesCount: supaPost.upvotes_count ?? (supaPost.likes_count || 0),
+        downvotesCount: supaPost.downvotes_count ?? 0,
         commentsCount: supaPost.comments_count || 0,
         createdAt: supaPost.created_at ? new Date(supaPost.created_at) : new Date(),
       },
@@ -480,14 +491,14 @@ router.post('/:id/like', requireAuth, async (req, res) => {
 
     await prisma.post.update({
       where: { id },
-      data: { likesCount: score },
+      data: { likesCount: score, upvotesCount: upCount, downvotesCount: downCount },
     }).catch(() => null);
 
     if (supabaseAdmin) {
-      await supabaseAdmin.from('posts').update({ likes_count: score }).eq('id', id).catch(() => null);
+      await supabaseAdmin.from('posts').update({ likes_count: score, upvotes_count: upCount, downvotes_count: downCount }).eq('id', id).catch(() => null);
     }
 
-    return res.json({ liked, likesCount: score });
+    return res.json({ liked, likesCount: score, upvotesCount: upCount, downvotesCount: downCount });
   } catch (error) {
     console.error('Like post error:', error);
     return res.status(500).json({ error: 'Failed to like post.' });
@@ -545,11 +556,11 @@ router.post('/:id/vote', requireAuth, async (req, res) => {
 
     await prisma.post.update({
       where: { id },
-      data: { likesCount: score },
+      data: { likesCount: score, upvotesCount: upCount, downvotesCount: downCount },
     }).catch(() => null);
 
     if (supabaseAdmin) {
-      await supabaseAdmin.from('posts').update({ likes_count: score }).eq('id', id).catch(() => null);
+      await supabaseAdmin.from('posts').update({ likes_count: score, upvotes_count: upCount, downvotes_count: downCount }).eq('id', id).catch(() => null);
     }
 
     const currentPost = await prisma.post.findUnique({ where: { id } }).catch(() => null);
@@ -637,7 +648,7 @@ router.post('/:id/vote', requireAuth, async (req, res) => {
       }
     }
 
-    return res.json({ success: true, vote, score });
+    return res.json({ success: true, vote, score, upvotesCount: upCount, downvotesCount: downCount });
   } catch (error) {
     console.error('Vote post error:', error);
     return res.status(500).json({ error: 'Failed to vote on post.' });
