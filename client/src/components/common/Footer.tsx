@@ -64,7 +64,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2 text-xs text-slate-500 dark:text-slate-400">
               <li><Link to="/privacy" className="hover:text-brand-600 transition-colors">Privacy Notice (DPDP)</Link></li>
               <li><Link to="/terms" className="hover:text-brand-600 transition-colors">Terms of Service</Link></li>
-              <li><Link to="/dsar" className="hover:text-brand-600 transition-colors font-medium text-brand-600 dark:text-brand-400">Data Subject Rights (DSAR)</Link></li>
+              <li><Link to="/dsar" className="hover:text-brand-600 transition-colors">Data Subject Rights (DSAR)</Link></li>
               <li>
                 <button
                   type="button"

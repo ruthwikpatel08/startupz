@@ -713,6 +713,9 @@ export const MessagesPage: React.FC = () => {
         // Also fetch user's projects from API so any assigned team member sees the group chat!
         try {
           const pRes = await api.getProjects().catch(() => null);
+          if (Array.isArray(pRes?.deletedProjectIds)) {
+            pRes.deletedProjectIds.forEach((id: string) => recordDeletedProjectId(id));
+          }
           const serverProjs = Array.isArray(pRes?.projects) ? pRes.projects : [];
           serverProjs.forEach((sp: any) => {
             const isCreator = user?.id && (sp.creator?.userId === user.id || sp.creatorId === user.id);

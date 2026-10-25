@@ -100,7 +100,7 @@ export const Navbar: React.FC = () => {
       window.removeEventListener('startupz_messages_updated', handleMessagesUpdated);
       clearInterval(interval);
     };
-  }, [user?.id]);
+  }, [user?.id, location.pathname]);
 
   const handleGoogleClick = async () => {
     try {
@@ -191,7 +191,7 @@ export const Navbar: React.FC = () => {
             {/* 1. LEFT EDGE: HookZ logo + name */}
             <div className="flex items-center shrink-0">
               <Link
-                to={user ? '/dashboard' : '/login'}
+                to="/feed"
                 title="HookZ"
                 className="flex items-center gap-2 cursor-pointer group"
               >

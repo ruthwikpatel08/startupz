@@ -225,7 +225,7 @@ const AppContent: React.FC = () => {
                 {/* Protected Routes */}
                 <Route
                   path="/dashboard"
-                  element={<Navigate to="/profile" replace />}
+                  element={<Navigate to="/feed" replace />}
                 />
                 <Route
                   path="/startups/create"

@@ -381,6 +381,10 @@ export const api = {
     request<any>(`/messages/message/${messageId}`, { method: 'PUT', body: JSON.stringify({ content }) }),
   deleteMessageForMe: (messageId: string) =>
     request<any>(`/messages/message/${messageId}/delete-for-me`, { method: 'POST' }),
+  markConversationAsRead: (conversationId: string) =>
+    request<any>(`/messages/conversations/${conversationId}/read`, { method: 'PUT' }),
+  getUnreadMessagesCount: () =>
+    request<{ unreadCount: number }>('/messages/unread-count'),
   getDeletedChatItems: () =>
     request<{ deletedConversationIds: string[]; deletedMessageIds: string[] }>('/messages/deleted-items'),
   blockUser: (userId: string) =>
@@ -393,6 +397,7 @@ export const api = {
   // PROJECTS
   getProjects: (params?: any) => request<any>(`/projects${buildQuery(params)}`),
   getProject: (id: string) => request<any>(`/projects/${id}`),
+  getDeletedProjectIds: () => request<{ deletedProjectIds: string[] }>('/projects/deleted-ids'),
   createProject: (payload: any) =>
     request<any>('/projects', { method: 'POST', body: JSON.stringify(payload) }),
   updateProject: (id: string, payload: any) =>

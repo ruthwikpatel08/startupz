@@ -398,7 +398,7 @@ export const LandingPage: React.FC = () => {
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  All ({unconnectedProfiles.length})
+                  All
                 </button>
                 <button
                   type="button"
@@ -409,7 +409,7 @@ export const LandingPage: React.FC = () => {
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  Students ({unconnectedProfiles.filter((p) => p.category === 'students').length})
+                  Students
                 </button>
                 <button
                   type="button"
@@ -420,7 +420,7 @@ export const LandingPage: React.FC = () => {
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  Others ({unconnectedProfiles.filter((p) => p.category === 'others').length})
+                  Others
                 </button>
               </div>
             </div>

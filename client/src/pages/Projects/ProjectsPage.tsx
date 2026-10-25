@@ -510,6 +510,9 @@ export const ProjectsPage: React.FC = () => {
         const res = await api.getProjects().catch(() => null);
         if (res && Array.isArray(res.projects)) {
           serverList = res.projects;
+          if (Array.isArray(res.deletedProjectIds)) {
+            res.deletedProjectIds.forEach((dId: string) => recordDeletedProjectId(dId));
+          }
         } else {
           // Direct Supabase fallback if server is waking up or offline
           try {
@@ -1723,6 +1726,17 @@ export const ProjectsPage: React.FC = () => {
     } catch (apiErr) {
       console.warn('Server visibility update notice:', apiErr);
     }
+
+    // 4. Broadcast update across all open tabs, windows, and devices so other accounts sync immediately
+    try {
+      ['global-projects-sync-channel', 'global-data-sync-broadcast'].forEach((ch) => {
+        supabase.channel(ch).send({
+          type: 'broadcast',
+          event: 'project_updated',
+          payload: { id: projectId, visibility: newVis },
+        }).catch(() => null);
+      });
+    } catch {}
 
     showToast(`Project visibility set to ${newVis === 'PRIVATE' ? 'Private' : 'Public'}.`);
     if (roleCompletionModal?.id === projectId) {

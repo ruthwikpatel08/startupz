@@ -41,6 +41,7 @@ import {
   AlertCircle,
   Users,
   Boxes,
+  X,
 } from 'lucide-react';
 
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
@@ -127,6 +128,9 @@ export const StartupFeedPage: React.FC = () => {
   const [copiedPostId, setCopiedPostId] = useState<string | null>(null);
   const [shareModalItem, setShareModalItem] = useState<ShareItemData | null>(null);
   const [postVisibility, setPostVisibility] = useState<'PUBLIC' | 'CONNECTIONS'>('PUBLIC');
+  const [downvotePromptModal, setDownvotePromptModal] = useState<{ postId: string; ideaTitle?: string } | null>(null);
+  const [downvoteReason, setDownvoteReason] = useState('');
+  const [selectedDownvoteTag, setSelectedDownvoteTag] = useState('');
 
   // Connection tracking to ensure connect button is hidden once connected
   const [connectedUserIds, setConnectedUserIds] = useState<Set<string>>(new Set());
@@ -897,6 +901,32 @@ export const StartupFeedPage: React.FC = () => {
       ? userVotes[postId]
       : (currentPost.isLiked ? 'up' : null);
 
+    // If downvoting an idea (only when casting a downvote, not when undoing or upvoting)
+    if (clickedVote === 'down' && currentVote !== 'down') {
+      setSelectedDownvoteTag('Needs clearer problem / solution');
+      setDownvoteReason('');
+      setDownvotePromptModal({
+        postId,
+        ideaTitle: currentPost.content ? (currentPost.content.length > 70 ? currentPost.content.slice(0, 70) + '...' : currentPost.content) : 'this idea',
+      });
+      return;
+    }
+
+    await executeVotePost(postId, clickedVote);
+  };
+
+  const executeVotePost = async (postId: string, clickedVote: 'up' | 'down', feedbackReason?: string) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    const currentPost = posts.find((p) => p.id === postId);
+    if (!currentPost) return;
+
+    const currentVote = userVotes[postId] !== undefined
+      ? userVotes[postId]
+      : (currentPost.isLiked ? 'up' : null);
+
     const currentUpvotes = currentPost.upvotesCount ?? Math.max(0, currentPost.likesCount || 0);
     const currentDownvotes = currentPost.downvotesCount ?? 0;
 
@@ -993,11 +1023,14 @@ export const StartupFeedPage: React.FC = () => {
 
         if (currentPost) {
           const myName = user.profile?.fullName || user.email?.split('@')[0] || 'Someone';
+          const notifMsg = feedbackReason
+            ? `${myName} downvoted your idea: "${feedbackReason}".`
+            : `${myName} downvoted your idea.`;
           sendPostNotification(
             currentPost,
             'POST_DOWNVOTE',
             'Downvoted your idea 👎',
-            `${myName} downvoted your idea.`
+            notifMsg
           );
         }
       } else {
@@ -2094,6 +2127,114 @@ export const StartupFeedPage: React.FC = () => {
           setTimeout(() => setSuccessToast(null), 3000);
         }}
       />
+
+      {/* Downvote Feedback Modal */}
+      {downvotePromptModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => setDownvotePromptModal(null)}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl p-6 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setDownvotePromptModal(null)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              aria-label="Close modal"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-500 dark:text-rose-400 flex items-center justify-center">
+                <ArrowBigDown className="w-6 h-6 fill-current" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Why are you downvoting?
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Constructive feedback helps creators understand gaps and improve their ideas.
+                </p>
+              </div>
+            </div>
+
+            {downvotePromptModal.ideaTitle && (
+              <div className="mb-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50 text-xs text-slate-600 dark:text-slate-300 italic line-clamp-2">
+                "{downvotePromptModal.ideaTitle}"
+              </div>
+            )}
+
+            <div className="space-y-3 mb-5">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                Primary Reason
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  'Needs clearer problem / solution',
+                  'Unrealistic market or execution',
+                  'Lacks technical feasibility',
+                  'Poor unit economics / pricing',
+                  'High competition / no moat',
+                  'Other constructive reason',
+                ].map((reasonTag) => {
+                  const isSelected = selectedDownvoteTag === reasonTag;
+                  return (
+                    <button
+                      key={reasonTag}
+                      type="button"
+                      onClick={() => setSelectedDownvoteTag(reasonTag)}
+                      className={`text-left text-xs px-3 py-2 rounded-lg border transition-all ${
+                        isSelected
+                          ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 font-medium'
+                          : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {reasonTag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mb-5">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
+                Additional Comments <span className="font-normal text-slate-400">(optional)</span>
+              </label>
+              <textarea
+                value={downvoteReason}
+                onChange={(e) => setDownvoteReason(e.target.value)}
+                placeholder="Share specific suggestions or what could make this idea better..."
+                rows={3}
+                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/40"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDownvotePromptModal(null)}
+                className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const fullReason = [selectedDownvoteTag, downvoteReason.trim()].filter(Boolean).join(': ');
+                  const targetPostId = downvotePromptModal.postId;
+                  setDownvotePromptModal(null);
+                  await executeVotePost(targetPostId, 'down', fullReason);
+                }}
+                className="px-4 py-2 text-xs font-medium bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-sm transition-all"
+              >
+                Submit Downvote
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
