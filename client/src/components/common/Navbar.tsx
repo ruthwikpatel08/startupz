@@ -241,10 +241,10 @@ export const Navbar: React.FC = () => {
               {!isAuthPage && (
                 <button
                   onClick={() => setAiScoutOpen(true)}
-                  className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-dark-800 hover:bg-slate-200/70 dark:hover:bg-dark-850 border border-slate-200 dark:border-slate-700 transition-colors shrink-0 cursor-pointer"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-xs font-semibold text-white bg-black hover:bg-neutral-900 border border-black dark:border-neutral-800 transition-colors shrink-0 cursor-pointer shadow-xs"
                   title="AI People Finder Bot"
                 >
-                  <Sparkles size={13} className="text-brand-600 dark:text-brand-400" />
+                  <Sparkles size={13} className="text-white" />
                   <span className="hidden xs:inline">AI - Scout</span>
                 </button>
               )}
@@ -540,9 +540,9 @@ export const Navbar: React.FC = () => {
                     setMobileMenuOpen(false);
                     setAiScoutOpen(true);
                   }}
-                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-lg text-xs font-semibold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900/50 hover:bg-brand-100"
+                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-lg text-xs font-semibold text-white bg-black hover:bg-neutral-900 border border-black shadow-xs"
                 >
-                  <Sparkles size={15} className="text-brand-600 dark:text-brand-400" />
+                  <Sparkles size={15} className="text-white" />
                   <span>AI - Scout Finder</span>
                 </button>
               )}

@@ -69,47 +69,24 @@ export const ProblemFilters: React.FC<ProblemFiltersProps> = ({
         )}
       </div>
 
-      {/* Categories Horizontal Pills */}
+      {/* Category Domains Selector */}
       <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-            <Filter size={12} className="text-brand-600 dark:text-brand-400" />
-            <span>Category Domains</span>
-          </label>
-          {selectedCategory && (
-            <button
-              onClick={() => onCategoryChange('')}
-              className="text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline"
-            >
-              Clear category
-            </button>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          <button
-            onClick={() => onCategoryChange('')}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors shrink-0 ${
-              !selectedCategory
-                ? 'bg-brand-600 text-white'
-                : 'bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-800 border border-slate-200/60 dark:border-dark-800'
-            }`}
-          >
-            All Categories
-          </button>
+        <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+          <Filter size={12} className="text-slate-400" />
+          <span>Category Domains</span>
+        </label>
+        <select
+          value={selectedCategory}
+          onChange={(e) => onCategoryChange(e.target.value)}
+          className="input-base py-1.5 px-2.5 text-xs"
+        >
+          <option value="">All Categories</option>
           {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => onCategoryChange(selectedCategory === cat ? '' : cat)}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors shrink-0 ${
-                selectedCategory === cat
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-800 border border-slate-200/60 dark:border-dark-800'
-              }`}
-            >
+            <option key={cat} value={cat}>
               {cat}
-            </button>
+            </option>
           ))}
-        </div>
+        </select>
       </div>
 
       {/* Secondary Row: Regions, Impact Level & Tags */}
