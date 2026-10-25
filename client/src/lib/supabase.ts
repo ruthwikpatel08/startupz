@@ -1503,6 +1503,35 @@ export function recordDeletedProjectId(projectId: string): void {
 }
 
 /**
+ * Returns set of permanently deleted entity IDs across sessions and viewports
+ */
+export function getDeletedEntityIds(entityType: string): Set<string> {
+  try {
+    const raw = localStorage.getItem(`startupz_deleted_${entityType.toLowerCase()}_ids`);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+/**
+ * Records an entity as permanently deleted across sessions and viewports
+ */
+export function recordDeletedEntityId(entityType: string, id: string): void {
+  if (!id || !entityType) return;
+  try {
+    const set = getDeletedEntityIds(entityType);
+    set.add(id);
+    localStorage.setItem(`startupz_deleted_${entityType.toLowerCase()}_ids`, JSON.stringify(Array.from(set)));
+    if (entityType.toUpperCase() === 'PROJECT') {
+      recordDeletedProjectId(id);
+    }
+  } catch {}
+}
+
+/**
  * Returns set of message IDs deleted for a given user ("delete for you")
  */
 export function getDeletedMessageIds(userId?: string): Set<string> {
@@ -2136,6 +2165,7 @@ export function broadcastEntityDeleted(
   id: string
 ): void {
   if (!id) return;
+  recordDeletedEntityId(entityType, id);
   if (entityType === 'PROJECT') {
     recordDeletedProjectId(id);
   }
@@ -2148,6 +2178,7 @@ export function broadcastEntityDeleted(
 
   const channelNames = [
     'global-data-sync-broadcast',
+    'global-feed-sync-channel',
     'global-projects-sync-channel',
     'global-startups-sync-channel',
     'global-opps-sync-channel',

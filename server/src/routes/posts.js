@@ -1,7 +1,35 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import { prisma } from '../db.js';
-import { requireAuth, optionalAuth } from '../middleware/auth.js';
+import { requireAuth, optionalAuth, isOwnerOrAdmin, isUserAdminCheck, getUserCandidateIds } from '../middleware/auth.js';
 import { supabaseAdmin } from '../supabase.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DELETED_POSTS_FILE = path.join(__dirname, '..', 'data', 'deleted_posts.json');
+
+function loadDeletedPosts() {
+  try {
+    if (fs.existsSync(DELETED_POSTS_FILE)) {
+      const raw = fs.readFileSync(DELETED_POSTS_FILE, 'utf8');
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return new Set(arr);
+    }
+  } catch {}
+  return new Set();
+}
+
+function saveDeletedPosts(set) {
+  try {
+    const dir = path.dirname(DELETED_POSTS_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(DELETED_POSTS_FILE, JSON.stringify(Array.from(set), null, 2), 'utf8');
+  } catch {}
+}
+
+let deletedPostIds = loadDeletedPosts();
 
 const router = express.Router();
 
@@ -14,6 +42,9 @@ router.get('/', optionalAuth, async (req, res) => {
     const skip = (pageNum - 1) * limitNum;
 
     const where = {};
+    if (deletedPostIds.size > 0) {
+      where.id = { notIn: Array.from(deletedPostIds) };
+    }
     if (postType && postType !== 'ALL') where.postType = postType;
     if (startupId) where.startupId = startupId;
     if (authorId) where.authorId = authorId;
@@ -70,6 +101,7 @@ router.get('/', optionalAuth, async (req, res) => {
 
         if (Array.isArray(supaList) && supaList.length > 0) {
           for (const sp of supaList) {
+            if (deletedPostIds.has(sp.id)) continue;
             supaPostMap.set(sp.id, sp);
             await ensurePostInPrisma(sp.id);
           }
@@ -195,11 +227,14 @@ router.get('/', optionalAuth, async (req, res) => {
       };
     });
 
+    const cleanFormatted = formatted.filter((p) => p && p.id && !deletedPostIds.has(p.id));
+
     return res.json({
-      posts: formatted,
-      total,
+      posts: cleanFormatted,
+      total: cleanFormatted.length,
       page: pageNum,
-      totalPages: Math.ceil(total / limitNum),
+      totalPages: Math.ceil(cleanFormatted.length / limitNum) || 1,
+      deletedPostIds: Array.from(deletedPostIds),
     });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to retrieve posts.' });
@@ -1093,9 +1128,13 @@ router.get('/proposals/stats', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/posts/deleted-ids
+router.get('/deleted-ids', (req, res) => {
+  return res.json({ deletedPostIds: Array.from(deletedPostIds) });
+});
+
 // DELETE /api/posts/:id
 router.delete('/:id', requireAuth, async (req, res) => {
-
   try {
     const { id } = req.params;
     let post = await prisma.post.findUnique({ where: { id } }).catch(() => null);
@@ -1106,28 +1145,41 @@ router.delete('/:id', requireAuth, async (req, res) => {
       }
     }
 
-    if (!post) return res.status(404).json({ error: 'Post not found.' });
+    if (!post) {
+      // If already gone from DB, ensure tombstone is marked permanently
+      deletedPostIds.add(id);
+      saveDeletedPosts(deletedPostIds);
+      return res.json({ message: 'Post already deleted.', id });
+    }
 
     const authorId = post.authorId || post.author_id;
-    if (authorId && authorId !== req.user.id && !req.user.isAdmin) {
+    if (!isOwnerOrAdmin(authorId, req.user)) {
       return res.status(403).json({ error: 'Unauthorized to delete this post.' });
     }
 
+    deletedPostIds.add(id);
+    saveDeletedPosts(deletedPostIds);
+
     await prisma.post.delete({ where: { id } }).catch(() => null);
 
-    // Clean up any saved items referencing this post
+    // Clean up any saved items and comments referencing this post
     await prisma.savedItem.deleteMany({
       where: { itemType: 'POST', itemId: id },
+    }).catch(() => null);
+    await prisma.comment.deleteMany({
+      where: { postId: id },
     }).catch(() => null);
 
     // Mirror delete to Supabase if configured
     if (supabaseAdmin) {
       try {
         await supabaseAdmin.from('posts').delete().eq('id', id);
+        await supabaseAdmin.from('comments').delete().eq('post_id', id);
+        await supabaseAdmin.from('likes').delete().eq('post_id', id);
       } catch (sErr) {}
     }
 
-    return res.json({ message: 'Post deleted successfully.' });
+    return res.json({ message: 'Post deleted successfully.', id });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to delete post.' });
   }

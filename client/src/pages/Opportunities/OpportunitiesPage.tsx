@@ -41,7 +41,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Avatar } from '../../components/common/Avatar';
-import { supabase, broadcastEntityDeleted } from '../../lib/supabase';
+import { supabase, broadcastEntityDeleted, getDeletedEntityIds, recordDeletedEntityId } from '../../lib/supabase';
 
 export const OpportunitiesPage: React.FC = () => {
   const { user } = useAuth();
@@ -308,6 +308,7 @@ export const OpportunitiesPage: React.FC = () => {
       return;
     }
     try {
+      recordDeletedEntityId('OPPORTUNITY', oppId);
       // 1. Delete via Express API
       await api.deleteOpportunity(oppId).catch(() => null);
 
@@ -552,7 +553,11 @@ export const OpportunitiesPage: React.FC = () => {
       if (search) params.append('search', search);
 
       const res = await api.getOpportunities(params.toString()).catch(() => ({ opportunities: [] }));
-      const serverClean = (res?.opportunities || []).filter((o: any) => !isDemoRecord(o));
+      if (Array.isArray(res?.deletedOpportunityIds)) {
+        res.deletedOpportunityIds.forEach((dId: string) => recordDeletedEntityId('OPPORTUNITY', dId));
+      }
+      const deletedOppSet = getDeletedEntityIds('OPPORTUNITY');
+      const serverClean = (res?.opportunities || []).filter((o: any) => o && o.id && !deletedOppSet.has(o.id) && !isDemoRecord(o));
 
       // Direct Supabase query to guarantee open opportunities stay permanent even across server restarts
       let supaMapped: StartupOpportunity[] = [];
@@ -564,7 +569,9 @@ export const OpportunitiesPage: React.FC = () => {
           .order('created_at', { ascending: false });
 
         if (Array.isArray(supaData) && supaData.length > 0) {
-          supaMapped = supaData.map((so: any) => ({
+          supaMapped = supaData
+            .filter((so: any) => so && so.id && !deletedOppSet.has(so.id))
+            .map((so: any) => ({
             id: so.id,
             startupId: so.startup_id,
             role: so.role,

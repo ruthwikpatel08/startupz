@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Problem } from '../../types';
 import { api } from '../../services/api';
-import { supabase, broadcastEntityDeleted } from '../../lib/supabase';
+import { supabase, broadcastEntityDeleted, getDeletedEntityIds, recordDeletedEntityId } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { ProblemCard } from '../../components/problems/ProblemCard';
 import { ProblemFilters } from '../../components/problems/ProblemFilters';
@@ -159,7 +159,12 @@ export const ProblemsPage: React.FC = () => {
       if (selectedTag) params.tag = selectedTag;
 
       const res = await api.getProblems(params);
-      const list = Array.isArray(res) ? res : res?.problems || [];
+      if (Array.isArray(res?.deletedProblemIds)) {
+        res.deletedProblemIds.forEach((dId: string) => recordDeletedEntityId('PROBLEM', dId));
+      }
+      const deletedProblemSet = getDeletedEntityIds('PROBLEM');
+      const rawList = Array.isArray(res) ? res : res?.problems || [];
+      const list = rawList.filter((p: any) => p && p.id && !deletedProblemSet.has(p.id));
       setProblems(list);
       if (!search.trim() && !selectedCategory && !selectedRegion && !selectedImpact && !selectedTag && list.length > 0) {
         cachedProblemsList = list;
@@ -223,9 +228,10 @@ export const ProblemsPage: React.FC = () => {
       return;
     }
     try {
+      recordDeletedEntityId('PROBLEM', problemId);
+      broadcastEntityDeleted('PROBLEM', problemId);
       await api.deleteProblem(problemId);
       setProblems((prev) => prev.filter((p) => p.id !== problemId));
-      broadcastEntityDeleted('PROBLEM', problemId);
     } catch (err: any) {
       alert(err.message || 'Failed to delete problem statement.');
     }

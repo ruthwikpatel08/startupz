@@ -37,6 +37,7 @@ import {
   broadcastEntityDeleted,
   getDeletedProjectIds,
   recordDeletedProjectId,
+  getCandidateIdsForUser,
 } from '../../lib/supabase';
 
 export interface PendingApplicant {
@@ -106,7 +107,13 @@ export const isCurrentUserMatch = (
   currentUser: any
 ): boolean => {
   if (!target || !currentUser) return false;
-  const targetId = String(target.userId || target.id || '').trim().toLowerCase();
+  const targetId = String(
+    target.userId ||
+    (target as any).user_id ||
+    target.id ||
+    (target as any)._id ||
+    ''
+  ).trim().toLowerCase();
   const currentId = String(currentUser.id || '').trim().toLowerCase();
 
   // If target has no identifying information, it cannot match
@@ -1760,24 +1767,30 @@ export const ProjectsPage: React.FC = () => {
   };
 
   const filteredProjects = projects.filter((p) => {
-    // Visibility check: Private projects only visible to creator, lead, or assigned/invited members
+    // Visibility check: Private projects only visible to creator, lead, assigned team members, or admin
     if (p.visibility === 'PRIVATE') {
       if (!user) return false;
-      if (user.isAdmin) return true;
-
-      const userIds = new Set(
-        [user.id, user.profile?.id, user.profile?.userId].filter(Boolean).map(String)
+      const isUserAdmin = Boolean(
+        user.isAdmin ||
+        user.role === 'ADMIN' ||
+        ['ruthwikpatel08@gmail.com', 'gokulvamshi@hookz.in', 'gokulvamshi@gmail.com', 'admin@startupz.com'].includes((user.email || '').toLowerCase().trim()) ||
+        ['ruthwikpatel08', 'gokulvamshi'].includes((user.profile?.username || '').toLowerCase().trim())
       );
-      const creatorId = String(p.creator?.userId || (p as any).creatorId || '');
-      const isCreator = Boolean(creatorId && userIds.has(creatorId)) || isCurrentUserMatch(p.creator, user);
+      if (isUserAdmin) return true;
+
+      const userCandidateIds = new Set(getCandidateIdsForUser(user.id));
+      const creatorId = String(p.creator?.userId || (p.creator as any)?.user_id || (p.creator as any)?.id || (p as any).creatorId || (p as any).creator_id || '').trim().toLowerCase();
+      const isCreator = Boolean(creatorId && userCandidateIds.has(creatorId)) || isCurrentUserMatch(p.creator, user);
 
       const isMember = Array.isArray(p.roles) && p.roles.some((r) => {
-        if (r.status !== 'ASSIGNED' || !r.assignedTo) return false;
+        const status = String(r.status || '').toUpperCase();
+        if (status !== 'ASSIGNED' || !r.assignedTo) return false;
         return isCurrentUserMatch(r.assignedTo, user);
       });
 
       const isInvited = Array.isArray(p.roles) && p.roles.some((r) => {
-        if (r.status !== 'INVITED' || !r.invitedUser) return false;
+        const status = String(r.status || '').toUpperCase();
+        if (status !== 'INVITED' || !r.invitedUser) return false;
         return isCurrentUserMatch(r.invitedUser, user);
       });
 
@@ -1794,7 +1807,7 @@ export const ProjectsPage: React.FC = () => {
           (Array.isArray(p.roles) &&
             p.roles.some((r) => (r.assignedTo as any)?.email && userEmail === (r.assignedTo as any).email.toLowerCase().trim())));
 
-      const userFullName = (user.profile?.fullName || '').toLowerCase().trim();
+      const userFullName = (user.profile?.fullName || (user as any).fullName || '').toLowerCase().trim();
       const nameMatches =
         Boolean(userFullName) &&
         ((p.creator?.fullName && userFullName === p.creator.fullName.trim().toLowerCase()) ||
@@ -1805,7 +1818,13 @@ export const ProjectsPage: React.FC = () => {
                 userFullName === r.assignedTo.fullName.trim().toLowerCase()
             )));
 
-      if (!isCreator && !isMember && !isInvited && !isLead && !emailMatches && !nameMatches) {
+      const hasTeamArrayMatch =
+        (Array.isArray((p as any).team) && (p as any).team.some((m: any) => isCurrentUserMatch(m, user))) ||
+        (Array.isArray((p as any).teamMembers) && (p as any).teamMembers.some((m: any) => isCurrentUserMatch(m, user))) ||
+        (Array.isArray((p as any).collaborators) && (p as any).collaborators.some((m: any) => isCurrentUserMatch(m, user))) ||
+        (Array.isArray((p as any).members) && (p as any).members.some((m: any) => isCurrentUserMatch(m, user)));
+
+      if (!isCreator && !isMember && !isInvited && !isLead && !emailMatches && !nameMatches && !hasTeamArrayMatch) {
         return false;
       }
     }

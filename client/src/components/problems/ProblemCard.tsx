@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Problem } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
+import { broadcastEntityDeleted, recordDeletedEntityId } from '../../lib/supabase';
 import {
   Bookmark,
   ExternalLink,
@@ -241,6 +242,8 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
                     onDelete(problem.id);
                   } else {
                     try {
+                      recordDeletedEntityId('PROBLEM', problem.id);
+                      broadcastEntityDeleted('PROBLEM', problem.id);
                       await api.deleteProblem(problem.id);
                       window.location.reload();
                     } catch (err: any) {

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Problem } from '../../types';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { broadcastEntityDeleted, recordDeletedEntityId } from '../../lib/supabase';
 import { getCategoryColor } from '../../components/problems/ProblemCard';
 import {
   Shield,
@@ -50,6 +51,8 @@ export const ManageProblemsPage: React.FC = () => {
   const handleDelete = async (id: string) => {
     setActionLoading(true);
     try {
+      recordDeletedEntityId('PROBLEM', id);
+      broadcastEntityDeleted('PROBLEM', id);
       await api.deleteProblem(id);
       setProblems((prev) => prev.filter((p) => p.id !== id));
       setDeleteConfirmId(null);

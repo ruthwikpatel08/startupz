@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, isDemoRecord } from '../../services/api';
-import { supabase, broadcastEntityDeleted } from '../../lib/supabase';
+import { supabase, broadcastEntityDeleted, getDeletedEntityIds, recordDeletedEntityId } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
@@ -103,7 +103,11 @@ export const ExploreStartupsPage: React.FC = () => {
       let clean: Startup[] = [];
       try {
         const res = await api.getStartups(params.toString());
-        clean = (res.startups || []).filter((s: any) => !isDemoRecord(s));
+        if (Array.isArray(res?.deletedStartupIds)) {
+          res.deletedStartupIds.forEach((dId: string) => recordDeletedEntityId('STARTUP', dId));
+        }
+        const deletedSet = getDeletedEntityIds('STARTUP');
+        clean = (res.startups || []).filter((s: any) => s && s.id && !deletedSet.has(s.id) && !isDemoRecord(s));
       } catch (apiErr) {
         console.warn('api.getStartups failed, trying direct Supabase query:', apiErr);
       }
@@ -320,6 +324,8 @@ export const ExploreStartupsPage: React.FC = () => {
       return;
     }
     try {
+      recordDeletedEntityId('STARTUP', id);
+      broadcastEntityDeleted('STARTUP', id);
       await api.deleteStartup(id).catch(() => null);
       try {
         await supabase.from('posts').delete().eq('startup_id', id);
@@ -333,8 +339,6 @@ export const ExploreStartupsPage: React.FC = () => {
       try {
         sessionStorage.setItem('startupz_cached_startups', JSON.stringify(cachedStartupsList));
       } catch {}
-      // Broadcast deletion across all connected devices
-      broadcastEntityDeleted('STARTUP', id);
     } catch (err: any) {
       alert(err?.message || 'Failed to delete startup.');
     }

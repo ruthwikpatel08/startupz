@@ -1,6 +1,35 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import { prisma } from '../db.js';
-import { requireAuth, requireAdmin, optionalAuth } from '../middleware/auth.js';
+import { requireAuth, requireAdmin, optionalAuth, isOwnerOrAdmin, isUserAdminCheck, getUserCandidateIds } from '../middleware/auth.js';
+import { supabaseAdmin } from '../supabase.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DELETED_PROBLEMS_FILE = path.join(__dirname, '..', 'data', 'deleted_problems.json');
+
+function loadDeletedProblems() {
+  try {
+    if (fs.existsSync(DELETED_PROBLEMS_FILE)) {
+      const raw = fs.readFileSync(DELETED_PROBLEMS_FILE, 'utf8');
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return new Set(arr);
+    }
+  } catch {}
+  return new Set();
+}
+
+function saveDeletedProblems(set) {
+  try {
+    const dir = path.dirname(DELETED_PROBLEMS_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(DELETED_PROBLEMS_FILE, JSON.stringify(Array.from(set), null, 2), 'utf8');
+  } catch {}
+}
+
+let deletedProblemIds = loadDeletedProblems();
 import {
   ProblemCreateSchema,
   ProblemUpdateSchema,
@@ -226,6 +255,9 @@ router.get('/', optionalAuth, async (req, res) => {
 
     // Build Prisma query condition
     const where = {};
+    if (deletedProblemIds.size > 0) {
+      where.id = { notIn: Array.from(deletedProblemIds) };
+    }
 
     if (minImpactNum && !isNaN(minImpactNum)) {
       where.impactLevel = { gte: minImpactNum };
@@ -330,12 +362,15 @@ router.get('/', optionalAuth, async (req, res) => {
 
     const formatted = rawProblems.map((p) => formatProblem(p, savedProblemIds));
 
+    const cleanFormatted = formatted.filter((p) => p && p.id && !deletedProblemIds.has(p.id));
+
     const responsePayload = {
-      problems: formatted,
-      total,
+      problems: cleanFormatted,
+      total: cleanFormatted.length,
       page: pageNum,
-      totalPages: Math.ceil(total / takeNum),
+      totalPages: Math.ceil(cleanFormatted.length / takeNum) || 1,
       limit: takeNum,
+      deletedProblemIds: Array.from(deletedProblemIds),
     };
 
     if (isDefaultFeed) {
@@ -711,6 +746,11 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// GET /api/problems/deleted-ids
+router.get('/deleted-ids', (req, res) => {
+  return res.json({ deletedProblemIds: Array.from(deletedProblemIds) });
+});
+
 /**
  * DELETE /api/problems/:id
  * Delete a problem statement (Creator or Admin)
@@ -719,16 +759,21 @@ router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const existing = await prisma.problem.findUnique({ where: { id } });
+    const existing = await prisma.problem.findUnique({ where: { id } }).catch(() => null);
     if (!existing) {
-      return res.status(404).json({ error: 'Problem statement not found.' });
+      deletedProblemIds.add(id);
+      saveDeletedProblems(deletedProblemIds);
+      return res.json({ success: true, message: 'Problem statement already deleted.', id });
     }
 
-    if (existing.creatorId !== req.user.id && !req.user.isAdmin) {
+    if (!isOwnerOrAdmin(existing.creatorId, req.user)) {
       return res.status(403).json({ error: 'Unauthorized to delete this problem statement.' });
     }
 
-    await prisma.problem.delete({ where: { id } });
+    deletedProblemIds.add(id);
+    saveDeletedProblems(deletedProblemIds);
+
+    await prisma.problem.delete({ where: { id } }).catch(() => null);
 
     // Also remove any saved item references for this problem
     await prisma.savedItem.deleteMany({
@@ -736,7 +781,13 @@ router.delete('/:id', requireAuth, async (req, res) => {
         itemType: 'PROBLEM',
         itemId: id,
       },
-    });
+    }).catch(() => null);
+
+    if (supabaseAdmin) {
+      try {
+        await supabaseAdmin.from('problems').delete().eq('id', id);
+      } catch (sErr) {}
+    }
 
     invalidateProblemsCache();
     res.json({ success: true, message: 'Problem statement deleted successfully.', id });

@@ -15,6 +15,9 @@ import {
   invalidateUserProfileCache,
   isUuid,
   checkUsernameAvailability,
+  broadcastEntityDeleted,
+  getDeletedEntityIds,
+  recordDeletedEntityId,
 } from '../../lib/supabase';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { invalidateFindCoFounderCache } from '../CoFounders/FindCoFounderPage';
@@ -941,6 +944,9 @@ export const ProfilePage: React.FC = () => {
         console.warn('Supabase profile posts fetch notice:', sbErr);
       }
 
+      const deletedPostSet = getDeletedEntityIds('POST');
+      postsList = postsList.filter((p: any) => p && p.id && !deletedPostSet.has(p.id));
+
       // Merge any local persisted posts authored by this user
       try {
         const rawLocal = localStorage.getItem('startupz_user_persisted_posts');
@@ -948,7 +954,7 @@ export const ProfilePage: React.FC = () => {
           const localPosts: any[] = JSON.parse(rawLocal);
           const postMap = new Map(postsList.map((p: any) => [p.id, p]));
           localPosts
-            .filter((lp: any) => lp.authorId === authorId || lp.author?.id === authorId)
+            .filter((lp: any) => (lp.authorId === authorId || lp.author?.id === authorId) && !deletedPostSet.has(lp.id))
             .forEach((lp: any) => {
               if (!postMap.has(lp.id)) {
                 postsList.unshift(lp);
@@ -972,6 +978,8 @@ export const ProfilePage: React.FC = () => {
     }
     setDeletingPostId(postId);
     try {
+      recordDeletedEntityId('POST', postId);
+      broadcastEntityDeleted('POST', postId);
       await api.deletePost(postId).catch(() => null);
       try {
         await supabase.from('posts').delete().eq('id', postId);
@@ -991,6 +999,47 @@ export const ProfilePage: React.FC = () => {
       setDeletingPostId(null);
     }
   };
+
+  // Cross-device realtime delete listener for Profile
+  useEffect(() => {
+    const handleRemoteDelete = (payload: any) => {
+      if (payload?.entityType === 'POST' && payload?.id) {
+        recordDeletedEntityId('POST', payload.id);
+        setUserPosts((prev) => prev.filter((p) => p.id !== payload.id));
+        try {
+          const raw = localStorage.getItem('startupz_user_persisted_posts');
+          if (raw) {
+            const list = JSON.parse(raw);
+            localStorage.setItem('startupz_user_persisted_posts', JSON.stringify(list.filter((p: any) => p.id !== payload.id)));
+          }
+        } catch {}
+      }
+    };
+
+    const syncChannel = supabase.channel('global-profile-posts-sync');
+    syncChannel
+      .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => handleRemoteDelete(payload))
+      .subscribe();
+
+    const dataChannel = supabase.channel('global-data-sync-broadcast');
+    dataChannel
+      .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => handleRemoteDelete(payload))
+      .subscribe();
+
+    const handleLocal = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.entityType === 'POST' && detail?.id) {
+        handleRemoteDelete(detail);
+      }
+    };
+    window.addEventListener('global_entity_deleted', handleLocal);
+
+    return () => {
+      syncChannel.unsubscribe();
+      dataChannel.unsubscribe();
+      window.removeEventListener('global_entity_deleted', handleLocal);
+    };
+  }, []);
 
   // Block / Unblock logic
   useEffect(() => {

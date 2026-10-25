@@ -250,6 +250,7 @@ export const api = {
   getStartups: (params?: any) => request<any>(`/startups${buildQuery(params)}`),
   getStartup: (id: string) => request<any>(`/startups/${id}`),
   getStartupById: (id: string) => request<any>(`/startups/${id}`),
+  getDeletedStartupIds: () => request<{ deletedStartupIds: string[] }>('/startups/deleted-ids'),
   createStartup: (payload: any) => request<any>('/startups', { method: 'POST', body: JSON.stringify(payload) }),
   updateStartup: (id: string, payload: any) => request<any>(`/startups/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteStartup: (id: string) => request<any>(`/startups/${id}`, { method: 'DELETE' }),
@@ -263,6 +264,7 @@ export const api = {
   getOpportunities: (params?: any) => request<any>(`/opportunities${buildQuery(params)}`),
   getOpportunity: (id: string) => request<any>(`/opportunities/${id}`),
   getOpportunityById: (id: string) => request<any>(`/opportunities/${id}`),
+  getDeletedOpportunityIds: () => request<{ deletedOpportunityIds: string[] }>('/opportunities/deleted-ids'),
   createOpportunity: (payload: any) => request<any>('/opportunities', { method: 'POST', body: JSON.stringify(payload) }),
   updateOpportunity: (id: string, payload: any) => request<any>(`/opportunities/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteOpportunity: (id: string) => request<any>(`/opportunities/${id}`, { method: 'DELETE' }),
@@ -338,6 +340,7 @@ export const api = {
 
   // POSTS
   getPosts: (params?: any) => request<any>(`/posts${buildQuery(params)}`),
+  getDeletedPostIds: () => request<{ deletedPostIds: string[] }>('/posts/deleted-ids'),
   createPost: (payload: any) => request<any>('/posts', { method: 'POST', body: JSON.stringify(payload) }),
   deletePost: (id: string) => request<any>(`/posts/${id}`, { method: 'DELETE' }),
   likePost: (id: string) => request<any>(`/posts/${id}/like`, { method: 'POST' }),
@@ -547,6 +550,7 @@ export const api = {
       return getFallbackProblemMeta();
     }
   },
+  getDeletedProblemIds: () => request<{ deletedProblemIds: string[] }>('/problems/deleted-ids'),
   createProblem: (payload: any) => request<any>('/problems', { method: 'POST', body: JSON.stringify(payload) }),
   updateProblem: (id: string, payload: any) => request<any>(`/problems/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteProblem: (id: string) => request<any>(`/problems/${id}`, { method: 'DELETE' }),

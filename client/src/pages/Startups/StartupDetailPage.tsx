@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../../services/api';
-import { supabase, broadcastEntityDeleted } from '../../lib/supabase';
+import { supabase, broadcastEntityDeleted, getDeletedEntityIds, recordDeletedEntityId } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Startup } from '../../types';
 import { VerificationBadge } from '../../components/common/Badge';
@@ -196,6 +196,8 @@ export const StartupDetailPage: React.FC = () => {
       return;
     }
     try {
+      recordDeletedEntityId('STARTUP', startup.id);
+      broadcastEntityDeleted('STARTUP', startup.id);
       await api.deleteStartup(startup.id).catch(() => null);
       try {
         await supabase.from('posts').delete().eq('startup_id', startup.id);
@@ -204,7 +206,6 @@ export const StartupDetailPage: React.FC = () => {
       } catch (err) {
         console.warn('Supabase cleanup notice on startup delete:', err);
       }
-      broadcastEntityDeleted('STARTUP', startup.id);
       navigate('/startups');
     } catch (err: any) {
       alert(err.message || 'Failed to delete startup.');
@@ -341,6 +342,8 @@ export const StartupDetailPage: React.FC = () => {
   const handleDeleteOpportunity = async (oppId: string) => {
     if (!window.confirm('Are you sure you want to remove this opportunity?')) return;
     try {
+      recordDeletedEntityId('OPPORTUNITY', oppId);
+      broadcastEntityDeleted('OPPORTUNITY', oppId);
       await api.deleteOpportunity(oppId);
       setStartup((prev) => {
         if (!prev) return null;

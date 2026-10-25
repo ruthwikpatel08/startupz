@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { api, clearApiCache } from '../../services/api';
-import { supabase, fetchUserConnections, broadcastEntityDeleted, resolveUserIdToUUID, isUUID } from '../../lib/supabase';
+import { supabase, fetchUserConnections, broadcastEntityDeleted, resolveUserIdToUUID, isUUID, getDeletedEntityIds, recordDeletedEntityId } from '../../lib/supabase';
 import { Post, Startup, Problem } from '../../types';
 import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -48,15 +48,12 @@ import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-do
 
 const LOCAL_POSTS_KEY = 'startupz_user_persisted_posts';
 
-// Clean up any legacy deleted post tombstones so user data is never suppressed
-try {
-  localStorage.removeItem('startupz_user_deleted_post_ids');
-} catch {}
-
 const getLocalPersistedPosts = (): any[] => {
   try {
     const raw = localStorage.getItem(LOCAL_POSTS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const list = raw ? JSON.parse(raw) : [];
+    const deletedPostSet = getDeletedEntityIds('POST');
+    return Array.isArray(list) ? list.filter((p: any) => p && p.id && !deletedPostSet.has(p.id)) : [];
   } catch {
     return [];
   }
@@ -64,13 +61,17 @@ const getLocalPersistedPosts = (): any[] => {
 
 const saveLocalPersistedPost = (newPost: any) => {
   try {
+    const deletedPostSet = getDeletedEntityIds('POST');
+    if (newPost?.id && deletedPostSet.has(newPost.id)) return;
     const current = getLocalPersistedPosts().filter((p) => p.id !== newPost.id);
     localStorage.setItem(LOCAL_POSTS_KEY, JSON.stringify([newPost, ...current]));
   } catch {}
 };
 
 const markPostDeletedLocally = (postId: string) => {
+  if (!postId) return;
   try {
+    recordDeletedEntityId('POST', postId);
     const currentPosts = getLocalPersistedPosts().filter((p) => p.id !== postId);
     localStorage.setItem(LOCAL_POSTS_KEY, JSON.stringify(currentPosts));
   } catch {}
@@ -225,8 +226,14 @@ export const StartupFeedPage: React.FC = () => {
       let loadedList: any[] = [];
       try {
         const res = await api.getPosts();
+        if (Array.isArray(res?.deletedPostIds)) {
+          res.deletedPostIds.forEach((dId: string) => recordDeletedEntityId('POST', dId));
+        }
         if (res?.posts && Array.isArray(res.posts) && res.posts.length > 0) {
-          loadedList = res.posts.map((p: any) => {
+          const deletedPostSet = getDeletedEntityIds('POST');
+          loadedList = res.posts
+            .filter((p: any) => p && p.id && !deletedPostSet.has(p.id))
+            .map((p: any) => {
             const isLiked = p.isLiked ?? userLikedIds.has(p.id);
             const uVote = p.userVote || userVoteMap[p.id] || (isLiked ? 'up' : null);
             if (uVote) {
@@ -1288,14 +1295,21 @@ export const StartupFeedPage: React.FC = () => {
 
   // Cross-device sync & auto-refresh on focus
   useEffect(() => {
+    const handleRemoteDelete = (payload: any) => {
+      if (payload?.entityType === 'POST' && payload?.id) {
+        markPostDeletedLocally(payload.id);
+        setPosts((prev) => prev.filter((p) => p.id !== payload.id));
+      }
+    };
+
     const syncChannel = supabase.channel('global-feed-sync-channel');
     syncChannel
-      .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => {
-        if (payload?.entityType === 'POST' && payload?.id) {
-          markPostDeletedLocally(payload.id);
-          setPosts((prev) => prev.filter((p) => p.id !== payload.id));
-        }
-      })
+      .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => handleRemoteDelete(payload))
+      .subscribe();
+
+    const dataChannel = supabase.channel('global-data-sync-broadcast');
+    dataChannel
+      .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => handleRemoteDelete(payload))
       .subscribe();
 
     const dbChannel = supabase

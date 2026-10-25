@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Problem } from '../../types';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { broadcastEntityDeleted, recordDeletedEntityId } from '../../lib/supabase';
 import { getCategoryColor } from '../../components/problems/ProblemCard';
 import { AIInsightSection } from '../../components/problems/AIInsightSection';
 import { ShareProblemModal } from '../../components/problems/ShareProblemModal';
@@ -84,6 +85,8 @@ export const ProblemDetailPage: React.FC = () => {
     if (!window.confirm(`Are you sure you want to delete "${problem.title}"?`)) return;
 
     try {
+      recordDeletedEntityId('PROBLEM', problem.id);
+      broadcastEntityDeleted('PROBLEM', problem.id);
       await api.deleteProblem(problem.id);
       navigate('/problems');
     } catch (err: any) {

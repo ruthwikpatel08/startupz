@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { prisma } from '../db.js';
-import { requireAuth, optionalAuth } from '../middleware/auth.js';
+import { requireAuth, optionalAuth, isUserAdminCheck, getUserCandidateIds, isOwnerOrAdmin } from '../middleware/auth.js';
 import { supabaseAdmin } from '../supabase.js';
 import { generateProjectScoutAnalysis } from '../utils/aiClient.js';
 
@@ -339,10 +339,13 @@ router.get('/', optionalAuth, async (req, res) => {
     all = all.filter((p) => p && p.id && !deletedProjectIds.has(p.id));
 
     const filtered = all.filter((p) => {
-      // Public projects: visible to all members and visitors across the platform
+      // 1. Admin sees ALL projects across the platform (both public and private)
+      if (isUserAdminCheck(req.user)) return true;
+
+      // 2. Public projects: visible to all members and visitors across the platform
       if (p.visibility === 'PUBLIC') return true;
 
-      // Private projects: strictly visible ONLY to creator, assigned team members, or platform admin
+      // 3. Private projects: strictly visible ONLY to creator, lead, or assigned/invited team members
       return isProjectMemberOrCreator(p, req.user);
     });
 
@@ -1331,33 +1334,46 @@ export function isProjectLeadOrCreator(project, user) {
  */
 export function isProjectMemberOrCreator(project, user) {
   if (!user || !project) return false;
-  if (user.isAdmin) return true;
+  if (isUserAdminCheck(user)) return true;
   if (isProjectLeadOrCreator(project, user)) return true;
 
-  const userIds = new Set(
-    [user.id, user.profile?.id, user.profile?.userId, user._id]
-      .filter(Boolean)
-      .map(String)
-  );
+  const userCandidateIds = new Set(getUserCandidateIds(user));
   const userEmail = (user.email || '').toLowerCase().trim();
-  const userFullName = (user.profile?.fullName || '').toLowerCase().trim();
+  const userFullName = (user.profile?.fullName || user.fullName || '').toLowerCase().trim();
 
   const ruthwikIds = ['c3e1a001-8888-4444-9999-000000000001', 'b669157c-4d30-42f4-a8bf-4e27dc425e00', 'ruthwikpatel08'];
   const gokulIds = ['c3e1a001-8888-4444-9999-000000000002', '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba', 'gokulvamshi'];
 
+  const matchTarget = (target) => {
+    if (!target) return false;
+    const tId = String(target.userId || target.user_id || target.id || target._id || '').trim().toLowerCase();
+    if (tId && userCandidateIds.has(tId)) return true;
+    if (tId && ruthwikIds.includes(tId) && Array.from(userCandidateIds).some((id) => ruthwikIds.includes(id))) return true;
+    if (tId && gokulIds.includes(tId) && Array.from(userCandidateIds).some((id) => gokulIds.includes(id))) return true;
+
+    const tEmail = String(target.email || '').toLowerCase().trim();
+    if (userEmail && tEmail && userEmail === tEmail) return true;
+
+    const tName = String(target.fullName || target.name || '').toLowerCase().trim();
+    const ignoredNames = new Set(['builder', 'connection', 'connected builder', 'project lead', 'member', 'user', 'undefined', 'null']);
+    if (userFullName && tName && !ignoredNames.has(tName) && !ignoredNames.has(userFullName) && userFullName === tName) return true;
+    return false;
+  };
+
   if (Array.isArray(project.roles)) {
-    return project.roles.some((r) => {
-      if (!r.assignedTo) return false;
-      if (r.status && r.status !== 'ASSIGNED') return false;
-      const assignedId = String(r.assignedTo.userId || r.assignedTo.id || '');
-      if (assignedId && userIds.has(assignedId)) return true;
-      if (ruthwikIds.includes(assignedId) && Array.from(userIds).some((id) => ruthwikIds.includes(id))) return true;
-      if (gokulIds.includes(assignedId) && Array.from(userIds).some((id) => gokulIds.includes(id))) return true;
-      if (userEmail && r.assignedTo.email && userEmail === r.assignedTo.email.toLowerCase().trim()) return true;
-      if (userFullName && r.assignedTo.fullName && userFullName === r.assignedTo.fullName.toLowerCase().trim()) return true;
-      return false;
+    const hasRoleMember = project.roles.some((r) => {
+      const status = String(r.status || '').toUpperCase();
+      if (status !== 'ASSIGNED' && status !== 'INVITED') return false;
+      return matchTarget(r.assignedTo) || matchTarget(r.invitedUser);
     });
+    if (hasRoleMember) return true;
   }
+
+  const teamLists = [project.team, project.teamMembers, project.collaborators, project.members];
+  for (const list of teamLists) {
+    if (Array.isArray(list) && list.some(matchTarget)) return true;
+  }
+
   return false;
 }
 

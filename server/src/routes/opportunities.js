@@ -1,8 +1,36 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import { prisma } from '../db.js';
-import { requireAuth, optionalAuth } from '../middleware/auth.js';
+import { requireAuth, optionalAuth, isOwnerOrAdmin, isUserAdminCheck, getUserCandidateIds } from '../middleware/auth.js';
 import { supabaseAdmin } from '../supabase.js';
 import { ensureStartupInPrisma } from './startups.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DELETED_OPPORTUNITIES_FILE = path.join(__dirname, '..', 'data', 'deleted_opportunities.json');
+
+function loadDeletedOpportunities() {
+  try {
+    if (fs.existsSync(DELETED_OPPORTUNITIES_FILE)) {
+      const raw = fs.readFileSync(DELETED_OPPORTUNITIES_FILE, 'utf8');
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return new Set(arr);
+    }
+  } catch {}
+  return new Set();
+}
+
+function saveDeletedOpportunities(set) {
+  try {
+    const dir = path.dirname(DELETED_OPPORTUNITIES_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(DELETED_OPPORTUNITIES_FILE, JSON.stringify(Array.from(set), null, 2), 'utf8');
+  } catch {}
+}
+
+let deletedOpportunityIds = loadDeletedOpportunities();
 
 const router = express.Router();
 
@@ -248,11 +276,14 @@ router.get('/', optionalAuth, async (req, res) => {
       };
     });
 
+    const cleanFormatted = formatted.filter((opp) => opp && opp.id && !deletedOpportunityIds.has(opp.id));
+
     return res.json({
-      opportunities: formatted,
-      total,
+      opportunities: cleanFormatted,
+      total: cleanFormatted.length,
       page: pageNum,
-      totalPages: Math.ceil(total / limitNum),
+      totalPages: Math.ceil(cleanFormatted.length / limitNum) || 1,
+      deletedOpportunityIds: Array.from(deletedOpportunityIds),
     });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to retrieve opportunities.' });
@@ -705,6 +736,11 @@ router.put('/:id', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/opportunities/deleted-ids
+router.get('/deleted-ids', (req, res) => {
+  return res.json({ deletedOpportunityIds: Array.from(deletedOpportunityIds) });
+});
+
 // DELETE /api/opportunities/:id - Delete opportunity listing (Founder or Admin only)
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
@@ -732,13 +768,18 @@ router.delete('/:id', requireAuth, async (req, res) => {
     }
 
     if (!opp) {
-      return res.status(404).json({ error: 'Opportunity not found.' });
+      deletedOpportunityIds.add(id);
+      saveDeletedOpportunities(deletedOpportunityIds);
+      return res.json({ message: 'Opportunity already deleted.', id });
     }
 
     const founderId = opp.startup?.founderId || opp.startup?.founder_id || opp.founderId;
-    if (founderId !== req.user.id && !req.user.isAdmin) {
+    if (!isOwnerOrAdmin(founderId, req.user)) {
       return res.status(403).json({ error: 'Only the startup founder can delete this opportunity.' });
     }
+
+    deletedOpportunityIds.add(id);
+    saveDeletedOpportunities(deletedOpportunityIds);
 
     await prisma.opportunityApplication.deleteMany({ where: { opportunityId: id } }).catch(() => null);
     await prisma.startupOpportunity.delete({ where: { id } }).catch(() => null);
@@ -748,7 +789,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
       await supabaseAdmin.from('startup_opportunities').delete().eq('id', id).catch(() => null);
     }
 
-    return res.json({ message: 'Opportunity permanently deleted successfully.' });
+    return res.json({ message: 'Opportunity permanently deleted successfully.', id });
   } catch (error) {
     console.error('Delete opportunity error:', error);
     return res.status(500).json({ error: 'Failed to delete opportunity.' });

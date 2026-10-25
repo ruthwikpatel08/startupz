@@ -1,8 +1,36 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import { prisma } from '../db.js';
-import { requireAuth, optionalAuth } from '../middleware/auth.js';
+import { requireAuth, optionalAuth, isOwnerOrAdmin, isUserAdminCheck, getUserCandidateIds } from '../middleware/auth.js';
 import { supabaseAdmin } from '../supabase.js';
 import { saveOpportunityToSupabase } from './opportunities.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DELETED_STARTUPS_FILE = path.join(__dirname, '..', 'data', 'deleted_startups.json');
+
+function loadDeletedStartups() {
+  try {
+    if (fs.existsSync(DELETED_STARTUPS_FILE)) {
+      const raw = fs.readFileSync(DELETED_STARTUPS_FILE, 'utf8');
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return new Set(arr);
+    }
+  } catch {}
+  return new Set();
+}
+
+function saveDeletedStartups(set) {
+  try {
+    const dir = path.dirname(DELETED_STARTUPS_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(DELETED_STARTUPS_FILE, JSON.stringify(Array.from(set), null, 2), 'utf8');
+  } catch {}
+}
+
+let deletedStartupIds = loadDeletedStartups();
 
 const router = express.Router();
 
@@ -26,6 +54,9 @@ router.get('/', optionalAuth, async (req, res) => {
     const skip = (pageNum - 1) * limitNum;
 
     const where = {};
+    if (deletedStartupIds.size > 0) {
+      where.id = { notIn: Array.from(deletedStartupIds) };
+    }
 
     if (!req.user) {
       where.visibility = 'PUBLIC';
@@ -103,6 +134,7 @@ router.get('/', optionalAuth, async (req, res) => {
 
         if (Array.isArray(supaList) && supaList.length > 0) {
           for (const ss of supaList) {
+            if (deletedStartupIds.has(ss.id)) continue;
             await ensureStartupInPrisma(ss);
           }
         }
@@ -167,18 +199,21 @@ router.get('/', optionalAuth, async (req, res) => {
       saves.forEach((s) => userSaves.add(s.itemId));
     }
 
-    const formattedStartups = startups.map((s) => ({
-      ...s,
-      isLiked: userLikes.has(s.id),
-      isSaved: userSaves.has(s.id),
-      teamSize: (s.members?.length || 0) + 1,
-    }));
+    const formattedStartups = startups
+      .filter((s) => s && s.id && !deletedStartupIds.has(s.id))
+      .map((s) => ({
+        ...s,
+        isLiked: userLikes.has(s.id),
+        isSaved: userSaves.has(s.id),
+        teamSize: (s.members?.length || 0) + 1,
+      }));
 
     return res.json({
       startups: formattedStartups,
-      total,
+      total: formattedStartups.length,
       page: pageNum,
-      totalPages: Math.ceil(total / limitNum),
+      totalPages: Math.ceil(formattedStartups.length / limitNum) || 1,
+      deletedStartupIds: Array.from(deletedStartupIds),
     });
   } catch (error) {
     console.error('List startups error:', error);
@@ -903,6 +938,11 @@ router.put('/:id', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/startups/deleted-ids
+router.get('/deleted-ids', (req, res) => {
+  return res.json({ deletedStartupIds: Array.from(deletedStartupIds) });
+});
+
 // DELETE /api/startups/:id - Delete Startup
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
@@ -918,12 +958,20 @@ router.delete('/:id', requireAuth, async (req, res) => {
         };
       }
     }
-    if (!existing) return res.status(404).json({ error: 'Startup not found.' });
+
+    if (!existing) {
+      deletedStartupIds.add(id);
+      saveDeletedStartups(deletedStartupIds);
+      return res.json({ message: 'Startup already deleted.', id });
+    }
 
     const founderId = existing.founderId || existing.founder_id;
-    if (founderId && founderId !== req.user.id && !req.user.isAdmin) {
+    if (!isOwnerOrAdmin(founderId, req.user)) {
       return res.status(403).json({ error: 'Unauthorized to delete this startup.' });
     }
+
+    deletedStartupIds.add(id);
+    saveDeletedStartups(deletedStartupIds);
 
     // 1. Clean up only posts directly linked to this startup ID
     await prisma.post.deleteMany({
@@ -947,8 +995,8 @@ router.delete('/:id', requireAuth, async (req, res) => {
     await prisma.startupOpportunity.deleteMany({ where: { startupId: id } }).catch(() => {});
 
     // 4. Finally delete the startup
-    await prisma.startup.delete({ where: { id } });
-    return res.json({ message: 'Startup successfully deleted.' });
+    await prisma.startup.delete({ where: { id } }).catch(() => null);
+    return res.json({ message: 'Startup successfully deleted.', id });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to delete startup.' });
   }
