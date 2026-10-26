@@ -515,16 +515,16 @@ export const ProjectsPage: React.FC = () => {
         clearApiCache();
         let serverList: BuilderProject[] | null = null;
         const res = await api.getProjects().catch(() => null);
-        if (res && Array.isArray(res.projects)) {
+        if (res && Array.isArray(res.projects) && res.projects.length > 0) {
           serverList = res.projects;
           if (Array.isArray(res.deletedProjectIds)) {
             res.deletedProjectIds.forEach((dId: string) => recordDeletedProjectId(dId));
           }
         } else {
-          // Direct Supabase fallback if server is waking up or offline
+          // Direct Supabase fallback if server is waking up, offline, or returned empty
           try {
             const { data } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
-            if (Array.isArray(data)) {
+            if (Array.isArray(data) && data.length > 0) {
               serverList = data.map((row: any) => ({
                 id: row.id,
                 title: row.title,
@@ -612,12 +612,28 @@ export const ProjectsPage: React.FC = () => {
           );
 
           setAppliedRolesSet(new Set(aSet));
-          setProjects(serverList);
-          try {
-            localStorage.setItem('startupz_builder_projects', JSON.stringify(serverList));
-            localStorage.setItem('startupz_projects', JSON.stringify(serverList));
-          } catch {}
-          serverList.forEach((p) => syncProjectGroup(p));
+          if (serverList.length > 0) {
+            setProjects(serverList);
+            try {
+              localStorage.setItem('startupz_builder_projects', JSON.stringify(serverList));
+              localStorage.setItem('startupz_projects', JSON.stringify(serverList));
+            } catch {}
+            serverList.forEach((p) => syncProjectGroup(p));
+          } else {
+            // Guard: Never wipe existing local projects unless explicitly deleted
+            try {
+              const cached = localStorage.getItem('startupz_builder_projects');
+              if (cached) {
+                const parsed = JSON.parse(cached);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  const nonDeleted = parsed.filter((p: any) => p && p.id && !deletedIds.has(p.id));
+                  if (nonDeleted.length > 0) {
+                    setProjects(nonDeleted);
+                  }
+                }
+              }
+            } catch {}
+          }
         }
       } catch (err) {
         console.warn('Could not fetch server projects:', err);
