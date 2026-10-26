@@ -8,6 +8,20 @@ import {
 const SYSTEM_PROMPT =
   'You are HookZ AI, an assistant helping startup founders analyze global problem statements. When given a problem description, you provide practical, unbiased, structured insights in JSON format. Never suggest something illegal or unethical. Base responses only on the information given. Do not mention you are an AI or the system. Focus on the problem context and possible startup solutions or relevant analysis. Output valid JSON matching the requested schema.';
 
+const FALLBACK_MODELS = [
+  'gemini-3.8-flash',       // Primary model recommended in your Render error log
+  'gemini-3.6-flash',       // Stable fallback with separate free quota
+  'gemini-flash-latest',    // Google's auto-aliased latest free Flash model
+  'gemini-3-flash-preview', // Preview fallback
+  'gemini-2.5-flash-lite',  // Lite fallback
+];
+
+function getModelCandidates() {
+  const configured = (process.env.GEMINI_MODEL || '').trim();
+  const models = configured ? [configured, ...FALLBACK_MODELS] : [...FALLBACK_MODELS];
+  return Array.from(new Set(models.filter(Boolean)));
+}
+
 let genAIClient = null;
 
 function getGenAI() {
@@ -51,6 +65,31 @@ function cleanJsonOutput(text) {
 }
 
 /**
+ * Execute Gemini generateContent with automatic model fallback.
+ * Tries the primary configured model followed by free-tier fallback models.
+ * Logs warnings on intermediate model failures and throws only if all models fail.
+ */
+async function generateContentWithFallback(ai, requestParams) {
+  const models = getModelCandidates();
+  let lastError = null;
+
+  for (const model of models) {
+    try {
+      const response = await ai.models.generateContent({
+        ...requestParams,
+        model,
+      });
+      return response;
+    } catch (err) {
+      lastError = err;
+      console.warn(`⚠️ Gemini model "${model}" failed (${err?.status || err?.code || 'error'}: ${err?.message || err}). Trying next fallback model...`);
+    }
+  }
+
+  throw new Error(`All Gemini candidate models failed (${models.join(', ')}). Last error: ${lastError?.message || lastError}`);
+}
+
+/**
  * 15.2 Solution Suggestions using Gemini
  */
 export async function generateProblemSolutions(problem) {
@@ -59,9 +98,7 @@ export async function generateProblemSolutions(problem) {
 
   if (ai) {
     try {
-      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-      const response = await ai.models.generateContent({
-        model,
+      const response = await generateContentWithFallback(ai, {
         contents: prompt,
         config: {
           systemInstruction: SYSTEM_PROMPT,
@@ -103,9 +140,7 @@ Background: ${profile.bio || profile.startupExperience || 'Experienced builder'}
 
   if (ai) {
     try {
-      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-      const response = await ai.models.generateContent({
-        model,
+      const response = await generateContentWithFallback(ai, {
         contents: prompt,
         config: {
           systemInstruction: SYSTEM_PROMPT,
@@ -136,9 +171,7 @@ export async function categorizeProblemAI(title, description) {
 
   if (ai) {
     try {
-      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-      const response = await ai.models.generateContent({
-        model,
+      const response = await generateContentWithFallback(ai, {
         contents: prompt,
         config: {
           systemInstruction: SYSTEM_PROMPT,
@@ -372,9 +405,7 @@ Return valid JSON with an array named "problems":
 
   if (ai) {
     try {
-      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-      const response = await ai.models.generateContent({
-        model,
+      const response = await generateContentWithFallback(ai, {
         contents: prompt,
         config: {
           systemInstruction: SYSTEM_PROMPT,
