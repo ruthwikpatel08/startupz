@@ -514,7 +514,12 @@ export async function checkAndRefreshWeeklyProblems(force = false) {
 
   isRefreshingWeeklyProblems = true;
   try {
-    const existingCount = await prisma.problem.count();
+    if (!prisma.problem) return { success: true, busy: false, message: 'Problem model not initialized' };
+    const existingCount = await prisma.problem.count().catch(() => null);
+    if (existingCount === null) {
+      console.log('ℹ️ [WeeklyProblems] Problem table not available in current database, skipping refresh cycle.');
+      return { success: true, busy: false, message: 'Problem table not available' };
+    }
 
     // Discover new venture problem statements from Google Gemini AI
     const newAIGenerated = await discoverProblemsFromAI(

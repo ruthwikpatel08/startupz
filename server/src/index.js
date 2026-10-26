@@ -32,7 +32,7 @@ import consentRoutes from './routes/consent.js';
 import dsarRoutes from './routes/dsar.js';
 
 import { execSync } from 'child_process';
-import { prisma } from './db.js';
+import { prisma, checkTablesExist } from './db.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -142,13 +142,27 @@ app.all(['/api/health', '/health'], (req, res) => {
 // Database Health Check & Diagnostic
 app.get('/api/health/db', async (req, res) => {
   try {
-    const userCount = await prisma.user.count();
-    const startupCount = await prisma.startup.count();
-    const failedStartupCount = await prisma.failedStartup.count();
+    await prisma.$queryRawUnsafe('SELECT 1');
+    const tablesReady = await checkTablesExist(['User', 'Startup']);
+
+    if (!tablesReady) {
+      return res.json({
+        status: 'initializing',
+        database: 'connected',
+        tablesReady: false,
+        message: 'Database connection active; tables pending migration or initialization.',
+        provider: process.env.DATABASE_URL ? (process.env.DATABASE_URL.startsWith('postgres') ? 'postgresql' : 'sqlite') : 'sqlite',
+      });
+    }
+
+    const userCount = await prisma.user.count().catch(() => 0);
+    const startupCount = await prisma.startup.count().catch(() => 0);
+    const failedStartupCount = prisma.failedStartup ? await prisma.failedStartup.count().catch(() => 0) : 0;
     const problemCount = prisma.problem ? await prisma.problem.count().catch(() => 0) : 0;
     res.json({
       status: 'ok',
       database: 'connected',
+      tablesReady: true,
       userCount,
       startupCount,
       failedStartupCount,
@@ -340,43 +354,53 @@ async function purgeDemoDatabase() {
 
 async function ensureDatabaseReady() {
   try {
-    await prisma.user.count();
-    if (!prisma.problem) {
-      throw new Error('Problem model not available on current Prisma Client');
-    }
-    await prisma.problem.count();
-    console.log('✅ Database connected and verified.');
-  } catch (err) {
-    console.log('⚠️ Database uninitialized or schema update needed:', err.message);
+    await prisma.$queryRawUnsafe('SELECT 1');
+  } catch (connErr) {
+    console.warn('⚠️ Database connection check notice:', connErr.message);
+    return false;
+  }
+
+  let tablesReady = await checkTablesExist(['User', 'Problem']);
+
+  if (!tablesReady) {
+    console.log('⚠️ Database uninitialized or schema tables missing. Attempting automated synchronization...');
     try {
-      console.log('🔄 Attempting automated Prisma schema push...');
       execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
       execSync('npx prisma generate', { stdio: 'inherit' });
-      console.log('✅ Database schema pushed and client generated successfully.');
-    } catch (pushErr) {
-      console.warn('Notice: automated prisma db push encountered notice:', pushErr.message);
-    }
-  }
-
-  try {
-    const userCount = await prisma.user.count().catch(() => 0);
-    const problemCount = prisma.problem ? await prisma.problem.count().catch(() => 0) : 0;
-    if (userCount === 0 || problemCount === 0) {
-      console.log('🌱 Database needs seed data (users or problems). Seeding initial accounts and problem statements...');
-      try {
-        const { main: seedDatabase } = await import('./seed.js');
-        if (seedDatabase) {
-          await seedDatabase();
-        }
-      } catch (seedErr) {
-        console.error('Auto-seed error:', seedErr.message);
+      tablesReady = await checkTablesExist(['User', 'Problem']);
+      if (tablesReady) {
+        console.log('✅ Database schema pushed and tables verified successfully.');
+      } else {
+        console.warn('Notice: Automated schema push completed but tables were not detected. Migration scripts may be required.');
       }
+    } catch (pushErr) {
+      console.warn('Notice: Automated prisma db push notice:', pushErr.message);
     }
-
-    // Demo purge is no longer run automatically to preserve all user posts and interactions permanently
-  } catch (e) {
-    console.warn('Startup verification notice:', e.message);
+  } else {
+    console.log('✅ Database connected and verified.');
   }
+
+  if (tablesReady) {
+    try {
+      const userCount = await prisma.user.count().catch(() => 0);
+      const problemCount = prisma.problem ? await prisma.problem.count().catch(() => 0) : 0;
+      if (userCount === 0 || problemCount === 0) {
+        console.log('🌱 Database needs seed data (users or problems). Seeding initial accounts and problem statements...');
+        try {
+          const { main: seedDatabase } = await import('./seed.js');
+          if (seedDatabase) {
+            await seedDatabase();
+          }
+        } catch (seedErr) {
+          console.warn('Auto-seed notice:', seedErr.message);
+        }
+      }
+    } catch (e) {
+      console.warn('Startup verification notice:', e.message);
+    }
+  }
+
+  return tablesReady;
 }
 
 const isServerEntry = process.argv[1] && (
@@ -390,7 +414,11 @@ const isServerEntry = process.argv[1] && (
 if (isServerEntry && process.env.NODE_ENV !== 'test') {
   app.listen(PORT, async () => {
     console.log(`🚀 StartupZ Server running on http://localhost:${PORT}`);
-    await ensureDatabaseReady();
-    checkAndRefreshWeeklyProblems().catch(() => {});
+    const isReady = await ensureDatabaseReady();
+    if (isReady) {
+      checkAndRefreshWeeklyProblems().catch(() => {});
+    } else {
+      console.log('ℹ️ [WeeklyProblems] Postponed weekly refresh check until schema tables are verified.');
+    }
   });
 }
