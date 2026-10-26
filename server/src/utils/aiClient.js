@@ -9,11 +9,12 @@ const SYSTEM_PROMPT =
   'You are HookZ AI, an assistant helping startup founders analyze global problem statements. When given a problem description, you provide practical, unbiased, structured insights in JSON format. Never suggest something illegal or unethical. Base responses only on the information given. Do not mention you are an AI or the system. Focus on the problem context and possible startup solutions or relevant analysis. Output valid JSON matching the requested schema.';
 
 const FALLBACK_MODELS = [
-  'gemini-3.8-flash',       // Primary model recommended in your Render error log
-  'gemini-3.6-flash',       // Stable fallback with separate free quota
-  'gemini-flash-latest',    // Google's auto-aliased latest free Flash model
-  'gemini-3-flash-preview', // Preview fallback
-  'gemini-2.5-flash-lite',  // Lite fallback
+  'gemini-flash-lite-latest', // High-availability lightweight model with low latency and high free-tier capacity
+  'gemini-3.5-flash-lite',   // Secondary lite model
+  'gemini-3.1-flash-lite',   // Tertiary lite model
+  'gemini-3.8-flash',        // Full flash model (may encounter 503 under high demand)
+  'gemini-3.6-flash',        // Stable flash fallback
+  'gemini-flash-latest',     // Auto-aliased latest flash model
 ];
 
 function getModelCandidates() {
@@ -82,7 +83,7 @@ async function generateContentWithFallback(ai, requestParams) {
       return response;
     } catch (err) {
       lastError = err;
-      console.warn(`⚠️ Gemini model "${model}" failed (${err?.status || err?.code || 'error'}: ${err?.message || err}). Trying next fallback model...`);
+      console.log(`ℹ️ [Gemini] Model "${model}" temporarily unavailable (${err?.status || err?.code || '503'}), switching to next candidate model...`);
     }
   }
 
