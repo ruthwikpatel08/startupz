@@ -1035,8 +1035,8 @@ export const ProfilePage: React.FC = () => {
     window.addEventListener('global_entity_deleted', handleLocal);
 
     return () => {
-      syncChannel.unsubscribe();
-      dataChannel.unsubscribe();
+      supabase.removeChannel(syncChannel);
+      supabase.removeChannel(dataChannel);
       window.removeEventListener('global_entity_deleted', handleLocal);
     };
   }, []);

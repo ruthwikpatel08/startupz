@@ -1341,6 +1341,7 @@ export const StartupFeedPage: React.FC = () => {
       window.removeEventListener('focus', handleVisibility);
       window.removeEventListener('global_entity_deleted', handleLocalDelete);
       supabase.removeChannel(syncChannel);
+      supabase.removeChannel(dataChannel);
       supabase.removeChannel(dbChannel);
     };
   }, []);

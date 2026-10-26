@@ -313,11 +313,14 @@ export const NotificationsDropdown: React.FC = () => {
     if (!user?.id) return;
     fetchNotifications();
 
+    let isMounted = true;
     let channel: any = null;
 
     const setupRealtime = async () => {
       try {
         const userUuid = isUUID(user.id) ? user.id : await resolveUserIdToUUID(user.id);
+        if (!isMounted) return;
+
         const allUserIds = Array.from(
           new Set([
             user.id,
@@ -365,6 +368,10 @@ export const NotificationsDropdown: React.FC = () => {
             }
           )
           .subscribe();
+
+        if (!isMounted && channel) {
+          supabase.removeChannel(channel);
+        }
       } catch (err) {
         console.warn('Realtime notifications subscription notice:', err);
       }
@@ -395,6 +402,7 @@ export const NotificationsDropdown: React.FC = () => {
     window.addEventListener('startupz_open_notifications', handleOpenNotifs);
 
     return () => {
+      isMounted = false;
       clearInterval(interval);
       if (channel) supabase.removeChannel(channel);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
