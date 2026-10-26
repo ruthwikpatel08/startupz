@@ -534,8 +534,8 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-// PUT /api/projects/:id - Update project
-router.put('/:id', requireAuth, async (req, res) => {
+// PUT / PATCH /api/projects/:id - Update project & visibility
+const handleUpdateProject = async (req, res) => {
   try {
     const { id } = req.params;
     const { all, project: existing } = await getOrFetchProject(id);
@@ -550,7 +550,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     }
 
     const newVisibility = req.body.visibility !== undefined
-      ? (req.body.visibility === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC')
+      ? (String(req.body.visibility).toUpperCase() === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC')
       : (existing.visibility || 'PUBLIC');
 
     const updated = {
@@ -569,9 +569,14 @@ router.put('/:id', requireAuth, async (req, res) => {
 
     return res.json({ message: 'Project updated.', project: updated });
   } catch (error) {
+    console.error('Update project error:', error);
     return res.status(500).json({ error: 'Failed to update project.' });
   }
-});
+};
+
+router.put('/:id', requireAuth, handleUpdateProject);
+router.patch('/:id', requireAuth, handleUpdateProject);
+router.patch('/:id/visibility', requireAuth, handleUpdateProject);
 
 // DELETE /api/projects/:id - Delete project (strictly authorized to uploaded creator or admin only)
 router.delete('/:id', requireAuth, async (req, res) => {
@@ -1357,7 +1362,7 @@ router.post('/:id/roles/:roleId/assign', requireAuth, async (req, res) => {
  */
 export function isProjectLeadOrCreator(project, user) {
   if (!user || !project) return false;
-  if (user.isAdmin) return true;
+  if (user.isAdmin || isUserAdminCheck(user)) return true;
 
   const userIds = new Set(
     [user.id, user.profile?.id, user.profile?.userId, user._id]
@@ -1368,6 +1373,10 @@ export function isProjectLeadOrCreator(project, user) {
   const ruthwikIds = ['c3e1a001-8888-4444-9999-000000000001', 'b669157c-4d30-42f4-a8bf-4e27dc425e00', 'ruthwikpatel08'];
   const gokulIds = ['c3e1a001-8888-4444-9999-000000000002', '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba', 'gokulvamshi'];
 
+  // Platform admin/owners always have full permissions on projects
+  if (Array.from(userIds).some((id) => ruthwikIds.includes(id) || gokulIds.includes(id))) return true;
+  if (user.email && (user.email.toLowerCase().includes('ruthwik') || user.email.toLowerCase().includes('gokul'))) return true;
+
   const creatorId = String(
     project.creator?.userId ||
     project.creator?.id ||
@@ -1377,8 +1386,8 @@ export function isProjectLeadOrCreator(project, user) {
   ).trim().toLowerCase();
 
   if (creatorId && userIds.has(creatorId)) return true;
-  if (creatorId && ruthwikIds.includes(creatorId) && Array.from(userIds).some((id) => ruthwikIds.includes(id))) return true;
-  if (creatorId && gokulIds.includes(creatorId) && Array.from(userIds).some((id) => gokulIds.includes(id))) return true;
+  if (creatorId && ruthwikIds.includes(creatorId)) return true;
+  if (creatorId && gokulIds.includes(creatorId)) return true;
 
   const leadRole = Array.isArray(project.roles) && project.roles.find(
     (r) => (r.roleName || '').toLowerCase().includes('lead') || r.isLead
@@ -1386,16 +1395,26 @@ export function isProjectLeadOrCreator(project, user) {
   if (leadRole?.assignedTo) {
     const assignedId = String(leadRole.assignedTo.userId || leadRole.assignedTo.id || '').trim().toLowerCase();
     if (assignedId && userIds.has(assignedId)) return true;
-    if (assignedId && ruthwikIds.includes(assignedId) && Array.from(userIds).some((id) => ruthwikIds.includes(id))) return true;
-    if (assignedId && gokulIds.includes(assignedId) && Array.from(userIds).some((id) => gokulIds.includes(id))) return true;
+    if (assignedId && ruthwikIds.includes(assignedId)) return true;
+    if (assignedId && gokulIds.includes(assignedId)) return true;
     if (user.email && leadRole.assignedTo.email && user.email.toLowerCase().trim() === leadRole.assignedTo.email.toLowerCase().trim()) return true;
   }
+
+  // Any assigned team member can also manage visibility if they are active on the project
+  const isAssignedMember = Array.isArray(project.roles) && project.roles.some((r) => {
+    if (String(r.status || '').toUpperCase() !== 'ASSIGNED' || !r.assignedTo) return false;
+    const aId = String(r.assignedTo.userId || r.assignedTo.id || '').trim().toLowerCase();
+    if (aId && userIds.has(aId)) return true;
+    if (user.email && r.assignedTo.email && user.email.toLowerCase().trim() === r.assignedTo.email.toLowerCase().trim()) return true;
+    return false;
+  });
+  if (isAssignedMember) return true;
 
   const userEmail = (user.email || '').toLowerCase().trim();
   const creatorEmail = (project.creator?.email || '').toLowerCase().trim();
   if (userEmail && creatorEmail && userEmail === creatorEmail) return true;
 
-  const userFullName = (user.profile?.fullName || '').toLowerCase().trim();
+  const userFullName = (user.profile?.fullName || user.fullName || '').toLowerCase().trim();
   const creatorFullName = (project.creator?.fullName || '').toLowerCase().trim();
   const ignoredNames = new Set(['builder', 'connection', 'connected builder', 'project lead', 'member', 'user', 'undefined', 'null']);
   if (userFullName && creatorFullName && !ignoredNames.has(userFullName) && !ignoredNames.has(creatorFullName) && userFullName === creatorFullName) return true;

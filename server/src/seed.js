@@ -444,9 +444,7 @@ export async function main() {
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
           $11::jsonb, $12::jsonb, $13::jsonb, $14, $15, $16, $17
         )
-        ON CONFLICT (id) DO UPDATE SET
-          visibility = EXCLUDED.visibility,
-          updated_at = EXCLUDED.updated_at
+        ON CONFLICT (id) DO NOTHING
       `,
         proj.id, proj.creator?.userId || 'unknown', proj.title, proj.ideaSummary || '',
         proj.tagline || '', proj.problemSolved || '', proj.solutionApproach || '',

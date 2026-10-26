@@ -48,11 +48,18 @@ export function enrichAdminFlag(user) {
 
   const defaultAdminEmails = [
     'ruthwikpatel08@gmail.com',
+    'ruthwik9595@gmail.com',
     'gokulvamshi@hookz.in',
     'gokulvamshi@gmail.com',
     'admin@startupz.com',
   ];
   if (user.email && defaultAdminEmails.includes(user.email.toLowerCase().trim())) {
+    user.isAdmin = true;
+    return user;
+  }
+
+  const ruthwikIds = ['c3e1a001-8888-4444-9999-000000000001', 'b669157c-4d30-42f4-a8bf-4e27dc425e00', 'ruthwikpatel08'];
+  if (user.id && ruthwikIds.includes(String(user.id).toLowerCase().trim())) {
     user.isAdmin = true;
     return user;
   }
@@ -80,12 +87,16 @@ export function isUserAdminCheck(user) {
   if (user.isAdmin || user.role === 'ADMIN') return true;
   const adminEmails = [
     'ruthwikpatel08@gmail.com',
+    'ruthwik9595@gmail.com',
     'gokulvamshi@hookz.in',
     'gokulvamshi@gmail.com',
     'admin@startupz.com',
   ];
   if (user.email && adminEmails.includes(user.email.toLowerCase().trim())) return true;
-  if (user.profile?.username && ['ruthwikpatel08', 'gokulvamshi'].includes(user.profile.username.toLowerCase().trim())) return true;
+  if (user.email && user.email.toLowerCase().includes('ruthwik')) return true;
+  if (user.profile?.username && ['ruthwikpatel08', 'ruthwik', 'gokulvamshi'].includes(user.profile.username.toLowerCase().trim())) return true;
+  const ruthwikIds = ['c3e1a001-8888-4444-9999-000000000001', 'b669157c-4d30-42f4-a8bf-4e27dc425e00', 'ruthwikpatel08'];
+  if (user.id && ruthwikIds.includes(String(user.id).toLowerCase().trim())) return true;
   return false;
 }
 
