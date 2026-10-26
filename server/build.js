@@ -35,9 +35,12 @@ try {
 
 const execEnv = {
   ...process.env,
-  DATABASE_URL: process.env.DATABASE_URL,
-  JWT_SECRET: process.env.JWT_SECRET,
 };
+
+if (execEnv.DATABASE_URL && execEnv.DATABASE_URL.includes(':6543') && !execEnv.DATABASE_URL.includes('pgbouncer=true')) {
+  const separator = execEnv.DATABASE_URL.includes('?') ? '&' : '?';
+  execEnv.DATABASE_URL = `${execEnv.DATABASE_URL}${separator}pgbouncer=true`;
+}
 
 try {
   console.log('[StartupZ Build] Generating Prisma client...');
@@ -46,12 +49,16 @@ try {
   console.warn('[StartupZ Build] Warning during prisma generate:', err.message);
 }
 
-try {
-  console.log('[StartupZ Build] Syncing database schema with Prisma db push...');
-  execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit', env: execEnv, cwd: __dirname });
-  console.log('[StartupZ Build] Database schema synchronized.');
-} catch (err) {
-  console.warn('[StartupZ Build] Warning during prisma db push:', err.message);
+if (execEnv.DATABASE_URL && execEnv.DATABASE_URL.startsWith('postgres')) {
+  try {
+    console.log('[StartupZ Build] Syncing database schema with Prisma db push...');
+    execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit', env: execEnv, cwd: __dirname });
+    console.log('[StartupZ Build] Database schema synchronized.');
+  } catch (err) {
+    console.warn('[StartupZ Build] Notice: prisma db push during build (will sync on runtime startup):', err.message);
+  }
+} else {
+  console.log('[StartupZ Build] DATABASE_URL not detected during build phase. Database schema will sync on runtime startup.');
 }
 
 console.log('[StartupZ Build] Build step completed.');

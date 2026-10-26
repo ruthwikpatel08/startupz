@@ -8,6 +8,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 if (!process.env.DATABASE_URL) {
   process.env.DATABASE_URL = 'file:./dev.db';
 }
+
+if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes(':6543') && !process.env.DATABASE_URL.includes('pgbouncer=true')) {
+  const separator = process.env.DATABASE_URL.includes('?') ? '&' : '?';
+  process.env.DATABASE_URL = `${process.env.DATABASE_URL}${separator}pgbouncer=true`;
+}
 if (!process.env.JWT_SECRET) {
   process.env.JWT_SECRET = 'startupz_super_secret_jwt_key_2026_modern_startup_network';
 }
