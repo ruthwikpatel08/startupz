@@ -6,6 +6,7 @@ import { prisma } from '../db.js';
 import { requireAuth, optionalAuth, isUserAdminCheck, getUserCandidateIds, isOwnerOrAdmin } from '../middleware/auth.js';
 import { supabaseAdmin } from '../supabase.js';
 import { generateProjectScoutAnalysis } from '../utils/aiClient.js';
+import { initialProjects } from '../realData/initialProjects.js';
 
 const router = express.Router();
 
@@ -86,14 +87,14 @@ function readProjects() {
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf8');
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         return deduplicateProjectsList(parsed.filter((p) => p && p.id && !deletedProjectIds.has(p.id)));
       }
     }
   } catch (err) {
     console.warn('Error reading projects.json:', err.message);
   }
-  return [];
+  return deduplicateProjectsList(initialProjects.filter((p) => p && p.id && !deletedProjectIds.has(p.id)));
 }
 
 function writeProjects(projects) {
@@ -201,89 +202,169 @@ export async function deleteProjectMessagesFromSupabase(projectId) {
   }
 }
 
+function mapDbProjectRow(row) {
+  let creator = row.creator;
+  if (typeof creator === 'string') {
+    try { creator = JSON.parse(creator); } catch {}
+  }
+  let roles = row.roles;
+  if (typeof roles === 'string') {
+    try { roles = JSON.parse(roles); } catch {}
+  }
+  let tags = row.tags;
+  if (typeof tags === 'string') {
+    try { tags = JSON.parse(tags); } catch {}
+  }
+
+  return {
+    id: row.id,
+    title: row.title,
+    ideaSummary: row.idea_summary || row.tagline || '',
+    tagline: row.tagline || row.idea_summary || '',
+    problemSolved: row.problem_solved || '',
+    solutionApproach: row.solution_approach || '',
+    detailedDescription: row.detailed_description || '',
+    stage: row.stage || 'Ideation',
+    visibility: row.visibility || 'PUBLIC',
+    creator: creator || { userId: row.creator_id, fullName: 'Builder' },
+    roles: Array.isArray(roles) ? roles : [],
+    tags: Array.isArray(tags) ? tags : [],
+    githubUrl: row.github_url || undefined,
+    demoUrl: row.demo_url || undefined,
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || new Date().toISOString(),
+  };
+}
+
 export async function saveProjectToSupabase(project) {
-  if (!supabaseAdmin || !project || !project.id) return;
+  if (!project || !project.id) return;
+  const payload = {
+    id: project.id,
+    creator_id: project.creator?.userId || project.creatorId || 'unknown',
+    title: project.title,
+    idea_summary: project.ideaSummary || project.tagline || '',
+    tagline: project.tagline || project.ideaSummary || '',
+    problem_solved: project.problemSolved || '',
+    solution_approach: project.solutionApproach || '',
+    detailed_description: project.detailedDescription || '',
+    stage: project.stage || 'Ideation',
+    visibility: project.visibility === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC',
+    creator: project.creator || {},
+    roles: Array.isArray(project.roles) ? project.roles : [],
+    tags: Array.isArray(project.tags) ? project.tags : [],
+    github_url: project.githubUrl || null,
+    demo_url: project.demoUrl || null,
+    created_at: project.createdAt && !isNaN(Date.parse(project.createdAt)) ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  // 1. Save via Supabase Admin HTTP API if available
+  if (supabaseAdmin) {
+    try {
+      await supabaseAdmin.from('projects').upsert(payload, { onConflict: 'id' });
+    } catch (err) {
+      console.warn('saveProjectToSupabase error:', err.message);
+    }
+  }
+
+  // 2. Direct PostgreSQL fallback via Prisma
   try {
-    await supabaseAdmin.from('projects').upsert({
-      id: project.id,
-      creator_id: project.creator?.userId || project.creatorId || 'unknown',
-      title: project.title,
-      idea_summary: project.ideaSummary || project.tagline || '',
-      tagline: project.tagline || project.ideaSummary || '',
-      problem_solved: project.problemSolved || '',
-      solution_approach: project.solutionApproach || '',
-      detailed_description: project.detailedDescription || '',
-      stage: project.stage || 'Ideation',
-      visibility: project.visibility === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC',
-      creator: project.creator || {},
-      roles: Array.isArray(project.roles) ? project.roles : [],
-      tags: Array.isArray(project.tags) ? project.tags : [],
-      github_url: project.githubUrl || null,
-      demo_url: project.demoUrl || null,
-      created_at: project.createdAt && !isNaN(Date.parse(project.createdAt)) ? new Date(project.createdAt).toISOString() : new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'id' });
+    await prisma.$executeRawUnsafe(`
+      INSERT INTO projects (
+        id, creator_id, title, idea_summary, tagline, problem_solved,
+        solution_approach, detailed_description, stage, visibility,
+        creator, roles, tags, github_url, demo_url, created_at, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+        $11::jsonb, $12::jsonb, $13::jsonb, $14, $15, $16, $17
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        creator_id = EXCLUDED.creator_id,
+        title = EXCLUDED.title,
+        idea_summary = EXCLUDED.idea_summary,
+        tagline = EXCLUDED.tagline,
+        problem_solved = EXCLUDED.problem_solved,
+        solution_approach = EXCLUDED.solution_approach,
+        detailed_description = EXCLUDED.detailed_description,
+        stage = EXCLUDED.stage,
+        visibility = EXCLUDED.visibility,
+        creator = EXCLUDED.creator,
+        roles = EXCLUDED.roles,
+        tags = EXCLUDED.tags,
+        github_url = EXCLUDED.github_url,
+        demo_url = EXCLUDED.demo_url,
+        updated_at = EXCLUDED.updated_at
+    `,
+      payload.id, payload.creator_id, payload.title, payload.idea_summary, payload.tagline,
+      payload.problem_solved, payload.solution_approach, payload.detailed_description,
+      payload.stage, payload.visibility, JSON.stringify(payload.creator),
+      JSON.stringify(payload.roles), JSON.stringify(payload.tags), payload.github_url,
+      payload.demo_url, new Date(payload.created_at), new Date(payload.updated_at)
+    );
   } catch (err) {
-    console.warn('saveProjectToSupabase error:', err.message);
+    // Projects table may not exist yet or connection in flux
   }
 }
 
 export async function deleteProjectFromSupabase(projectId) {
-  if (!supabaseAdmin || !projectId) return;
-  try {
-    await supabaseAdmin.from('projects').delete().eq('id', projectId);
-    await deleteProjectMessagesFromSupabase(projectId);
-  } catch (err) {
-    console.warn('deleteProjectFromSupabase error:', err.message);
+  if (!projectId) return;
+  if (supabaseAdmin) {
+    try {
+      await supabaseAdmin.from('projects').delete().eq('id', projectId);
+      await deleteProjectMessagesFromSupabase(projectId);
+    } catch (err) {
+      console.warn('deleteProjectFromSupabase error:', err.message);
+    }
   }
+  try {
+    await prisma.$executeRawUnsafe('DELETE FROM projects WHERE id = $1', projectId);
+    await prisma.$executeRawUnsafe('DELETE FROM project_messages WHERE project_id = $1', projectId);
+  } catch {}
 }
 
 export async function fetchProjectsFromSupabase() {
-  if (!supabaseAdmin) return [];
+  // 1. Try Supabase Admin HTTP API if configured
+  if (supabaseAdmin) {
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && Array.isArray(data) && data.length > 0) {
+        return data
+          .filter((row) => row && row.id && !deletedProjectIds.has(row.id))
+          .map(mapDbProjectRow);
+      }
+    } catch (err) {
+      console.warn('fetchProjectsFromSupabase error:', err.message);
+    }
+  }
+
+  // 2. Direct PostgreSQL fallback via Prisma (guarantees cloud persistence even if service key is missing)
   try {
-    const { data, error } = await supabaseAdmin
-      .from('projects')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (!error && Array.isArray(data)) {
-      return data
+    const rows = await prisma.$queryRawUnsafe('SELECT * FROM projects ORDER BY created_at DESC');
+    if (Array.isArray(rows) && rows.length > 0) {
+      return rows
         .filter((row) => row && row.id && !deletedProjectIds.has(row.id))
-        .map((row) => ({
-          id: row.id,
-          title: row.title,
-          ideaSummary: row.idea_summary || row.tagline || '',
-          tagline: row.tagline || row.idea_summary || '',
-          problemSolved: row.problem_solved || '',
-          solutionApproach: row.solution_approach || '',
-          detailedDescription: row.detailed_description || '',
-          stage: row.stage || 'Ideation',
-          visibility: row.visibility || 'PUBLIC',
-          creator: row.creator || { userId: row.creator_id, fullName: 'Builder' },
-          roles: Array.isArray(row.roles) ? row.roles : [],
-          tags: Array.isArray(row.tags) ? row.tags : [],
-          githubUrl: row.github_url || undefined,
-          demoUrl: row.demo_url || undefined,
-          createdAt: row.created_at || new Date().toISOString(),
-          updatedAt: row.updated_at || new Date().toISOString(),
-        }));
+        .map(mapDbProjectRow);
     }
   } catch (err) {
-    console.warn('fetchProjectsFromSupabase error:', err.message);
+    // Projects table may not exist yet
   }
-  return [];
+
+  // 3. Fallback to baseline projects tracked in git
+  return deduplicateProjectsList(initialProjects.filter((p) => p && p.id && !deletedProjectIds.has(p.id)));
 }
 
 // In-memory cache synced with disk and Supabase
 cachedProjects = readProjects();
 
-if (supabaseAdmin) {
-  fetchProjectsFromSupabase().then((supaList) => {
-    if (Array.isArray(supaList)) {
-      cachedProjects = supaList.filter((p) => p && p.id && !deletedProjectIds.has(p.id));
-      writeProjects(cachedProjects);
-    }
-  }).catch(() => {});
-}
+fetchProjectsFromSupabase().then((supaList) => {
+  if (Array.isArray(supaList) && supaList.length > 0) {
+    cachedProjects = supaList.filter((p) => p && p.id && !deletedProjectIds.has(p.id));
+    writeProjects(cachedProjects);
+  }
+}).catch(() => {});
 
 // Export helper for other routes (e.g. saved.js)
 export function getAllProjectsList() {
@@ -297,14 +378,12 @@ export async function getOrFetchProject(id) {
   if (!id || deletedProjectIds.has(id)) {
     return { all: getAllProjectsList(), project: null };
   }
-  if (supabaseAdmin) {
-    const supaList = await fetchProjectsFromSupabase();
-    if (Array.isArray(supaList)) {
-      cachedProjects = deduplicateProjectsList(supaList.filter((p) => p && p.id && !deletedProjectIds.has(p.id)));
-      writeProjects(cachedProjects);
-      const project = cachedProjects.find((p) => p.id === id);
-      if (project) return { all: cachedProjects, project };
-    }
+  const supaList = await fetchProjectsFromSupabase();
+  if (Array.isArray(supaList) && supaList.length > 0) {
+    cachedProjects = deduplicateProjectsList(supaList.filter((p) => p && p.id && !deletedProjectIds.has(p.id)));
+    writeProjects(cachedProjects);
+    const project = cachedProjects.find((p) => p.id === id);
+    if (project) return { all: cachedProjects, project };
   }
   const all = getAllProjectsList();
   const project = all.find((p) => p.id === id) || null;
@@ -319,19 +398,14 @@ router.get('/deleted-ids', (req, res) => {
 // GET /api/projects - List public projects for all members & user's private projects
 router.get('/', optionalAuth, async (req, res) => {
   try {
-    const currentUserId = req.user?.id;
     let all = [];
 
-    // Always fetch latest authoritative projects from Supabase if available
-    if (supabaseAdmin) {
-      const supaList = await fetchProjectsFromSupabase();
-      if (Array.isArray(supaList)) {
-        all = deduplicateProjectsList(supaList.filter((p) => p && p.id && !deletedProjectIds.has(p.id)));
-        cachedProjects = all;
-        writeProjects(all);
-      } else {
-        all = getAllProjectsList();
-      }
+    // Always fetch latest authoritative projects from database (Supabase + Prisma direct)
+    const supaList = await fetchProjectsFromSupabase();
+    if (Array.isArray(supaList) && supaList.length > 0) {
+      all = deduplicateProjectsList(supaList.filter((p) => p && p.id && !deletedProjectIds.has(p.id)));
+      cachedProjects = all;
+      writeProjects(all);
     } else {
       all = getAllProjectsList();
     }

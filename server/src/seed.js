@@ -7,6 +7,7 @@ import { realMentors } from './realData/mentors.js';
 import { realOpportunities } from './realData/opportunities.js';
 import { realFailedStartups } from './realData/failedStartups.js';
 import { demoAccounts } from './realData/demoAccounts.js';
+import { initialProjects } from './realData/initialProjects.js';
 
 export async function main() {
   console.log('🌱 Starting verified HookZ real data & ecosystem seed...');
@@ -430,6 +431,35 @@ export async function main() {
     }
   }
   console.log(`✅ Seeded ${createdProblems.length} authoritative worldwide problem statements.`);
+
+  // 9. SEED BUILDER PROJECTS (Preserving existing projects without data loss)
+  try {
+    for (const proj of initialProjects) {
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO projects (
+          id, creator_id, title, idea_summary, tagline, problem_solved,
+          solution_approach, detailed_description, stage, visibility,
+          creator, roles, tags, github_url, demo_url, created_at, updated_at
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+          $11::jsonb, $12::jsonb, $13::jsonb, $14, $15, $16, $17
+        )
+        ON CONFLICT (id) DO UPDATE SET
+          visibility = EXCLUDED.visibility,
+          updated_at = EXCLUDED.updated_at
+      `,
+        proj.id, proj.creator?.userId || 'unknown', proj.title, proj.ideaSummary || '',
+        proj.tagline || '', proj.problemSolved || '', proj.solutionApproach || '',
+        proj.detailedDescription || '', proj.stage || 'Ideation', proj.visibility || 'PUBLIC',
+        JSON.stringify(proj.creator || {}), JSON.stringify(proj.roles || []),
+        JSON.stringify(proj.tags || []), proj.githubUrl || null, proj.demoUrl || null,
+        new Date(proj.createdAt || Date.now()), new Date()
+      );
+    }
+    console.log(`✅ Verified ${initialProjects.length} builder projects in database.`);
+  } catch (err) {
+    console.log('ℹ️ Projects table check during seed:', err.message);
+  }
 
   console.log('========================================================================');
   console.log('🎉 HOOKZ REAL-WORLD DATABASE POPULATION COMPLETED SUCCESSFULLY!');
