@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { api, isDemoRecord } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { User, Investor } from '../../types';
-import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
+import { VerificationBadge } from '../../components/common/Badge';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { StartupConnectionModal } from '../../components/common/StartupConnectionModal';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -15,7 +15,6 @@ import {
   Search,
   Filter,
   Sparkles,
-  MapPin,
   Clock,
   Briefcase,
   UserPlus,
@@ -300,7 +299,7 @@ export const FindCoFounderPage: React.FC = () => {
                 fullName: p.full_name,
                 username: uName,
                 headline: p.headline || '',
-                oneLineBio: p.one_line_bio || p.headline || '',
+                oneLineBio: p.one_line_bio || '',
                 location: p.location || '',
                 bio: p.bio || '',
                 avatar: p.avatar,
@@ -335,7 +334,7 @@ export const FindCoFounderPage: React.FC = () => {
                   fullName: myP.full_name,
                   username: myP.username || (myP.email ? myP.email.split('@')[0] : 'user'),
                   headline: myP.headline || '',
-                  oneLineBio: myP.one_line_bio || myP.headline || '',
+                  oneLineBio: myP.one_line_bio || '',
                   location: myP.location || '',
                   bio: myP.bio || '',
                   avatar: myP.avatar,
@@ -937,30 +936,32 @@ export const FindCoFounderPage: React.FC = () => {
           {matches.map((cand) => {
             const username = cand.profile?.username || cand.email?.split('@')[0] || 'user';
             const displayName = cand.profile?.fullName || cand.email?.split('@')[0] || 'Builder';
-            const categoryRole = cand.profile?.preferredRole || cand.role || 'MEMBER';
+            const skills = cand.profile?.skills || '';
+            const topSkill = (Array.isArray(skills) ? skills : skills.split(',')).map((skill: string) => skill.trim()).find(Boolean);
+            const shortBio = cand.profile?.oneLineBio || cand.profile?.bio;
 
             return (
               <div
                 key={cand.id}
-                className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-subtle hover:border-[var(--border-subtle)] transition-colors flex flex-col justify-between space-y-3"
+                className="group min-w-0 p-5 rounded-2xl bg-gradient-to-br from-[var(--brand-soft)] via-[var(--bg-surface)] to-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-sm hover:shadow-lg hover:border-brand-300 motion-safe:hover:-translate-y-1 motion-safe:transition-all motion-safe:duration-200 flex flex-col justify-between gap-5"
               >
                 <div className="space-y-2.5">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex min-w-0 items-start gap-3">
                       <Avatar
                         src={cand.profile?.avatar}
                         name={displayName}
                         size="lg"
                       />
-                      <div>
+                      <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <Link
                             to={cand.isMe ? '/profile' : `/profile/${cand.id}`}
-                            className="font-semibold text-xs sm:text-sm text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors"
+                            className="text-base font-bold tracking-tight text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors break-words focus-visible:outline-brand-600"
                           >
                             {displayName}
                           </Link>
-                          <span className="text-xs text-[var(--brand-primary)] font-mono">
+                          <span className="text-xs text-[var(--text-muted)] truncate max-w-full">
                             @{username}
                           </span>
                           {cand.isMe && (
@@ -968,14 +969,9 @@ export const FindCoFounderPage: React.FC = () => {
                               You
                             </span>
                           )}
-                          <VerificationBadge badge={cand.verificationBadge} isVerified={true} size="sm" />
+                          {topSkill && <span title={`Top skill: ${topSkill}`} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-brand-200 bg-[var(--brand-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--brand-primary)]"><Sparkles size={12} className="shrink-0" aria-hidden="true" /><span className="truncate">{topSkill}</span></span>}
                         </div>
-                        <p className="text-xs text-[var(--text-muted)] line-clamp-1 mt-0.5">{cand.profile?.headline}</p>
                         <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] mt-0.5">
-                          <span className="flex items-center gap-1">
-                            <MapPin size={11} /> {cand.profile?.location || 'Remote'}
-                          </span>
-                          <span>•</span>
                           <span className="flex items-center gap-1">
                             <Clock size={11} /> {cand.profile?.availability || 'Full-time'}
                           </span>
@@ -1001,19 +997,15 @@ export const FindCoFounderPage: React.FC = () => {
                     </div>
                   )}
 
-                  {(cand.profile?.oneLineBio || cand.profile?.headline) && (
-                    <p className="text-xs font-bold text-[var(--text-primary)] line-clamp-2 leading-relaxed">
-                      {cand.profile.oneLineBio || cand.profile.headline}
+                  {shortBio && (
+                    <p className="text-sm text-[var(--text-muted)] line-clamp-2 leading-relaxed break-words">
+                      {shortBio}
                     </p>
                   )}
                 </div>
 
-                <div className="pt-2.5 border-t border-[var(--border-subtle)] flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <RoleBadge role={categoryRole} size="sm" />
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
+                <div className="pt-4 border-t border-[var(--border-subtle)]">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
                     {cand.isMe ? (
                       <>
                         <Link
@@ -1035,16 +1027,16 @@ export const FindCoFounderPage: React.FC = () => {
                           to={`/profile/${cand.id}`}
                           className="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                         >
-                          Profile
+                          See Profile
                         </Link>
 
                         {/* Startup Connection Button */}
                         <button
                           onClick={() => setStartupConnectUser(cand)}
-                          className="px-3 py-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] text-xs font-medium transition-colors cursor-pointer"
-                          title="Propose Co-Founding a Startup"
+                          className="min-h-10 px-3 rounded-xl border border-brand-200 bg-[var(--bg-surface)] text-[var(--brand-primary)] hover:bg-[var(--brand-soft)] text-xs font-semibold motion-safe:transition-all active:scale-95 focus-visible:outline-brand-600 cursor-pointer"
+                          title="Propose a collaboration"
                         >
-                          Pitch
+                          Collaborate
                         </button>
 
                         {/* User Connection Button */}
@@ -1067,7 +1059,7 @@ export const FindCoFounderPage: React.FC = () => {
                         ) : (
                           <button
                             onClick={() => setConnectUser(cand)}
-                            className="px-3.5 py-1.5 rounded-lg btn-primary text-white text-xs font-semibold transition-colors cursor-pointer"
+                            className="min-h-10 px-3.5 py-1.5 !rounded-xl btn-primary text-white text-xs font-semibold hover:shadow-md motion-safe:transition-all active:scale-95 focus-visible:outline-brand-600 cursor-pointer"
                           >
                             + Connect
                           </button>
