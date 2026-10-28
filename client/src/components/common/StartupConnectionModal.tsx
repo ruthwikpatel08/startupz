@@ -208,14 +208,14 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
     >
       {!user ? (
         <div className="py-6 text-center space-y-4">
-          <div className="w-10 h-10 mx-auto rounded-md bg-slate-100 dark:bg-dark-800 flex items-center justify-center text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+          <div className="w-10 h-10 mx-auto rounded-md bg-[var(--bg-soft)] flex items-center justify-center text-[var(--text-secondary)] border border-[var(--border-subtle)]">
             <Lock size={18} />
           </div>
           <div className="space-y-1">
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+            <h4 className="text-sm font-semibold text-[var(--text-primary)]">
               Sign In Required
             </h4>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
               Please sign in to send a formal startup proposal to {displayName}.
             </p>
           </div>
@@ -244,27 +244,27 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
           <div className="w-10 h-10 mx-auto rounded-md bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
             <CheckCircle2 size={20} />
           </div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">
             Startup Proposal Sent
           </h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
             {displayName} has been notified and can review your venture idea and terms.
           </p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Target Profile Card */}
-          <div className="flex items-center gap-3 p-2.5 rounded-md bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-3 p-2.5 rounded-md bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
             <Avatar src={avatar} name={displayName} size="md" />
             <div className="min-w-0 flex-1">
-              <h4 className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+              <h4 className="text-xs font-semibold text-[var(--text-primary)] truncate">
                 {displayName}
               </h4>
-              <p className="text-[11px] text-slate-500 truncate">
+              <p className="text-[11px] text-[var(--text-muted)] truncate">
                 {targetUser.profile?.headline || 'Startup Builder'}
               </p>
             </div>
-            <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-900">
+            <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)]">
               Co-Founder Pitch
             </span>
           </div>
@@ -277,7 +277,7 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
           )}
 
           <div>
-            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">
               Venture / Startup Idea Name *
             </label>
             <input
@@ -292,7 +292,7 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">
                 Proposed Role for {displayName}
               </label>
               <select
@@ -310,7 +310,7 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">
                 Proposed Equity Split
               </label>
               <select
@@ -328,7 +328,7 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">
               The Pitch & Problem You're Solving *
             </label>
             <textarea
@@ -341,7 +341,7 @@ export const StartupConnectionModal: React.FC<StartupConnectionModalProps> = ({
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-subtle)]">
             <button
               type="button"
               onClick={onClose}

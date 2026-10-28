@@ -174,10 +174,10 @@ export const MentorsPage: React.FC = () => {
       />
       {/* Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-          <GraduationCap className="text-brand-600 dark:text-brand-400" size={24} /> Startup Mentorship & Advisory
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
+          <GraduationCap className="text-[var(--brand-primary)]" size={24} /> Startup Mentorship & Advisory
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
+        <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-1 max-w-2xl">
           Connect 1-on-1 with vetted mentors who have built, scaled, and exited startups. Get actionable feedback on fundraising, architecture, and go-to-market.
         </p>
       </div>
@@ -185,7 +185,7 @@ export const MentorsPage: React.FC = () => {
       {/* Filter and Search Bar */}
       <div className="card-base p-3 flex flex-col md:flex-row items-center gap-2.5">
         <div className="relative flex-1 w-full">
-          <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+          <Search size={14} className="absolute left-3 top-2.5 text-[var(--text-muted)]" />
           <input
             type="text"
             value={search}
@@ -228,7 +228,7 @@ export const MentorsPage: React.FC = () => {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div key={n} className="h-60 card-base animate-pulse bg-slate-100 dark:bg-dark-850" />
+            <div key={n} className="h-60 card-base animate-pulse bg-[var(--bg-soft)]" />
           ))}
         </div>
       ) : error ? (
@@ -236,10 +236,10 @@ export const MentorsPage: React.FC = () => {
           <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
             <AlertCircle size={20} />
           </div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">
             Unable to Load Mentors
           </h3>
-          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+          <p className="text-xs text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
             {error}
           </p>
           <div className="pt-1">
@@ -261,15 +261,15 @@ export const MentorsPage: React.FC = () => {
             onAction={handleResetFilters}
           />
         ) : (
-          <div className="card-base p-8 sm:p-10 text-center space-y-4 border-dashed border-2 border-slate-300 dark:border-dark-700 bg-slate-50/40 dark:bg-dark-850/40">
-            <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center mx-auto border border-brand-200/60 dark:border-brand-900/60">
+          <div className="card-base p-8 sm:p-10 text-center space-y-4 border-dashed border-2 border-[var(--border-subtle)] bg-[var(--bg-primary)]">
+            <div className="w-12 h-12 rounded-xl bg-[var(--brand-soft)] text-[var(--brand-primary)] flex items-center justify-center mx-auto border border-brand-200/60 dark:border-brand-900/60">
               <GraduationCap size={22} />
             </div>
             <div className="max-w-xl mx-auto space-y-2">
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+              <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">
                 Startup Mentorship Directory Open for Registration
               </h3>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
                 There are currently no public mentor profiles listed in the directory. If you are an experienced founder, technical leader, or operator interested in advising early-stage teams, you can register your mentorship profile to connect with founders across the HookZ network. Early-stage builders can check back regularly as verified advisors join.
               </p>
             </div>
@@ -287,7 +287,7 @@ export const MentorsPage: React.FC = () => {
                 <RefreshCw size={13} /> Check Again
               </button>
             </div>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500">
+            <p className="text-[11px] text-[var(--text-muted)]">
               New mentor listings appear here automatically once approved. Check back regularly.
             </p>
           </div>
@@ -303,7 +303,7 @@ export const MentorsPage: React.FC = () => {
             return (
               <div
                 key={mentor.id}
-                className="card-base p-5 flex flex-col justify-between space-y-4 hover:border-slate-300 dark:hover:border-dark-700 transition-colors"
+                className="card-base p-5 flex flex-col justify-between space-y-4 hover:border-[var(--border-subtle)] transition-colors"
               >
                 <div className="space-y-3">
                   {/* Top: Avatar, Name, Verification */}
@@ -317,7 +317,7 @@ export const MentorsPage: React.FC = () => {
                       />
                       <div>
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <h3 className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                          <h3 className="font-semibold text-sm text-[var(--text-primary)] truncate">
                             {mentorName}
                           </h3>
                           <VerificationBadge badge="Verified Mentor" isVerified={mentor.isVerified} size="sm" />
@@ -326,7 +326,7 @@ export const MentorsPage: React.FC = () => {
                               href={sanitizeExternalUrl(mentor.website)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-slate-400 hover:text-brand-600 transition-colors p-0.5 rounded"
+                              className="text-[var(--text-muted)] hover:text-[var(--brand-primary)] transition-colors p-0.5 rounded"
                               title="Official Advisory Portal / Website"
                               onClick={(e) => e.stopPropagation()}
                             >
@@ -334,44 +334,44 @@ export const MentorsPage: React.FC = () => {
                             </a>
                           )}
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{headline}</p>
+                        <p className="text-xs text-[var(--text-muted)] line-clamp-1">{headline}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* About snippet */}
-                  <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
                     {mentor.about}
                   </p>
 
                   {/* Highlights: Available Hours & Experience */}
-                  <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                  <div className="flex items-center gap-4 text-xs text-[var(--text-muted)]">
                     <div className="flex items-center gap-1.5">
-                      <Clock size={13} className="text-slate-400" />
+                      <Clock size={13} className="text-[var(--text-muted)]" />
                       <span>{mentor.availableHours || '2-4 hrs/mo'}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Award size={13} className="text-slate-400" />
+                      <Award size={13} className="text-[var(--text-muted)]" />
                       <span>{mentor.yearsExperience} yrs exp</span>
                     </div>
                   </div>
 
                   {/* Expertise Topics */}
                   <div>
-                    <span className="text-[10px] font-medium text-slate-400 mb-1 block">
+                    <span className="text-[10px] font-medium text-[var(--text-muted)] mb-1 block">
                       Mentoring Focus
                     </span>
                     <div className="flex flex-wrap gap-1">
                       {topics.slice(0, 3).map((topic, i) => (
                         <span
                           key={i}
-                          className="px-2 py-0.5 rounded bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300 text-[10px] font-medium border border-slate-200/60 dark:border-dark-800"
+                          className="px-2 py-0.5 rounded bg-[var(--bg-soft)] text-[var(--text-secondary)] text-[10px] font-medium border border-[var(--border-subtle)]"
                         >
                           {topic}
                         </span>
                       ))}
                       {topics.length > 3 && (
-                        <span className="text-[10px] text-slate-400 font-medium self-center">
+                        <span className="text-[10px] text-[var(--text-muted)] font-medium self-center">
                           +{topics.length - 3} more
                         </span>
                       )}
@@ -380,7 +380,7 @@ export const MentorsPage: React.FC = () => {
                 </div>
 
                 {/* Bottom Actions */}
-                <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center gap-2">
+                <div className="pt-3 border-t border-[var(--border-subtle)] flex items-center gap-2">
                   <button
                     onClick={() => handleOpenRequest(mentor)}
                     className="btn-primary flex-1 py-1.5 px-3 text-xs font-semibold inline-flex items-center justify-center gap-1.5"
@@ -404,12 +404,12 @@ export const MentorsPage: React.FC = () => {
       )}
 
       {/* Permanent Directory Guide & Educational Pillars */}
-      <section className="pt-8 border-t border-slate-200/80 dark:border-dark-800 space-y-6">
+      <section className="pt-8 border-t border-[var(--border-subtle)] space-y-6">
         <div className="space-y-1">
-          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+          <h2 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">
             Startup Mentorship &amp; Advisory on HookZ
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-xs sm:text-sm text-[var(--text-muted)]">
             Learn how early-stage founders connect with seasoned advisors and how operators contribute to breakout ventures.
           </p>
         </div>
@@ -418,18 +418,18 @@ export const MentorsPage: React.FC = () => {
           {/* Pillar 1: Strategic Advisory Focus Areas */}
           <div className="card-base p-5 flex flex-col justify-between space-y-3">
             <div className="space-y-2.5">
-              <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-100 dark:border-brand-900/40">
+              <div className="w-9 h-9 rounded-lg bg-[var(--brand-soft)] text-[var(--brand-primary)] flex items-center justify-center border border-[var(--border-subtle)]">
                 <Compass size={18} />
               </div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              <h3 className="text-sm font-semibold text-[var(--text-primary)]">
                 What Startup Mentors Provide
               </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                 Connect for direct, 1-on-1 feedback on pitch narratives, technical architecture, product-market fit validation, and go-to-market execution. Gain perspective from operators who have navigated early-stage pivots and fundraising milestones.
               </p>
             </div>
-            <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
-              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            <div className="pt-2 border-t border-[var(--border-subtle)]">
+              <span className="text-[11px] font-medium text-[var(--text-muted)]">
                 Focus Areas: Fundraising, GTM, Product MVP, Architecture
               </span>
             </div>
@@ -441,17 +441,17 @@ export const MentorsPage: React.FC = () => {
               <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/40">
                 <BookOpen size={18} />
               </div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              <h3 className="text-sm font-semibold text-[var(--text-primary)]">
                 How Founders Seek Guidance
               </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                 Browse advisors by domain expertise and industry. Review proven track records and submit structured mentorship requests outlining your venture's current stage, key bottlenecks, and the specific questions you want to discuss.
               </p>
             </div>
-            <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+            <div className="pt-2 border-t border-[var(--border-subtle)]">
               <Link
                 to="/startups"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--brand-primary)] hover:underline"
               >
                 Explore Ventures <ArrowRight size={12} />
               </Link>
@@ -461,20 +461,20 @@ export const MentorsPage: React.FC = () => {
           {/* Pillar 3: How Experienced Operators Participate */}
           <div className="card-base p-5 flex flex-col justify-between space-y-3">
             <div className="space-y-2.5">
-              <div className="w-9 h-9 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-100 dark:border-purple-900/40">
+              <div className="w-9 h-9 rounded-lg bg-[var(--brand-soft)] text-[var(--brand-primary)] flex items-center justify-center border border-[var(--border-subtle)]">
                 <Award size={18} />
               </div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              <h3 className="text-sm font-semibold text-[var(--text-primary)]">
                 How Operators Join as Mentors
               </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                 Founders, engineering leaders, and growth specialists can register as mentors, define their advisory availability, and select preferred industries. Mentor contributions help cultivate the next generation of student-led startups.
               </p>
             </div>
-            <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+            <div className="pt-2 border-t border-[var(--border-subtle)]">
               <Link
                 to="/profile"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--brand-primary)] hover:underline"
               >
                 Join as Mentor <ArrowRight size={12} />
               </Link>
@@ -483,42 +483,42 @@ export const MentorsPage: React.FC = () => {
         </div>
 
         {/* 3-Step Mentorship Engagement Workflow */}
-        <div className="card-base p-5 sm:p-6 space-y-4 bg-slate-50/50 dark:bg-dark-850/50">
-          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <div className="card-base p-5 sm:p-6 space-y-4 bg-[var(--bg-primary)]">
+          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[var(--text-muted)]">
             How Mentorship Engagement Works
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             <div className="flex items-start gap-3">
-              <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+              <span className="w-6 h-6 rounded-full bg-[var(--brand-soft)] text-[var(--brand-primary)] font-bold flex items-center justify-center shrink-0 text-xs">
                 1
               </span>
               <div className="space-y-1">
-                <span className="font-semibold text-slate-900 dark:text-white block">Identify Domain Specialists</span>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                <span className="font-semibold text-[var(--text-primary)] block">Identify Domain Specialists</span>
+                <p className="text-[var(--text-secondary)] leading-relaxed">
                   Filter advisors by specific startup needs, from technical architecture to pre-seed pitch review.
                 </p>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+              <span className="w-6 h-6 rounded-full bg-[var(--brand-soft)] text-[var(--brand-primary)] font-bold flex items-center justify-center shrink-0 text-xs">
                 2
               </span>
               <div className="space-y-1">
-                <span className="font-semibold text-slate-900 dark:text-white block">Submit Targeted Requests</span>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                <span className="font-semibold text-[var(--text-primary)] block">Submit Targeted Requests</span>
+                <p className="text-[var(--text-secondary)] leading-relaxed">
                   Provide crisp context on your product, traction, and the exact 1-2 hurdles where advisory input is critical.
                 </p>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+              <span className="w-6 h-6 rounded-full bg-[var(--brand-soft)] text-[var(--brand-primary)] font-bold flex items-center justify-center shrink-0 text-xs">
                 3
               </span>
               <div className="space-y-1">
-                <span className="font-semibold text-slate-900 dark:text-white block">Collaborate Directly</span>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                <span className="font-semibold text-[var(--text-primary)] block">Collaborate Directly</span>
+                <p className="text-[var(--text-secondary)] leading-relaxed">
                   Connect 1-on-1, exchange structured feedback, and build ongoing advisor relationships without platform gatekeeping.
                 </p>
               </div>
@@ -540,8 +540,8 @@ export const MentorsPage: React.FC = () => {
               <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                 <CheckCircle size={22} />
               </div>
-              <h4 className="text-base font-bold text-slate-900 dark:text-white">Mentorship Request Sent!</h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <h4 className="text-base font-bold text-[var(--text-primary)]">Mentorship Request Sent!</h4>
+              <p className="text-xs text-[var(--text-muted)]">
                 The mentor has been notified. You will receive an alert once they accept your session request.
               </p>
             </div>
@@ -552,7 +552,7 @@ export const MentorsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                   Select Mentoring Topic *
                 </label>
                 <select
@@ -571,7 +571,7 @@ export const MentorsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                   Context & What You Need Help With *
                 </label>
                 <textarea

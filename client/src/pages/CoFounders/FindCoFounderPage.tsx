@@ -669,10 +669,10 @@ export const FindCoFounderPage: React.FC = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2.5">
-            <Users className="text-brand-600" size={28} /> Network Directory & Co-Founders
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] flex items-center gap-2.5">
+            <Users className="text-[var(--brand-primary)]" size={28} /> Network Directory & Co-Founders
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-1">
             Real registered founders, co-founders, investors, and startup partners across categories.
           </p>
         </div>
@@ -696,25 +696,25 @@ export const FindCoFounderPage: React.FC = () => {
               onClick={() => handleSelectCategory(cat.value)}
               className={`p-3 rounded-lg border text-left transition-colors cursor-pointer flex flex-col justify-between space-y-1.5 ${
                 isSelected
-                  ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-900 dark:text-brand-200 border-brand-600 dark:border-brand-500 shadow-subtle'
-                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                  ? 'bg-[var(--brand-soft)] text-[var(--brand-primary)] border-brand-600 dark:border-brand-500 shadow-subtle'
+                  : 'bg-[var(--bg-surface)] border-[var(--border-subtle)] hover:border-[var(--border-subtle)]'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className={`p-1.5 rounded-md ${isSelected ? 'bg-brand-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
+                <span className={`p-1.5 rounded-md ${isSelected ? 'bg-brand-600 text-white' : 'bg-[var(--bg-soft)] text-[var(--text-secondary)]'}`}>
                   <Icon size={16} />
                 </span>
                 {isSelected && (
-                  <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300">
+                  <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-[var(--brand-soft)] text-[var(--brand-primary)]">
                     Active
                   </span>
                 )}
               </div>
               <div>
-                <div className={`font-semibold text-xs leading-tight ${isSelected ? 'text-brand-900 dark:text-white' : 'text-slate-900 dark:text-white'}`}>
+                <div className={`font-semibold text-xs leading-tight ${isSelected ? 'text-[var(--brand-primary)]' : 'text-[var(--text-primary)]'}`}>
                   {cat.label}
                 </div>
-                <div className={`text-[10px] mt-0.5 line-clamp-1 ${isSelected ? 'text-brand-700 dark:text-brand-300' : 'text-slate-400'}`}>
+                <div className={`text-[10px] mt-0.5 line-clamp-1 ${isSelected ? 'text-[var(--brand-primary)]' : 'text-[var(--text-muted)]'}`}>
                   {cat.hint}
                 </div>
               </div>
@@ -725,7 +725,7 @@ export const FindCoFounderPage: React.FC = () => {
 
       {/* Real User & Username Search Input Bar */}
       <div className="relative font-sans">
-        <Search size={16} className="absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
+        <Search size={16} className="absolute left-3.5 top-3 text-[var(--text-muted)] pointer-events-none" />
         <input
           type="text"
           value={searchQuery}
@@ -737,7 +737,7 @@ export const FindCoFounderPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setSearchQuery('')}
-            className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+            className="absolute right-3 top-3 text-[var(--text-muted)] hover:text-[var(--text-secondary)] cursor-pointer"
           >
             <X size={15} />
           </button>
@@ -747,9 +747,9 @@ export const FindCoFounderPage: React.FC = () => {
       {/* Category Specific Filters */}
       {currentCategory === 'investors' ? (
         /* Investor Filters */
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle font-sans">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-3.5 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-subtle font-sans">
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+            <Search size={14} className="absolute left-3 top-2.5 text-[var(--text-muted)]" />
             <input
               type="text"
               placeholder="Search investor, fund, portfolio..."
@@ -790,7 +790,7 @@ export const FindCoFounderPage: React.FC = () => {
       ) : (
         /* Filter Pills Row for People */
         <div className="space-y-1.5 font-sans">
-          <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">
+          <label className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider block">
             Filter by Desired Skill / Role:
           </label>
           <div className="flex flex-wrap gap-1.5">
@@ -803,7 +803,7 @@ export const FindCoFounderPage: React.FC = () => {
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     isSelected
                       ? 'bg-brand-600 text-white'
-                      : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300'
+                      : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-subtle)]'
                   }`}
                 >
                   {r.label}
@@ -818,7 +818,7 @@ export const FindCoFounderPage: React.FC = () => {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-56 rounded-lg bg-slate-100 dark:bg-slate-800/60 animate-pulse border border-slate-200 dark:border-slate-800" />
+            <div key={i} className="h-56 rounded-lg bg-[var(--bg-soft)] animate-pulse border border-[var(--border-subtle)]" />
           ))}
         </div>
       ) : currentCategory === 'investors' ? (
@@ -839,7 +839,7 @@ export const FindCoFounderPage: React.FC = () => {
               return (
                 <div
                   key={inv.id}
-                  className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3"
+                  className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-subtle hover:border-[var(--border-subtle)] transition-colors flex flex-col justify-between space-y-3"
                 >
                   <div className="space-y-2.5">
                     <div className="flex items-start justify-between gap-3">
@@ -851,17 +851,17 @@ export const FindCoFounderPage: React.FC = () => {
                         />
                         <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <h3 className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                            <h3 className="font-semibold text-xs sm:text-sm text-[var(--text-primary)] truncate">
                               {inv.organization}
                             </h3>
                             {inv.user?.profile?.username && (
-                              <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
+                              <span className="text-xs text-[var(--brand-primary)] font-mono">
                                 @{inv.user.profile.username}
                               </span>
                             )}
                             <VerificationBadge badge="Verified Investor" isVerified={true} size="sm" />
                           </div>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-[var(--text-muted)]">
                             {inv.investorType} • {inv.location}
                           </p>
                         </div>
@@ -874,16 +874,16 @@ export const FindCoFounderPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2">
+                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-2">
                       {inv.about}
                     </p>
 
                     <div className="space-y-1 text-xs">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-slate-400 text-[10px] uppercase tracking-wider">
+                        <span className="font-semibold text-[var(--text-muted)] text-[10px] uppercase tracking-wider">
                           Stages:
                         </span>
-                        <span className="text-slate-700 dark:text-slate-300 text-xs">{inv.preferredStages}</span>
+                        <span className="text-[var(--text-secondary)] text-xs">{inv.preferredStages}</span>
                       </div>
                     </div>
 
@@ -891,7 +891,7 @@ export const FindCoFounderPage: React.FC = () => {
                       {(inv.industries || '').split(',').map((ind) => ind.trim()).filter(Boolean).map((ind, idx) => (
                         <span
                           key={idx}
-                          className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                          className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--bg-soft)] text-[var(--text-secondary)]"
                         >
                           {ind}
                         </span>
@@ -899,8 +899,8 @@ export const FindCoFounderPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
-                    <span className="text-xs text-slate-400 font-normal">{inv.location}</span>
+                  <div className="pt-2.5 border-t border-[var(--border-subtle)] flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-xs text-[var(--text-muted)] font-normal">{inv.location}</span>
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => setStartupConnectUser(targetUserObj)}
@@ -942,7 +942,7 @@ export const FindCoFounderPage: React.FC = () => {
             return (
               <div
                 key={cand.id}
-                className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3"
+                className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-subtle hover:border-[var(--border-subtle)] transition-colors flex flex-col justify-between space-y-3"
               >
                 <div className="space-y-2.5">
                   <div className="flex items-start justify-between gap-3">
@@ -956,22 +956,22 @@ export const FindCoFounderPage: React.FC = () => {
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <Link
                             to={cand.isMe ? '/profile' : `/profile/${cand.id}`}
-                            className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                            className="font-semibold text-xs sm:text-sm text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors"
                           >
                             {displayName}
                           </Link>
-                          <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
+                          <span className="text-xs text-[var(--brand-primary)] font-mono">
                             @{username}
                           </span>
                           {cand.isMe && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-brand-100 text-brand-700 dark:bg-brand-950/80 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)]">
                               You
                             </span>
                           )}
                           <VerificationBadge badge={cand.verificationBadge} isVerified={true} size="sm" />
                         </div>
-                        <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{cand.profile?.headline}</p>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                        <p className="text-xs text-[var(--text-muted)] line-clamp-1 mt-0.5">{cand.profile?.headline}</p>
+                        <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] mt-0.5">
                           <span className="flex items-center gap-1">
                             <MapPin size={11} /> {cand.profile?.location || 'Remote'}
                           </span>
@@ -993,8 +993,8 @@ export const FindCoFounderPage: React.FC = () => {
                   </div>
 
                   {cand.matchExplanation && (
-                    <div className="p-2.5 rounded-md bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
-                      <span className="font-semibold text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-0.5">
+                    <div className="p-2.5 rounded-md bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)]">
+                      <span className="font-semibold text-[10px] uppercase tracking-wider text-[var(--text-muted)] block mb-0.5">
                         Category Alignment
                       </span>
                       <p className="leading-relaxed">{cand.matchExplanation}</p>
@@ -1002,13 +1002,13 @@ export const FindCoFounderPage: React.FC = () => {
                   )}
 
                   {(cand.profile?.oneLineBio || cand.profile?.headline) && (
-                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-relaxed">
+                    <p className="text-xs font-bold text-[var(--text-primary)] line-clamp-2 leading-relaxed">
                       {cand.profile.oneLineBio || cand.profile.headline}
                     </p>
                   )}
                 </div>
 
-                <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
+                <div className="pt-2.5 border-t border-[var(--border-subtle)] flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-1.5">
                     <RoleBadge role={categoryRole} size="sm" />
                   </div>
@@ -1033,7 +1033,7 @@ export const FindCoFounderPage: React.FC = () => {
                       <>
                         <Link
                           to={`/profile/${cand.id}`}
-                          className="text-xs font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+                          className="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                         >
                           Profile
                         </Link>
@@ -1041,7 +1041,7 @@ export const FindCoFounderPage: React.FC = () => {
                         {/* Startup Connection Button */}
                         <button
                           onClick={() => setStartupConnectUser(cand)}
-                          className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-medium transition-colors cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] text-xs font-medium transition-colors cursor-pointer"
                           title="Propose Co-Founding a Startup"
                         >
                           Pitch
@@ -1067,7 +1067,7 @@ export const FindCoFounderPage: React.FC = () => {
                         ) : (
                           <button
                             onClick={() => setConnectUser(cand)}
-                            className="px-3.5 py-1.5 rounded-lg bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white text-xs font-semibold transition-colors cursor-pointer"
+                            className="px-3.5 py-1.5 rounded-lg btn-primary text-white text-xs font-semibold transition-colors cursor-pointer"
                           >
                             + Connect
                           </button>

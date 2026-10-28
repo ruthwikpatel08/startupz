@@ -90,10 +90,10 @@ export const RaiseSolutionModal: React.FC<RaiseSolutionModalProps> = ({
             <Lock size={22} />
           </div>
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
               Sign In Required
             </h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
               Please sign in to publish your solution to this startup challenge and collaborate with builders.
             </p>
           </div>
@@ -122,10 +122,10 @@ export const RaiseSolutionModal: React.FC<RaiseSolutionModalProps> = ({
           <div className="w-12 h-12 mx-auto rounded-full bg-emerald-50 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">
             <CheckCircle2 size={24} />
           </div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">
             Solution Submitted
           </h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
             Your proposed solution is now published. Founders, mentors, and investors can review and collaborate with you.
           </p>
         </div>
@@ -141,7 +141,7 @@ export const RaiseSolutionModal: React.FC<RaiseSolutionModalProps> = ({
                 {failedStartup.peakFunding} lost
               </span>
             </div>
-            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               "{failedStartup.unsolvedProblem}"
             </p>
           </div>
@@ -154,7 +154,7 @@ export const RaiseSolutionModal: React.FC<RaiseSolutionModalProps> = ({
           )}
 
           <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
               Solution Title *
             </label>
             <input
@@ -168,7 +168,7 @@ export const RaiseSolutionModal: React.FC<RaiseSolutionModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
               Solution Blueprint *
             </label>
             <textarea
@@ -183,7 +183,7 @@ export const RaiseSolutionModal: React.FC<RaiseSolutionModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                 Target Audience
               </label>
               <input
@@ -196,7 +196,7 @@ export const RaiseSolutionModal: React.FC<RaiseSolutionModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                 Key Differentiation & Moat
               </label>
               <input
@@ -209,7 +209,7 @@ export const RaiseSolutionModal: React.FC<RaiseSolutionModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-subtle)]">
             <button
               type="button"
               onClick={onClose}

@@ -84,7 +84,7 @@ function renderLineTokens(
             target="_blank"
             rel="noopener noreferrer"
             className={`font-bold underline underline-offset-2 ${
-              isMine ? 'text-white' : 'text-brand-600 dark:text-brand-400 hover:text-brand-700'
+              isMine ? 'text-white' : 'text-[var(--brand-primary)] hover:text-[var(--brand-primary)]'
             }`}
           >
             {linkLabel}
@@ -131,7 +131,7 @@ function renderLineTokens(
           className={`font-bold underline underline-offset-2 break-all ${
             isMine
               ? 'text-white hover:text-brand-100'
-              : 'text-brand-600 dark:text-brand-400 hover:text-brand-700'
+              : 'text-[var(--brand-primary)] hover:text-[var(--brand-primary)]'
           }`}
         >
           {part}
@@ -156,7 +156,7 @@ function renderTextWithMarkdown(
 
     if (trimmed.startsWith('#### ')) {
       return (
-        <div key={lineIdx} className="font-bold text-xs text-brand-600 dark:text-brand-400 mt-2 mb-0.5">
+        <div key={lineIdx} className="font-bold text-xs text-[var(--brand-primary)] mt-2 mb-0.5">
           {renderLineTokens(trimmed.replace(/^####\s+/, ''), isMine, onNavigate)}
         </div>
       );
@@ -164,7 +164,7 @@ function renderTextWithMarkdown(
 
     if (trimmed.startsWith('### ')) {
       return (
-        <div key={lineIdx} className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white mt-2.5 mb-1">
+        <div key={lineIdx} className="font-extrabold text-xs sm:text-sm text-[var(--text-primary)] mt-2.5 mb-1">
           {renderLineTokens(trimmed.replace(/^###\s+/, ''), isMine, onNavigate)}
         </div>
       );
@@ -172,7 +172,7 @@ function renderTextWithMarkdown(
 
     if (trimmed.startsWith('## ')) {
       return (
-        <div key={lineIdx} className="font-extrabold text-sm text-slate-900 dark:text-white mt-3 mb-1">
+        <div key={lineIdx} className="font-extrabold text-sm text-[var(--text-primary)] mt-3 mb-1">
           {renderLineTokens(trimmed.replace(/^##\s+/, ''), isMine, onNavigate)}
         </div>
       );
@@ -181,7 +181,7 @@ function renderTextWithMarkdown(
     if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
       return (
         <div key={lineIdx} className="flex items-start gap-1.5 ml-1 my-0.5">
-          <span className="text-brand-500 font-bold shrink-0 mt-0.5">•</span>
+          <span className="text-[var(--brand-primary)] font-bold shrink-0 mt-0.5">•</span>
           <div className="flex-1">
             {renderLineTokens(trimmed.replace(/^[-*]\s+/, ''), isMine, onNavigate)}
           </div>
@@ -201,7 +201,7 @@ function getFileIcon(name: string) {
   const lower = (name || '').toLowerCase();
   if (lower.endsWith('.pdf')) return <FileText size={18} className="text-rose-500" />;
   if (/\.(zip|rar|7z|tar|gz)$/i.test(lower)) return <FileArchive size={18} className="text-amber-500" />;
-  if (/\.(mp3|wav|ogg|m4a|flac)$/i.test(lower)) return <Music size={18} className="text-purple-500" />;
+  if (/\.(mp3|wav|ogg|m4a|flac)$/i.test(lower)) return <Music size={18} className="text-[var(--brand-primary)]" />;
   if (/\.(mp4|mov|webm|avi|mkv)$/i.test(lower)) return <Video size={18} className="text-cyan-500" />;
   if (/\.(js|jsx|ts|tsx|py|html|css|json|java|cpp|c|go|rs)$/i.test(lower)) return <FileCode size={18} className="text-emerald-500" />;
   return <FileText size={18} className="text-blue-500" />;
@@ -273,8 +273,8 @@ const RenderMessageContent: React.FC<{
           }}
           className={`rounded-xl p-3 border transition-all cursor-pointer select-none text-left block shadow-xs hover:shadow-md ${
             isMine
-              ? 'bg-white/15 hover:bg-white/20 border-white/30 text-white'
-              : 'bg-slate-50 dark:bg-dark-800 hover:bg-slate-100 dark:hover:bg-dark-750 border-slate-200 dark:border-dark-700 text-slate-900 dark:text-white'
+              ? 'bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)] border-white/30 text-white'
+              : 'bg-[var(--bg-primary)] hover:bg-[var(--bg-soft)] border-[var(--border-subtle)] text-[var(--text-primary)]'
           }`}
           role="button"
           tabIndex={0}
@@ -284,13 +284,13 @@ const RenderMessageContent: React.FC<{
             <span
               className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
                 isMine
-                  ? 'bg-white/25 text-white'
-                  : 'bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400 border border-brand-200 dark:border-brand-900'
+                  ? 'bg-[var(--bg-surface)] text-white'
+                  : 'bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)]'
               }`}
             >
               {typeBadge}
             </span>
-            <ExternalLink size={12} className={isMine ? 'text-white/80' : 'text-slate-400'} />
+            <ExternalLink size={12} className={isMine ? 'text-white/80' : 'text-[var(--text-muted)]'} />
           </div>
 
           {/* BOLD LETTERS */}
@@ -301,13 +301,13 @@ const RenderMessageContent: React.FC<{
           <div className="mt-2.5 pt-2 border-t border-white/20 dark:border-dark-700/60 flex items-center justify-between gap-2">
             <span
               className={`text-[11px] font-bold flex items-center gap-1 ${
-                isMine ? 'text-white' : 'text-brand-600 dark:text-brand-400'
+                isMine ? 'text-white' : 'text-[var(--brand-primary)]'
               }`}
             >
               <span>{ctaText}</span>
               <ArrowRight size={12} />
             </span>
-            <span className={`text-[10px] truncate max-w-[140px] opacity-70 ${isMine ? 'text-white/70' : 'text-slate-400'}`}>
+            <span className={`text-[10px] truncate max-w-[140px] opacity-70 ${isMine ? 'text-white/70' : 'text-[var(--text-muted)]'}`}>
               {sharedUrl.replace(/^https?:\/\/[^\/]+/, '') || sharedUrl}
             </span>
           </div>
@@ -344,7 +344,7 @@ const RenderMessageContent: React.FC<{
         parts.push(
           <div
             key={`img-${matchStart}`}
-            className="my-1.5 max-w-sm rounded-xl overflow-hidden border border-slate-200/80 dark:border-dark-700 shadow-sm bg-slate-900/10 dark:bg-black/20 group relative"
+            className="my-1.5 max-w-sm rounded-xl overflow-hidden border border-[var(--border-subtle)] shadow-sm bg-slate-900/10 dark:bg-black/20 group relative"
           >
             <img
               src={attachUrl}
@@ -353,18 +353,18 @@ const RenderMessageContent: React.FC<{
               className="w-full max-h-72 object-cover cursor-pointer hover:opacity-95 transition-opacity"
               onClick={() => (onOpenImage ? onOpenImage(attachUrl, attachName) : window.open(attachUrl, '_blank'))}
             />
-            <div className="p-2 bg-white/95 dark:bg-dark-850/95 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-dark-750 text-xs">
-              <span className="font-semibold text-slate-800 dark:text-slate-200 truncate text-[11px]" title={attachName}>
+            <div className="p-2 bg-[var(--bg-surface)] flex items-center justify-between gap-2 border-t border-[var(--border-subtle)] text-xs">
+              <span className="font-semibold text-[var(--text-primary)] truncate text-[11px]" title={attachName}>
                 {attachName}
               </span>
               <div className="flex items-center gap-1.5 shrink-0">
-                {attachSize && <span className="text-[10px] text-slate-400">{attachSize}</span>}
+                {attachSize && <span className="text-[10px] text-[var(--text-muted)]">{attachSize}</span>}
                 <a
                   href={attachUrl}
                   download={attachName}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-1 rounded hover:bg-slate-100 dark:hover:bg-dark-750 text-slate-500 hover:text-brand-600 transition-colors"
+                  className="p-1 rounded hover:bg-[var(--bg-soft)] text-[var(--text-muted)] hover:text-[var(--brand-primary)] transition-colors"
                   title="Download image"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -380,16 +380,16 @@ const RenderMessageContent: React.FC<{
             key={`file-${matchStart}`}
             className={`my-1.5 p-3 rounded-xl border flex items-center justify-between gap-3 max-w-sm transition-all shadow-2xs hover:shadow-sm ${
               isMine
-                ? 'bg-white/15 border-white/30 text-white'
-                : 'bg-slate-50 dark:bg-dark-800 border-slate-200 dark:border-dark-700 text-slate-900 dark:text-white'
+                ? 'bg-[var(--bg-surface)] border-white/30 text-white'
+                : 'bg-[var(--bg-primary)] border-[var(--border-subtle)] text-[var(--text-primary)]'
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <div
                 className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
                   isMine
-                    ? 'bg-white/20 text-white'
-                    : 'bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-900'
+                    ? 'bg-[var(--bg-surface)] text-white'
+                    : 'bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)]'
                 }`}
               >
                 {getFileIcon(attachName)}
@@ -398,7 +398,7 @@ const RenderMessageContent: React.FC<{
                 <p className="font-bold text-xs truncate" title={attachName}>
                   {attachName}
                 </p>
-                <p className={`text-[10px] ${isMine ? 'text-white/75' : 'text-slate-400'}`}>
+                <p className={`text-[10px] ${isMine ? 'text-white/75' : 'text-[var(--text-muted)]'}`}>
                   {attachSize || 'File attachment'}
                 </p>
               </div>
@@ -410,7 +410,7 @@ const RenderMessageContent: React.FC<{
               rel="noopener noreferrer"
               className={`p-1.5 rounded-lg shrink-0 transition-colors ${
                 isMine
-                  ? 'bg-white/25 hover:bg-white/35 text-white'
+                  ? 'bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)] text-white'
                   : 'bg-brand-600 hover:bg-brand-700 text-white shadow-xs'
               }`}
               title={`Download ${attachName}`}
@@ -447,12 +447,12 @@ const RenderMessageContent: React.FC<{
           rel="noopener noreferrer"
           className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 max-w-sm transition-all hover:opacity-95 ${
             isMine
-              ? 'bg-white/15 border-white/30 text-white'
-              : 'bg-slate-50 dark:bg-dark-800 border-slate-200 dark:border-dark-700 text-slate-900 dark:text-white'
+              ? 'bg-[var(--bg-surface)] border-white/30 text-white'
+              : 'bg-[var(--bg-primary)] border-[var(--border-subtle)] text-[var(--text-primary)]'
           }`}
         >
           <div className="flex items-center gap-2 min-w-0">
-            <Link2 size={15} className={isMine ? 'text-white' : 'text-brand-500'} />
+            <Link2 size={15} className={isMine ? 'text-white' : 'text-[var(--brand-primary)]'} />
             <span className="font-bold text-xs truncate">{trimmed}</span>
           </div>
           <ExternalLink size={13} className="shrink-0 opacity-80" />
@@ -1960,36 +1960,36 @@ export const MessagesPage: React.FC = () => {
   return (
     <div className="w-full max-w-7xl mx-auto px-0 sm:px-4 md:px-6 lg:px-8 py-0 sm:py-3 md:py-5 h-[calc(100dvh-56px)] md:h-[calc(100vh-80px)] flex flex-col">
       <SEO title="Direct Messages | HookZ" noindex={true} />
-      <div className="flex-1 card-base shadow-none sm:shadow-sm overflow-hidden flex flex-col md:flex-row border-0 sm:border border-slate-200 dark:border-dark-800 rounded-none sm:rounded-xl">
+      <div className="flex-1 card-base shadow-none sm:shadow-sm overflow-hidden flex flex-col md:flex-row border-0 sm:border border-[var(--border-subtle)] rounded-none sm:rounded-xl">
         
         {/* Left Side: Conversation List / Inbox */}
         {/* On mobile: Hidden if a conversation is selected. On desktop: Always visible */}
         <div
           className={`${
             selectedConversation ? 'hidden md:flex' : 'flex'
-          } w-full md:w-80 lg:w-96 border-r border-slate-200 dark:border-dark-800 flex-col h-full bg-slate-50/70 dark:bg-dark-900/60 shrink-0`}
+          } w-full md:w-80 lg:w-96 border-r border-[var(--border-subtle)] flex-col h-full bg-[var(--bg-primary)] shrink-0`}
         >
           {/* Inbox Header */}
-          <div className="p-3.5 border-b border-slate-200 dark:border-dark-800 space-y-2.5 bg-white dark:bg-dark-900">
+          <div className="p-3.5 border-b border-[var(--border-subtle)] space-y-2.5 bg-[var(--bg-surface)]">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <MessageSquare size={17} className="text-brand-600 dark:text-brand-400" />
+              <h2 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <MessageSquare size={17} className="text-[var(--brand-primary)]" />
                 <span>Messages</span>
               </h2>
-              <span className="text-[11px] font-medium text-slate-400 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-dark-800">
+              <span className="text-[11px] font-medium text-[var(--text-muted)] px-2 py-0.5 rounded-full bg-[var(--bg-soft)]">
                 {filteredConversations.length} {filteredConversations.length === 1 ? 'chat' : 'chats'}
               </span>
             </div>
 
             {/* Category Tabs: Separate Direct Messages from Project Team Chats */}
-            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-dark-850 rounded-xl text-xs font-semibold">
+            <div className="flex items-center gap-1 p-1 bg-[var(--bg-soft)] rounded-xl text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setChatTab('DIRECT')}
                 className={`flex-1 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   chatTab === 'DIRECT'
-                    ? 'bg-white dark:bg-dark-750 text-brand-600 dark:text-brand-400 shadow-2xs font-bold'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-[var(--bg-surface)] text-[var(--brand-primary)] shadow-2xs font-bold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 <UserIcon size={13} />
@@ -1997,8 +1997,8 @@ export const MessagesPage: React.FC = () => {
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded-full ${
                     chatTab === 'DIRECT'
-                      ? 'bg-brand-50 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 font-bold'
-                      : 'bg-slate-200/60 dark:bg-dark-700 text-slate-500'
+                      ? 'bg-[var(--brand-soft)] text-[var(--brand-primary)] font-bold'
+                      : 'bg-[var(--bg-soft)] text-[var(--text-muted)]'
                   }`}
                 >
                   {directConversations.length}
@@ -2009,8 +2009,8 @@ export const MessagesPage: React.FC = () => {
                 onClick={() => setChatTab('PROJECTS')}
                 className={`flex-1 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   chatTab === 'PROJECTS'
-                    ? 'bg-white dark:bg-dark-750 text-brand-600 dark:text-brand-400 shadow-2xs font-bold'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-[var(--bg-surface)] text-[var(--brand-primary)] shadow-2xs font-bold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 <FolderKanban size={13} />
@@ -2018,8 +2018,8 @@ export const MessagesPage: React.FC = () => {
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded-full ${
                     chatTab === 'PROJECTS'
-                      ? 'bg-brand-50 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 font-bold'
-                      : 'bg-slate-200/60 dark:bg-dark-700 text-slate-500'
+                      ? 'bg-[var(--brand-soft)] text-[var(--brand-primary)] font-bold'
+                      : 'bg-[var(--bg-soft)] text-[var(--text-muted)]'
                   }`}
                 >
                   {projectConversations.length}
@@ -2030,8 +2030,8 @@ export const MessagesPage: React.FC = () => {
                 onClick={() => setChatTab('ALL')}
                 className={`py-1.5 px-2.5 rounded-lg transition-all flex items-center justify-center gap-1 cursor-pointer ${
                   chatTab === 'ALL'
-                    ? 'bg-white dark:bg-dark-750 text-brand-600 dark:text-brand-400 shadow-2xs font-bold'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-[var(--bg-surface)] text-[var(--brand-primary)] shadow-2xs font-bold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 <span>All</span>
@@ -2039,13 +2039,13 @@ export const MessagesPage: React.FC = () => {
             </div>
 
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+              <Search size={14} className="absolute left-3 top-2.5 text-[var(--text-muted)]" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={chatTab === 'PROJECTS' ? 'Search project chats...' : 'Search direct messages...'}
-                className="input-base pl-9 pr-3 py-1.5 text-xs w-full bg-slate-50 dark:bg-dark-850"
+                className="input-base pl-9 pr-3 py-1.5 text-xs w-full bg-[var(--bg-primary)]"
               />
             </div>
           </div>
@@ -2057,19 +2057,19 @@ export const MessagesPage: React.FC = () => {
                 {[1, 2, 3, 4].map((n) => (
                   <div
                     key={n}
-                    className="h-14 rounded-lg bg-slate-200/60 dark:bg-dark-800 animate-pulse"
+                    className="h-14 rounded-lg bg-[var(--bg-soft)] animate-pulse"
                   />
                 ))}
               </div>
             ) : filteredConversations.length === 0 ? (
-              <div className="p-8 text-center flex flex-col items-center justify-center h-full text-slate-400">
-                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-dark-800 flex items-center justify-center text-slate-400 mb-2">
+              <div className="p-8 text-center flex flex-col items-center justify-center h-full text-[var(--text-muted)]">
+                <div className="w-12 h-12 rounded-full bg-[var(--bg-soft)] flex items-center justify-center text-[var(--text-muted)] mb-2">
                   <MessageSquare size={20} />
                 </div>
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <p className="text-xs font-semibold text-[var(--text-secondary)]">
                   No conversations yet
                 </p>
-                <p className="text-[11px] text-slate-400 mt-1 max-w-xs">
+                <p className="text-[11px] text-[var(--text-muted)] mt-1 max-w-xs">
                   Connect with founders or collaborators to start chatting.
                 </p>
               </div>
@@ -2101,8 +2101,8 @@ export const MessagesPage: React.FC = () => {
                     onClick={() => handleSelectConversation(conv)}
                     className={`group relative w-full flex items-center transition-colors cursor-pointer border-l-2 ${
                       isSelected
-                        ? 'bg-brand-50/80 dark:bg-brand-950/40 border-brand-600 dark:border-brand-500'
-                        : 'border-transparent hover:bg-slate-100/70 dark:hover:bg-dark-800/50'
+                        ? 'bg-[var(--brand-soft)] border-brand-600 dark:border-brand-500'
+                        : 'border-transparent hover:bg-[var(--bg-soft)]'
                     }`}
                   >
                     <button
@@ -2114,7 +2114,7 @@ export const MessagesPage: React.FC = () => {
                       className="flex-1 min-w-0 text-left p-3.5 pr-1 flex items-center gap-3 cursor-pointer"
                     >
                       {(conv as any).isProjectGroup ? (
-                        <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-200/60 dark:border-brand-900/60 shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--brand-soft)] text-[var(--brand-primary)] flex items-center justify-center border border-brand-200/60 dark:border-brand-900/60 shrink-0">
                           <FolderKanban size={18} />
                         </div>
                       ) : (
@@ -2137,20 +2137,20 @@ export const MessagesPage: React.FC = () => {
                             <span
                               className={`text-xs truncate ${
                                 hasUnread
-                                  ? 'font-bold text-slate-900 dark:text-white'
-                                  : 'font-semibold text-slate-800 dark:text-slate-200'
+                                  ? 'font-bold text-[var(--text-primary)]'
+                                  : 'font-semibold text-[var(--text-primary)]'
                               }`}
                             >
                               {name}
                             </span>
                             {(conv as any).isProjectGroup && (
-                              <span className="shrink-0 px-1.5 py-0.2 rounded text-[9px] font-bold bg-brand-100 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+                              <span className="shrink-0 px-1.5 py-0.2 rounded text-[9px] font-bold bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)]">
                                 Project
                               </span>
                             )}
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="text-[10px] text-slate-400">
+                            <span className="text-[10px] text-[var(--text-muted)]">
                               {new Date(conv.lastMessageAt).toLocaleDateString(undefined, {
                                 month: 'short',
                                 day: 'numeric',
@@ -2166,8 +2166,8 @@ export const MessagesPage: React.FC = () => {
                         <p
                           className={`text-[11px] truncate mt-0.5 ${
                             hasUnread
-                              ? 'font-bold text-slate-900 dark:text-slate-100'
-                              : 'text-slate-500 dark:text-slate-400'
+                              ? 'font-bold text-[var(--text-primary)]'
+                              : 'text-[var(--text-muted)]'
                           }`}
                         >
                           {conv.lastMessage || 'Start a conversation...'}
@@ -2182,7 +2182,7 @@ export const MessagesPage: React.FC = () => {
                         e.stopPropagation();
                         handleDeleteConversation(conv);
                       }}
-                      className="p-2 mr-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
+                      className="p-2 mr-2 rounded-lg text-[var(--text-muted)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-all opacity-80 sm:opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
                       title="Delete conversation for you"
                       aria-label="Delete chat"
                     >
@@ -2207,7 +2207,7 @@ export const MessagesPage: React.FC = () => {
           onDrop={handleDrop}
           className={`${
             !selectedConversation ? 'hidden md:flex' : 'flex'
-          } flex-1 flex-col h-full bg-white dark:bg-dark-900 relative overflow-hidden`}
+          } flex-1 flex-col h-full bg-[var(--bg-surface)] relative overflow-hidden`}
         >
           {isDraggingOver && (
             <div className="absolute inset-0 z-40 bg-brand-600/10 border-2 border-dashed border-brand-500 backdrop-blur-2xs flex items-center justify-center pointer-events-none animate-in fade-in">
@@ -2220,12 +2220,12 @@ export const MessagesPage: React.FC = () => {
           {selectedConversation ? (
             <>
               {/* Instagram-style Chat Header on Top */}
-              <div className="px-3.5 py-3 border-b border-slate-200 dark:border-dark-800 flex items-center justify-between bg-white dark:bg-dark-900 shrink-0 sticky top-0 z-10 shadow-2xs">
+              <div className="px-3.5 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--bg-surface)] shrink-0 sticky top-0 z-10 shadow-2xs">
                 <div className="flex items-center gap-2.5 min-w-0">
                   {/* Mobile Back Button (<) */}
                   <button
                     onClick={handleBackToList}
-                    className="md:hidden p-1.5 -ml-1 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 rounded-full cursor-pointer transition-colors"
+                    className="md:hidden p-1.5 -ml-1 text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] rounded-full cursor-pointer transition-colors"
                     aria-label="Back to conversations"
                   >
                     <ChevronLeft size={22} />
@@ -2233,7 +2233,7 @@ export const MessagesPage: React.FC = () => {
 
                   {/* Participant Avatar */}
                   {(selectedConversation as any).isProjectGroup ? (
-                    <div className="w-9 h-9 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-200/60 dark:border-brand-900/60 shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-[var(--brand-soft)] text-[var(--brand-primary)] flex items-center justify-center border border-brand-200/60 dark:border-brand-900/60 shrink-0">
                       <FolderKanban size={17} />
                     </div>
                   ) : (
@@ -2259,12 +2259,12 @@ export const MessagesPage: React.FC = () => {
                             ? '/projects'
                             : `/profile/${selectedConversation.participant?.id}`
                         }
-                        className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate hover:underline"
+                        className="font-bold text-xs sm:text-sm text-[var(--text-primary)] truncate hover:underline"
                       >
                         {receiverName}
                       </Link>
                       {(selectedConversation as any).isProjectGroup ? (
-                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300">
+                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[var(--brand-soft)] text-[var(--brand-primary)]">
                           Team
                         </span>
                       ) : (
@@ -2275,7 +2275,7 @@ export const MessagesPage: React.FC = () => {
                         />
                       )}
                     </div>
-                    <p className="text-[10px] text-slate-400 truncate">
+                    <p className="text-[10px] text-[var(--text-muted)] truncate">
                       {(selectedConversation as any).isProjectGroup
                         ? `${(selectedConversation as any).members?.length || 1} members • Team chat`
                         : selectedConversation.participant?.profile?.headline ||
@@ -2294,7 +2294,7 @@ export const MessagesPage: React.FC = () => {
                       className={`p-1.5 rounded-lg border transition-colors cursor-pointer inline-flex items-center gap-1.5 text-xs ${
                         isParticipantBlocked
                           ? 'text-rose-600 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/50'
-                          : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-transparent hover:border-rose-200 dark:hover:border-rose-900/50'
+                          : 'text-[var(--text-muted)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-transparent hover:border-rose-200 dark:hover:border-rose-900/50'
                       }`}
                       title={isParticipantBlocked ? 'Unblock user' : 'Block user'}
                     >
@@ -2310,7 +2310,7 @@ export const MessagesPage: React.FC = () => {
                       type="button"
                       onClick={() => handleDeleteConversation(selectedConversation)}
                       disabled={deletingConv}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-900/50 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 text-xs"
+                      className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-transparent hover:border-rose-200 dark:hover:border-rose-900/50 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 text-xs"
                       title="Delete conversation permanently for you"
                     >
                       <Trash2 size={15} />
@@ -2355,9 +2355,9 @@ export const MessagesPage: React.FC = () => {
               )}
 
               {/* Messages Bubble Area */}
-              <div className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-3 bg-slate-50/40 dark:bg-dark-950/30">
+              <div className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-3 bg-[var(--bg-primary)]">
                 {loadingMessages ? (
-                  <div className="flex justify-center items-center h-full text-xs text-slate-400">
+                  <div className="flex justify-center items-center h-full text-xs text-[var(--text-muted)]">
                     Loading messages...
                   </div>
                 ) : messages.length === 0 ? (
@@ -2372,10 +2372,10 @@ export const MessagesPage: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-1 max-w-xs">
-                      <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+                      <h4 className="font-bold text-sm text-[var(--text-primary)]">
                         {receiverName}
                       </h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                      <p className="text-xs text-[var(--text-muted)] line-clamp-2">
                         {selectedConversation.participant?.profile?.headline ||
                           'Startup Founder & Collaborator'}
                       </p>
@@ -2391,7 +2391,7 @@ export const MessagesPage: React.FC = () => {
                       </Link>
                     )}
 
-                    <div className="pt-2 text-[11px] text-slate-400 max-w-xs">
+                    <div className="pt-2 text-[11px] text-[var(--text-muted)] max-w-xs">
                       Send a message to introduce yourself, discuss mutual startup synergies, or share ideas.
                     </div>
                   </div>
@@ -2406,7 +2406,7 @@ export const MessagesPage: React.FC = () => {
                         {/* Centered Date Separator */}
                         {showDateBreak && (
                           <div className="flex items-center justify-center my-3">
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200/80 dark:bg-dark-800 text-slate-600 dark:text-slate-300 shadow-2xs">
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-[var(--bg-soft)] text-[var(--text-secondary)] shadow-2xs">
                               {formatDateLabel(m.createdAt)}
                             </span>
                           </div>
@@ -2420,18 +2420,18 @@ export const MessagesPage: React.FC = () => {
                             /* SENDER BUBBLE (Right Side) */
                             <div className="flex flex-col items-end max-w-[85%] sm:max-w-md ml-auto group relative">
                               {editingMessageId === m.id ? (
-                                <div className="w-full bg-white dark:bg-dark-850 p-2.5 sm:p-3 rounded-2xl border border-brand-500 shadow-md space-y-2">
+                                <div className="w-full bg-[var(--bg-surface)] p-2.5 sm:p-3 rounded-2xl border border-brand-500 shadow-md space-y-2">
                                   <textarea
                                     value={editingContent}
                                     onChange={(e) => setEditingContent(e.target.value)}
                                     rows={2}
-                                    className="input-base text-xs sm:text-sm w-full p-2 bg-slate-50 dark:bg-dark-900 resize-none"
+                                    className="input-base text-xs sm:text-sm w-full p-2 bg-[var(--bg-primary)] resize-none"
                                   />
                                   <div className="flex items-center justify-end gap-1.5">
                                     <button
                                       type="button"
                                       onClick={handleCancelEdit}
-                                      className="px-2 py-1 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer"
+                                      className="px-2 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] cursor-pointer"
                                     >
                                       Cancel
                                     </button>
@@ -2439,7 +2439,7 @@ export const MessagesPage: React.FC = () => {
                                       type="button"
                                       disabled={editingSaving || !editingContent.trim()}
                                       onClick={() => handleSaveEdit(m.id)}
-                                      className="px-2.5 py-1 text-xs bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg disabled:opacity-50 cursor-pointer inline-flex items-center gap-1"
+                                      className="px-2.5 py-1 text-xs btn-primary text-white font-medium rounded-lg disabled:opacity-50 cursor-pointer inline-flex items-center gap-1"
                                     >
                                       {editingSaving ? 'Saving...' : 'Save'}
                                     </button>
@@ -2460,13 +2460,13 @@ export const MessagesPage: React.FC = () => {
                                       </span>
                                     )}
                                   </div>
-                                  <div className="text-[10px] text-slate-400 mt-1 flex items-center justify-end gap-2 mr-1">
+                                  <div className="text-[10px] text-[var(--text-muted)] mt-1 flex items-center justify-end gap-2 mr-1">
                                     {/* Action Buttons & Dropdown for Sender Message */}
                                     <div className="relative flex items-center gap-1 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                                       <button
                                         type="button"
                                         onClick={() => handleStartEdit(m)}
-                                        className="text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 p-0.5 rounded cursor-pointer"
+                                        className="text-[var(--text-muted)] hover:text-[var(--brand-primary)] p-0.5 rounded cursor-pointer"
                                         title="Edit message"
                                       >
                                         <Pencil size={12} />
@@ -2474,7 +2474,7 @@ export const MessagesPage: React.FC = () => {
                                       <button
                                         type="button"
                                         onClick={() => handleUnsend(m.id)}
-                                        className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-0.5 rounded cursor-pointer"
+                                        className="text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 p-0.5 rounded cursor-pointer"
                                         title="Unsend for everyone"
                                       >
                                         <Undo2 size={12} />
@@ -2485,7 +2485,7 @@ export const MessagesPage: React.FC = () => {
                                           e.stopPropagation();
                                           setActiveMessageMenuId(activeMessageMenuId === m.id ? null : m.id);
                                         }}
-                                        className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded cursor-pointer"
+                                        className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] p-0.5 rounded cursor-pointer"
                                         title="Message options"
                                       >
                                         <MoreHorizontal size={13} />
@@ -2494,15 +2494,15 @@ export const MessagesPage: React.FC = () => {
                                       {/* Dropdown Menu */}
                                       {activeMessageMenuId === m.id && (
                                         <div
-                                          className="absolute right-0 bottom-full mb-1 bg-white dark:bg-dark-850 border border-slate-200 dark:border-dark-750 rounded-xl shadow-xl py-1 px-1 min-w-[150px] z-30 animate-in fade-in zoom-in-95"
+                                          className="absolute right-0 bottom-full mb-1 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl shadow-xl py-1 px-1 min-w-[150px] z-30 animate-in fade-in zoom-in-95"
                                           onClick={(e) => e.stopPropagation()}
                                         >
                                           <button
                                             type="button"
                                             onClick={() => handleStartEdit(m)}
-                                            className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-750 flex items-center gap-2 cursor-pointer font-medium"
+                                            className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] flex items-center gap-2 cursor-pointer font-medium"
                                           >
-                                            <Pencil size={13} className="text-brand-600 dark:text-brand-400" />
+                                            <Pencil size={13} className="text-[var(--brand-primary)]" />
                                             <span>Edit</span>
                                           </button>
                                           <button
@@ -2524,7 +2524,7 @@ export const MessagesPage: React.FC = () => {
                                           <button
                                             type="button"
                                             onClick={() => handleCopyMessage(m)}
-                                            className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-750 flex items-center gap-2 cursor-pointer font-medium"
+                                            className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] flex items-center gap-2 cursor-pointer font-medium"
                                           >
                                             <Copy size={13} />
                                             <span>{copiedMessageId === m.id ? 'Copied!' : 'Copy'}</span>
@@ -2544,8 +2544,8 @@ export const MessagesPage: React.FC = () => {
                                         size={12}
                                         className={
                                           m.isRead
-                                            ? 'text-brand-600 dark:text-brand-400'
-                                            : 'text-slate-400 dark:text-slate-500'
+                                            ? 'text-[var(--brand-primary)]'
+                                            : 'text-[var(--text-muted)]'
                                         }
                                       />
                                     </span>
@@ -2566,14 +2566,14 @@ export const MessagesPage: React.FC = () => {
                                     </div>
                                     <div className="flex flex-col items-start min-w-0 flex-1">
                                       <div className="flex items-center gap-1.5 mb-1 ml-1">
-                                        <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                                        <span className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1">
                                           HookZ AI Scout
                                         </span>
-                                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-brand-100 dark:bg-brand-950/80 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+                                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)]">
                                           Project Assistant
                                         </span>
                                       </div>
-                                      <div className="bg-white dark:bg-dark-850 text-slate-900 dark:text-slate-100 border border-brand-500/25 dark:border-brand-500/30 rounded-2xl rounded-tl-xs p-3.5 sm:p-4 text-xs sm:text-sm leading-relaxed shadow-xs break-words w-full space-y-1">
+                                      <div className="bg-[var(--bg-surface)] text-[var(--text-primary)] border border-brand-500/25 dark:border-brand-500/30 rounded-2xl rounded-tl-xs p-3.5 sm:p-4 text-xs sm:text-sm leading-relaxed shadow-xs break-words w-full space-y-1">
                                         <RenderMessageContent
                                           content={m.content}
                                           isMine={false}
@@ -2581,10 +2581,10 @@ export const MessagesPage: React.FC = () => {
                                           onOpenImage={(url, name) => setLightboxImage({ url, name })}
                                         />
                                       </div>
-                                      <div className="text-[10px] text-slate-400 mt-1 ml-1 flex items-center gap-1.5">
+                                      <div className="text-[10px] text-[var(--text-muted)] mt-1 ml-1 flex items-center gap-1.5">
                                         <span>{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         <span>•</span>
-                                        <span className="text-brand-600 dark:text-brand-400 font-medium">Verified Team Analysis</span>
+                                        <span className="text-[var(--brand-primary)] font-medium">Verified Team Analysis</span>
                                         <div className="relative ml-auto">
                                           <button
                                             type="button"
@@ -2592,14 +2592,14 @@ export const MessagesPage: React.FC = () => {
                                               e.stopPropagation();
                                               setActiveMessageMenuId(activeMessageMenuId === m.id ? null : m.id);
                                             }}
-                                            className="p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
+                                            className="p-0.5 rounded text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] transition-colors cursor-pointer"
                                             title="Message options"
                                           >
                                             <MoreHorizontal size={12} />
                                           </button>
                                           {activeMessageMenuId === m.id && (
                                             <div
-                                              className="message-menu-dropdown absolute right-0 bottom-full mb-1 z-30 w-36 bg-white dark:bg-dark-850 border border-slate-200 dark:border-dark-750 rounded-xl shadow-lg p-1 text-xs animate-in fade-in"
+                                              className="message-menu-dropdown absolute right-0 bottom-full mb-1 z-30 w-36 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl shadow-lg p-1 text-xs animate-in fade-in"
                                               onClick={(e) => e.stopPropagation()}
                                             >
                                               <button
@@ -2613,7 +2613,7 @@ export const MessagesPage: React.FC = () => {
                                               <button
                                                 type="button"
                                                 onClick={() => handleCopyMessage(m)}
-                                                className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-750 flex items-center gap-2 cursor-pointer font-medium"
+                                                className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] flex items-center gap-2 cursor-pointer font-medium"
                                               >
                                                 <Copy size={13} />
                                                 <span>{copiedMessageId === m.id ? 'Copied!' : 'Copy'}</span>
@@ -2639,7 +2639,7 @@ export const MessagesPage: React.FC = () => {
                                     className="!w-7 !h-7 rounded-full mb-4 shrink-0 shadow-2xs"
                                   />
                                   <div className="flex flex-col items-start">
-                                    <div className="bg-white dark:bg-dark-850 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-dark-750 rounded-2xl rounded-tl-xs px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-2xs break-words">
+                                    <div className="bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)] rounded-2xl rounded-tl-xs px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-2xs break-words">
                                       <RenderMessageContent
                                         content={m.content}
                                         isMine={false}
@@ -2647,12 +2647,12 @@ export const MessagesPage: React.FC = () => {
                                         onOpenImage={(url, name) => setLightboxImage({ url, name })}
                                       />
                                       {m.isEdited && (
-                                        <span className="text-[10px] text-slate-400 ml-1.5 italic">
+                                        <span className="text-[10px] text-[var(--text-muted)] ml-1.5 italic">
                                           (edited)
                                         </span>
                                       )}
                                     </div>
-                                    <div className="text-[10px] text-slate-400 mt-1 ml-1 flex items-center gap-1.5">
+                                    <div className="text-[10px] text-[var(--text-muted)] mt-1 ml-1 flex items-center gap-1.5">
                                       <span>
                                         {new Date(m.createdAt).toLocaleTimeString([], {
                                           hour: '2-digit',
@@ -2666,14 +2666,14 @@ export const MessagesPage: React.FC = () => {
                                             e.stopPropagation();
                                             setActiveMessageMenuId(activeMessageMenuId === m.id ? null : m.id);
                                           }}
-                                          className="p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
+                                          className="p-0.5 rounded text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] transition-colors cursor-pointer"
                                           title="Message options"
                                         >
                                           <MoreHorizontal size={12} />
                                         </button>
                                         {activeMessageMenuId === m.id && (
                                           <div
-                                            className="message-menu-dropdown absolute left-0 bottom-full mb-1 z-30 w-36 bg-white dark:bg-dark-850 border border-slate-200 dark:border-dark-750 rounded-xl shadow-lg p-1 text-xs animate-in fade-in"
+                                            className="message-menu-dropdown absolute left-0 bottom-full mb-1 z-30 w-36 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl shadow-lg p-1 text-xs animate-in fade-in"
                                             onClick={(e) => e.stopPropagation()}
                                           >
                                             <button
@@ -2687,7 +2687,7 @@ export const MessagesPage: React.FC = () => {
                                             <button
                                               type="button"
                                               onClick={() => handleCopyMessage(m)}
-                                              className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-750 flex items-center gap-2 cursor-pointer font-medium"
+                                              className="w-full px-2.5 py-1.5 text-xs text-left rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] flex items-center gap-2 cursor-pointer font-medium"
                                             >
                                               <Copy size={13} />
                                               <span>{copiedMessageId === m.id ? 'Copied!' : 'Copy'}</span>
@@ -2711,8 +2711,8 @@ export const MessagesPage: React.FC = () => {
                     <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-600 to-indigo-600 text-white flex items-center justify-center shadow-xs shrink-0 mt-0.5">
                       <Sparkles size={14} className="animate-spin" />
                     </div>
-                    <div className="bg-white dark:bg-dark-850 border border-brand-500/30 rounded-2xl rounded-tl-xs px-3.5 py-2.5 text-xs text-slate-600 dark:text-slate-300 shadow-2xs flex items-center gap-2">
-                      <Bot size={14} className="text-brand-600 animate-pulse" />
+                    <div className="bg-[var(--bg-surface)] border border-brand-500/30 rounded-2xl rounded-tl-xs px-3.5 py-2.5 text-xs text-[var(--text-secondary)] shadow-2xs flex items-center gap-2">
+                      <Bot size={14} className="text-[var(--brand-primary)] animate-pulse" />
                       <span className="font-medium">AI Scout is analyzing your team discussion...</span>
                       <div className="flex gap-1 ml-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-brand-500 animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -2727,7 +2727,7 @@ export const MessagesPage: React.FC = () => {
 
               {/* Message Composer Input */}
               {isParticipantBlocked ? (
-                <div className="p-3 border-t border-slate-200 dark:border-dark-800 bg-slate-50 dark:bg-dark-900 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0">
+                <div className="p-3 border-t border-[var(--border-subtle)] bg-[var(--bg-primary)] flex items-center justify-between text-xs text-[var(--text-muted)] shrink-0">
                   <span>You cannot message this user because they are blocked.</span>
                   <button
                     type="button"
@@ -2738,7 +2738,7 @@ export const MessagesPage: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <div className="border-t border-slate-200 dark:border-dark-800 bg-white dark:bg-dark-900 shrink-0 sticky bottom-0 z-10">
+                <div className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0 sticky bottom-0 z-10">
                   {/* Hidden file pickers */}
                   <input
                     ref={photoInputRef}
@@ -2763,24 +2763,24 @@ export const MessagesPage: React.FC = () => {
 
                   {/* Attachment Preview Chip */}
                   {selectedAttachment && (
-                    <div className="px-3 pt-2 pb-1.5 flex items-center justify-between bg-slate-50 dark:bg-dark-850 border-b border-slate-100 dark:border-dark-800 animate-in fade-in slide-in-from-bottom-2">
+                    <div className="px-3 pt-2 pb-1.5 flex items-center justify-between bg-[var(--bg-primary)] border-b border-[var(--border-subtle)] animate-in fade-in slide-in-from-bottom-2">
                       <div className="flex items-center gap-2.5 min-w-0">
                         {selectedAttachment.isImage && selectedAttachment.previewUrl ? (
                           <img
                             src={selectedAttachment.previewUrl}
                             alt="Attachment preview"
-                            className="w-10 h-10 rounded-lg object-cover border border-slate-200 dark:border-dark-750 shrink-0"
+                            className="w-10 h-10 rounded-lg object-cover border border-[var(--border-subtle)] shrink-0"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0 border border-brand-200 dark:border-brand-800/40">
+                          <div className="w-10 h-10 rounded-lg bg-[var(--brand-soft)] text-[var(--brand-primary)] flex items-center justify-center shrink-0 border border-[var(--border-subtle)]">
                             {getFileIcon(selectedAttachment.name)}
                           </div>
                         )}
                         <div className="min-w-0">
-                          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[220px] sm:max-w-xs">
+                          <p className="text-xs font-semibold text-[var(--text-primary)] truncate max-w-[220px] sm:max-w-xs">
                             {selectedAttachment.name}
                           </p>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          <p className="text-[11px] text-[var(--text-muted)]">
                             {selectedAttachment.size} {isUploadingAttachment ? '• Uploading...' : '• Ready to send'}
                           </p>
                         </div>
@@ -2788,7 +2788,7 @@ export const MessagesPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setSelectedAttachment(null)}
-                        className="p-1 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                        className="p-1 rounded-full text-[var(--text-muted)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
                         title="Remove attachment"
                       >
                         <X size={15} />
@@ -2801,13 +2801,13 @@ export const MessagesPage: React.FC = () => {
                     className="p-2 sm:p-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] flex items-center gap-1.5 sm:gap-2"
                   >
                     {/* Attachment Action Buttons */}
-                    <div className="flex items-center gap-0.5 text-slate-500 dark:text-slate-400 shrink-0">
+                    <div className="flex items-center gap-0.5 text-[var(--text-muted)] shrink-0">
                       <button
                         type="button"
                         onClick={() => photoInputRef.current?.click()}
                         disabled={sending || isUploadingAttachment}
                         title="Share Photo"
-                        className="p-1.5 sm:p-2 rounded-full hover:bg-slate-100 dark:hover:bg-dark-800 hover:text-brand-600 transition-colors cursor-pointer"
+                        className="p-1.5 sm:p-2 rounded-full hover:bg-[var(--bg-soft)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer"
                         aria-label="Upload photo"
                       >
                         <ImageIcon size={18} />
@@ -2817,7 +2817,7 @@ export const MessagesPage: React.FC = () => {
                         onClick={() => fileInputRef.current?.click()}
                         disabled={sending || isUploadingAttachment}
                         title="Share File / Document"
-                        className="p-1.5 sm:p-2 rounded-full hover:bg-slate-100 dark:hover:bg-dark-800 hover:text-brand-600 transition-colors cursor-pointer"
+                        className="p-1.5 sm:p-2 rounded-full hover:bg-[var(--bg-soft)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer"
                         aria-label="Upload file"
                       >
                         <Paperclip size={18} />
@@ -2827,7 +2827,7 @@ export const MessagesPage: React.FC = () => {
                         onClick={handleInsertLink}
                         disabled={sending || isUploadingAttachment}
                         title="Share Link"
-                        className="p-1.5 sm:p-2 rounded-full hover:bg-slate-100 dark:hover:bg-dark-800 hover:text-brand-600 transition-colors cursor-pointer"
+                        className="p-1.5 sm:p-2 rounded-full hover:bg-[var(--bg-soft)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer"
                         aria-label="Insert link"
                       >
                         <Link2 size={18} />
@@ -2840,7 +2840,7 @@ export const MessagesPage: React.FC = () => {
                           onClick={handleTriggerScoutMention}
                           disabled={sending || isUploadingAttachment}
                           title="Ask AI Scout in this project"
-                          className="px-2 py-1 sm:py-1.5 rounded-full bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/70 dark:hover:bg-brand-900/80 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800/60 transition-colors cursor-pointer flex items-center gap-1 font-semibold text-xs shrink-0"
+                          className="px-2 py-1 sm:py-1.5 rounded-full bg-[var(--brand-soft)] hover:bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)] transition-colors cursor-pointer flex items-center gap-1 font-semibold text-xs shrink-0"
                           aria-label="Ask AI Scout"
                         >
                           <Bot size={15} className={isScoutAnalyzing ? 'animate-spin' : ''} />
@@ -2856,13 +2856,13 @@ export const MessagesPage: React.FC = () => {
                       onChange={(e) => setNewMessage(e.target.value)}
                       onPaste={handlePaste}
                       placeholder={selectedAttachment ? 'Add a caption (optional)...' : 'Type a message, drop files, paste links...'}
-                      className="input-base py-2 px-3 text-xs sm:text-sm flex-1 rounded-full bg-slate-50 dark:bg-dark-850 border-slate-200 dark:border-dark-750 focus:bg-white dark:focus:bg-dark-900"
+                      className="input-base py-2 px-3 text-xs sm:text-sm flex-1 rounded-full bg-[var(--bg-primary)] border-[var(--border-subtle)] focus:bg-[var(--bg-surface)]"
                     />
 
                     <button
                       type="submit"
                       disabled={sending || isUploadingAttachment || (!newMessage.trim() && !selectedAttachment)}
-                      className="w-9 h-9 rounded-full bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 active:scale-95 disabled:opacity-40 transition-all cursor-pointer shadow-xs shrink-0"
+                      className="w-9 h-9 rounded-full btn-primary text-white flex items-center justify-center active:scale-95 disabled:opacity-40 transition-all cursor-pointer shadow-xs shrink-0"
                       aria-label="Send message"
                     >
                       {sending || isUploadingAttachment ? (
@@ -2910,12 +2910,12 @@ export const MessagesPage: React.FC = () => {
               <UserX size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h3 className="text-sm font-bold text-[var(--text-primary)]">
                 {isParticipantBlocked
                   ? `Unblock ${receiverName}?`
                   : `Block ${receiverName}?`}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
                 {isParticipantBlocked
                   ? "They will be able to message you, view your profile, and connect with you again."
                   : "They will not be able to send you messages or view your activity. You can unblock them at any time."}
@@ -2923,7 +2923,7 @@ export const MessagesPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-dark-800">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border-subtle)]">
             <button
               type="button"
               onClick={() => setBlockModalOpen(false)}
@@ -2953,21 +2953,21 @@ export const MessagesPage: React.FC = () => {
         maxWidth="sm"
       >
         <div className="space-y-4 py-2 font-sans">
-          <div className="flex items-start gap-3 text-slate-600 dark:text-slate-300">
+          <div className="flex items-start gap-3 text-[var(--text-secondary)]">
             <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center shrink-0">
               <Trash2 size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h3 className="text-sm font-bold text-[var(--text-primary)]">
                 Delete chat history?
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+              <p className="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
                 This will delete this conversation for you across all your devices (desktop and mobile). The other participant will still retain their copy of the chat.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-dark-800">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border-subtle)]">
             <button
               type="button"
               onClick={() => setConversationToDelete(null)}

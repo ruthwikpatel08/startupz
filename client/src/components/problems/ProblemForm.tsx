@@ -197,10 +197,10 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
       {/* Title */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] ">
             Problem Title <span className="text-rose-500">*</span>
           </label>
-          <span className="text-[11px] text-slate-400 font-medium">
+          <span className="text-[11px] text-[var(--text-muted)] font-medium">
             {title.length}/150
           </span>
         </div>
@@ -219,7 +219,7 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
       {/* Description & AI Auto-Assist */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+          <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] ">
             Full Problem Description <span className="text-rose-500">*</span>
           </label>
 
@@ -231,7 +231,7 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
             className="btn-secondary inline-flex items-center gap-1.5 text-xs py-1 px-2.5 disabled:opacity-50"
             title="Automatically detect categories and tags using Gemini GenAI"
           >
-            <Sparkles size={12} className="text-brand-600 dark:text-brand-400" />
+            <Sparkles size={12} className="text-[var(--brand-primary)] " />
             <span>{aiLoading ? 'AI Analyzing...' : 'AI Auto-Tag & Categorize'}</span>
           </button>
         </div>
@@ -249,8 +249,8 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
 
       {/* Categories */}
       <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
-          <FolderTree size={14} className="text-brand-600 dark:text-brand-400" />
+        <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]  mb-2 flex items-center gap-1.5">
+          <FolderTree size={14} className="text-[var(--brand-primary)] " />
           <span>Categories (Assign 1 or more) <span className="text-rose-500">*</span></span>
         </label>
         <div className="flex flex-wrap gap-1.5 mb-2.5">
@@ -264,7 +264,7 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
                 className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${
                   selected
                     ? 'bg-brand-600 text-white border-brand-600'
-                    : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-slate-300'
+                    : 'bg-[var(--bg-surface)]  text-[var(--text-secondary)]  border-[var(--border-subtle)]  hover:border-[var(--border-subtle)]'
                 }`}
               >
                 {selected && '✓ '}
@@ -304,8 +304,8 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
 
       {/* Regions */}
       <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
-          <Globe2 size={14} className="text-brand-600 dark:text-brand-400" />
+        <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]  mb-2 flex items-center gap-1.5">
+          <Globe2 size={14} className="text-[var(--brand-primary)] " />
           <span>Critical Regions / Geographies</span>
         </label>
         <div className="flex flex-wrap gap-1.5">
@@ -319,7 +319,7 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
                 className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${
                   selected
                     ? 'bg-brand-600 text-white border-brand-600'
-                    : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-slate-300'
+                    : 'bg-[var(--bg-surface)]  text-[var(--text-secondary)]  border-[var(--border-subtle)]  hover:border-[var(--border-subtle)]'
                 }`}
               >
                 {selected && '✓ '}
@@ -332,15 +332,15 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
 
       {/* Tags Chips */}
       <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1.5">
-          <TagIcon size={14} className="text-slate-400" />
+        <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]  mb-2 flex items-center gap-1.5">
+          <TagIcon size={14} className="text-[var(--text-muted)]" />
           <span>Tags & Keywords</span>
         </label>
         <div className="flex flex-wrap gap-1.5 mb-2">
           {tags.map((t) => (
             <span
               key={t}
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-dark-700"
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-medium bg-[var(--bg-soft)]  text-[var(--text-secondary)]  border border-[var(--border-subtle)] "
             >
               #{t}
               <button
@@ -383,7 +383,7 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
         
         {/* Impact Level */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]  mb-1.5 flex items-center gap-1.5">
             <Flame size={14} className="text-amber-500" />
             <span>Impact Urgency Score (1 - 10)</span>
           </label>
@@ -396,19 +396,19 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
               onChange={(e) => setImpactLevel(parseInt(e.target.value, 10))}
               className="flex-1 accent-brand-600 cursor-pointer"
             />
-            <span className="w-12 text-center px-2 py-0.5 rounded bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-bold text-xs border border-brand-200/60 dark:border-brand-900/40">
+            <span className="w-12 text-center px-2 py-0.5 rounded bg-[var(--brand-soft)]  text-[var(--brand-primary)]  font-bold text-xs border border-brand-200/60 dark:border-brand-900/40">
               {impactLevel}/10
             </span>
           </div>
-          <span className="text-[11px] text-slate-400 mt-1 block">
+          <span className="text-[11px] text-[var(--text-muted)] mt-1 block">
             {impactLevel >= 9 ? 'Critical Global Emergency' : impactLevel >= 7 ? 'High Global Priority' : 'Substantial Focus Area'}
           </span>
         </div>
 
         {/* Source URL */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-            <LinkIcon size={14} className="text-slate-400" />
+          <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]  mb-1.5 flex items-center gap-1.5">
+            <LinkIcon size={14} className="text-[var(--text-muted)]" />
             <span>Official Citation / Source URL</span>
           </label>
           <input
@@ -425,7 +425,7 @@ export const ProblemForm: React.FC<ProblemFormProps> = ({
       </div>
 
       {/* Form Action Buttons */}
-      <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-dark-800">
+      <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[var(--border-subtle)] ">
         <button
           type="button"
           onClick={onCancel}

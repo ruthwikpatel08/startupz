@@ -425,15 +425,15 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
       >
         <div className="space-y-4">
           {/* Header Description */}
-          <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-start gap-3">
-            <div className="p-2 rounded-md bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 shrink-0 border border-brand-200/60 dark:border-brand-900/60">
+          <div className="p-3.5 rounded-lg bg-[var(--bg-primary)]  border border-[var(--border-subtle)]  flex items-start gap-3">
+            <div className="p-2 rounded-md bg-[var(--brand-soft)]  text-[var(--brand-primary)]  shrink-0 border border-brand-200/60 dark:border-brand-900/60">
               <Bot size={18} />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+              <h4 className="text-xs font-bold text-[var(--text-primary)] ">
                 Intelligent Natural Language Search by District, State, Profession & College
               </h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed font-medium">
+              <p className="text-xs text-[var(--text-secondary)]  mt-0.5 leading-relaxed font-medium">
                 AI Scout scans member profiles, college affiliations (IITs, NITs, NIAT, Private Universities), verified professions, and all Indian districts & states to surface exact matches.
               </p>
             </div>
@@ -448,17 +448,17 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="e.g. Student from Telangana in AI, Salesman in Khammam, Designer from NIAT..."
-                className="w-full pl-10 pr-40 sm:pr-44 py-2.5 text-xs sm:text-sm rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600/20 font-medium"
+                className="w-full pl-10 pr-40 sm:pr-44 py-2.5 text-xs sm:text-sm rounded-lg bg-[var(--bg-surface)]  border border-[var(--border-subtle)]  text-[var(--text-primary)]  placeholder:text-[var(--text-muted)] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600/20 font-medium"
               />
               <Search
                 size={16}
-                className="absolute left-3.5 text-slate-400 pointer-events-none"
+                className="absolute left-3.5 text-[var(--text-muted)] pointer-events-none"
               />
               <div className="absolute right-1.5 flex items-center gap-1.5">
                 <button
                   onClick={() => handleSearch()}
                   disabled={loading || !query.trim()}
-                  className="px-3 py-1.5 rounded-md text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  className="px-3 py-1.5 rounded-md text-xs font-semibold text-white btn-primary disabled:opacity-50 flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                 >
                   {loading ? (
                     <span className="text-xs animate-spin">⏳</span>
@@ -470,7 +470,7 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="p-1.5 rounded-md text-[var(--text-muted)] hover:text-[var(--text-secondary)]  hover:bg-[var(--bg-soft)]  transition-colors"
                   title="Close AI Scout"
                   aria-label="Close AI Scout"
                 >
@@ -482,7 +482,7 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
             {/* Quick Prompts */}
             {!results && (
               <div className="space-y-1.5 pt-1">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider block">
                   Popular Queries:
                 </span>
                 <div className="flex flex-wrap gap-1.5">
@@ -493,7 +493,7 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
                         setQuery(p);
                         handleSearch(p);
                       }}
-                      className="px-2.5 py-1 text-xs rounded-md bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-brand-600 hover:text-brand-600 dark:hover:border-brand-500 border border-slate-200 dark:border-slate-800 transition-colors text-left font-medium cursor-pointer"
+                      className="px-2.5 py-1 text-xs rounded-md bg-[var(--bg-surface)]  text-[var(--text-secondary)]  hover:border-brand-600 hover:text-[var(--brand-primary)] dark:hover:border-brand-500 border border-[var(--border-subtle)]  transition-colors text-left font-medium cursor-pointer"
                     >
                       {p}
                     </button>
@@ -511,7 +511,7 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
 
           {/* Results Display */}
           {results && (
-            <div className="space-y-3.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="space-y-3.5 pt-2 border-t border-[var(--border-subtle)] ">
               {/* Typo & Misspelling Adjustment Banner */}
               {typoCorrections.length > 0 && (
                 <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
@@ -520,9 +520,9 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
                     {typoCorrections.map((tc, idx) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-800 text-[11px] font-mono shadow-2xs"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[var(--bg-surface)]  border border-amber-300 dark:border-amber-800 text-[11px] font-mono shadow-2xs"
                       >
-                        <span className="line-through text-slate-400">{tc.from}</span>
+                        <span className="line-through text-[var(--text-muted)]">{tc.from}</span>
                         <span>→</span>
                         <span className="font-bold text-amber-600 dark:text-amber-400">{tc.to}</span>
                       </span>
@@ -535,10 +535,10 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
               )}
 
               {/* Detected Interpretation Badges */}
-              <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <div className="p-2.5 rounded-lg bg-[var(--bg-primary)]  border border-[var(--border-subtle)]  space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-secondary)] ">
                   <span>AI Extracted Criteria:</span>
-                  <span className="text-brand-600 dark:text-brand-400 font-bold">
+                  <span className="text-[var(--brand-primary)]  font-bold">
                     {results.results?.length || 0} candidate(s) found
                   </span>
                 </div>
@@ -549,7 +549,7 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
                     </span>
                   )}
                   {results.interpretation?.detectedProfession && (
-                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 flex items-center gap-1">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--brand-soft)]  text-[var(--brand-primary)]  border border-purple-200 dark:border-purple-800 flex items-center gap-1">
                       <Briefcase size={11} /> Role: {results.interpretation.detectedProfession}
                     </span>
                   )}
@@ -561,7 +561,7 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
                   {results.interpretation?.detectedSkills?.map((s: string, idx: number) => (
                     <span
                       key={idx}
-                      className="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                      className="px-2 py-0.5 rounded text-[11px] font-medium bg-[var(--bg-soft)]  text-[var(--text-secondary)]  border border-[var(--border-subtle)] "
                     >
                       ⚡ {s.toUpperCase()}
                     </span>
@@ -573,13 +573,13 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
               <div className="space-y-3 max-h-[52vh] overflow-y-auto pr-1">
                 {results.results?.length === 0 ? (
                   <div className="py-12 text-center space-y-3">
-                    <div className="w-12 h-12 mx-auto rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center">
+                    <div className="w-12 h-12 mx-auto rounded-full bg-[var(--bg-soft)]  text-[var(--text-muted)] flex items-center justify-center">
                       <Users size={22} />
                     </div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    <h3 className="text-base font-bold text-[var(--text-primary)] ">
                       No users found
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                    <p className="text-xs text-[var(--text-muted)]  max-w-sm mx-auto">
                       No users found matching your search query. Try broadening your keywords, roles, or locations.
                     </p>
                     <div className="pt-2 flex items-center justify-center gap-3">
@@ -620,7 +620,7 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
                     return (
                       <div
                         key={candidate.id}
-                        className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors space-y-3 shadow-2xs"
+                        className="p-4 rounded-xl bg-[var(--bg-surface)]  border border-[var(--border-subtle)]  hover:border-[var(--border-subtle)]  transition-colors space-y-3 shadow-2xs"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                           <div className="flex items-start gap-3">
@@ -636,12 +636,12 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
                                     onClose();
                                     navigate(candidate.user_id ? `/profile/${candidate.user_id}` : '/cofounders');
                                   }}
-                                  className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white hover:text-brand-600 cursor-pointer"
+                                  className="text-xs sm:text-sm font-bold text-[var(--text-primary)]  hover:text-[var(--brand-primary)] cursor-pointer"
                                 >
                                   {name}
                                 </h4>
                                 {candidate.username && (
-                                  <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
+                                  <span className="text-xs text-[var(--brand-primary)]  font-mono">
                                     @{candidate.username}
                                   </span>
                                 )}
@@ -656,20 +656,20 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
                                 </span>
                               </div>
 
-                              <p className="text-xs text-slate-600 dark:text-slate-300 font-medium line-clamp-1">
+                              <p className="text-xs text-[var(--text-secondary)]  font-medium line-clamp-1">
                                 {candidate.headline}
                               </p>
 
-                              <div className="flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex-wrap">
+                              <div className="flex items-center gap-2.5 text-[11px] text-[var(--text-muted)]  mt-1 flex-wrap">
                                 {candidate.location && (
                                   <span className="flex items-center gap-1">
-                                    <MapPin size={11} className="text-brand-500" />
+                                    <MapPin size={11} className="text-[var(--brand-primary)]" />
                                     <span>{candidate.location}</span>
                                   </span>
                                 )}
                                 {candidate.education && (
-                                  <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
-                                    <GraduationCap size={11} className="text-purple-500" />
+                                  <span className="flex items-center gap-1 font-semibold text-[var(--text-secondary)] ">
+                                    <GraduationCap size={11} className="text-[var(--brand-primary)]" />
                                     <span>{candidate.education}</span>
                                   </span>
                                 )}
@@ -703,11 +703,11 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
                         </div>
 
                         {/* Match Reasons Pill Bar */}
-                        <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-100 dark:border-slate-800">
+                        <div className="flex flex-wrap gap-1 pt-1 border-t border-[var(--border-subtle)] ">
                           {candidate.matchReasons.map((reason: string, rIdx: number) => (
                             <span
                               key={rIdx}
-                              className="text-[10px] font-semibold px-2 py-0.5 rounded bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200/50 dark:border-brand-900/50"
+                              className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[var(--brand-soft)]  text-[var(--brand-primary)]  border border-brand-200/50 dark:border-brand-900/50"
                             >
                               ✓ {reason}
                             </span>
@@ -720,7 +720,7 @@ export const AIScoutModal: React.FC<AIScoutModalProps> = ({ isOpen, onClose }) =
                             {candidate.skills.split(',').slice(0, 4).map((sk: string, idx: number) => (
                               <span
                                 key={idx}
-                                className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[var(--bg-soft)]  text-[var(--text-secondary)] "
                               >
                                 {sk.trim()}
                               </span>

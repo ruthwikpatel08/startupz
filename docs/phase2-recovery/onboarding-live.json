@@ -1,0 +1,44 @@
+{
+  "auth": {
+    "signedIn": true,
+    "accessTokenPresent": true,
+    "clientServerProjectMatch": true
+  },
+  "request": {
+    "endpoint": "/rest/v1/rpc/complete_onboarding",
+    "payload": {
+      "p_answers": {
+        "role": "Student",
+        "fullName": "Recovery Browser Test",
+        "college": "Test University",
+        "year": "1st Year",
+        "major": "Test University",
+        "primaryRole": "Frontend",
+        "skills": [
+          "React"
+        ],
+        "hackathons": "0",
+        "lookingFor": [
+          "Hackathon teammates"
+        ],
+        "bio": "Test University"
+      },
+      "p_profile_consent": true,
+      "p_terms_consent": true
+    }
+  },
+  "response": {
+    "status": 200,
+    "onboarding_completed": true
+  },
+  "verification": {
+    "singleSubmit": true,
+    "databaseRowMatches": true,
+    "twoConsents": true,
+    "localStoreComplete": true,
+    "homeRedirect": true,
+    "refreshStaysHome": true,
+    "onboardingRevisitRedirects": true
+  },
+  "temporaryAccountRemoved": true
+}

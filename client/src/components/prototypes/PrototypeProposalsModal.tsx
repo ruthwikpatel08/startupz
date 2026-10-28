@@ -145,11 +145,11 @@ export const PrototypeProposalsModal: React.FC<PrototypeProposalsModalProps> = (
     >
       <div className="space-y-4">
         {/* Header subtitle */}
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800 text-xs">
-          <span className="text-slate-500 dark:text-slate-400">
+        <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]  text-xs">
+          <span className="text-[var(--text-muted)] ">
             Builders who submitted a "Build Together" proposal
           </span>
-          <span className="font-bold text-brand-600 dark:text-brand-400">
+          <span className="font-bold text-[var(--brand-primary)] ">
             {proposals.length} {proposals.length === 1 ? 'Proposal' : 'Proposals'}
           </span>
         </div>
@@ -159,20 +159,20 @@ export const PrototypeProposalsModal: React.FC<PrototypeProposalsModalProps> = (
             {[1, 2].map((i) => (
               <div
                 key={i}
-                className="h-28 rounded-xl bg-slate-100 dark:bg-dark-850 animate-pulse border border-slate-200 dark:border-slate-800"
+                className="h-28 rounded-xl bg-[var(--bg-soft)]  animate-pulse border border-[var(--border-subtle)] "
               />
             ))}
           </div>
         ) : proposals.length === 0 ? (
           <div className="py-12 text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-dark-850 text-slate-400 mx-auto flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-[var(--bg-soft)]  text-[var(--text-muted)] mx-auto flex items-center justify-center">
               <Users size={22} />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h4 className="text-sm font-bold text-[var(--text-primary)] ">
                 No Proposals Received Yet
               </h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1">
+              <p className="text-xs text-[var(--text-muted)]  max-w-sm mx-auto mt-1">
                 When other builders view your prototype and click <strong>"Build Together"</strong>, their introductions and proposals will appear here.
               </p>
             </div>
@@ -192,20 +192,20 @@ export const PrototypeProposalsModal: React.FC<PrototypeProposalsModalProps> = (
               return (
                 <div
                   key={prop.id}
-                  className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-dark-850 shadow-2xs space-y-3 transition-colors"
+                  className="p-4 rounded-xl border border-[var(--border-subtle)]  bg-[var(--bg-surface)]  shadow-2xs space-y-3 transition-colors"
                 >
                   {/* Proposer Info Header */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <Avatar src={senderAvatar} name={senderName} size="md" />
                       <div className="min-w-0">
-                        <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 truncate">
+                        <div className="text-xs font-bold text-[var(--text-primary)]  flex items-center gap-1.5 truncate">
                           <span>{senderName}</span>
                           {sender?.isVerified && (
-                            <ShieldCheck size={13} className="text-brand-600 shrink-0" />
+                            <ShieldCheck size={13} className="text-[var(--brand-primary)] shrink-0" />
                           )}
                         </div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        <div className="text-[11px] text-[var(--text-muted)]  truncate">
                           {senderHeadline}
                         </div>
                       </div>
@@ -230,35 +230,35 @@ export const PrototypeProposalsModal: React.FC<PrototypeProposalsModalProps> = (
                   </div>
 
                   {/* About the Builder */}
-                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-dark-900 border border-slate-100 dark:border-slate-800/60 text-xs">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                  <div className="p-2.5 rounded-lg bg-[var(--bg-primary)]  border border-[var(--border-subtle)]  text-xs">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">
                       About the Builder:
                     </div>
-                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-[var(--text-secondary)]  leading-relaxed whitespace-pre-wrap">
                       {prop.aboutBuilder}
                     </p>
                   </div>
 
                   {/* What they want to do */}
-                  <div className="p-2.5 rounded-lg bg-brand-50/60 dark:bg-brand-950/40 border border-brand-100 dark:border-brand-900/60 text-xs">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300 mb-1 flex items-center gap-1">
+                  <div className="p-2.5 rounded-lg bg-[var(--brand-soft)]  border border-brand-100 dark:border-brand-900/60 text-xs">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--brand-primary)]  mb-1 flex items-center gap-1">
                       <Sparkles size={11} /> Proposed Contribution:
                     </div>
-                    <p className="text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
+                    <p className="text-[var(--text-primary)]  leading-relaxed whitespace-pre-wrap">
                       {prop.contribution}
                     </p>
                   </div>
 
                   {/* Optional contact link */}
                   {prop.contactInfo && (
-                    <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <div className="text-xs text-[var(--text-muted)]  flex items-center gap-1">
                       <span className="font-semibold text-[11px]">Links / Contact:</span>
                       {prop.contactInfo.startsWith('http') ? (
                         <a
                           href={prop.contactInfo}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-brand-600 dark:text-brand-400 hover:underline inline-flex items-center gap-1"
+                          className="text-[var(--brand-primary)]  hover:underline inline-flex items-center gap-1"
                         >
                           <span className="truncate max-w-xs">{prop.contactInfo}</span>
                           <ExternalLink size={11} />
@@ -270,8 +270,8 @@ export const PrototypeProposalsModal: React.FC<PrototypeProposalsModalProps> = (
                   )}
 
                   {/* Actions footer */}
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 gap-2">
-                    <div className="text-[10px] text-slate-400">
+                  <div className="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)]  gap-2">
+                    <div className="text-[10px] text-[var(--text-muted)]">
                       {new Date(prop.createdAt).toLocaleDateString(undefined, {
                         month: 'short',
                         day: 'numeric',
@@ -284,7 +284,7 @@ export const PrototypeProposalsModal: React.FC<PrototypeProposalsModalProps> = (
                       <button
                         type="button"
                         onClick={() => handleOpenChat(prop.senderId)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-dark-800 hover:bg-slate-200 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)]  bg-[var(--bg-soft)]  hover:bg-[var(--bg-soft)] transition-colors cursor-pointer"
                       >
                         <MessageSquare size={13} />
                         <span>Chat</span>
@@ -307,7 +307,7 @@ export const PrototypeProposalsModal: React.FC<PrototypeProposalsModalProps> = (
                           type="button"
                           disabled={updatingId === prop.id}
                           onClick={() => handleUpdateStatus(prop.id, 'DECLINED')}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                         >
                           <XCircle size={13} />
                           <span>Decline</span>
@@ -321,7 +321,7 @@ export const PrototypeProposalsModal: React.FC<PrototypeProposalsModalProps> = (
           </div>
         )}
 
-        <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex justify-end pt-2 border-t border-[var(--border-subtle)] ">
           <button type="button" onClick={onClose} className="btn-secondary">
             Close
           </button>

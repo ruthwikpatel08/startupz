@@ -17,7 +17,7 @@ export const MembershipsPage: React.FC = () => {
       priceAnnual: 0,
       popular: false,
       icon: Rocket,
-      badgeColor: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+      badgeColor: 'bg-[var(--bg-soft)] text-[var(--text-secondary)]',
       buttonVariant: 'secondary',
       features: [
         'Full Directory Access (Startups & Problems)',
@@ -115,29 +115,29 @@ export const MembershipsPage: React.FC = () => {
 
         {/* Header Section */}
         <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-brand-50 dark:bg-brand-950/40 border border-brand-200/50 dark:border-brand-900/50 text-brand-700 dark:text-brand-300 text-xs font-semibold">
-            <Sparkles size={13} className="text-brand-600 dark:text-brand-400" />
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[var(--brand-soft)] border border-brand-200/50 dark:border-brand-900/50 text-[var(--brand-primary)] text-xs font-semibold">
+            <Sparkles size={13} className="text-[var(--brand-primary)]" />
             <span>Membership Plans</span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight">
             Accelerate Your Startup Journey
           </h1>
 
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
             Choose the right tier to match with co-founders, hire technical builders, pitch verified investors, and access platform discovery tools.
           </p>
 
           {/* Billing Cycle Toggle */}
           <div className="pt-3 flex items-center justify-center gap-2.5">
-            <span className={`text-xs font-medium ${billingCycle === 'monthly' ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+            <span className={`text-xs font-medium ${billingCycle === 'monthly' ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>
               Monthly
             </span>
 
             <button
               type="button"
               onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-              className="relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-slate-200 dark:bg-dark-800 transition-colors duration-150 ease-in-out focus:outline-none"
+              className="relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-[var(--bg-soft)] transition-colors duration-150 ease-in-out focus:outline-none"
               aria-label="Toggle billing cycle"
             >
               <span
@@ -148,7 +148,7 @@ export const MembershipsPage: React.FC = () => {
             </button>
 
             <div className="flex items-center gap-1.5">
-              <span className={`text-xs font-medium ${billingCycle === 'annual' ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
+              <span className={`text-xs font-medium ${billingCycle === 'annual' ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>
                 Annual
               </span>
               <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-900/50 rounded">
@@ -170,7 +170,7 @@ export const MembershipsPage: React.FC = () => {
                 className={`relative flex flex-col justify-between card-base p-6 transition-colors ${
                   plan.popular
                     ? 'border-brand-600 dark:border-brand-500 shadow-xs'
-                    : 'hover:border-slate-300 dark:hover:border-dark-700'
+                    : 'hover:border-[var(--border-subtle)]'
                 }`}
               >
                 {/* Popular Badge */}
@@ -184,24 +184,24 @@ export const MembershipsPage: React.FC = () => {
                   {/* Header */}
                   <div className="flex items-center justify-between gap-3 mb-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-md bg-slate-100 dark:bg-dark-850 flex items-center justify-center text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-dark-800">
+                      <div className="w-8 h-8 rounded-md bg-[var(--bg-soft)] flex items-center justify-center text-[var(--text-secondary)] border border-[var(--border-subtle)]">
                         <Icon size={16} />
                       </div>
-                      <h2 className="text-base font-bold text-slate-900 dark:text-white">{plan.name}</h2>
+                      <h2 className="text-base font-bold text-[var(--text-primary)]">{plan.name}</h2>
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-500 dark:text-slate-400 min-h-[32px] mb-5">
+                  <p className="text-xs text-[var(--text-muted)] min-h-[32px] mb-5">
                     {plan.tagline}
                   </p>
 
                   {/* Price */}
-                  <div className="mb-5 pb-5 border-b border-slate-100 dark:border-dark-800">
+                  <div className="mb-5 pb-5 border-b border-[var(--border-subtle)]">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
+                      <span className="text-3xl sm:text-4xl font-bold text-[var(--text-primary)] tracking-tight">
                         ${price}
                       </span>
-                      <span className="text-xs font-normal text-slate-400">
+                      <span className="text-xs font-normal text-[var(--text-muted)]">
                         / month {billingCycle === 'annual' && plan.priceAnnual > 0 ? '(billed annually)' : ''}
                       </span>
                     </div>
@@ -209,19 +209,19 @@ export const MembershipsPage: React.FC = () => {
 
                   {/* Included Features */}
                   <div className="space-y-2.5 mb-6">
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--text-muted)]">
                       What's Included:
                     </p>
                     {plan.features.map((feat, i) => (
-                      <div key={i} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
+                      <div key={i} className="flex items-start gap-2 text-xs text-[var(--text-secondary)]">
                         <Check size={14} className="text-emerald-600 shrink-0 mt-0.5" />
                         <span>{feat}</span>
                       </div>
                     ))}
 
                     {plan.notIncluded.map((feat, i) => (
-                      <div key={i} className="flex items-start gap-2 text-xs text-slate-400 line-through">
-                        <div className="w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-dark-700 shrink-0 mt-0.5 flex items-center justify-center text-[9px]">
+                      <div key={i} className="flex items-start gap-2 text-xs text-[var(--text-muted)] line-through">
+                        <div className="w-3.5 h-3.5 rounded-full border border-[var(--border-subtle)] shrink-0 mt-0.5 flex items-center justify-center text-[9px]">
                           ✕
                         </div>
                         <span>{feat}</span>
@@ -231,7 +231,7 @@ export const MembershipsPage: React.FC = () => {
                 </div>
 
                 {/* CTA Button */}
-                <div className="pt-4 border-t border-slate-100 dark:border-dark-800">
+                <div className="pt-4 border-t border-[var(--border-subtle)]">
                   <Link
                     to={user ? '/' : '/register'}
                     className={`w-full inline-flex items-center justify-center gap-1.5 py-2 px-4 text-xs font-semibold rounded-md transition-colors ${
@@ -251,17 +251,17 @@ export const MembershipsPage: React.FC = () => {
 
         {/* Trust Badges */}
         <div className="card-base p-4 text-center">
-          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs font-medium text-slate-600 dark:text-slate-400">
+          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs font-medium text-[var(--text-secondary)]">
             <div className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-brand-600 dark:text-brand-400" />
+              <ShieldCheck size={16} className="text-[var(--brand-primary)]" />
               <span>Verified Ecosystem Profiles</span>
             </div>
             <div className="flex items-center gap-2">
-              <Zap size={16} className="text-brand-600 dark:text-brand-400" />
+              <Zap size={16} className="text-[var(--brand-primary)]" />
               <span>Instant AI Scout Bot Access</span>
             </div>
             <div className="flex items-center gap-2">
-              <Crown size={16} className="text-brand-600 dark:text-brand-400" />
+              <Crown size={16} className="text-[var(--brand-primary)]" />
               <span>Cancel or Change Plan Anytime</span>
             </div>
           </div>
@@ -270,11 +270,11 @@ export const MembershipsPage: React.FC = () => {
         {/* FAQ Section */}
         <div className="max-w-2xl mx-auto space-y-5">
           <div className="text-center space-y-1">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center justify-center gap-1.5">
-              <HelpCircle size={18} className="text-brand-600 dark:text-brand-400" />
+            <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center justify-center gap-1.5">
+              <HelpCircle size={18} className="text-[var(--brand-primary)]" />
               <span>Frequently Asked Questions</span>
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-[var(--text-muted)]">
               Common questions about HookZ memberships and features.
             </p>
           </div>
@@ -285,8 +285,8 @@ export const MembershipsPage: React.FC = () => {
                 key={idx}
                 className="card-base p-3.5 space-y-1"
               >
-                <h3 className="text-xs font-semibold text-slate-900 dark:text-white">{faq.q}</h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{faq.a}</p>
+                <h3 className="text-xs font-semibold text-[var(--text-primary)]">{faq.q}</h3>
+                <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{faq.a}</p>
               </div>
             ))}
           </div>

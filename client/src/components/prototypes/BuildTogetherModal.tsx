@@ -146,14 +146,14 @@ export const BuildTogetherModal: React.FC<BuildTogetherModalProps> = ({
     >
       {!user ? (
         <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
-          <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+          <div className="w-12 h-12 rounded-full bg-[var(--bg-soft)]  text-[var(--text-secondary)]  flex items-center justify-center border border-[var(--border-subtle)] ">
             <Lock size={20} />
           </div>
           <div className="space-y-1">
-            <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+            <h4 className="text-sm font-bold text-[var(--text-primary)] ">
               Sign In to Propose Building Together
             </h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+            <p className="text-xs text-[var(--text-muted)]  max-w-sm mx-auto">
               Connect directly with {authorName} and collaborate to turn this prototype sample into a live venture.
             </p>
           </div>
@@ -179,10 +179,10 @@ export const BuildTogetherModal: React.FC<BuildTogetherModalProps> = ({
             <CheckCircle2 size={24} />
           </div>
           <div className="space-y-1">
-            <h4 className="text-base font-bold text-slate-900 dark:text-white">
+            <h4 className="text-base font-bold text-[var(--text-primary)] ">
               Proposal Sent Successfully!
             </h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+            <p className="text-xs text-[var(--text-muted)]  max-w-sm mx-auto">
               {authorName} has received your introduction and what you want to build. They will review it in their Proposals dashboard.
             </p>
           </div>
@@ -190,20 +190,20 @@ export const BuildTogetherModal: React.FC<BuildTogetherModalProps> = ({
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Prototype & Creator Banner */}
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+          <div className="p-3 rounded-xl bg-[var(--bg-primary)]  border border-[var(--border-subtle)]  flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
               <Avatar src={authorAvatar} name={authorName} size="sm" />
               <div className="min-w-0">
-                <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                <div className="text-xs font-bold text-[var(--text-primary)]  truncate">
                   {authorName}
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                <div className="text-[11px] text-[var(--text-muted)]  truncate">
                   {authorHeadline}
                 </div>
               </div>
             </div>
             <div className="shrink-0 text-right">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[var(--brand-soft)]  text-[var(--brand-primary)]  border border-brand-200 dark:border-brand-800">
                 <Hammer size={10} /> Collaboration
               </span>
             </div>
@@ -211,10 +211,10 @@ export const BuildTogetherModal: React.FC<BuildTogetherModalProps> = ({
 
           {/* Question 1: Describe About You */}
           <div>
-            <label className="block text-xs font-semibold text-slate-900 dark:text-white mb-1">
+            <label className="block text-xs font-semibold text-[var(--text-primary)]  mb-1">
               Describe About Yourself <span className="text-rose-500">*</span>
             </label>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
+            <p className="text-[11px] text-[var(--text-muted)]  mb-1.5">
               Tell the creator who you are, your background, skills, current role, or past projects.
             </p>
             <textarea
@@ -229,10 +229,10 @@ export const BuildTogetherModal: React.FC<BuildTogetherModalProps> = ({
 
           {/* Question 2: What You Want to Do for this Prototype */}
           <div>
-            <label className="block text-xs font-semibold text-slate-900 dark:text-white mb-1">
+            <label className="block text-xs font-semibold text-[var(--text-primary)]  mb-1">
               What Do You Want to Do for this Prototype? <span className="text-rose-500">*</span>
             </label>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
+            <p className="text-[11px] text-[var(--text-muted)]  mb-1.5">
               Explain how you want to contribute, what features you want to build, or your proposed collaboration.
             </p>
             <textarea
@@ -247,8 +247,8 @@ export const BuildTogetherModal: React.FC<BuildTogetherModalProps> = ({
 
           {/* Optional: Portfolio or Contact Link */}
           <div>
-            <label className="block text-xs font-semibold text-slate-900 dark:text-white mb-1">
-              Portfolio / GitHub / Contact Link <span className="text-slate-400 text-[11px] font-normal">(Optional)</span>
+            <label className="block text-xs font-semibold text-[var(--text-primary)]  mb-1">
+              Portfolio / GitHub / Contact Link <span className="text-[var(--text-muted)] text-[11px] font-normal">(Optional)</span>
             </label>
             <input
               type="text"
@@ -267,7 +267,7 @@ export const BuildTogetherModal: React.FC<BuildTogetherModalProps> = ({
           )}
 
           {/* Buttons */}
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-subtle)] ">
             <button type="button" onClick={onClose} disabled={loading} className="btn-secondary">
               Cancel
             </button>

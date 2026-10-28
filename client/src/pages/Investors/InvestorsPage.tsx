@@ -197,10 +197,10 @@ export const InvestorsPage: React.FC = () => {
       
       {/* Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-          <TrendingUp className="text-brand-600 dark:text-brand-400" size={24} /> Investor Directory & Angel Network
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
+          <TrendingUp className="text-[var(--brand-primary)]" size={24} /> Investor Directory & Angel Network
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
+        <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-1 max-w-2xl">
           Discover vetted venture funds, syndicates, and angel investors actively backing early-stage startups.
         </p>
       </div>
@@ -208,7 +208,7 @@ export const InvestorsPage: React.FC = () => {
       {/* Filters Toolbar */}
       <div className="card-base p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
         <div className="relative">
-          <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+          <Search size={14} className="absolute left-3 top-2.5 text-[var(--text-muted)]" />
           <input
             type="text"
             value={search}
@@ -265,7 +265,7 @@ export const InvestorsPage: React.FC = () => {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-56 card-base animate-pulse bg-slate-100 dark:bg-dark-850" />
+            <div key={i} className="h-56 card-base animate-pulse bg-[var(--bg-soft)]" />
           ))}
         </div>
       ) : error ? (
@@ -273,10 +273,10 @@ export const InvestorsPage: React.FC = () => {
           <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
             <AlertCircle size={20} />
           </div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]">
             Unable to Load Investors
           </h3>
-          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+          <p className="text-xs text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
             {error}
           </p>
           <div className="pt-1">
@@ -298,15 +298,15 @@ export const InvestorsPage: React.FC = () => {
             onAction={handleResetFilters}
           />
         ) : (
-          <div className="card-base p-8 sm:p-10 text-center space-y-4 border-dashed border-2 border-slate-300 dark:border-dark-700 bg-slate-50/40 dark:bg-dark-850/40">
-            <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center mx-auto border border-brand-200/60 dark:border-brand-900/60">
+          <div className="card-base p-8 sm:p-10 text-center space-y-4 border-dashed border-2 border-[var(--border-subtle)] bg-[var(--bg-primary)]">
+            <div className="w-12 h-12 rounded-xl bg-[var(--brand-soft)] text-[var(--brand-primary)] flex items-center justify-center mx-auto border border-brand-200/60 dark:border-brand-900/60">
               <TrendingUp size={22} />
             </div>
             <div className="max-w-xl mx-auto space-y-2">
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+              <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">
                 Investor &amp; Venture Directory Open for Registration
               </h3>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
                 There are currently no public investor profiles listed in the directory. If you are an angel backer, syndicate lead, or venture fund investing in early-stage teams, you can register your investment thesis to discover high-potential startups on HookZ. Founders can check back regularly as verified investment partners join.
               </p>
             </div>
@@ -324,7 +324,7 @@ export const InvestorsPage: React.FC = () => {
                 <RefreshCw size={13} /> Check Again
               </button>
             </div>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500">
+            <p className="text-[11px] text-[var(--text-muted)]">
               Accredited funds and angel syndicate profiles appear here once verified. Check back regularly.
             </p>
           </div>
@@ -334,7 +334,7 @@ export const InvestorsPage: React.FC = () => {
           {investors.map((inv) => (
             <div
               key={inv.id}
-              className="card-base p-5 flex flex-col justify-between space-y-4 hover:border-slate-300 dark:hover:border-dark-700 transition-colors"
+              className="card-base p-5 flex flex-col justify-between space-y-4 hover:border-[var(--border-subtle)] transition-colors"
             >
               <div className="space-y-3">
                 {/* Header */}
@@ -348,7 +348,7 @@ export const InvestorsPage: React.FC = () => {
                     />
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-sm text-slate-900 dark:text-white truncate">
+                        <h3 className="font-semibold text-sm text-[var(--text-primary)] truncate">
                           {inv.organization}
                         </h3>
                         <VerificationBadge type={inv.isVerified ? 'Verified Investor' : null} />
@@ -357,7 +357,7 @@ export const InvestorsPage: React.FC = () => {
                             href={sanitizeExternalUrl(inv.website)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-slate-400 hover:text-brand-600 transition-colors p-0.5 rounded"
+                            className="text-[var(--text-muted)] hover:text-[var(--brand-primary)] transition-colors p-0.5 rounded"
                             title="Visit Official Website"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -365,7 +365,7 @@ export const InvestorsPage: React.FC = () => {
                           </a>
                         )}
                       </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                      <p className="text-xs text-[var(--text-muted)]">
                         {inv.investorType} • {inv.location}
                       </p>
                     </div>
@@ -379,24 +379,24 @@ export const InvestorsPage: React.FC = () => {
                 </div>
 
                 {/* About / Thesis */}
-                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-2">
+                <p className="text-xs text-[var(--text-secondary)] leading-relaxed line-clamp-2">
                   {inv.about}
                 </p>
 
                 {/* Preferred Stages & Portfolio */}
                 <div className="space-y-1 text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-slate-400 text-[11px]">
+                    <span className="font-medium text-[var(--text-muted)] text-[11px]">
                       Stages:
                     </span>
-                    <span className="text-slate-700 dark:text-slate-300 font-medium">{inv.preferredStages}</span>
+                    <span className="text-[var(--text-secondary)] font-medium">{inv.preferredStages}</span>
                   </div>
                   {inv.portfolio && (
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-400 text-[11px]">
+                      <span className="font-medium text-[var(--text-muted)] text-[11px]">
                         Portfolio:
                       </span>
-                      <span className="text-slate-500 dark:text-slate-400 truncate">{inv.portfolio}</span>
+                      <span className="text-[var(--text-muted)] truncate">{inv.portfolio}</span>
                     </div>
                   )}
                 </div>
@@ -406,7 +406,7 @@ export const InvestorsPage: React.FC = () => {
                   {inv.industries.split(',').map((ind, idx) => (
                     <span
                       key={idx}
-                      className="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-dark-800"
+                      className="text-[10px] font-medium px-2 py-0.5 rounded bg-[var(--bg-soft)] text-[var(--text-secondary)] border border-[var(--border-subtle)]"
                     >
                       {ind.trim()}
                     </span>
@@ -415,13 +415,13 @@ export const InvestorsPage: React.FC = () => {
               </div>
 
               {/* Actions Footer */}
-              <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between">
+              <div className="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between">
                 <button
                   onClick={() => handleToggleSave(inv.id)}
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                     inv.isSaved
-                      ? 'text-brand-600 bg-brand-50 dark:bg-brand-950/40'
-                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                      ? 'text-[var(--brand-primary)] bg-[var(--brand-soft)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   <Bookmark size={14} fill={inv.isSaved ? 'currentColor' : 'none'} />
@@ -450,12 +450,12 @@ export const InvestorsPage: React.FC = () => {
       )}
 
       {/* Permanent Educational Guide & Capital Pillars */}
-      <section className="pt-8 border-t border-slate-200/80 dark:border-dark-800 space-y-6">
+      <section className="pt-8 border-t border-[var(--border-subtle)] space-y-6">
         <div className="space-y-1">
-          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+          <h2 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">
             Startup Capital &amp; Venture Partnerships on HookZ
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-xs sm:text-sm text-[var(--text-muted)]">
             Understand the funding ecosystem, how early-stage teams present traction, and how check-writers evaluate founders.
           </p>
         </div>
@@ -467,15 +467,15 @@ export const InvestorsPage: React.FC = () => {
               <div className="w-9 h-9 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/40">
                 <DollarSign size={18} />
               </div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              <h3 className="text-sm font-semibold text-[var(--text-primary)]">
                 Types of Startup Backers
               </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                 From individual angel investors and micro-syndicates to institutional seed venture funds and university accelerators. Different stages require distinct capital partners aligned with your product maturity and growth trajectory.
               </p>
             </div>
-            <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
-              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            <div className="pt-2 border-t border-[var(--border-subtle)]">
+              <span className="text-[11px] font-medium text-[var(--text-muted)]">
                 Stages: Pre-Seed, Seed, Series A, Accelerators
               </span>
             </div>
@@ -484,20 +484,20 @@ export const InvestorsPage: React.FC = () => {
           {/* Pillar 2: How Founders Pitch Traction */}
           <div className="card-base p-5 flex flex-col justify-between space-y-3">
             <div className="space-y-2.5">
-              <div className="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-100 dark:border-brand-900/40">
+              <div className="w-9 h-9 rounded-lg bg-[var(--brand-soft)] text-[var(--brand-primary)] flex items-center justify-center border border-[var(--border-subtle)]">
                 <Rocket size={18} />
               </div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              <h3 className="text-sm font-semibold text-[var(--text-primary)]">
                 How Founders Connect
               </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                 Share verifiable milestones, product prototypes, and co-founder backgrounds directly. Avoid cold generic outreach by matching your venture's domain focus directly with an investor's declared sector thesis.
               </p>
             </div>
-            <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+            <div className="pt-2 border-t border-[var(--border-subtle)]">
               <Link
                 to="/startups"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--brand-primary)] hover:underline"
               >
                 Explore Ventures <ArrowRight size={12} />
               </Link>
@@ -507,20 +507,20 @@ export const InvestorsPage: React.FC = () => {
           {/* Pillar 3: Information for Accredited Investors */}
           <div className="card-base p-5 flex flex-col justify-between space-y-3">
             <div className="space-y-2.5">
-              <div className="w-9 h-9 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-100 dark:border-purple-900/40">
+              <div className="w-9 h-9 rounded-lg bg-[var(--brand-soft)] text-[var(--brand-primary)] flex items-center justify-center border border-[var(--border-subtle)]">
                 <ShieldCheck size={18} />
               </div>
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              <h3 className="text-sm font-semibold text-[var(--text-primary)]">
                 For Accredited Investors &amp; Funds
               </h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                 Angel syndicates and VC partners can register verified profiles, specify check sizes, and review student and first-time founder submissions across AI, B2B SaaS, ClimateTech, and FinTech.
               </p>
             </div>
-            <div className="pt-2 border-t border-slate-100 dark:border-dark-800">
+            <div className="pt-2 border-t border-[var(--border-subtle)]">
               <Link
                 to="/profile"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--brand-primary)] hover:underline"
               >
                 Join as Investor <ArrowRight size={12} />
               </Link>
@@ -529,42 +529,42 @@ export const InvestorsPage: React.FC = () => {
         </div>
 
         {/* 3-Step Matchmaking Workflow */}
-        <div className="card-base p-5 sm:p-6 space-y-4 bg-slate-50/50 dark:bg-dark-850/50">
-          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        <div className="card-base p-5 sm:p-6 space-y-4 bg-[var(--bg-primary)]">
+          <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[var(--text-muted)]">
             The Venture Connection Process
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             <div className="flex items-start gap-3">
-              <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+              <span className="w-6 h-6 rounded-full bg-[var(--brand-soft)] text-[var(--brand-primary)] font-bold flex items-center justify-center shrink-0 text-xs">
                 1
               </span>
               <div className="space-y-1">
-                <span className="font-semibold text-slate-900 dark:text-white block">Discover Aligned Theses</span>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                <span className="font-semibold text-[var(--text-primary)] block">Discover Aligned Theses</span>
+                <p className="text-[var(--text-secondary)] leading-relaxed">
                   Filter by sector focus, typical ticket size, and investment stage to find genuine partners.
                 </p>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+              <span className="w-6 h-6 rounded-full bg-[var(--brand-soft)] text-[var(--brand-primary)] font-bold flex items-center justify-center shrink-0 text-xs">
                 2
               </span>
               <div className="space-y-1">
-                <span className="font-semibold text-slate-900 dark:text-white block">Submit Concise Traction Overviews</span>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                <span className="font-semibold text-[var(--text-primary)] block">Submit Concise Traction Overviews</span>
+                <p className="text-[var(--text-secondary)] leading-relaxed">
                   Provide crisp metrics on customer validation, team roles, and current capital requirements.
                 </p>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <span className="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-950 text-brand-700 dark:text-brand-300 font-bold flex items-center justify-center shrink-0 text-xs">
+              <span className="w-6 h-6 rounded-full bg-[var(--brand-soft)] text-[var(--brand-primary)] font-bold flex items-center justify-center shrink-0 text-xs">
                 3
               </span>
               <div className="space-y-1">
-                <span className="font-semibold text-slate-900 dark:text-white block">Direct Founder-Funder Dialogue</span>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                <span className="font-semibold text-[var(--text-primary)] block">Direct Founder-Funder Dialogue</span>
+                <p className="text-[var(--text-secondary)] leading-relaxed">
                   Engage directly without broker markups or referral fee bottlenecks.
                 </p>
               </div>

@@ -398,7 +398,7 @@ export const ProjectAiScoutControl: React.FC<ProjectAiScoutControlProps> = ({
               ? dragState.isValid
                 ? 'text-emerald-300'
                 : 'text-rose-300'
-              : 'text-slate-400 opacity-60'
+              : 'text-[var(--text-muted)] opacity-60'
           }`}
         />
 
@@ -408,7 +408,7 @@ export const ProjectAiScoutControl: React.FC<ProjectAiScoutControlProps> = ({
               ? dragState.isValid
                 ? 'bg-emerald-500/30 text-emerald-300'
                 : 'bg-rose-500/30 text-rose-300'
-              : 'bg-brand-500/20 text-brand-400'
+              : 'bg-brand-500/20 text-[var(--brand-primary)]'
           }`}
         >
           {isAnalyzing ? (
@@ -435,7 +435,7 @@ export const ProjectAiScoutControl: React.FC<ProjectAiScoutControlProps> = ({
               </span>
             )
           ) : (
-            <span className="text-[10px] font-semibold text-brand-300 bg-brand-500/20 px-1.5 py-0.2 rounded-full border border-brand-500/30">
+            <span className="text-[10px] font-semibold text-[var(--brand-primary)] bg-brand-500/20 px-1.5 py-0.2 rounded-full border border-brand-500/30">
               @mention
             </span>
           )}

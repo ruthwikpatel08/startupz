@@ -24,12 +24,12 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   const label = actionText || actionLabel;
 
   return (
-    <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-dark-900 shadow-subtle">
-      <div className="w-10 h-10 rounded-md bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 flex items-center justify-center mb-3 border border-slate-200 dark:border-slate-700">
+    <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-subtle">
+      <div className="w-10 h-10 rounded-md bg-[var(--bg-soft)] text-[var(--text-secondary)] flex items-center justify-center mb-3 border border-[var(--border-subtle)]">
         <Icon size={18} />
       </div>
-      <h4 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-white mb-1">{title}</h4>
-      <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mb-5 leading-relaxed">
+      <h4 className="text-sm sm:text-base font-semibold text-[var(--text-primary)] mb-1">{title}</h4>
+      <p className="text-xs sm:text-sm text-[var(--text-muted)] max-w-md mb-5 leading-relaxed">
         {description}
       </p>
       {label && (

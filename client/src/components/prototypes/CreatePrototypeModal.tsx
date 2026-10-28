@@ -333,15 +333,15 @@ export const CreatePrototypeModal: React.FC<CreatePrototypeModalProps> = ({
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Banner note */}
         <div className="p-3 rounded-xl bg-gradient-to-r from-brand-50/80 to-blue-50/80 dark:from-brand-950/40 dark:to-dark-850 border border-brand-200/80 dark:border-brand-900/60 text-xs flex items-start gap-2.5">
-          <Sparkles size={16} className="text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" />
-          <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+          <Sparkles size={16} className="text-[var(--brand-primary)]  shrink-0 mt-0.5" />
+          <p className="text-[var(--text-secondary)]  leading-relaxed">
             Showcase what you built — not completely, just an early working sample, website, or prototype. Others can test your demo and click <strong>"Build Together"</strong> to collaborate!
           </p>
         </div>
 
         {/* 1. Prototype Title */}
         <div>
-          <label className="block text-xs font-bold text-slate-900 dark:text-white mb-1">
+          <label className="block text-xs font-bold text-[var(--text-primary)]  mb-1">
             Prototype Title / Project Name <span className="text-rose-500">*</span>
           </label>
           <input
@@ -356,12 +356,12 @@ export const CreatePrototypeModal: React.FC<CreatePrototypeModalProps> = ({
 
         {/* 2. The Question / Problem */}
         <div>
-          <label className="block text-xs font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-1.5">
+          <label className="block text-xs font-bold text-[var(--text-primary)]  mb-1 flex items-center gap-1.5">
             <HelpCircle size={14} className="text-amber-500" />
             <span>What is the Problem? (The Question)</span>
             <span className="text-rose-500">*</span>
           </label>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
+          <p className="text-[11px] text-[var(--text-muted)]  mb-1.5">
             Clearly explain what problem or unmet challenge this prototype is created to solve.
           </p>
           <textarea
@@ -376,12 +376,12 @@ export const CreatePrototypeModal: React.FC<CreatePrototypeModalProps> = ({
 
         {/* 3. The Solution */}
         <div>
-          <label className="block text-xs font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-1.5">
+          <label className="block text-xs font-bold text-[var(--text-primary)]  mb-1 flex items-center gap-1.5">
             <CheckCircle2 size={14} className="text-emerald-500" />
             <span>What is the Solution for that?</span>
             <span className="text-rose-500">*</span>
           </label>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
+          <p className="text-[11px] text-[var(--text-muted)]  mb-1.5">
             Explain how your prototype provides the solution to the problem above.
           </p>
           <textarea
@@ -396,11 +396,11 @@ export const CreatePrototypeModal: React.FC<CreatePrototypeModalProps> = ({
 
         {/* 4. What was built / Sample Overview */}
         <div>
-          <label className="block text-xs font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-1.5">
-            <Boxes size={14} className="text-brand-600 dark:text-brand-400" />
+          <label className="block text-xs font-bold text-[var(--text-primary)]  mb-1 flex items-center gap-1.5">
+            <Boxes size={14} className="text-[var(--brand-primary)] " />
             <span>What Did You Build? (Sample Overview)</span>
           </label>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
+          <p className="text-[11px] text-[var(--text-muted)]  mb-1.5">
             Describe what you built so far (not finished, just a sample / working demonstration).
           </p>
           <textarea
@@ -413,29 +413,29 @@ export const CreatePrototypeModal: React.FC<CreatePrototypeModalProps> = ({
         </div>
 
         {/* 5. Live Website URL & Media Upload (One or both required) */}
-        <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800 space-y-3">
+        <div className="p-3.5 rounded-xl bg-[var(--bg-primary)]  border border-[var(--border-subtle)]  space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-900 dark:text-white">
+            <span className="text-xs font-bold text-[var(--text-primary)] ">
               Website URL or Demo Video / Photo
             </span>
-            <span className="text-[10px] font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 px-2 py-0.5 rounded-md border border-brand-200 dark:border-brand-800">
+            <span className="text-[10px] font-semibold text-[var(--brand-primary)]  bg-[var(--brand-soft)]  px-2 py-0.5 rounded-md border border-brand-200 dark:border-brand-800">
               At least 1 required
             </span>
           </div>
 
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+          <p className="text-[11px] text-[var(--text-muted)]  leading-relaxed">
             If you provide a Website URL, media uploading is optional. If you upload a video or photo, the website URL is optional.
           </p>
 
           {/* Website URL Input */}
           <div>
-            <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+            <label className="block text-[11px] font-semibold text-[var(--text-secondary)]  mb-1 flex items-center gap-1">
               <Globe size={13} className="text-blue-500" />
               <span>Live Website / Prototype URL</span>
               {mediaFile ? (
-                <span className="text-slate-400 font-normal text-[10px]">(Optional since media is uploaded)</span>
+                <span className="text-[var(--text-muted)] font-normal text-[10px]">(Optional since media is uploaded)</span>
               ) : (
-                <span className="text-slate-500 text-[10px] font-normal">(Required if no media uploaded)</span>
+                <span className="text-[var(--text-muted)] text-[10px] font-normal">(Required if no media uploaded)</span>
               )}
             </label>
             <input
@@ -449,22 +449,22 @@ export const CreatePrototypeModal: React.FC<CreatePrototypeModalProps> = ({
 
           {/* Media Upload Area */}
           <div>
-            <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
-              <Video size={13} className="text-indigo-500" />
+            <label className="block text-[11px] font-semibold text-[var(--text-secondary)]  mb-1 flex items-center gap-1">
+              <Video size={13} className="text-[var(--brand-primary)]" />
               <span>Demo Video (Less than 60s) or Photo</span>
               {websiteUrl.trim() ? (
-                <span className="text-slate-400 font-normal text-[10px]">(Optional since website URL is provided)</span>
+                <span className="text-[var(--text-muted)] font-normal text-[10px]">(Optional since website URL is provided)</span>
               ) : (
-                <span className="text-slate-500 text-[10px] font-normal">(Required if no website URL provided)</span>
+                <span className="text-[var(--text-muted)] text-[10px] font-normal">(Required if no website URL provided)</span>
               )}
             </label>
 
             {mediaPreview ? (
-              <div className="relative p-2 rounded-xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-800 space-y-2">
+              <div className="relative p-2 rounded-xl bg-[var(--bg-surface)]  border border-[var(--border-subtle)]  space-y-2">
                 <div className="flex items-center justify-between pb-1 text-xs">
                   <div className="flex items-center gap-2">
                     {mediaType === 'video' ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--brand-primary)] ">
                         <Video size={13} /> Video ({videoDuration}s / &lt;60s max)
                       </span>
                     ) : (
@@ -492,7 +492,7 @@ export const CreatePrototypeModal: React.FC<CreatePrototypeModalProps> = ({
                     />
                   </div>
                 ) : (
-                  <div className="max-h-56 overflow-hidden rounded-lg bg-slate-100 dark:bg-dark-850 flex items-center justify-center">
+                  <div className="max-h-56 overflow-hidden rounded-lg bg-[var(--bg-soft)]  flex items-center justify-center">
                     <img
                       src={mediaPreview}
                       alt="Prototype preview"
@@ -504,7 +504,7 @@ export const CreatePrototypeModal: React.FC<CreatePrototypeModalProps> = ({
             ) : (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-xl p-4 text-center cursor-pointer transition-colors bg-white dark:bg-dark-900"
+                className="border-2 border-dashed border-[var(--border-subtle)]  hover:border-brand-500 dark:hover:border-brand-500 rounded-xl p-4 text-center cursor-pointer transition-colors bg-[var(--bg-surface)] "
               >
                 <input
                   ref={fileInputRef}
@@ -514,13 +514,13 @@ export const CreatePrototypeModal: React.FC<CreatePrototypeModalProps> = ({
                   onChange={handleFileSelect}
                 />
                 <div className="flex flex-col items-center justify-center space-y-1.5">
-                  <div className="w-9 h-9 rounded-full bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-full bg-[var(--brand-soft)]  text-[var(--brand-primary)]  flex items-center justify-center">
                     <Upload size={16} />
                   </div>
-                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <div className="text-xs font-bold text-[var(--text-primary)] ">
                     Click to upload Demo Video or Photo
                   </div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 max-w-xs">
+                  <p className="text-[10px] text-[var(--text-muted)]  max-w-xs">
                     Video limit: <strong>Less than 60s</strong> (&lt;30MB). Image limit: <strong>Max 5MB</strong>.
                   </p>
                 </div>
@@ -537,7 +537,7 @@ export const CreatePrototypeModal: React.FC<CreatePrototypeModalProps> = ({
         )}
 
         {/* Modal Actions */}
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-subtle)] ">
           <button type="button" onClick={onClose} disabled={submitting} className="btn-secondary">
             Cancel
           </button>

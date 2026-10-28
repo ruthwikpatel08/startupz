@@ -1,0 +1,12 @@
+PASS npm --prefix client run build (TypeScript + Vite, 2114 modules)
+PASS npm --prefix client run lint (0 errors; 342 warnings)
+PASS node scripts/test-onboarding.mjs
+PASS node scripts/test-onboarding-db.mjs (includes missing-table reproduction and repair)
+PASS node scripts/test-onboarding-live.mjs (real Auth/PostgREST/DB, cleanup complete)
+PASS node scripts/test-product-theme.cjs (8 populated/empty product routes x 2 widths x 2 themes, dialogs, exact button/card tokens, persisted toggle)
+PASS node scripts/test-product-theme.cjs --controls (desktop)
+PASS node scripts/test-product-theme.cjs --controls --mobile (mobile)
+PASS node scripts/test-phase1-ui.cjs --recovery (6 landing/auth viewport-theme combinations; 3 onboarding branches; 18 routes x 2 themes)
+PASS git diff --check
+LOCKED files: no diff in PublicLandingPage.tsx/.css, pages/Auth, components/auth, index.css, tailwind.config.js, client/index.html
+12 login/signup screenshots byte-identical to prior baseline. Landing differences limited to floating illustration/rendering pixels; source unchanged.

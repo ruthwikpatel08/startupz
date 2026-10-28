@@ -88,12 +88,12 @@ export const SendPitchModal: React.FC<SendPitchModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title={`Pitch to ${investor.organization}`} maxWidth="lg">
       {!user ? (
         <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
-          <div className="w-10 h-10 rounded-md bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+          <div className="w-10 h-10 rounded-md bg-[var(--bg-soft)] text-[var(--text-secondary)] flex items-center justify-center border border-[var(--border-subtle)]">
             <Lock size={18} />
           </div>
           <div className="space-y-1">
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Sign In Required to Send Pitch</h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+            <h4 className="text-sm font-semibold text-[var(--text-primary)]">Sign In Required to Send Pitch</h4>
+            <p className="text-xs text-[var(--text-muted)] max-w-xs mx-auto">
               Please sign in to pitch your startup directly to {investor.organization}.
             </p>
           </div>
@@ -122,18 +122,18 @@ export const SendPitchModal: React.FC<SendPitchModalProps> = ({
           <div className="w-10 h-10 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-800">
             <CheckCircle size={20} />
           </div>
-          <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Pitch Dispatched</h4>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <h4 className="text-sm font-semibold text-[var(--text-primary)]">Pitch Dispatched</h4>
+          <p className="text-xs text-[var(--text-muted)]">
             {investor.user?.profile?.fullName || investor.organization} will review your startup profile.
           </p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="p-2.5 rounded-md bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+          <div className="p-2.5 rounded-md bg-[var(--bg-primary)] border border-[var(--border-subtle)] flex items-center justify-between text-xs">
             <div>
-              <span className="font-semibold text-slate-900 dark:text-white">{investor.organization}</span>
-              <span className="text-slate-400 mx-1.5">•</span>
-              <span className="text-slate-500 dark:text-slate-400">{investor.investorType}</span>
+              <span className="font-semibold text-[var(--text-primary)]">{investor.organization}</span>
+              <span className="text-[var(--text-muted)] mx-1.5">•</span>
+              <span className="text-[var(--text-muted)]">{investor.investorType}</span>
             </div>
             <div className="text-emerald-600 dark:text-emerald-400 font-medium text-[11px]">
               Check Size: {investor.minCheckSize || '$25K'} - {investor.maxCheckSize || '$250K'}
@@ -141,11 +141,11 @@ export const SendPitchModal: React.FC<SendPitchModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">
               Select Startup to Pitch
             </label>
             {fetchingStartups ? (
-              <div className="text-xs text-slate-400 animate-pulse">Loading startups...</div>
+              <div className="text-xs text-[var(--text-muted)] animate-pulse">Loading startups...</div>
             ) : myStartups.length > 0 ? (
               <select
                 value={selectedStartupId}
@@ -159,14 +159,14 @@ export const SendPitchModal: React.FC<SendPitchModalProps> = ({
                 ))}
               </select>
             ) : (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[var(--text-muted)]">
                 You haven't registered a startup yet. Your pitch will be sent as an independent founder introduction.
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">
               Executive Summary & Traction Highlights *
             </label>
             <textarea
@@ -180,7 +180,7 @@ export const SendPitchModal: React.FC<SendPitchModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">
               Pitch Deck or Demo Link
             </label>
             <input
@@ -198,7 +198,7 @@ export const SendPitchModal: React.FC<SendPitchModalProps> = ({
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-subtle)]">
             <button
               type="button"
               onClick={onClose}

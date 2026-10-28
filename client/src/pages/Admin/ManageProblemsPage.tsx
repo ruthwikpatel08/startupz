@@ -88,20 +88,20 @@ export const ManageProblemsPage: React.FC = () => {
             <div className="flex items-center gap-2 mb-1">
               <Link
                 to="/admin"
-                className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+                className="text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
               >
                 Admin Dashboard
               </Link>
-              <span className="text-slate-400">/</span>
-              <span className="text-xs font-semibold text-brand-600 dark:text-brand-400">
+              <span className="text-[var(--text-muted)]">/</span>
+              <span className="text-xs font-semibold text-[var(--brand-primary)]">
                 Problem Statements
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
-              <Shield className="text-brand-600 dark:text-brand-400" size={26} />
+            <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] flex items-center gap-2.5">
+              <Shield className="text-[var(--brand-primary)]" size={26} />
               <span>Manage Global Problem Statements</span>
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <p className="text-sm text-[var(--text-muted)] mt-1">
               Curate, edit, and publish authoritative global challenges from UN SDGs, WHO, and World Bank.
             </p>
           </div>
@@ -128,10 +128,10 @@ export const ManageProblemsPage: React.FC = () => {
         {/* Telemetry Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="card-base p-4">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
               Total Problems
             </span>
-            <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-1">
+            <div className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mt-1">
               {problems.length}
             </div>
           </div>
@@ -147,16 +147,16 @@ export const ManageProblemsPage: React.FC = () => {
           </div>
 
           <div className="card-base p-4">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
               Domains Covered
             </span>
-            <div className="text-2xl sm:text-3xl font-bold text-brand-600 dark:text-brand-400 mt-1">
+            <div className="text-2xl sm:text-3xl font-bold text-[var(--brand-primary)] mt-1">
               {categories.length}
             </div>
           </div>
 
           <div className="card-base p-4">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
               Global Coverage
             </span>
             <div className="text-2xl sm:text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
@@ -168,7 +168,7 @@ export const ManageProblemsPage: React.FC = () => {
         {/* Filter & Search Bar */}
         <div className="card-base p-3 flex flex-col sm:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
             <input
               type="text"
               value={search}
@@ -195,18 +195,18 @@ export const ManageProblemsPage: React.FC = () => {
         {/* Problems Table */}
         <div className="card-base overflow-hidden">
           {loading ? (
-            <div className="p-12 text-center text-xs font-semibold text-slate-400 animate-pulse">
+            <div className="p-12 text-center text-xs font-semibold text-[var(--text-muted)] animate-pulse">
               Loading Problem Statements...
             </div>
           ) : filteredProblems.length === 0 ? (
-            <div className="p-12 text-center text-xs font-medium text-slate-500">
+            <div className="p-12 text-center text-xs font-medium text-[var(--text-muted)]">
               No problem statements matched your search criteria.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-dark-800 bg-slate-50 dark:bg-dark-800/60 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                     <th className="py-3 px-5">Problem Statement</th>
                     <th className="py-3 px-4">Categories</th>
                     <th className="py-3 px-4">Regions</th>
@@ -222,16 +222,16 @@ export const ManageProblemsPage: React.FC = () => {
                     return (
                       <tr
                         key={p.id}
-                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors"
+                        className="hover:bg-[var(--bg-primary)] transition-colors"
                       >
                         <td className="py-4 px-6 max-w-sm">
                           <Link
                             to={`/problems/${p.id}`}
-                            className="font-bold text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 transition-colors block line-clamp-1"
+                            className="font-bold text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors block line-clamp-1"
                           >
                             {p.title}
                           </Link>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
+                          <p className="text-[11px] text-[var(--text-muted)] line-clamp-1 mt-0.5">
                             {p.description}
                           </p>
                         </td>
@@ -251,7 +251,7 @@ export const ManageProblemsPage: React.FC = () => {
                           </div>
                         </td>
 
-                        <td className="py-4 px-4 text-slate-600 dark:text-slate-300 font-medium">
+                        <td className="py-4 px-4 text-[var(--text-secondary)] font-medium">
                           {p.regions?.join(', ') || 'Global'}
                         </td>
 
@@ -280,7 +280,7 @@ export const ManageProblemsPage: React.FC = () => {
                               <ExternalLink size={11} />
                             </a>
                           ) : (
-                            <span className="text-slate-400">-</span>
+                            <span className="text-[var(--text-muted)]">-</span>
                           )}
                         </td>
 
@@ -288,7 +288,7 @@ export const ManageProblemsPage: React.FC = () => {
                           <div className="inline-flex items-center gap-1">
                             <Link
                               to={`/problems/${p.id}`}
-                              className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors"
+                              className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] transition-colors"
                               title="View Public Page"
                             >
                               <Eye size={14} />
@@ -296,7 +296,7 @@ export const ManageProblemsPage: React.FC = () => {
 
                             <Link
                               to={`/admin/problems/${p.id}/edit`}
-                              className="p-1 rounded text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-950/40 transition-colors"
+                              className="p-1 rounded text-[var(--brand-primary)] hover:bg-[var(--brand-soft)] transition-colors"
                               title="Edit Problem"
                             >
                               <Edit size={14} />
@@ -325,10 +325,10 @@ export const ManageProblemsPage: React.FC = () => {
       {deleteConfirmId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="card-base w-full max-w-sm p-6 shadow-xl space-y-4 animate-in zoom-in-95 duration-150">
-            <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+            <h3 className="text-base font-semibold text-[var(--text-primary)]">
               Delete Problem Statement?
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
               This action cannot be undone. All associated join records and bookmarks for this problem will be removed.
             </p>
             <div className="flex items-center justify-end gap-2 pt-2">

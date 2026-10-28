@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawn } = require('node:child_process');
-const output = path.resolve('docs/phase1/screenshots');
+const output = path.resolve(process.argv.includes('--recovery') ? 'docs/phase2-recovery/regression' : 'docs/phase1/screenshots');
 fs.mkdirSync(output, { recursive: true });
 
 (async () => {

@@ -419,7 +419,7 @@ export const StartupDetailPage: React.FC = () => {
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16">
-        <div className="h-64 card-base bg-slate-50 dark:bg-dark-900 animate-pulse" />
+        <div className="h-64 card-base bg-[var(--bg-primary)] animate-pulse" />
       </div>
     );
   }
@@ -428,9 +428,9 @@ export const StartupDetailPage: React.FC = () => {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center space-y-4">
         <SEO title="Startup Profile Not Found | HookZ" noindex={true} />
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Startup Profile Not Found</h2>
-        <p className="text-xs text-slate-500">The requested venture does not exist or has been removed.</p>
-        <Link to="/startups" className="inline-block px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold">
+        <h2 className="text-xl font-bold text-[var(--text-primary)]">Startup Profile Not Found</h2>
+        <p className="text-xs text-[var(--text-muted)]">The requested venture does not exist or has been removed.</p>
+        <Link to="/startups" className="inline-block px-4 py-2 btn-primary text-white rounded-xl text-xs font-bold">
           Explore Other Startups
         </Link>
       </div>
@@ -463,14 +463,14 @@ export const StartupDetailPage: React.FC = () => {
 
         {/* Founder Controls Banner for Mobile & Desktop */}
         {isOwner && (
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl bg-brand-50/80 dark:bg-brand-950/50 border border-brand-200 dark:border-brand-900/60">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-3.5 rounded-xl bg-[var(--brand-soft)] border border-[var(--border-subtle)]">
             <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-brand-600 dark:text-brand-400 shrink-0" />
+              <Sparkles size={16} className="text-[var(--brand-primary)] shrink-0" />
               <div>
-                <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                <span className="text-xs font-bold text-[var(--text-primary)] block">
                   Founder Controls
                 </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                <span className="text-[11px] text-[var(--text-muted)] block">
                   You are the founder of this startup venture.
                 </span>
               </div>
@@ -479,7 +479,7 @@ export const StartupDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleOpenEditModal}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 shadow-xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white btn-primary shadow-xs transition-colors cursor-pointer"
                 title="Edit this startup"
               >
                 <Edit2 size={13} />
@@ -501,10 +501,10 @@ export const StartupDetailPage: React.FC = () => {
         {/* Top Badges & Actions */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-900/60 uppercase tracking-wider">
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-brand-200/60 dark:border-brand-900/60 uppercase tracking-wider">
               {startup.stage} STAGE
             </span>
-            <span className="text-xs font-medium text-slate-500 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-850 border border-slate-200/60 dark:border-dark-700/60">
+            <span className="text-xs font-medium text-[var(--text-muted)] px-2 py-0.5 rounded-md bg-[var(--bg-soft)] border border-[var(--border-subtle)]">
               {startup.industry}
             </span>
             {startup.isConfidential && (
@@ -534,7 +534,7 @@ export const StartupDetailPage: React.FC = () => {
               onClick={handleLike}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors border ${startup.isLiked
                   ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 border-rose-200 dark:border-rose-900'
-                  : 'bg-white dark:bg-dark-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:text-rose-500'
+                  : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-rose-500'
                 }`}
             >
               <Heart size={14} fill={startup.isLiked ? 'currentColor' : 'none'} />
@@ -544,8 +544,8 @@ export const StartupDetailPage: React.FC = () => {
             <button
               onClick={handleSave}
               className={`p-2 rounded-md transition-colors border ${startup.isSaved
-                  ? 'bg-brand-50 dark:bg-brand-950/60 text-brand-600 border-brand-200 dark:border-brand-900'
-                  : 'bg-white dark:bg-dark-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:text-brand-600'
+                  ? 'bg-[var(--brand-soft)] text-[var(--brand-primary)] border-[var(--border-subtle)]'
+                  : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--brand-primary)]'
                 }`}
               title="Save Startup"
             >
@@ -554,7 +554,7 @@ export const StartupDetailPage: React.FC = () => {
 
             <button
               onClick={handleShare}
-              className="p-2 rounded-md bg-white dark:bg-dark-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-dark-700 hover:text-brand-600 transition-colors"
+              className="p-2 rounded-md bg-[var(--bg-surface)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:text-[var(--brand-primary)] transition-colors"
               title="Share"
             >
               <Share2 size={14} />
@@ -564,7 +564,7 @@ export const StartupDetailPage: React.FC = () => {
               onClick={() => setFeedbackOpen(true)}
               className="btn-secondary inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium"
             >
-              <Sparkles size={14} className="text-brand-600" /> AI Validation
+              <Sparkles size={14} className="text-[var(--brand-primary)]" /> AI Validation
             </button>
 
             {isOwner && (
@@ -572,7 +572,7 @@ export const StartupDetailPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleOpenEditModal}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-900/60 hover:bg-brand-100 dark:hover:bg-brand-900/40 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-[var(--brand-primary)] bg-[var(--brand-soft)] border border-[var(--border-subtle)] hover:bg-[var(--brand-soft)] transition-colors cursor-pointer"
                   title="Edit this startup"
                 >
                   <Edit2 size={14} />
@@ -597,16 +597,16 @@ export const StartupDetailPage: React.FC = () => {
           <img
             src={startup.logo || `https://api.dicebear.com/7.x/identicon/svg?seed=${startup.name}`}
             alt=""
-            className="w-16 h-16 rounded-lg object-cover border border-slate-200 dark:border-dark-700 shrink-0"
+            className="w-16 h-16 rounded-lg object-cover border border-[var(--border-subtle)] shrink-0"
           />
           <div className="space-y-1.5 min-w-0 break-words flex-1">
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight break-words">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight break-words">
               {startup.name}
             </h1>
-            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl break-words">
+            <p className="text-sm sm:text-base text-[var(--text-secondary)] leading-relaxed max-w-3xl break-words">
               {startup.oneLineDescription}
             </p>
-            <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-1">
+            <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--text-muted)] pt-1">
               {startup.location && (
                 <span className="flex items-center gap-1">
                   <MapPin size={13} /> {startup.location}
@@ -617,7 +617,7 @@ export const StartupDetailPage: React.FC = () => {
                   href={sanitizeExternalUrl(startup.website)}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-1 text-brand-600 hover:underline"
+                  className="flex items-center gap-1 text-[var(--brand-primary)] hover:underline"
                 >
                   <Globe size={13} /> Website <ExternalLink size={11} />
                 </a>
@@ -637,22 +637,22 @@ export const StartupDetailPage: React.FC = () => {
         </div>
 
         {/* Quick Highlights Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-100 dark:border-dark-800 text-xs">
-          <div className="p-3 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800">
-            <span className="text-slate-400 text-[10px] uppercase font-semibold tracking-wider block">Funding Status</span>
-            <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">{startup.fundingStatus || 'Bootstrapped'}</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-[var(--border-subtle)] text-xs">
+          <div className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
+            <span className="text-[var(--text-muted)] text-[10px] uppercase font-semibold tracking-wider block">Funding Status</span>
+            <span className="font-semibold text-[var(--text-primary)] mt-0.5 block">{startup.fundingStatus || 'Bootstrapped'}</span>
           </div>
-          <div className="p-3 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800">
-            <span className="text-slate-400 text-[10px] uppercase font-semibold tracking-wider block">Round Target</span>
+          <div className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
+            <span className="text-[var(--text-muted)] text-[10px] uppercase font-semibold tracking-wider block">Round Target</span>
             <span className="font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5 block">{startup.fundingRequired || 'Not specified'}</span>
           </div>
-          <div className="p-3 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800">
-            <span className="text-slate-400 text-[10px] uppercase font-semibold tracking-wider block">Business Model</span>
-            <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">{startup.businessModel || 'SaaS'}</span>
+          <div className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
+            <span className="text-[var(--text-muted)] text-[10px] uppercase font-semibold tracking-wider block">Business Model</span>
+            <span className="font-semibold text-[var(--text-primary)] mt-0.5 block">{startup.businessModel || 'SaaS'}</span>
           </div>
-          <div className="p-3 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800">
-            <span className="text-slate-400 text-[10px] uppercase font-semibold tracking-wider block">Team Size</span>
-            <span className="font-semibold text-slate-900 dark:text-white mt-0.5 block">{startup.teamSize || 1} Builders</span>
+          <div className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
+            <span className="text-[var(--text-muted)] text-[10px] uppercase font-semibold tracking-wider block">Team Size</span>
+            <span className="font-semibold text-[var(--text-primary)] mt-0.5 block">{startup.teamSize || 1} Builders</span>
           </div>
         </div>
 
@@ -669,7 +669,7 @@ export const StartupDetailPage: React.FC = () => {
             <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-semibold text-xs uppercase tracking-wider">
               <AlertCircle size={15} /> Problem We Are Solving
             </div>
-            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-normal">
+            <p className="text-sm text-[var(--text-secondary)] leading-relaxed font-normal">
               {startup.problem}
             </p>
           </div>
@@ -679,7 +679,7 @@ export const StartupDetailPage: React.FC = () => {
             <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold text-xs uppercase tracking-wider">
               <CheckCircle2 size={15} /> Our Solution & Technology
             </div>
-            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-normal">
+            <p className="text-sm text-[var(--text-secondary)] leading-relaxed font-normal">
               {startup.solution}
             </p>
           </div>
@@ -687,19 +687,19 @@ export const StartupDetailPage: React.FC = () => {
           {/* Target Customers & Traction */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="card-base p-4 sm:p-5 space-y-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)] block">
                 Target Customer Profile
               </span>
-              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                 {startup.targetCustomers || 'Early adopters, high-growth SMBs, and modern enterprises.'}
               </p>
             </div>
 
             <div className="card-base p-4 sm:p-5 space-y-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)] block">
                 Current Traction & Milestones
               </span>
-              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                 {startup.currentTraction || 'Early validation and pilot phase underway.'}
               </p>
             </div>
@@ -708,14 +708,14 @@ export const StartupDetailPage: React.FC = () => {
           {/* Required Skills */}
           {startup.requiredSkills && (
             <div className="card-base p-5 sm:p-6 space-y-3">
-              <h4 className="font-semibold text-sm text-slate-900 dark:text-white">
+              <h4 className="font-semibold text-sm text-[var(--text-primary)]">
                 Looking for Collaborators & Co-Founders with Skills:
               </h4>
               <div className="flex flex-wrap gap-1.5">
                 {startup.requiredSkills.split(',').map((sk, idx) => (
                   <span
                     key={idx}
-                    className="px-2.5 py-1 rounded-md text-xs font-medium bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-900/60"
+                    className="px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-brand-200/60 dark:border-brand-900/60"
                   >
                     {sk.trim()}
                   </span>
@@ -728,14 +728,14 @@ export const StartupDetailPage: React.FC = () => {
           {startup.opportunities && startup.opportunities.length > 0 ? (
             <div className="card-base p-5 sm:p-6 space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <h4 className="font-semibold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                  <Briefcase size={16} className="text-brand-600" /> Open Opportunities at {startup.name}
+                <h4 className="font-semibold text-sm text-[var(--text-primary)] flex items-center gap-2">
+                  <Briefcase size={16} className="text-[var(--brand-primary)]" /> Open Opportunities at {startup.name}
                 </h4>
                 {isOwner && (
                   <button
                     type="button"
                     onClick={() => handleOpenEditModal('internship')}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-900/60 px-2.5 py-1 rounded-md border border-brand-200 dark:border-brand-900/60 cursor-pointer transition-colors"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--brand-primary)] bg-[var(--brand-soft)] hover:bg-[var(--brand-soft)] px-2.5 py-1 rounded-md border border-[var(--border-subtle)] cursor-pointer transition-colors"
                   >
                     <Plus size={12} />
                     <span>Manage / Add Opportunities</span>
@@ -748,25 +748,25 @@ export const StartupDetailPage: React.FC = () => {
                   return (
                     <div
                       key={opp.id}
-                      className="p-3.5 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200/60 dark:border-dark-700/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                      className="p-3.5 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h5 className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white">{opp.role}</h5>
+                          <h5 className="font-semibold text-xs sm:text-sm text-[var(--text-primary)]">{opp.role}</h5>
                           <span
                             className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${isIntern
-                                ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-900/60'
+                                ? 'bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-indigo-200/60 dark:border-indigo-900/60'
                                 : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/60'
                               }`}
                           >
                             {isIntern ? 'Internship' : 'Job Position'}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                        <p className="text-[11px] text-[var(--text-muted)] mt-1">
                           {opp.commitment} • {opp.compensation} • {opp.workplaceType}
                         </p>
                         {opp.description && (
-                          <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 line-clamp-2">
+                          <p className="text-xs text-[var(--text-secondary)] mt-1 line-clamp-2">
                             {opp.description}
                           </p>
                         )}
@@ -777,7 +777,7 @@ export const StartupDetailPage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleOpenEditModal(isIntern ? 'internship' : 'job')}
-                              className="px-2.5 py-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-900/60 border border-brand-200 dark:border-brand-900/60 rounded-lg inline-flex items-center gap-1 cursor-pointer transition-colors"
+                              className="px-2.5 py-1.5 text-xs font-semibold text-[var(--brand-primary)] bg-[var(--brand-soft)] hover:bg-[var(--brand-soft)] border border-[var(--border-subtle)] rounded-lg inline-flex items-center gap-1 cursor-pointer transition-colors"
                               title={`Edit this ${isIntern ? 'internship' : 'job'}`}
                             >
                               <Edit2 size={12} />
@@ -808,8 +808,8 @@ export const StartupDetailPage: React.FC = () => {
           ) : isOwner ? (
             <div className="card-base p-5 sm:p-6 space-y-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <h4 className="font-semibold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                  <Briefcase size={16} className="text-brand-600" /> Opportunities at {startup.name}
+                <h4 className="font-semibold text-sm text-[var(--text-primary)] flex items-center gap-2">
+                  <Briefcase size={16} className="text-[var(--brand-primary)]" /> Opportunities at {startup.name}
                 </h4>
                 <button
                   type="button"
@@ -820,7 +820,7 @@ export const StartupDetailPage: React.FC = () => {
                   <span>Add Internship or Job</span>
                 </button>
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[var(--text-muted)]">
                 You haven't listed any internships or jobs yet. Add opportunities to attract student builders and talent.
               </p>
             </div>
@@ -833,7 +833,7 @@ export const StartupDetailPage: React.FC = () => {
 
           {/* Founder Card */}
           <div className="card-base p-5 sm:p-6 space-y-4">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] block">
               FOUNDER
             </span>
             <div className="flex items-center gap-3">
@@ -846,15 +846,15 @@ export const StartupDetailPage: React.FC = () => {
               <div className="min-w-0 flex-1">
                 <Link
                   to={`/profile/${startup.founder?.id}`}
-                  className="font-semibold text-sm text-slate-900 dark:text-white hover:text-brand-600 block truncate"
+                  className="font-semibold text-sm text-[var(--text-primary)] hover:text-[var(--brand-primary)] block truncate"
                 >
                   {startup.founder?.profile?.fullName || 'Founder'}
                 </Link>
-                <p className="text-xs text-slate-500 line-clamp-1">
+                <p className="text-xs text-[var(--text-muted)] line-clamp-1">
                   {startup.founder?.profile?.headline || 'Startup Builder'}
                 </p>
                 {startup.founder?.profile?.location && (
-                  <span className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                  <span className="text-[11px] text-[var(--text-muted)] flex items-center gap-1 mt-0.5">
                     <MapPin size={10} /> {startup.founder.profile.location}
                   </span>
                 )}
@@ -862,7 +862,7 @@ export const StartupDetailPage: React.FC = () => {
             </div>
 
             {startup.founder?.profile?.bio && (
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-100 dark:border-dark-800 pt-3">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed border-t border-[var(--border-subtle)] pt-3">
                 {startup.founder.profile.bio}
               </p>
             )}
@@ -878,11 +878,11 @@ export const StartupDetailPage: React.FC = () => {
 
           {/* Team Members */}
           <div className="card-base p-5 sm:p-6 space-y-3">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)] block">
               STARTUP TEAM ({startup.teamSize || (startup.members?.length || 0) + 1})
             </span>
             <div className="space-y-2">
-              <div className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800">
+              <div className="flex items-center gap-2.5 p-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
                 <Avatar
                   src={startup.founder?.profile?.avatar}
                   name={startup.founder?.profile?.fullName}
@@ -890,15 +890,15 @@ export const StartupDetailPage: React.FC = () => {
                   className="!w-7 !h-7"
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-xs text-slate-900 dark:text-white truncate">
+                  <div className="font-semibold text-xs text-[var(--text-primary)] truncate">
                     {startup.founder?.profile?.fullName}
                   </div>
-                  <div className="text-[10px] text-brand-600 font-medium">Founder / CEO</div>
+                  <div className="text-[10px] text-[var(--brand-primary)] font-medium">Founder / CEO</div>
                 </div>
               </div>
 
               {startup.members?.map((m) => (
-                <div key={m.id} className="flex items-center gap-2.5 p-2 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800">
+                <div key={m.id} className="flex items-center gap-2.5 p-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
                   <Avatar
                     src={m.user?.profile?.avatar}
                     name={m.user?.profile?.fullName || m.id}
@@ -906,10 +906,10 @@ export const StartupDetailPage: React.FC = () => {
                     className="!w-7 !h-7"
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-xs text-slate-900 dark:text-white truncate">
+                    <div className="font-semibold text-xs text-[var(--text-primary)] truncate">
                       {m.user?.profile?.fullName || 'Team Member'}
                     </div>
-                    <div className="text-[10px] text-slate-500 font-medium">{m.role}</div>
+                    <div className="text-[10px] text-[var(--text-muted)] font-medium">{m.role}</div>
                   </div>
                 </div>
               ))}
@@ -945,19 +945,19 @@ export const StartupDetailPage: React.FC = () => {
             aria-hidden="true"
           />
           <div
-            className="relative z-10 card-base max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 dark:border-dark-700 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200"
+            className="relative z-10 card-base max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-[var(--border-subtle)] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-dark-800 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-dark-850/50">
+            <div className="p-4 sm:p-5 border-b border-[var(--border-subtle)] flex items-center justify-between shrink-0 bg-[var(--bg-primary)]">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400">
+                <div className="p-1.5 rounded-lg bg-[var(--brand-soft)] text-[var(--brand-primary)]">
                   <Edit2 size={16} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                  <h3 className="font-bold text-sm sm:text-base text-[var(--text-primary)]">
                     Edit Startup & Opportunities
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-[var(--text-muted)]">
                     Update details, internship roles, and job positions for {startup.name}
                   </p>
                 </div>
@@ -965,20 +965,20 @@ export const StartupDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setEditModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800 cursor-pointer"
+                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Modal Navigation Tabs */}
-            <div className="flex items-center gap-1 border-b border-slate-200 dark:border-dark-700 px-4 sm:px-6 pt-2 bg-slate-50/40 dark:bg-dark-850/40 shrink-0 overflow-x-auto">
+            <div className="flex items-center gap-1 border-b border-[var(--border-subtle)] px-4 sm:px-6 pt-2 bg-[var(--bg-primary)] shrink-0 overflow-x-auto">
               <button
                 type="button"
                 onClick={() => setEditTab('details')}
                 className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${editTab === 'details'
-                    ? 'border-brand-600 text-brand-600 dark:text-brand-400'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    ? 'border-brand-600 text-[var(--brand-primary)]'
+                    : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                   }`}
               >
                 <Rocket size={13} />
@@ -988,14 +988,14 @@ export const StartupDetailPage: React.FC = () => {
                 type="button"
                 onClick={() => setEditTab('internship')}
                 className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${editTab === 'internship'
-                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    ? 'border-indigo-600 text-[var(--brand-primary)]'
+                    : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                   }`}
               >
                 <GraduationCap size={13} />
                 <span>Internships</span>
                 {offerInternship && (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full font-bold bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)]">
                     Active
                   </span>
                 )}
@@ -1005,7 +1005,7 @@ export const StartupDetailPage: React.FC = () => {
                 onClick={() => setEditTab('job')}
                 className={`pb-2.5 px-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${editTab === 'job'
                     ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                    : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                   }`}
               >
                 <Briefcase size={13} />
@@ -1030,7 +1030,7 @@ export const StartupDetailPage: React.FC = () => {
                 <div className="space-y-4 animate-in fade-in duration-150">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                         Startup Name *
                       </label>
                       <input
@@ -1043,7 +1043,7 @@ export const StartupDetailPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                         Industry *
                       </label>
                       <input
@@ -1057,7 +1057,7 @@ export const StartupDetailPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                       One-Line Pitch / Tagline *
                     </label>
                     <input
@@ -1071,7 +1071,7 @@ export const StartupDetailPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                         Stage
                       </label>
                       <select
@@ -1089,7 +1089,7 @@ export const StartupDetailPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                         Funding Status
                       </label>
                       <select
@@ -1106,7 +1106,7 @@ export const StartupDetailPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                         Location
                       </label>
                       <input
@@ -1120,7 +1120,7 @@ export const StartupDetailPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                       The Problem It Solves *
                     </label>
                     <textarea
@@ -1133,7 +1133,7 @@ export const StartupDetailPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                       The Proposed Solution *
                     </label>
                     <textarea
@@ -1147,7 +1147,7 @@ export const StartupDetailPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                         Target Customers
                       </label>
                       <input
@@ -1160,7 +1160,7 @@ export const StartupDetailPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                         Business Model
                       </label>
                       <input
@@ -1175,7 +1175,7 @@ export const StartupDetailPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                         Required Skills / Looking For
                       </label>
                       <input
@@ -1188,7 +1188,7 @@ export const StartupDetailPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                         Funding Required ($)
                       </label>
                       <input
@@ -1203,7 +1203,7 @@ export const StartupDetailPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                         Website URL
                       </label>
                       <input
@@ -1216,7 +1216,7 @@ export const StartupDetailPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                         Demo / Pitch Link
                       </label>
                       <input
@@ -1234,17 +1234,17 @@ export const StartupDetailPage: React.FC = () => {
               {/* TAB 2: INTERNSHIP OPPORTUNITY FORM */}
               {editTab === 'internship' && (
                 <div className="space-y-4 animate-in fade-in duration-150">
-                  <div className="p-4 sm:p-5 rounded-xl border border-indigo-200/80 dark:border-indigo-900/60 bg-indigo-50/40 dark:bg-indigo-950/20 space-y-4">
+                  <div className="p-4 sm:p-5 rounded-xl border border-indigo-200/80 dark:border-indigo-900/60 bg-[var(--brand-soft)] space-y-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-400">
+                        <div className="p-1.5 rounded-lg bg-[var(--brand-soft)] text-[var(--brand-primary)]">
                           <GraduationCap size={18} />
                         </div>
                         <div>
-                          <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                          <h3 className="text-xs sm:text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
                             Internship Opportunity Form
                           </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                          <p className="text-xs text-[var(--text-muted)]">
                             Offer student builder internships with allotted stipend and duration (permanent or custom days).
                           </p>
                         </div>
@@ -1256,8 +1256,8 @@ export const StartupDetailPage: React.FC = () => {
                           onChange={(e) => setOfferInternship(e.target.checked)}
                           className="sr-only peer"
                         />
-                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer dark:bg-dark-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-                        <span className="ml-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        <div className="w-9 h-5 bg-[var(--bg-soft)] peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                        <span className="ml-2 text-xs font-semibold text-[var(--text-secondary)]">
                           {offerInternship ? 'Enabled' : 'Disabled'}
                         </span>
                       </label>
@@ -1267,7 +1267,7 @@ export const StartupDetailPage: React.FC = () => {
                       <div className="pt-3 border-t border-indigo-200/60 dark:border-indigo-900/50 space-y-3.5">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                               Internship Role Title *
                             </label>
                             <input
@@ -1280,7 +1280,7 @@ export const StartupDetailPage: React.FC = () => {
                           </div>
 
                           <div>
-                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                               Workplace Mode
                             </label>
                             <select
@@ -1298,8 +1298,8 @@ export const StartupDetailPage: React.FC = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {/* Money Allotted / Stipend */}
                           <div>
-                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
-                              <DollarSign size={13} className="text-indigo-600" />
+                            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1 flex items-center gap-1">
+                              <DollarSign size={13} className="text-[var(--brand-primary)]" />
                               Money Allotted / Stipend *
                             </label>
                             <input
@@ -1313,8 +1313,8 @@ export const StartupDetailPage: React.FC = () => {
 
                           {/* Duration Category: Permanent vs Custom Days */}
                           <div>
-                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
-                              <Clock size={13} className="text-indigo-600" />
+                            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1 flex items-center gap-1">
+                              <Clock size={13} className="text-[var(--brand-primary)]" />
                               Working Duration Category *
                             </label>
                             <div className="grid grid-cols-2 gap-2">
@@ -1323,7 +1323,7 @@ export const StartupDetailPage: React.FC = () => {
                                 onClick={() => setInternshipDurationType('Permanent')}
                                 className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${internshipDurationType === 'Permanent'
                                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                                    : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-indigo-300'
+                                    : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-[var(--border-subtle)]'
                                   }`}
                               >
                                 Permanent
@@ -1333,7 +1333,7 @@ export const StartupDetailPage: React.FC = () => {
                                 onClick={() => setInternshipDurationType('Custom')}
                                 className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${internshipDurationType === 'Custom'
                                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                                    : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-indigo-300'
+                                    : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-[var(--border-subtle)]'
                                   }`}
                               >
                                 Custom Days
@@ -1343,7 +1343,7 @@ export const StartupDetailPage: React.FC = () => {
                         </div>
 
                         {internshipDurationType === 'Custom' && (
-                          <div className="p-2.5 rounded-lg bg-indigo-100/50 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="p-2.5 rounded-lg bg-[var(--brand-soft)] border border-indigo-200/80 dark:border-indigo-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <span className="text-xs font-semibold text-indigo-950 dark:text-indigo-300 flex items-center gap-1.5">
                               <Calendar size={14} /> Total Working Days Needed:
                             </span>
@@ -1355,7 +1355,7 @@ export const StartupDetailPage: React.FC = () => {
                                   onClick={() => setInternshipCustomDays(String(days))}
                                   className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition-all cursor-pointer ${internshipCustomDays === String(days)
                                       ? 'bg-indigo-600 text-white border-indigo-600'
-                                      : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700'
+                                      : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)]'
                                     }`}
                                 >
                                   {days}d
@@ -1371,14 +1371,14 @@ export const StartupDetailPage: React.FC = () => {
                                   className="input-base !w-18 !py-1 !px-2 text-xs text-center"
                                   placeholder="Days"
                                 />
-                                <span className="text-xs text-slate-500">Days</span>
+                                <span className="text-xs text-[var(--text-muted)]">Days</span>
                               </div>
                             </div>
                           </div>
                         )}
 
                         <div>
-                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                             Internship Overview & Learning Outcomes
                           </label>
                           <input
@@ -1391,7 +1391,7 @@ export const StartupDetailPage: React.FC = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="p-3 rounded-lg bg-slate-100/50 dark:bg-dark-800/50 text-xs text-slate-500">
+                      <div className="p-3 rounded-lg bg-[var(--bg-soft)] text-xs text-[var(--text-muted)]">
                         Internship hiring is currently disabled for this venture. Toggle "Enabled" above to post or edit an internship role.
                       </div>
                     )}
@@ -1409,10 +1409,10 @@ export const StartupDetailPage: React.FC = () => {
                           <Briefcase size={18} />
                         </div>
                         <div>
-                          <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                          <h3 className="text-xs sm:text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
                             Job Opening Form
                           </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                          <p className="text-xs text-[var(--text-muted)]">
                             Hiring core engineers or leads? Specify allotted salary and commitment (permanent or custom days).
                           </p>
                         </div>
@@ -1424,8 +1424,8 @@ export const StartupDetailPage: React.FC = () => {
                           onChange={(e) => setOfferJob(e.target.checked)}
                           className="sr-only peer"
                         />
-                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer dark:bg-dark-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
-                        <span className="ml-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        <div className="w-9 h-5 bg-[var(--bg-soft)] peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                        <span className="ml-2 text-xs font-semibold text-[var(--text-secondary)]">
                           {offerJob ? 'Enabled' : 'Disabled'}
                         </span>
                       </label>
@@ -1435,7 +1435,7 @@ export const StartupDetailPage: React.FC = () => {
                       <div className="pt-3 border-t border-emerald-200/60 dark:border-emerald-900/50 space-y-3.5">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                               Job Position Title *
                             </label>
                             <input
@@ -1448,7 +1448,7 @@ export const StartupDetailPage: React.FC = () => {
                           </div>
 
                           <div>
-                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                               Workplace Mode
                             </label>
                             <select
@@ -1466,7 +1466,7 @@ export const StartupDetailPage: React.FC = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {/* Money Allotted / Salary */}
                           <div>
-                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1 flex items-center gap-1">
                               <DollarSign size={13} className="text-emerald-600" />
                               Money Allotted / Salary *
                             </label>
@@ -1481,7 +1481,7 @@ export const StartupDetailPage: React.FC = () => {
 
                           {/* Duration Category: Permanent vs Custom Days */}
                           <div>
-                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1 flex items-center gap-1">
                               <Clock size={13} className="text-emerald-600" />
                               Working Duration Category *
                             </label>
@@ -1491,7 +1491,7 @@ export const StartupDetailPage: React.FC = () => {
                                 onClick={() => setJobDurationType('Permanent')}
                                 className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${jobDurationType === 'Permanent'
                                     ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                                    : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-emerald-300'
+                                    : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-emerald-300'
                                   }`}
                               >
                                 Permanent
@@ -1501,7 +1501,7 @@ export const StartupDetailPage: React.FC = () => {
                                 onClick={() => setJobDurationType('Custom')}
                                 className={`py-1.5 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${jobDurationType === 'Custom'
                                     ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                                    : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700 hover:border-emerald-300'
+                                    : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-emerald-300'
                                   }`}
                               >
                                 Custom Days
@@ -1523,7 +1523,7 @@ export const StartupDetailPage: React.FC = () => {
                                   onClick={() => setJobCustomDays(String(days))}
                                   className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition-all cursor-pointer ${jobCustomDays === String(days)
                                       ? 'bg-emerald-600 text-white border-emerald-600'
-                                      : 'bg-white dark:bg-dark-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-dark-700'
+                                      : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)]'
                                     }`}
                                 >
                                   {days}d
@@ -1539,14 +1539,14 @@ export const StartupDetailPage: React.FC = () => {
                                   className="input-base !w-18 !py-1 !px-2 text-xs text-center"
                                   placeholder="Days"
                                 />
-                                <span className="text-xs text-slate-500">Days</span>
+                                <span className="text-xs text-[var(--text-muted)]">Days</span>
                               </div>
                             </div>
                           </div>
                         )}
 
                         <div>
-                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                          <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                             Job Responsibilities & Impact
                           </label>
                           <input
@@ -1559,7 +1559,7 @@ export const StartupDetailPage: React.FC = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="p-3 rounded-lg bg-slate-100/50 dark:bg-dark-800/50 text-xs text-slate-500">
+                      <div className="p-3 rounded-lg bg-[var(--bg-soft)] text-xs text-[var(--text-muted)]">
                         Job hiring is currently disabled for this venture. Toggle "Enabled" above to post or edit a job opening.
                       </div>
                     )}
@@ -1568,13 +1568,13 @@ export const StartupDetailPage: React.FC = () => {
               )}
 
               {/* Action Buttons */}
-              <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between gap-2">
+              <div className="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1">
                   {editTab === 'details' && (
                     <button
                       type="button"
                       onClick={() => setEditTab('internship')}
-                      className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
+                      className="text-xs font-semibold text-[var(--brand-primary)] hover:underline inline-flex items-center gap-1"
                     >
                       <span>Edit Internships →</span>
                     </button>

@@ -48,7 +48,7 @@ export const ProblemFormPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-16 text-center text-xs font-bold text-slate-400 animate-pulse">
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center text-xs font-bold text-[var(--text-muted)] animate-pulse">
         Loading Problem Statement Details...
       </div>
     );
@@ -59,16 +59,16 @@ export const ProblemFormPage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         
         {/* Navigation Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+        <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)]">
           <Link
             to="/admin/problems"
-            className="inline-flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 hover:text-[var(--text-primary)] transition-colors"
           >
             <ArrowLeft size={14} />
             <span>Back to Problem Management</span>
           </Link>
-          <span className="text-slate-400">/</span>
-          <span className="text-slate-900 dark:text-white">
+          <span className="text-[var(--text-muted)]">/</span>
+          <span className="text-[var(--text-primary)]">
             {isEdit ? 'Edit Problem Statement' : 'New Problem Statement'}
           </span>
         </div>
@@ -76,20 +76,20 @@ export const ProblemFormPage: React.FC = () => {
         {/* Card Header & Form Container */}
         <div className="card-base p-6 sm:p-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-lg bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold border border-brand-100 dark:border-brand-900/40">
+            <div className="w-10 h-10 rounded-lg bg-[var(--brand-soft)] text-[var(--brand-primary)] flex items-center justify-center font-bold border border-[var(--border-subtle)]">
               <Shield size={18} />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+              <h1 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">
                 {isEdit ? 'Edit Global Problem Statement' : 'Publish New Global Challenge'}
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
                 Curate verified world challenges drawing on UN SDGs, WHO, and World Bank research.
               </p>
             </div>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-slate-100 dark:border-dark-800">
+          <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
             <ProblemForm
               initialData={problem}
               onSubmit={handleSubmit}

@@ -200,15 +200,15 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
       maxWidth="md"
     >
       <div className="space-y-4 py-2 font-sans select-none">
-        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+        <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
           <span className="flex items-center gap-1.5 font-medium">
-            <Move size={13} className="text-brand-500" />
+            <Move size={13} className="text-[var(--brand-primary)]" />
             <span>Drag image to reposition &bull; Use slider to zoom</span>
           </span>
           <button
             type="button"
             onClick={handleReset}
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--text-secondary)] hover:text-[var(--brand-primary)] transition-colors cursor-pointer"
             title="Reset position and zoom"
           >
             <RotateCcw size={12} />
@@ -239,7 +239,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
               }}
             />
           ) : (
-            <div className="flex items-center justify-center text-slate-400 text-xs">
+            <div className="flex items-center justify-center text-[var(--text-muted)] text-xs">
               <RefreshCw size={18} className="animate-spin mr-2" />
               <span>Loading image preview...</span>
             </div>
@@ -264,11 +264,11 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
         </div>
 
         {/* Zoom Slider and Quick Controls */}
-        <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-3">
+        <div className="p-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-subtle)] flex items-center gap-3">
           <button
             type="button"
             onClick={() => setZoom((z) => Math.max(1, Number((z - 0.2).toFixed(2))))}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-soft)] transition-colors cursor-pointer"
             title="Zoom Out"
           >
             <ZoomOut size={16} />
@@ -281,30 +281,30 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
             step={0.05}
             value={zoom}
             onChange={(e) => setZoom(parseFloat(e.target.value))}
-            className="flex-1 accent-brand-600 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg cursor-pointer"
+            className="flex-1 accent-brand-600 h-1.5 bg-[var(--bg-soft)] rounded-lg cursor-pointer"
           />
 
           <button
             type="button"
             onClick={() => setZoom((z) => Math.min(3, Number((z + 0.2).toFixed(2))))}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-soft)] transition-colors cursor-pointer"
             title="Zoom In"
           >
             <ZoomIn size={16} />
           </button>
 
-          <span className="text-xs font-mono font-semibold text-slate-600 dark:text-slate-300 w-10 text-right">
+          <span className="text-xs font-mono font-semibold text-[var(--text-secondary)] w-10 text-right">
             {Math.round(zoom * 100)}%
           </span>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-3 pt-3 border-t border-[var(--border-subtle)]">
           <button
             type="button"
             disabled={isSaving}
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
+            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] transition-colors disabled:opacity-50 cursor-pointer"
           >
             Choose Another
           </button>

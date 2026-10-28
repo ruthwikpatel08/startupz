@@ -1430,15 +1430,15 @@ export const StartupFeedPage: React.FC = () => {
       case 'LAUNCH':
         return 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800';
       case 'COFOUNDER':
-        return 'bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800';
+        return 'bg-[var(--brand-soft)] text-[var(--brand-primary)] border-[var(--border-subtle)]';
       case 'HIRING':
         return 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800';
       case 'FUNDING':
         return 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800';
       case 'ADVICE':
-        return 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800';
+        return 'bg-[var(--brand-soft)] text-[var(--brand-primary)] border-[var(--border-subtle)]';
       default:
-        return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+        return 'bg-[var(--bg-soft)] text-[var(--text-secondary)] border-[var(--border-subtle)]';
     }
   };
 
@@ -1482,10 +1482,10 @@ export const StartupFeedPage: React.FC = () => {
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activePillar === 'ACHIEVEMENTS'
               ? 'bg-brand-600 text-white border-brand-600 dark:bg-brand-600 dark:text-white dark:border-brand-600 shadow-xs font-semibold'
-              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+              : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] font-medium'
           }`}
         >
-          <Award size={15} className={`shrink-0 ${activePillar === 'ACHIEVEMENTS' ? 'text-white' : 'text-slate-400'}`} />
+          <Award size={15} className={`shrink-0 ${activePillar === 'ACHIEVEMENTS' ? 'text-white' : 'text-[var(--text-muted)]'}`} />
           <span className="text-xs sm:text-[13px] truncate">
             Describes
           </span>
@@ -1498,10 +1498,10 @@ export const StartupFeedPage: React.FC = () => {
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activePillar === 'IDEAS'
               ? 'bg-brand-600 text-white border-brand-600 dark:bg-brand-600 dark:text-white dark:border-brand-600 shadow-xs font-semibold'
-              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+              : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] font-medium'
           }`}
         >
-          <Rocket size={15} className={`shrink-0 ${activePillar === 'IDEAS' ? 'text-white' : 'text-slate-400'}`} />
+          <Rocket size={15} className={`shrink-0 ${activePillar === 'IDEAS' ? 'text-white' : 'text-[var(--text-muted)]'}`} />
           <span className="text-xs sm:text-[13px] truncate">
             Ideas
           </span>
@@ -1514,10 +1514,10 @@ export const StartupFeedPage: React.FC = () => {
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activePillar === 'PROTOTYPES'
               ? 'bg-brand-600 text-white border-brand-600 dark:bg-brand-600 dark:text-white dark:border-brand-600 shadow-xs font-semibold'
-              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+              : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] font-medium'
           }`}
         >
-          <Boxes size={15} className={`shrink-0 ${activePillar === 'PROTOTYPES' ? 'text-white' : 'text-slate-400'}`} />
+          <Boxes size={15} className={`shrink-0 ${activePillar === 'PROTOTYPES' ? 'text-white' : 'text-[var(--text-muted)]'}`} />
           <span className="text-xs sm:text-[13px] truncate">
             Prototypes
           </span>
@@ -1554,7 +1554,7 @@ export const StartupFeedPage: React.FC = () => {
             ) : (
               <button
                 onClick={() => setComposerOpen(!composerOpen)}
-                className="flex-1 text-left px-3.5 py-2 rounded-md bg-slate-50 dark:bg-dark-850 hover:bg-slate-100 dark:hover:bg-dark-800 text-slate-500 text-xs font-normal border border-slate-200/80 dark:border-dark-700/80 transition-colors"
+                className="flex-1 text-left px-3.5 py-2 rounded-md bg-[var(--bg-primary)] hover:bg-[var(--bg-soft)] text-[var(--text-muted)] text-xs font-normal border border-[var(--border-subtle)] transition-colors"
               >
                 {activePillar === 'ACHIEVEMENTS'
                   ? 'Share what you describe, drawback, product launch, or experience...'
@@ -1564,9 +1564,9 @@ export const StartupFeedPage: React.FC = () => {
           </div>
 
           {composerOpen && activePillar !== 'PROTOTYPES' && (
-            <form onSubmit={handleCreatePost} className="mt-4 pt-4 border-t border-slate-100 dark:border-dark-800 space-y-3">
+            <form onSubmit={handleCreatePost} className="mt-4 pt-4 border-t border-[var(--border-subtle)] space-y-3">
               <div className="space-y-1.5">
-                <span className="text-xs font-medium text-slate-500">Post Category:</span>
+                <span className="text-xs font-medium text-[var(--text-muted)]">Post Category:</span>
                 <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-1 px-1">
                   {(activePillar === 'ACHIEVEMENTS' ? executionComposerTypes : ideaComposerTypes).map((t) => (
                     <button
@@ -1576,7 +1576,7 @@ export const StartupFeedPage: React.FC = () => {
                       className={`px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
                         postType === t.id
                           ? 'bg-brand-600 text-white shadow-sm'
-                          : 'bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-800'
+                          : 'bg-[var(--bg-soft)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
                       }`}
                     >
                       {t.label}
@@ -1611,7 +1611,7 @@ export const StartupFeedPage: React.FC = () => {
               />
 
               <div className="flex items-center gap-2">
-                <LinkIcon size={14} className="text-slate-400 shrink-0" />
+                <LinkIcon size={14} className="text-[var(--text-muted)] shrink-0" />
                 <input
                   type="url"
                   value={postLinks}
@@ -1629,15 +1629,15 @@ export const StartupFeedPage: React.FC = () => {
 
               <div className="flex items-center justify-between gap-2 pt-2 flex-wrap">
                 <div className="flex items-center gap-1.5 text-xs">
-                  <span className="text-slate-500 font-medium text-[11px]">Audience:</span>
-                  <div className="inline-flex rounded-lg p-0.5 bg-slate-100 dark:bg-dark-800 border border-slate-200 dark:border-dark-700">
+                  <span className="text-[var(--text-muted)] font-medium text-[11px]">Audience:</span>
+                  <div className="inline-flex rounded-lg p-0.5 bg-[var(--bg-soft)] border border-[var(--border-subtle)]">
                     <button
                       type="button"
                       onClick={() => setPostVisibility('PUBLIC')}
                       className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                         postVisibility === 'PUBLIC'
-                          ? 'bg-white dark:bg-dark-900 text-brand-600 shadow-xs'
-                          : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                          ? 'bg-[var(--bg-surface)] text-[var(--brand-primary)] shadow-xs'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                       }`}
                     >
                       <Globe size={11} />
@@ -1648,8 +1648,8 @@ export const StartupFeedPage: React.FC = () => {
                       onClick={() => setPostVisibility('CONNECTIONS')}
                       className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                         postVisibility === 'CONNECTIONS'
-                          ? 'bg-white dark:bg-dark-900 text-purple-600 dark:text-purple-400 shadow-xs'
-                          : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                          ? 'bg-[var(--bg-surface)] text-[var(--brand-primary)] shadow-xs'
+                          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                       }`}
                     >
                       <Users size={11} />
@@ -1695,8 +1695,8 @@ export const StartupFeedPage: React.FC = () => {
             onClick={() => setFilterType(item.id)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
               filterType === item.id
-                ? 'bg-slate-900 text-white dark:bg-[#1E293B] dark:text-[#F8FAFC] shadow-xs'
-                : 'bg-white dark:bg-[var(--bg-surface)] border border-slate-200/80 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                ? 'bg-[var(--text-primary)] text-[var(--bg-surface)] shadow-xs'
+                : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)]'
             }`}
           >
             {item.label}
@@ -1708,7 +1708,7 @@ export const StartupFeedPage: React.FC = () => {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((n) => (
-            <div key={n} className="h-44 rounded-lg bg-slate-100 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 animate-pulse" />
+            <div key={n} className="h-44 rounded-lg bg-[var(--bg-soft)] border border-[var(--border-subtle)] animate-pulse" />
           ))}
         </div>
       ) : activePillar === 'PROTOTYPES' ? (
@@ -1781,7 +1781,7 @@ export const StartupFeedPage: React.FC = () => {
 
             const netScore = post.likesCount || 0;
 
-            let scoreColorClass = 'text-slate-600 dark:text-slate-400 font-medium';
+            let scoreColorClass = 'text-[var(--text-secondary)] font-medium';
             if (currentVote === 'up' || (currentVote === null && netScore > 0)) {
               scoreColorClass = 'text-emerald-600 dark:text-emerald-400 font-bold';
             } else if (currentVote === 'down' || (currentVote === null && netScore < 0)) {
@@ -1794,7 +1794,7 @@ export const StartupFeedPage: React.FC = () => {
                 id={`post-${post.id}`}
                 className={`card-base p-5 sm:p-6 transition-all duration-500 space-y-4 min-w-0 overflow-hidden break-words ${
                   highlightedPostId === post.id
-                    ? 'ring-4 ring-brand-500 ring-offset-2 dark:ring-offset-dark-900 shadow-2xl scale-[1.01] bg-brand-50/25 dark:bg-brand-950/25'
+                    ? 'ring-4 ring-brand-500 ring-offset-2 dark:ring-offset-dark-900 shadow-2xl scale-[1.01] bg-[var(--brand-soft)]'
                     : ''
                 }`}
               >
@@ -1813,14 +1813,14 @@ export const StartupFeedPage: React.FC = () => {
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <Link
                           to={`/profile/${author?.id || user?.id}`}
-                          className="font-semibold text-sm text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                          className="font-semibold text-sm text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors"
                         >
                           {authorName}
                         </Link>
                         <VerificationBadge badge={author?.verificationBadge} isVerified={author?.isVerified} size="sm" />
                       </div>
-                      <p className="text-xs text-slate-500 line-clamp-1">{authorHeadline}</p>
-                      <div className="text-[11px] text-slate-400 mt-0.5">
+                      <p className="text-xs text-[var(--text-muted)] line-clamp-1">{authorHeadline}</p>
+                      <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
                         {new Date(post.createdAt).toLocaleDateString(undefined, {
                           month: 'short',
                           day: 'numeric',
@@ -1834,7 +1834,7 @@ export const StartupFeedPage: React.FC = () => {
                   {/* Post Type Badge & Report / Delete Dropdown */}
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {(post.visibility === 'CONNECTIONS' || post.title?.includes('[Connections Only]')) && (
-                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800 inline-flex items-center gap-1">
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)] inline-flex items-center gap-1">
                         <Users size={11} />
                         <span>Connections</span>
                       </span>
@@ -1851,7 +1851,7 @@ export const StartupFeedPage: React.FC = () => {
                       <button
                         onClick={() => handleDeletePost(post.id)}
                         title="Delete Post"
-                        className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
+                        className="p-1 rounded-md text-[var(--text-muted)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -1860,7 +1860,7 @@ export const StartupFeedPage: React.FC = () => {
                     <button
                       onClick={() => setReportTarget({ id: post.id, title: post.title || post.content.slice(0, 30) })}
                       title="Report Post"
-                      className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+                      className="p-1 rounded-md text-[var(--text-muted)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
                     >
                       <Flag size={14} />
                     </button>
@@ -1870,13 +1870,13 @@ export const StartupFeedPage: React.FC = () => {
                 {/* Post Body */}
                 <div className="space-y-2 min-w-0 break-words">
                   {post.title && (
-                    <h3 className="font-semibold text-base text-slate-900 dark:text-white break-words">
+                    <h3 className="font-semibold text-base text-[var(--text-primary)] break-words">
                       {post.title}
                     </h3>
                   )}
                   <div>
                     <p
-                      className={`text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed break-words ${
+                      className={`text-sm text-[var(--text-secondary)] whitespace-pre-line leading-relaxed break-words ${
                         expandedPostContent[post.id] ? '' : 'line-clamp-2 sm:line-clamp-3'
                       }`}
                     >
@@ -1891,7 +1891,7 @@ export const StartupFeedPage: React.FC = () => {
                             [post.id]: !prev[post.id],
                           }))
                         }
-                        className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline pt-1 cursor-pointer inline-flex items-center gap-0.5"
+                        className="text-xs font-semibold text-[var(--brand-primary)] hover:underline pt-1 cursor-pointer inline-flex items-center gap-0.5"
                       >
                         {expandedPostContent[post.id] ? 'Show less' : '...more'}
                       </button>
@@ -1904,7 +1904,7 @@ export const StartupFeedPage: React.FC = () => {
                         href={sanitizeExternalUrl(post.links)}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs text-brand-600 dark:text-brand-400 hover:underline break-all"
+                        className="inline-flex items-center gap-1.5 text-xs text-[var(--brand-primary)] hover:underline break-all"
                       >
                         <LinkIcon size={13} />
                         <span>{post.links}</span>
@@ -1914,12 +1914,12 @@ export const StartupFeedPage: React.FC = () => {
                 </div>
 
                 {/* Post Actions Bar */}
-                <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <div className="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs text-[var(--text-muted)]">
                   <div className="flex items-center gap-3 sm:gap-4">
                     {/* Reaction: Upvote / Downvote Pill for Ideas, Heart for other feeds */}
                     {isIdeaPost ? (
                       <div
-                        className="inline-flex items-center gap-1 sm:gap-1.5 p-0.5 sm:p-1 rounded-full bg-slate-100/90 dark:bg-dark-800 border border-slate-200/90 dark:border-dark-700 shadow-2xs transition-colors duration-150"
+                        className="inline-flex items-center gap-1 sm:gap-1.5 p-0.5 sm:p-1 rounded-full bg-[var(--bg-soft)] border border-[var(--border-subtle)] shadow-2xs transition-colors duration-150"
                         role="group"
                         aria-label="Idea post voting"
                       >
@@ -1944,7 +1944,7 @@ export const StartupFeedPage: React.FC = () => {
                           <span className="select-none font-bold">{post.upvotesCount ?? Math.max(0, post.likesCount || 0)}</span>
                         </button>
 
-                        <div className="w-[1px] h-3.5 bg-slate-200 dark:bg-dark-700" aria-hidden="true" />
+                        <div className="w-[1px] h-3.5 bg-[var(--bg-soft)]" aria-hidden="true" />
 
                         {/* Downvote Button (▼) with downvoted count */}
                         <button
@@ -1986,7 +1986,7 @@ export const StartupFeedPage: React.FC = () => {
                     {/* Comments Toggle */}
                     <button
                       onClick={() => handleToggleComments(post.id)}
-                      className="flex items-center gap-1.5 font-medium hover:text-brand-600 transition-colors"
+                      className="flex items-center gap-1.5 font-medium hover:text-[var(--brand-primary)] transition-colors"
                     >
                       <MessageSquare size={15} />
                       <span>{post.commentsCount || 0}</span>
@@ -1997,8 +1997,8 @@ export const StartupFeedPage: React.FC = () => {
                       onClick={() => handleToggleSave(post.id)}
                       className={`flex items-center gap-1.5 font-medium transition-colors ${
                         post.isSaved
-                          ? 'text-brand-600 dark:text-brand-400'
-                          : 'hover:text-brand-600'
+                          ? 'text-[var(--brand-primary)]'
+                          : 'hover:text-[var(--brand-primary)]'
                       }`}
                     >
                       <Bookmark size={15} className={post.isSaved ? 'fill-brand-600' : ''} />
@@ -2011,7 +2011,7 @@ export const StartupFeedPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleSharePost(post)}
-                      className="flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer text-xs"
+                      className="flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors cursor-pointer text-xs"
                       title="Share post with connections"
                     >
                       <Share2 size={14} />
@@ -2033,7 +2033,7 @@ export const StartupFeedPage: React.FC = () => {
 
                 {/* Expanded Comments Section */}
                 {isCommentsOpen && (
-                  <div className="pt-3 border-t border-slate-100 dark:border-dark-800 space-y-3">
+                  <div className="pt-3 border-t border-[var(--border-subtle)] space-y-3">
                     {/* Add Comment Box */}
                     {user && (
                       <div className="flex items-center gap-2">
@@ -2068,23 +2068,23 @@ export const StartupFeedPage: React.FC = () => {
                         post.comments.map((c) => (
                           <div
                             key={c.id}
-                            className="p-3 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-dark-800 text-xs space-y-1"
+                            className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-xs space-y-1"
                           >
                             <div className="flex items-center justify-between">
-                              <span className="font-semibold text-slate-900 dark:text-white">
+                              <span className="font-semibold text-[var(--text-primary)]">
                                 {c.author?.profile?.fullName || c.author?.email || 'Member'}
                               </span>
-                              <span className="text-[10px] text-slate-400">
+                              <span className="text-[10px] text-[var(--text-muted)]">
                                 {new Date(c.createdAt).toLocaleDateString()}
                               </span>
                             </div>
-                            <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                            <p className="text-[var(--text-secondary)] leading-relaxed">
                               {c.content}
                             </p>
                           </div>
                         ))
                       ) : (
-                        <p className="text-xs text-slate-400 text-center py-2">
+                        <p className="text-xs text-[var(--text-muted)] text-center py-2">
                           No comments yet. Start the conversation!
                         </p>
                       )}
@@ -2151,12 +2151,12 @@ export const StartupFeedPage: React.FC = () => {
           onClick={() => setDownvotePromptModal(null)}
         >
           <div
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl p-6 relative"
+            className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl w-full max-w-lg shadow-2xl p-6 relative"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setDownvotePromptModal(null)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="absolute top-4 right-4 p-2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] rounded-full hover:bg-[var(--bg-soft)] transition-colors"
               aria-label="Close modal"
             >
               <X className="w-5 h-5" />
@@ -2167,23 +2167,23 @@ export const StartupFeedPage: React.FC = () => {
                 <ArrowBigDown className="w-6 h-6 fill-current" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                <h3 className="text-lg font-bold text-[var(--text-primary)]">
                   Why are you downvoting?
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-[var(--text-muted)]">
                   Constructive feedback helps creators understand gaps and improve their ideas.
                 </p>
               </div>
             </div>
 
             {downvotePromptModal.ideaTitle && (
-              <div className="mb-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50 text-xs text-slate-600 dark:text-slate-300 italic line-clamp-2">
+              <div className="mb-4 p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] italic line-clamp-2">
                 "{downvotePromptModal.ideaTitle}"
               </div>
             )}
 
             <div className="space-y-3 mb-5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+              <label className="text-xs font-semibold text-[var(--text-secondary)] block">
                 Primary Reason
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -2204,7 +2204,7 @@ export const StartupFeedPage: React.FC = () => {
                       className={`text-left text-xs px-3 py-2 rounded-lg border transition-all ${
                         isSelected
                           ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 font-medium'
-                          : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          : 'border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]'
                       }`}
                     >
                       {reasonTag}
@@ -2215,15 +2215,15 @@ export const StartupFeedPage: React.FC = () => {
             </div>
 
             <div className="mb-5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
-                Additional Comments <span className="font-normal text-slate-400">(optional)</span>
+              <label className="text-xs font-semibold text-[var(--text-secondary)] block mb-1.5">
+                Additional Comments <span className="font-normal text-[var(--text-muted)]">(optional)</span>
               </label>
               <textarea
                 value={downvoteReason}
                 onChange={(e) => setDownvoteReason(e.target.value)}
                 placeholder="Share specific suggestions or what could make this idea better..."
                 rows={3}
-                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/40"
+                className="w-full text-xs px-3 py-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-rose-500/40"
               />
             </div>
 
@@ -2231,7 +2231,7 @@ export const StartupFeedPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setDownvotePromptModal(null)}
-                className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                className="px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] rounded-lg transition-colors"
               >
                 Cancel
               </button>

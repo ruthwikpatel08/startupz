@@ -51,8 +51,11 @@ export const OnboardingPage: React.FC = () => {
     savingRef.current = true; setSaving(true); setError('');
     try {
       // Exactly one request: profile + answers + consent + completion commit atomically.
-      const { data, error } = await supabase.rpc('complete_onboarding', { p_answers: submissionAnswers(role, answers), p_profile_consent: profileConsent, p_terms_consent: termsConsent });
-      if (error) throw error;
+      const { data, error, status } = await supabase.rpc('complete_onboarding', { p_answers: submissionAnswers(role, answers), p_profile_consent: profileConsent, p_terms_consent: termsConsent });
+      if (error) {
+        if (import.meta.env.DEV) console.error('complete_onboarding response', { status, code: error.code, message: error.message, details: error.details, hint: error.hint });
+        throw error;
+      }
       if (!data?.onboarding_completed) throw new Error('Your profile was not saved. Please try again.');
       invalidateUserProfileCache(user.id);
       invalidateUserProfileCache(user.email);

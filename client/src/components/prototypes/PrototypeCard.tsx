@@ -366,7 +366,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
     <>
       <div
         id={`post-${post.id}`}
-        className="card-base p-4 sm:p-5 border border-slate-200/90 dark:border-dark-800 bg-white dark:bg-dark-900 rounded-2xl shadow-xs hover:shadow-card transition-all space-y-4"
+        className="card-base p-4 sm:p-5 border border-[var(--border-subtle)]  bg-[var(--bg-surface)]  rounded-2xl shadow-xs hover:shadow-card transition-all space-y-4"
       >
         {/* 1. Header: Author profile & Prototype badge */}
         <div className="flex items-start justify-between gap-3">
@@ -390,17 +390,17 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <Link
                         to={`/profile/${authorId}`}
-                        className="font-bold text-sm text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 transition-colors truncate"
+                        className="font-bold text-sm text-[var(--text-primary)]  hover:text-[var(--brand-primary)]  transition-colors truncate"
                       >
                         {displayName}
                       </Link>
                       {author?.isVerified && (
                         <VerificationBadge badge={author.verificationBadge} size="sm" />
                       )}
-                      <span className="text-slate-400 dark:text-slate-500 text-xs">•</span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">{timeFormatted}</span>
+                      <span className="text-[var(--text-muted)]  text-xs">•</span>
+                      <span className="text-xs text-[var(--text-muted)] ">{timeFormatted}</span>
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                    <div className="text-xs text-[var(--text-muted)]  truncate">
                       {displayHeadline}
                     </div>
                   </div>
@@ -422,7 +422,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
                 type="button"
                 onClick={() => onDelete(post.id)}
                 title="Delete this prototype"
-                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 text-[var(--text-muted)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
               >
                 <Trash2 size={15} />
               </button>
@@ -432,7 +432,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
 
         {/* 2. Prototype Title */}
         <div>
-          <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <h3 className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]  tracking-tight">
             {post.title || 'Untitled Prototype'}
           </h3>
         </div>
@@ -447,7 +447,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
                   <HelpCircle size={13} className="text-amber-600 dark:text-amber-400" />
                   <span>The Problem (Question)</span>
                 </div>
-                <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-normal whitespace-pre-wrap">
+                <p className="text-xs sm:text-sm text-[var(--text-primary)]  leading-relaxed font-normal whitespace-pre-wrap">
                   {problemText}
                 </p>
               </div>
@@ -460,7 +460,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
                   <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400" />
                   <span>The Solution</span>
                 </div>
-                <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-normal whitespace-pre-wrap">
+                <p className="text-xs sm:text-sm text-[var(--text-primary)]  leading-relaxed font-normal whitespace-pre-wrap">
                   {solutionText}
                 </p>
               </div>
@@ -470,7 +470,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
 
         {/* 4. What Was Built / Description (if provided) */}
         {descriptionText && (
-          <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)]  leading-relaxed whitespace-pre-wrap">
             {descriptionText}
           </p>
         )}
@@ -482,23 +482,23 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
               href={websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-dark-850 hover:bg-brand-50/70 dark:hover:bg-brand-950/40 border border-slate-200 dark:border-slate-800 hover:border-brand-300 dark:hover:border-brand-800 w-full transition-all group"
+              className="inline-flex items-center justify-between gap-3 p-3 rounded-xl bg-[var(--bg-primary)]  hover:bg-[var(--brand-soft)]  border border-[var(--border-subtle)]  hover:border-brand-300 dark:hover:border-brand-800 w-full transition-all group"
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                   <Globe size={16} />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors flex items-center gap-1.5">
+                  <div className="text-xs font-bold text-[var(--text-primary)]  group-hover:text-[var(--brand-primary)]  transition-colors flex items-center gap-1.5">
                     <span>Explore Live Website / Demo Sample</span>
                     <ExternalLink size={12} className="opacity-70 group-hover:opacity-100" />
                   </div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate font-mono">
+                  <div className="text-[11px] text-[var(--text-muted)]  truncate font-mono">
                     {websiteUrl}
                   </div>
                 </div>
               </div>
-              <span className="shrink-0 text-xs font-bold text-brand-600 dark:text-brand-400 hidden sm:inline">
+              <span className="shrink-0 text-xs font-bold text-[var(--brand-primary)]  hidden sm:inline">
                 Open Link &rarr;
               </span>
             </a>
@@ -507,12 +507,12 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
 
         {/* 6. Media Display: Video (<60s) or Photo */}
         {mediaUrl && (
-          <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950 flex items-center justify-center relative">
+          <div className="rounded-xl overflow-hidden border border-[var(--border-subtle)]  bg-slate-950 flex items-center justify-center relative">
             {isVideo ? (
               <div className="w-full relative">
                 {/* 60s limit badge */}
                 <div className="absolute top-3 left-3 z-10 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold flex items-center gap-1 border border-white/10">
-                  <Video size={11} className="text-indigo-400" />
+                  <Video size={11} className="text-[var(--brand-primary)]" />
                   <span>&lt; 60s Demo</span>
                 </div>
                 <video
@@ -535,7 +535,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
         )}
 
         {/* 7. Action Bar: Like, Comments, Share, Save + BUILD TOGETHER or PROPOSALS */}
-        <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 gap-2 flex-wrap">
+        <div className="flex items-center justify-between pt-3 border-t border-[var(--border-subtle)]  gap-2 flex-wrap">
           {/* Left social actions */}
           <div className="flex items-center gap-1 sm:gap-2">
             {/* Like button */}
@@ -546,7 +546,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
               className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                 isLiked
                   ? 'text-rose-600 bg-rose-50 dark:bg-rose-950/60'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                  : 'text-[var(--text-secondary)]  hover:bg-[var(--bg-soft)] '
               }`}
             >
               <Heart size={15} className={isLiked ? 'fill-current text-rose-600' : ''} />
@@ -557,7 +557,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
             <button
               type="button"
               onClick={() => setCommentsOpen(!commentsOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)]  hover:bg-[var(--bg-soft)]  transition-colors cursor-pointer"
             >
               <MessageSquare size={15} />
               <span>{commentsCount}</span>
@@ -567,7 +567,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
             <button
               type="button"
               onClick={() => setShareModalOpen(true)}
-              className="p-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-[var(--text-secondary)]  hover:bg-[var(--bg-soft)]  transition-colors cursor-pointer"
               title="Share prototype"
             >
               <Share2 size={15} />
@@ -580,8 +580,8 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
               disabled={saveLoading}
               className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                 isSaved
-                  ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800'
+                  ? 'text-[var(--brand-primary)]  bg-[var(--brand-soft)] '
+                  : 'text-[var(--text-secondary)]  hover:bg-[var(--bg-soft)] '
               }`}
               title={isSaved ? 'Remove from saved' : 'Save prototype'}
             >
@@ -596,9 +596,9 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
               <button
                 type="button"
                 onClick={() => setProposalsModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-extrabold text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-800 hover:bg-brand-100 dark:hover:bg-brand-900 transition-all cursor-pointer shadow-2xs group"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-extrabold text-[var(--brand-primary)]  bg-[var(--brand-soft)]  border border-brand-200 dark:border-brand-800 hover:bg-[var(--brand-soft)]  transition-all cursor-pointer shadow-2xs group"
               >
-                <Users size={14} className="text-brand-600 group-hover:scale-110 transition-transform" />
+                <Users size={14} className="text-[var(--brand-primary)] group-hover:scale-110 transition-transform" />
                 <span>Proposals</span>
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-brand-600 text-white ml-0.5">
                   {proposalsCount}
@@ -611,7 +611,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
                 onClick={() => setBuildTogetherOpen(true)}
                 className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-subtle ${
                   hasSentProposal
-                    ? 'bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700'
+                    ? 'bg-[var(--bg-soft)]  text-[var(--text-secondary)]  border border-[var(--border-subtle)] '
                     : 'bg-brand-600 hover:bg-brand-700 text-white active:scale-95'
                 }`}
               >
@@ -624,7 +624,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
 
         {/* 8. Comments Section (Expanded) */}
         {commentsOpen && (
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
+          <div className="pt-3 border-t border-[var(--border-subtle)]  space-y-3">
             {/* Comment input form */}
             <form onSubmit={handleCommentSubmit} className="flex items-center gap-2">
               <input
@@ -650,24 +650,24 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
                 {comments.map((c) => (
                   <div
                     key={c.id}
-                    className="p-2.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-100 dark:border-slate-800 text-xs space-y-1"
+                    className="p-2.5 rounded-xl bg-[var(--bg-primary)]  border border-[var(--border-subtle)]  text-xs space-y-1"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900 dark:text-white">
+                      <span className="font-bold text-[var(--text-primary)] ">
                         {c.author?.profile?.fullName || c.author?.email?.split('@')[0] || 'Builder'}
                       </span>
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[10px] text-[var(--text-muted)]">
                         {new Date(c.createdAt).toLocaleDateString()}
                       </span>
                     </div>
-                    <p className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                    <p className="text-[var(--text-secondary)]  whitespace-pre-wrap">
                       {c.content}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-2 text-xs text-slate-400">
+              <div className="text-center py-2 text-xs text-[var(--text-muted)]">
                 No comments yet. Be the first to give feedback on this prototype!
               </div>
             )}

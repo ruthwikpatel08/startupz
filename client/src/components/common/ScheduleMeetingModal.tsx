@@ -112,14 +112,14 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
     >
       {!user ? (
         <div className="py-6 space-y-4 text-center">
-          <div className="w-10 h-10 mx-auto rounded-md bg-slate-100 dark:bg-dark-800 flex items-center justify-center text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+          <div className="w-10 h-10 mx-auto rounded-md bg-[var(--bg-soft)] flex items-center justify-center text-[var(--text-secondary)] border border-[var(--border-subtle)]">
             <Lock size={18} />
           </div>
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
               Sign In Required
             </h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
               Please sign in to schedule or host video pitch meetings with {displayName}.
             </p>
           </div>
@@ -145,14 +145,14 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
         </div>
       ) : createdRoomCode ? (
         <div className="py-6 space-y-4 text-center">
-          <div className="w-10 h-10 mx-auto rounded-md bg-brand-50 dark:bg-brand-950/60 flex items-center justify-center text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800">
+          <div className="w-10 h-10 mx-auto rounded-md bg-[var(--brand-soft)] flex items-center justify-center text-[var(--brand-primary)] border border-[var(--border-subtle)]">
             <Video size={20} />
           </div>
           <div className="space-y-1">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
               {meetingType === 'instant' ? 'Instant Video Room Ready' : 'Meeting Scheduled'}
             </h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
               {meetingType === 'instant'
                 ? `You and ${displayName} can join right now via your private secure room.`
                 : `A calendar invite and notification have been sent to ${displayName}.`}
@@ -160,16 +160,16 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
           </div>
 
           {/* Room Link Box */}
-          <div className="p-3 rounded-md bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 text-left">
+          <div className="p-3 rounded-md bg-[var(--bg-primary)] border border-[var(--border-subtle)] flex items-center justify-between gap-2 text-left">
             <div className="min-w-0 flex-1">
-              <span className="text-[10px] uppercase font-semibold text-slate-400 block">Meeting Room Link</span>
-              <span className="text-xs font-mono font-medium text-slate-700 dark:text-slate-200 truncate block">
+              <span className="text-[10px] uppercase font-semibold text-[var(--text-muted)] block">Meeting Room Link</span>
+              <span className="text-xs font-mono font-medium text-[var(--text-secondary)] truncate block">
                 {window.location.origin}/meeting/{createdRoomCode}
               </span>
             </div>
             <button
               onClick={copyRoomLink}
-              className="p-1.5 rounded-md bg-white dark:bg-dark-800 hover:bg-slate-100 dark:hover:bg-dark-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors"
+              className="p-1.5 rounded-md bg-[var(--bg-surface)] hover:bg-[var(--bg-soft)] text-[var(--text-secondary)] border border-[var(--border-subtle)] transition-colors"
               title="Copy room link"
             >
               {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
@@ -198,21 +198,21 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Target Profile Card */}
-          <div className="flex items-center gap-3 p-2.5 rounded-md bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-3 p-2.5 rounded-md bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
             <Avatar
               src={targetUser.profile?.avatar}
               name={displayName}
               size="md"
             />
             <div className="min-w-0 flex-1">
-              <h4 className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+              <h4 className="text-xs font-semibold text-[var(--text-primary)] truncate">
                 {displayName}
               </h4>
-              <p className="text-[11px] text-slate-500 truncate">
+              <p className="text-[11px] text-[var(--text-muted)] truncate">
                 {targetUser.profile?.headline || 'Startup Builder'}
               </p>
             </div>
-            <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-900">
+            <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)]">
               Video Sync
             </span>
           </div>
@@ -225,14 +225,14 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
           )}
 
           {/* Mode Switcher */}
-          <div className="grid grid-cols-2 gap-1.5 p-1 rounded-md bg-slate-100 dark:bg-dark-850">
+          <div className="grid grid-cols-2 gap-1.5 p-1 rounded-md bg-[var(--bg-soft)]">
             <button
               type="button"
               onClick={() => setMeetingType('instant')}
               className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded transition-colors ${
                 meetingType === 'instant'
-                  ? 'bg-white dark:bg-dark-900 text-slate-900 dark:text-white shadow-subtle'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-subtle'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               <Video size={13} />
@@ -243,8 +243,8 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
               onClick={() => setMeetingType('scheduled')}
               className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium rounded transition-colors ${
                 meetingType === 'scheduled'
-                  ? 'bg-white dark:bg-dark-900 text-slate-900 dark:text-white shadow-subtle'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-subtle'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               <Calendar size={13} />
@@ -253,7 +253,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">
               Meeting Title *
             </label>
             <input
@@ -269,7 +269,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
           {meetingType === 'scheduled' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">
                   Date *
                 </label>
                 <input
@@ -281,7 +281,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">
                   Time *
                 </label>
                 <input
@@ -296,7 +296,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
           )}
 
           <div>
-            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">
               Duration
             </label>
             <div className="grid grid-cols-4 gap-2">
@@ -307,8 +307,8 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
                   onClick={() => setDurationMinutes(mins)}
                   className={`py-1.5 text-xs font-medium rounded-md border transition-colors ${
                     durationMinutes === mins
-                      ? 'bg-brand-50 dark:bg-brand-950/60 border-brand-600 text-brand-700 dark:text-brand-300'
-                      : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-dark-850'
+                      ? 'bg-[var(--brand-soft)] border-brand-600 text-[var(--brand-primary)]'
+                      : 'border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]'
                   }`}
                 >
                   {mins} min
@@ -318,7 +318,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">
               Agenda & Notes (Optional)
             </label>
             <textarea
@@ -330,7 +330,7 @@ export const ScheduleMeetingModal: React.FC<ScheduleMeetingModalProps> = ({
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-subtle)]">
             <button
               type="button"
               onClick={onClose}

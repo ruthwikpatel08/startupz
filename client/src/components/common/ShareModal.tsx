@@ -289,20 +289,20 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
         aria-hidden="true"
       />
       <div
-        className="relative z-10 w-full max-w-lg rounded-2xl bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col my-auto"
+        className="relative z-10 w-full max-w-lg rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-5 sm:p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 flex items-center justify-center border border-brand-100 dark:border-brand-900/40 shadow-xs">
+            <div className="w-9 h-9 rounded-xl bg-[var(--brand-soft)] text-[var(--brand-primary)] flex items-center justify-center border border-[var(--border-subtle)] shadow-xs">
               <Share2 size={17} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
+              <h3 className="text-base font-bold text-[var(--text-primary)] tracking-tight">
                 Share with Connections
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-[var(--text-muted)]">
                 Share directly with your network on HookZ
               </p>
             </div>
@@ -310,7 +310,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X size={18} />
@@ -318,30 +318,30 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
         </div>
 
         {/* Item Preview Card */}
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 shrink-0 space-y-1">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider">
+        <div className="p-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] shrink-0 space-y-1">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-[var(--brand-primary)] uppercase tracking-wider">
             <Sparkles size={11} />
             <span>{item.type || 'Item'}</span>
           </div>
-          <h4 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white line-clamp-1">
+          <h4 className="text-xs sm:text-sm font-semibold text-[var(--text-primary)] line-clamp-1">
             {shareTitle}
           </h4>
           {shareDescription && (
-            <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+            <p className="text-xs text-[var(--text-muted)] line-clamp-2">
               {shareDescription}
             </p>
           )}
         </div>
 
         {/* Tab Toggle */}
-        <div className="flex items-center rounded-xl p-1 bg-slate-100 dark:bg-dark-850 shrink-0">
+        <div className="flex items-center rounded-xl p-1 bg-[var(--bg-soft)] shrink-0">
           <button
             type="button"
             onClick={() => setActiveTab('connections')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               activeTab === 'connections'
-                ? 'bg-white dark:bg-dark-900 text-brand-600 dark:text-brand-400 shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-[var(--bg-surface)] text-[var(--brand-primary)] shadow-xs'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             <Users size={13} />
@@ -352,8 +352,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
             onClick={() => setActiveTab('links')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               activeTab === 'links'
-                ? 'bg-white dark:bg-dark-900 text-brand-600 dark:text-brand-400 shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-[var(--bg-surface)] text-[var(--brand-primary)] shadow-xs'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             <Copy size={13} />
@@ -365,9 +365,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
         {activeTab === 'connections' ? (
           <div className="space-y-3 flex-1 overflow-hidden flex flex-col min-h-0">
             {!user ? (
-              <div className="p-6 text-center space-y-3 bg-slate-50 dark:bg-dark-850 rounded-xl border border-slate-200 dark:border-dark-800">
-                <Lock size={28} className="mx-auto text-slate-400" />
-                <p className="text-xs text-slate-600 dark:text-slate-300">
+              <div className="p-6 text-center space-y-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-subtle)]">
+                <Lock size={28} className="mx-auto text-[var(--text-muted)]" />
+                <p className="text-xs text-[var(--text-secondary)]">
                   Please log in to share directly with your connections.
                 </p>
                 <Link
@@ -397,7 +397,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
                   <div className="relative shrink-0">
                     <Search
                       size={13}
-                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none"
                     />
                     <input
                       type="text"
@@ -422,13 +422,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
                       {[1, 2, 3].map((i) => (
                         <div
                           key={i}
-                          className="h-12 rounded-xl bg-slate-100 dark:bg-dark-850 animate-pulse"
+                          className="h-12 rounded-xl bg-[var(--bg-soft)] animate-pulse"
                         />
                       ))}
                     </div>
                   ) : filteredConnections.length === 0 ? (
-                    <div className="py-8 text-center space-y-2 text-slate-500">
-                      <Users size={24} className="mx-auto text-slate-400" />
+                    <div className="py-8 text-center space-y-2 text-[var(--text-muted)]">
+                      <Users size={24} className="mx-auto text-[var(--text-muted)]" />
                       <p className="text-xs">
                         {connections.length === 0
                           ? "You don't have any accepted connections yet."
@@ -438,7 +438,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
                         <Link
                           to="/cofounders"
                           onClick={onClose}
-                          className="text-xs text-brand-600 dark:text-brand-400 font-semibold hover:underline inline-block pt-1"
+                          className="text-xs text-[var(--brand-primary)] font-semibold hover:underline inline-block pt-1"
                         >
                           Find and connect with builders →
                         </Link>
@@ -452,7 +452,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
                       return (
                         <div
                           key={conn.id}
-                          className="p-2.5 rounded-xl border border-slate-200/80 dark:border-dark-800 hover:border-slate-300 dark:hover:border-dark-700 bg-white dark:bg-dark-900 flex items-center justify-between gap-3 transition-colors"
+                          className="p-2.5 rounded-xl border border-[var(--border-subtle)] hover:border-[var(--border-subtle)] bg-[var(--bg-surface)] flex items-center justify-between gap-3 transition-colors"
                         >
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
                             <Avatar
@@ -462,10 +462,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
                               className="shrink-0"
                             />
                             <div className="min-w-0 flex-1">
-                              <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                              <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
                                 {conn.fullName}
                               </p>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                              <p className="text-[11px] text-[var(--text-muted)] truncate">
                                 {conn.headline}
                               </p>
                             </div>
@@ -507,7 +507,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
           <div className="space-y-4 flex-1 overflow-y-auto">
             {/* Direct URL Box */}
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              <label className="text-xs font-medium text-[var(--text-secondary)]">
                 Shareable Link
               </label>
               <div className="flex items-center gap-2">
@@ -546,15 +546,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
                   onClick={handleNativeShare}
                   className="w-full btn-secondary py-2 text-xs flex items-center justify-center gap-2 cursor-pointer font-medium"
                 >
-                  <Smartphone size={14} className="text-brand-600" />
+                  <Smartphone size={14} className="text-[var(--brand-primary)]" />
                   <span>Share via Device Share Sheet</span>
                 </button>
               </div>
             )}
 
             {/* External Social Channels */}
-            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-dark-800">
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <div className="space-y-2 pt-2 border-t border-[var(--border-subtle)]">
+              <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
                 External Channels
               </p>
               <div className="grid grid-cols-2 gap-2">
@@ -562,42 +562,42 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
                   href={`https://api.whatsapp.com/send?text=${encodedSummary}%20${encodedUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2.5 rounded-xl border border-slate-200 dark:border-dark-800 hover:border-emerald-300 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2 transition-colors"
+                  className="p-2.5 rounded-xl border border-[var(--border-subtle)] hover:border-emerald-300 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 text-xs font-medium text-[var(--text-secondary)] flex items-center gap-2 transition-colors"
                 >
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   <span>WhatsApp</span>
-                  <ExternalLink size={11} className="ml-auto text-slate-400" />
+                  <ExternalLink size={11} className="ml-auto text-[var(--text-muted)]" />
                 </a>
 
                 <a
                   href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2.5 rounded-xl border border-slate-200 dark:border-dark-800 hover:border-sky-300 hover:bg-sky-50/50 dark:hover:bg-sky-950/20 text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2 transition-colors"
+                  className="p-2.5 rounded-xl border border-[var(--border-subtle)] hover:border-sky-300 hover:bg-sky-50/50 dark:hover:bg-sky-950/20 text-xs font-medium text-[var(--text-secondary)] flex items-center gap-2 transition-colors"
                 >
                   <span className="w-2 h-2 rounded-full bg-sky-500" />
                   <span>LinkedIn</span>
-                  <ExternalLink size={11} className="ml-auto text-slate-400" />
+                  <ExternalLink size={11} className="ml-auto text-[var(--text-muted)]" />
                 </a>
 
                 <a
                   href={`https://twitter.com/intent/tweet?text=${encodedSummary}&url=${encodedUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2.5 rounded-xl border border-slate-200 dark:border-dark-800 hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-dark-800 text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2 transition-colors"
+                  className="p-2.5 rounded-xl border border-[var(--border-subtle)] hover:border-slate-400 hover:bg-[var(--bg-primary)] text-xs font-medium text-[var(--text-secondary)] flex items-center gap-2 transition-colors"
                 >
                   <span className="w-2 h-2 rounded-full bg-slate-900 dark:bg-slate-300" />
                   <span>X / Twitter</span>
-                  <ExternalLink size={11} className="ml-auto text-slate-400" />
+                  <ExternalLink size={11} className="ml-auto text-[var(--text-muted)]" />
                 </a>
 
                 <a
                   href={`mailto:?subject=${encodedTitle}&body=${encodedSummary}%0A%0A${encodedUrl}`}
-                  className="p-2.5 rounded-xl border border-slate-200 dark:border-dark-800 hover:border-brand-300 hover:bg-brand-50/50 dark:hover:bg-brand-950/20 text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2 transition-colors"
+                  className="p-2.5 rounded-xl border border-[var(--border-subtle)] hover:border-[var(--border-subtle)] hover:bg-[var(--brand-soft)] text-xs font-medium text-[var(--text-secondary)] flex items-center gap-2 transition-colors"
                 >
                   <span className="w-2 h-2 rounded-full bg-brand-500" />
                   <span>Email</span>
-                  <ExternalLink size={11} className="ml-auto text-slate-400" />
+                  <ExternalLink size={11} className="ml-auto text-[var(--text-muted)]" />
                 </a>
               </div>
             </div>
@@ -605,9 +605,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, item })
         )}
 
         {/* Modal Footer */}
-        <div className="pt-2 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs text-slate-500 shrink-0">
+        <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs text-[var(--text-muted)] shrink-0">
           <span className="flex items-center gap-1 text-[11px]">
-            <Globe size={12} className="text-slate-400" />
+            <Globe size={12} className="text-[var(--text-muted)]" />
             <span>Shared items open securely on HookZ</span>
           </span>
           <button

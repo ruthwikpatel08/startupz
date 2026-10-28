@@ -249,7 +249,7 @@ export const BusinessPage: React.FC = () => {
       href: '/cofounders?category=founders',
       icon: Rocket,
       badge: 'Visionaries',
-      color: 'text-brand-600 bg-brand-50 dark:bg-brand-950/60 border-brand-200 dark:border-brand-900',
+      color: 'text-[var(--brand-primary)] bg-[var(--brand-soft)] border-[var(--border-subtle)]',
     },
     {
       title: 'Co-Founders',
@@ -257,7 +257,7 @@ export const BusinessPage: React.FC = () => {
       href: '/cofounders?category=cofounders',
       icon: Users,
       badge: 'Builders',
-      color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-900',
+      color: 'text-[var(--brand-primary)] bg-[var(--brand-soft)] border-[var(--border-subtle)]',
     },
     {
       title: 'Investors',
@@ -303,11 +303,11 @@ export const BusinessPage: React.FC = () => {
           onClick={() => handleTabChange('startups')}
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activeTab === 'startups'
-              ? 'bg-indigo-50/80 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800/60 shadow-xs font-semibold'
-              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+              ? 'bg-[var(--brand-soft)] text-[var(--brand-primary)] border-[var(--border-subtle)] shadow-xs font-semibold'
+              : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] font-medium'
           }`}
         >
-          <Compass size={15} className={`shrink-0 ${activeTab === 'startups' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
+          <Compass size={15} className={`shrink-0 ${activeTab === 'startups' ? 'text-[var(--brand-primary)]' : 'text-[var(--text-muted)]'}`} />
           <span className="text-xs sm:text-[13px] truncate">
             Startups
           </span>
@@ -319,11 +319,11 @@ export const BusinessPage: React.FC = () => {
           onClick={() => handleTabChange('network')}
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activeTab === 'network'
-              ? 'bg-indigo-50/80 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800/60 shadow-xs font-semibold'
-              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+              ? 'bg-[var(--brand-soft)] text-[var(--brand-primary)] border-[var(--border-subtle)] shadow-xs font-semibold'
+              : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] font-medium'
           }`}
         >
-          <Users size={15} className={`shrink-0 ${activeTab === 'network' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
+          <Users size={15} className={`shrink-0 ${activeTab === 'network' ? 'text-[var(--brand-primary)]' : 'text-[var(--text-muted)]'}`} />
           <span className="text-xs sm:text-[13px] truncate">
             <span className="sm:hidden">Network</span>
             <span className="hidden sm:inline">Founders & Network</span>
@@ -337,10 +337,10 @@ export const BusinessPage: React.FC = () => {
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activeTab === 'graveyard'
               ? 'bg-rose-50/80 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-900/60 shadow-xs font-semibold'
-              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+              : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] font-medium'
           }`}
         >
-          <Skull size={15} className={`shrink-0 ${activeTab === 'graveyard' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}`} />
+          <Skull size={15} className={`shrink-0 ${activeTab === 'graveyard' ? 'text-rose-600 dark:text-rose-400' : 'text-[var(--text-muted)]'}`} />
           <span className="text-xs sm:text-[13px] truncate">
             Graveyard
           </span>
@@ -351,26 +351,26 @@ export const BusinessPage: React.FC = () => {
       {/* 1. Featured Startups Section (Direct view when entering Business) */}
       {activeTab === 'startups' && (
         <div className="space-y-5 animate-in fade-in duration-200">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-dark-800 pb-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
-                <Compass size={22} className="text-brand-600" />
+              <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2.5">
+                <Compass size={22} className="text-[var(--brand-primary)]" />
                 Verified Startups
               </h2>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">
                 Active ventures building solutions across artificial intelligence, fintech, and climate tech
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Link
                 to="/startups/create"
-                className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg text-xs sm:text-sm py-2 px-3.5 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-[var(--brand-soft)] rounded-lg text-xs sm:text-sm py-2 px-3.5 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Plus size={14} /> Post Startup
               </Link>
               <Link
                 to="/startups"
-                className="text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-400 hover:underline px-2.5 py-1.5"
+                className="text-xs sm:text-sm font-semibold text-[var(--brand-primary)] hover:underline px-2.5 py-1.5"
               >
                 Explore All Startups →
               </Link>
@@ -380,14 +380,14 @@ export const BusinessPage: React.FC = () => {
           {loadingStartups ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[1, 2, 3, 4, 5, 6].map((n) => (
-                <div key={n} className="h-48 rounded-xl bg-slate-100 dark:bg-dark-850 animate-pulse border border-slate-200 dark:border-dark-800" />
+                <div key={n} className="h-48 rounded-xl bg-[var(--bg-soft)] animate-pulse border border-[var(--border-subtle)]" />
               ))}
             </div>
           ) : startups.length === 0 ? (
             <div className="p-10 text-center card-base space-y-3.5">
-              <Compass size={32} className="mx-auto text-slate-400" />
-              <p className="text-sm text-slate-500">No startups listed yet. Be the first to launch!</p>
-              <Link to="/startups/create" className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg text-xs sm:text-sm py-2 px-4 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer">
+              <Compass size={32} className="mx-auto text-[var(--text-muted)]" />
+              <p className="text-sm text-[var(--text-muted)]">No startups listed yet. Be the first to launch!</p>
+              <Link to="/startups/create" className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-[var(--brand-soft)] rounded-lg text-xs sm:text-sm py-2 px-4 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer">
                 <Plus size={14} /> Post Startup
               </Link>
             </div>
@@ -402,35 +402,35 @@ export const BusinessPage: React.FC = () => {
                   <div>
                     <div className="flex items-center gap-3 mb-3">
                       {startup.logo ? (
-                        <img src={startup.logo} alt={startup.name} className="w-11 h-11 rounded-lg object-cover border border-slate-200 dark:border-slate-800" />
+                        <img src={startup.logo} alt={startup.name} className="w-11 h-11 rounded-lg object-cover border border-[var(--border-subtle)]" />
                       ) : (
-                        <div className="w-11 h-11 rounded-lg bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold text-base border border-brand-200/50 dark:border-brand-900/50">
+                        <div className="w-11 h-11 rounded-lg bg-[var(--brand-soft)] text-[var(--brand-primary)] flex items-center justify-center font-bold text-base border border-brand-200/50 dark:border-brand-900/50">
                           {startup.name.charAt(0)}
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <h4 className="font-bold text-base text-slate-900 dark:text-white truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                          <h4 className="font-bold text-base text-[var(--text-primary)] truncate group-hover:text-[var(--brand-primary)] transition-colors">
                             {startup.name}
                           </h4>
-                          {startup.isVerified && <ShieldCheck size={15} className="text-brand-600 shrink-0" />}
+                          {startup.isVerified && <ShieldCheck size={15} className="text-[var(--brand-primary)] shrink-0" />}
                         </div>
-                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                        <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
                           {startup.industry} • {startup.stage}
                         </span>
                       </div>
                     </div>
 
-                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
                       {startup.oneLineDescription || startup.solution}
                     </p>
                   </div>
 
-                  <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs sm:text-sm">
-                    <span className="text-slate-400 text-xs truncate">
+                  <div className="mt-4 pt-3.5 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs sm:text-sm">
+                    <span className="text-[var(--text-muted)] text-xs truncate">
                       {startup.location || 'Remote'}
                     </span>
-                    <span className="font-semibold text-brand-600 dark:text-brand-400">
+                    <span className="font-semibold text-[var(--brand-primary)]">
                       View Startup →
                     </span>
                   </div>
@@ -444,16 +444,16 @@ export const BusinessPage: React.FC = () => {
       {/* 2. Founders & Network Section (Shows Founders only without 'All Members') */}
       {activeTab === 'network' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-dark-800 pb-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3.5">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 text-xs font-semibold border border-brand-200/60 dark:border-brand-900/60 mb-1.5">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[var(--brand-soft)] text-[var(--brand-primary)] text-xs font-semibold border border-brand-200/60 dark:border-brand-900/60 mb-1.5">
                 <Rocket size={12} /> Venture Creators
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
-                <Users size={22} className="text-purple-600" />
+              <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)] flex items-center gap-2.5">
+                <Users size={22} className="text-[var(--brand-primary)]" />
                 Founders Directory
               </h2>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">
                 Verified founders actively building and scaling ventures. Connect directly or pitch synergy.
               </p>
             </div>
@@ -470,10 +470,10 @@ export const BusinessPage: React.FC = () => {
           {/* HookZ Leadership Spotlight */}
           <div className="space-y-3 pt-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <Crown size={14} className="text-brand-600" /> HookZ Leadership
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5">
+                <Crown size={14} className="text-[var(--brand-primary)]" /> HookZ Leadership
               </span>
-              <span className="text-[11px] text-slate-400 font-medium">Platform Architects</span>
+              <span className="text-[11px] text-[var(--text-muted)] font-medium">Platform Architects</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -511,7 +511,7 @@ export const BusinessPage: React.FC = () => {
                 };
 
                 return (
-                  <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3.5">
+                  <div className="p-4 sm:p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-subtle hover:border-[var(--border-subtle)] transition-colors flex flex-col justify-between space-y-3.5">
                     <div className="space-y-2.5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
@@ -524,21 +524,21 @@ export const BusinessPage: React.FC = () => {
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <Link
                                 to={`/profile/${rpUsername}`}
-                                className="font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                                className="font-bold text-sm sm:text-base text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors"
                               >
                                 {rpDisplayName}
                               </Link>
                               <Link
                                 to={`/profile/${rpUsername}`}
-                                className="text-xs text-brand-600 dark:text-brand-400 font-mono hover:underline"
+                                className="text-xs text-[var(--brand-primary)] font-mono hover:underline"
                               >
                                 @{rpUsername}
                               </Link>
                             </div>
-                            <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 mt-0.5">
+                            <p className="text-xs sm:text-sm text-[var(--text-muted)] line-clamp-1 mt-0.5">
                               {rpHeadline}
                             </p>
-                            <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                            <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] mt-1">
                               <span className="flex items-center gap-1">
                                 <MapPin size={12} /> {rpLocation}
                               </span>
@@ -553,7 +553,7 @@ export const BusinessPage: React.FC = () => {
                       </div>
 
                       {rpBio && (
-                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                        <p className="text-xs sm:text-sm text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
                           {rpBio}
                         </p>
                       )}
@@ -563,7 +563,7 @@ export const BusinessPage: React.FC = () => {
                           {rpSkills.map((skill: string) => (
                             <span
                               key={skill}
-                              className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
+                              className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[var(--bg-soft)] text-[var(--text-secondary)] border border-[var(--border-subtle)]"
                             >
                               {skill}
                             </span>
@@ -572,9 +572,9 @@ export const BusinessPage: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
-                      <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 font-medium">
-                        <Briefcase size={13} className="text-brand-600" /> Platform Founder
+                    <div className="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs text-[var(--text-muted)] flex-wrap gap-2">
+                      <span className="inline-flex items-center gap-1 text-[var(--text-secondary)] font-medium">
+                        <Briefcase size={13} className="text-[var(--brand-primary)]" /> Platform Founder
                       </span>
                       <div className="flex items-center gap-2">
                         <Link
@@ -642,7 +642,7 @@ export const BusinessPage: React.FC = () => {
                 };
 
                 return (
-                  <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3.5">
+                  <div className="p-4 sm:p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-subtle hover:border-[var(--border-subtle)] transition-colors flex flex-col justify-between space-y-3.5">
                     <div className="space-y-2.5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-center gap-3">
@@ -655,21 +655,21 @@ export const BusinessPage: React.FC = () => {
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <Link
                                 to={`/profile/${gvUsername}`}
-                                className="font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                                className="font-bold text-sm sm:text-base text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors"
                               >
                                 {gvDisplayName}
                               </Link>
                               <Link
                                 to={`/profile/${gvUsername}`}
-                                className="text-xs text-brand-600 dark:text-brand-400 font-mono hover:underline"
+                                className="text-xs text-[var(--brand-primary)] font-mono hover:underline"
                               >
                                 @{gvUsername}
                               </Link>
                             </div>
-                            <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 mt-0.5">
+                            <p className="text-xs sm:text-sm text-[var(--text-muted)] line-clamp-1 mt-0.5">
                               {gvHeadline}
                             </p>
-                            <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                            <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] mt-1">
                               <span className="flex items-center gap-1">
                                 <MapPin size={12} /> {gvLocation}
                               </span>
@@ -684,7 +684,7 @@ export const BusinessPage: React.FC = () => {
                       </div>
 
                       {gvBio && (
-                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                        <p className="text-xs sm:text-sm text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
                           {gvBio}
                         </p>
                       )}
@@ -694,7 +694,7 @@ export const BusinessPage: React.FC = () => {
                           {gvSkills.map((skill: string) => (
                             <span
                               key={skill}
-                              className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
+                              className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[var(--bg-soft)] text-[var(--text-secondary)] border border-[var(--border-subtle)]"
                             >
                               {skill}
                             </span>
@@ -703,9 +703,9 @@ export const BusinessPage: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
-                      <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-400 font-medium">
-                        <Briefcase size={13} className="text-brand-600" /> Platform Co-Founder
+                    <div className="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs text-[var(--text-muted)] flex-wrap gap-2">
+                      <span className="inline-flex items-center gap-1 text-[var(--text-secondary)] font-medium">
+                        <Briefcase size={13} className="text-[var(--brand-primary)]" /> Platform Co-Founder
                       </span>
                       <div className="flex items-center gap-2">
                         <Link
@@ -745,7 +745,7 @@ export const BusinessPage: React.FC = () => {
           {loadingFounders ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[1, 2, 3, 4].map((n) => (
-                <div key={n} className="h-44 rounded-xl bg-slate-100 dark:bg-dark-850 animate-pulse border border-slate-200 dark:border-dark-800" />
+                <div key={n} className="h-44 rounded-xl bg-[var(--bg-soft)] animate-pulse border border-[var(--border-subtle)]" />
               ))}
             </div>
           ) : (() => {
@@ -764,13 +764,13 @@ export const BusinessPage: React.FC = () => {
 
             if (visibleFounders.length === 0) {
               return (
-                <div className="text-center py-8 px-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                <div className="text-center py-8 px-4 rounded-xl border border-dashed border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+                  <p className="text-sm text-[var(--text-muted)]">
                     You are connected with all featured founders. Explore more founders in the Co-Founders Directory!
                   </p>
                   <Link
                     to="/cofounders?category=founders"
-                    className="inline-block mt-3 text-xs font-semibold text-brand-600 hover:text-brand-500"
+                    className="inline-block mt-3 text-xs font-semibold text-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
                   >
                     Browse Founders Directory &rarr;
                   </Link>
@@ -799,7 +799,7 @@ export const BusinessPage: React.FC = () => {
                   return (
                     <div
                       key={f.id}
-                      className="p-4 sm:p-5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle hover:border-slate-300 dark:hover:border-slate-700 transition-colors flex flex-col justify-between space-y-3.5"
+                      className="p-4 sm:p-5 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-subtle hover:border-[var(--border-subtle)] transition-colors flex flex-col justify-between space-y-3.5"
                     >
                       <div className="space-y-2.5">
                         <div className="flex items-start justify-between gap-3">
@@ -813,17 +813,17 @@ export const BusinessPage: React.FC = () => {
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <Link
                                   to={profileUrl}
-                                  className="font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-brand-600 transition-colors"
+                                  className="font-bold text-sm sm:text-base text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors"
                                 >
                                   {displayName}
                                 </Link>
-                                <span className="text-xs text-brand-600 dark:text-brand-400 font-mono">
+                                <span className="text-xs text-[var(--brand-primary)] font-mono">
                                   @{username}
                                 </span>
                                 <VerificationBadge badge="Active Builder" isVerified={true} size="sm" />
                               </div>
-                              <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 mt-0.5">{f.headline}</p>
-                              <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                              <p className="text-xs sm:text-sm text-[var(--text-muted)] line-clamp-1 mt-0.5">{f.headline}</p>
+                              <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] mt-1">
                                 <span className="flex items-center gap-1">
                                   <MapPin size={12} /> {f.location || 'Remote'}
                                 </span>
@@ -837,7 +837,7 @@ export const BusinessPage: React.FC = () => {
                         </div>
 
                         {(f.oneLineBio || f.headline) && (
-                          <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 line-clamp-2 leading-relaxed">
+                          <p className="text-xs sm:text-sm font-bold text-[var(--text-primary)] line-clamp-2 leading-relaxed">
                             {f.oneLineBio || f.headline}
                           </p>
                         )}
@@ -847,7 +847,7 @@ export const BusinessPage: React.FC = () => {
                             {f.skills.split(',').slice(0, 4).map((sk: string, idx: number) => (
                               <span
                                 key={idx}
-                                className="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                className="text-[11px] font-medium px-2 py-0.5 rounded bg-[var(--bg-soft)] text-[var(--text-secondary)]"
                               >
                                 {sk.trim()}
                               </span>
@@ -856,15 +856,15 @@ export const BusinessPage: React.FC = () => {
                         )}
                       </div>
 
-                      <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
-                        <span className="text-xs text-slate-400 font-medium">
+                      <div className="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-xs text-[var(--text-muted)] font-medium">
                           Active Venture Creator
                         </span>
 
                         <div className="flex items-center gap-2">
                           <Link
                             to={profileUrl}
-                            className="text-xs font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+                            className="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                           >
                             Profile
                           </Link>
@@ -872,7 +872,7 @@ export const BusinessPage: React.FC = () => {
                           {/* Pitch Button */}
                           <button
                             onClick={() => handlePitchClick(targetUserObj)}
-                            className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-medium transition-colors cursor-pointer"
+                            className="px-3 py-1.5 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] text-xs font-medium transition-colors cursor-pointer"
                             title="Propose Co-Founding or Synergy"
                           >
                             Pitch
@@ -898,7 +898,7 @@ export const BusinessPage: React.FC = () => {
                           ) : (
                             <button
                               onClick={() => handleConnectClick(targetUserObj)}
-                              className="px-3.5 py-1.5 rounded-lg bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white text-xs font-semibold transition-colors cursor-pointer"
+                              className="px-3.5 py-1.5 rounded-lg btn-primary text-white text-xs font-semibold transition-colors cursor-pointer"
                             >
                               + Connect
                             </button>
@@ -913,8 +913,8 @@ export const BusinessPage: React.FC = () => {
           })()}
 
           {/* Explore Other Specific Network Roles */}
-          <div className="pt-4 border-t border-slate-200 dark:border-dark-800">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
+          <div className="pt-4 border-t border-[var(--border-subtle)]">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">
               Explore Network Categories
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 w-full">
@@ -931,18 +931,18 @@ export const BusinessPage: React.FC = () => {
                         <span className={`p-1.5 rounded-lg border ${item.color}`}>
                           <Icon size={15} />
                         </span>
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--bg-soft)] text-[var(--text-secondary)]">
                           {item.badge}
                         </span>
                       </div>
-                      <h4 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                      <h4 className="font-bold text-sm text-[var(--text-primary)] group-hover:text-[var(--brand-primary)] transition-colors">
                         {item.title}
                       </h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-2 leading-relaxed">
                         {item.desc}
                       </p>
                     </div>
-                    <div className="mt-3 pt-2 border-t border-slate-100 dark:border-dark-800 text-xs font-semibold text-brand-600 dark:text-brand-400">
+                    <div className="mt-3 pt-2 border-t border-[var(--border-subtle)] text-xs font-semibold text-[var(--brand-primary)]">
                       Explore →
                     </div>
                   </Link>
@@ -956,16 +956,16 @@ export const BusinessPage: React.FC = () => {
       {/* 3. Startup Graveyard Section */}
       {activeTab === 'graveyard' && (
         <div className="space-y-5 animate-in fade-in duration-200">
-          <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-rose-950/40 via-slate-900 to-slate-900 border border-rose-900/40 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="p-6 sm:p-8 rounded-2xl product-feature flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-5">
               <div className="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0 border border-rose-500/20">
                 <Skull size={28} />
               </div>
               <div>
-                <h3 className="font-extrabold text-base sm:text-lg text-white">
+                <h3 className="font-extrabold text-base sm:text-lg text-[var(--text-primary)]">
                   Learn from the Fallen in Startup Graveyard
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed max-w-xl">
+                <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-1 leading-relaxed max-w-xl">
                   Read transparent post-mortems of failed ventures, understand root causes of failure, and solve their unfinished problem statements.
                 </p>
               </div>
@@ -983,11 +983,11 @@ export const BusinessPage: React.FC = () => {
       {/* CTA BANNER: Ready to find collaborators and build your venture? */}
       <section className="py-10">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="p-8 sm:p-10 rounded-2xl bg-brand-50/60 dark:bg-slate-900 text-slate-900 dark:text-white border border-brand-100 dark:border-slate-800 text-center space-y-4">
+          <div className="p-8 sm:p-10 rounded-2xl bg-[var(--brand-soft)] dark:bg-slate-900 text-[var(--text-primary)] border border-[var(--border-subtle)] dark:border-slate-800 text-center space-y-4">
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
               Ready to find collaborators and build your venture?
             </h2>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-lg mx-auto leading-relaxed">
               Join founders, engineers, designers, mentors, and investors building tomorrow's startup ecosystem.
             </p>
 
@@ -995,7 +995,7 @@ export const BusinessPage: React.FC = () => {
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
                   to="/feed"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 transition-colors shadow-sm cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold text-white btn-primary transition-colors shadow-sm cursor-pointer"
                 >
                   <LayoutDashboard size={14} />
                   <span>Go to Feed</span>
@@ -1003,7 +1003,7 @@ export const BusinessPage: React.FC = () => {
                 </Link>
                 <Link
                   to={`/profile/${user.id}`}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-white bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors shadow-sm"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-semibold text-[var(--text-secondary)] bg-[var(--bg-surface)] hover:bg-[var(--bg-primary)] border border-[var(--border-subtle)] transition-colors shadow-sm"
                 >
                   <span>My Startup Profile</span>
                 </Link>
@@ -1019,7 +1019,7 @@ export const BusinessPage: React.FC = () => {
 
                 <Link
                   to="/register"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 transition-colors"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-md text-xs font-semibold text-white btn-primary transition-colors"
                 >
                   <span>Get Started Free</span>
                   <ArrowRight size={13} />

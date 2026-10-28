@@ -1802,17 +1802,17 @@ export const ProfilePage: React.FC = () => {
   // Skeleton Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 font-sans">
+      <div className="min-h-screen bg-[var(--bg-primary)] py-8 px-4 sm:px-6 lg:px-8 font-sans">
         <div className="max-w-6xl mx-auto space-y-6 animate-pulse">
-          <div className="h-64 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+          <div className="h-64 rounded-2xl bg-[var(--bg-soft)]" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <div className="h-44 rounded-2xl bg-slate-200 dark:bg-slate-800" />
-              <div className="h-44 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+              <div className="h-44 rounded-2xl bg-[var(--bg-soft)]" />
+              <div className="h-44 rounded-2xl bg-[var(--bg-soft)]" />
             </div>
             <div className="space-y-6">
-              <div className="h-40 rounded-2xl bg-slate-200 dark:bg-slate-800" />
-              <div className="h-56 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+              <div className="h-40 rounded-2xl bg-[var(--bg-soft)]" />
+              <div className="h-56 rounded-2xl bg-[var(--bg-soft)]" />
             </div>
           </div>
         </div>
@@ -1822,16 +1822,16 @@ export const ProfilePage: React.FC = () => {
 
   if (!profileUser) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-20 px-4 text-center font-sans">
+      <div className="min-h-screen bg-[var(--bg-primary)] py-20 px-4 text-center font-sans">
         <SEO title="Profile Not Found | HookZ" noindex={true} />
-        <div className="max-w-md mx-auto p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Profile Not Found</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+        <div className="max-w-md mx-auto p-8 rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-sm space-y-4">
+          <h2 className="text-xl font-bold text-[var(--text-primary)]">Profile Not Found</h2>
+          <p className="text-sm text-[var(--text-muted)]">
             This founder or member profile is unavailable or may have been removed.
           </p>
           <Link
             to="/cofounders"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white btn-primary transition-colors"
           >
             Explore Talent Directory
           </Link>
@@ -1918,18 +1918,18 @@ export const ProfilePage: React.FC = () => {
       <div className="card-base p-4 sm:p-7 space-y-5 min-w-0 max-w-full overflow-hidden break-words">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Share2 size={18} className="text-brand-600" />
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+            <Share2 size={18} className="text-[var(--brand-primary)]" />
+            <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
               Posts & Updates
             </h2>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400">
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--bg-soft)] text-[var(--text-secondary)]">
               {userPosts.length}
             </span>
           </div>
           {isMe && (
             <Link
               to="/feed"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-xs transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white btn-primary rounded-lg shadow-xs transition-colors"
             >
               <Plus size={13} />
               <span>Create Post</span>
@@ -1939,14 +1939,14 @@ export const ProfilePage: React.FC = () => {
 
         {/* Filter Pills */}
         {userPosts.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap border-b border-slate-100 dark:border-dark-800 pb-3">
+          <div className="flex items-center gap-1.5 flex-wrap border-b border-[var(--border-subtle)] pb-3">
             <button
               type="button"
               onClick={() => setPostFilterTab('ALL')}
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 postFilterTab === 'ALL'
                   ? 'bg-brand-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-700'
+                  : 'bg-[var(--bg-soft)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
               }`}
             >
               All Posts ({userPosts.length})
@@ -1957,7 +1957,7 @@ export const ProfilePage: React.FC = () => {
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 postFilterTab === 'ACHIEVEMENTS'
                   ? 'bg-brand-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-700'
+                  : 'bg-[var(--bg-soft)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
               }`}
             >
               🌟 Describes ({executionsCount})
@@ -1968,7 +1968,7 @@ export const ProfilePage: React.FC = () => {
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 postFilterTab === 'IDEAS'
                   ? 'bg-brand-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-700'
+                  : 'bg-[var(--bg-soft)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
               }`}
             >
               💡 Ideas ({ideasCount})
@@ -1979,7 +1979,7 @@ export const ProfilePage: React.FC = () => {
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 postFilterTab === 'UPDATES'
                   ? 'bg-brand-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-dark-700'
+                  : 'bg-[var(--bg-soft)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
               }`}
             >
               📢 Updates ({updatesCount})
@@ -1990,7 +1990,7 @@ export const ProfilePage: React.FC = () => {
         {loadingPosts ? (
           <div className="space-y-3">
             {[1, 2].map((n) => (
-              <div key={n} className="h-20 bg-slate-50 dark:bg-dark-850 rounded-xl animate-pulse" />
+              <div key={n} className="h-20 bg-[var(--bg-primary)] rounded-xl animate-pulse" />
             ))}
           </div>
         ) : displayPosts.length > 0 ? (
@@ -2002,7 +2002,7 @@ export const ProfilePage: React.FC = () => {
               return (
                 <div
                   key={post.id}
-                  className="p-4 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2 relative group min-w-0 max-w-full overflow-hidden break-words"
+                  className="p-4 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2 relative group min-w-0 max-w-full overflow-hidden break-words"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -2013,11 +2013,11 @@ export const ProfilePage: React.FC = () => {
                           ? 'bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700'
                           : isAch
                           ? 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/60'
-                          : 'bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-900/60'
+                          : 'bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-brand-200/60 dark:border-brand-900/60'
                       }`}>
                         {pType === 'ACHIEVEMENT' ? 'EXECUTION' : (pType === 'DRAWBACK' || pType === 'DRAWBACKS' ? 'DRAWBACKS' : (post.postType || 'UPDATE'))}
                       </span>
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-[11px] text-[var(--text-muted)]">
                         {new Date(post.createdAt).toLocaleDateString(undefined, {
                           month: 'short',
                           day: 'numeric',
@@ -2032,7 +2032,7 @@ export const ProfilePage: React.FC = () => {
                         onClick={() => handleDeletePost(post.id)}
                         disabled={deletingPostId === post.id}
                         title="Delete this post permanently"
-                        className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1 text-xs"
+                        className="text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer disabled:opacity-50 inline-flex items-center gap-1 text-xs"
                       >
                         <Trash2 size={13} />
                         <span className="text-[11px]">Delete</span>
@@ -2041,12 +2041,12 @@ export const ProfilePage: React.FC = () => {
                   </div>
 
                   {post.title && (
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white break-words">
+                    <h3 className="font-bold text-sm text-[var(--text-primary)] break-words">
                       {post.title}
                     </h3>
                   )}
 
-                  <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed break-words">
+                  <p className="text-xs sm:text-sm text-[var(--text-secondary)] whitespace-pre-line leading-relaxed break-words">
                     {post.content}
                   </p>
 
@@ -2055,14 +2055,14 @@ export const ProfilePage: React.FC = () => {
                       href={post.links.startsWith('http') ? post.links : `https://${post.links}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-brand-600 hover:underline max-w-full min-w-0"
+                      className="inline-flex items-center gap-1 text-xs text-[var(--brand-primary)] hover:underline max-w-full min-w-0"
                     >
                       <ExternalLink size={12} className="shrink-0" />
                       <span className="truncate max-w-full">{post.links}</span>
                     </a>
                   )}
 
-                  <div className="pt-2 border-t border-slate-200/60 dark:border-dark-800 flex items-center gap-4 text-xs text-slate-400">
+                  <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center gap-4 text-xs text-[var(--text-muted)]">
                     {IDEA_SET.has(pType) ? (
                       <span className="flex items-center gap-2">
                         <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
@@ -2096,7 +2096,7 @@ export const ProfilePage: React.FC = () => {
                           type: 'post',
                         })
                       }
-                      className="flex items-center gap-1 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer text-xs text-slate-400 hover:text-brand-600"
+                      className="flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors cursor-pointer text-xs text-[var(--text-muted)] hover:text-[var(--brand-primary)]"
                       title="Share post with connections"
                     >
                       <Share2 size={12} />
@@ -2104,7 +2104,7 @@ export const ProfilePage: React.FC = () => {
                     </button>
                     <Link
                       to="/feed"
-                      className="text-brand-600 hover:underline ml-auto font-medium"
+                      className="text-[var(--brand-primary)] hover:underline ml-auto font-medium"
                     >
                       View in Feed →
                     </Link>
@@ -2114,9 +2114,9 @@ export const ProfilePage: React.FC = () => {
             })}
           </div>
         ) : (
-          <div className="text-center py-7 border border-dashed border-slate-200 dark:border-dark-800 rounded-xl space-y-2">
+          <div className="text-center py-7 border border-dashed border-[var(--border-subtle)] rounded-xl space-y-2">
             <Share2 size={24} className="mx-auto text-slate-300 dark:text-slate-600" />
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-[var(--text-muted)]">
               {postFilterTab !== 'ALL'
                 ? `No posts found under "${postFilterTab}".`
                 : isMe
@@ -2126,7 +2126,7 @@ export const ProfilePage: React.FC = () => {
             {isMe && (
               <Link
                 to="/feed"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
               >
                 <Plus size={13} />
                 <span>Post on Feed</span>
@@ -2142,17 +2142,17 @@ export const ProfilePage: React.FC = () => {
     <div className="card-base p-4 sm:p-6 space-y-4 min-w-0 max-w-full overflow-hidden break-words">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
+          <h3 className="text-base font-bold text-[var(--text-primary)]">
             Skills
           </h3>
-          <span className="text-xs font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">
+          <span className="text-xs font-semibold text-[var(--brand-primary)] bg-[var(--brand-soft)] px-2 py-0.5 rounded-full">
             {skillsList.length}
           </span>
         </div>
         {isMe && (
           <button
             onClick={handleOpenEdit}
-            className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 text-[var(--text-muted)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-primary)] rounded-lg transition-colors cursor-pointer"
             title="Edit Skills"
           >
             <Edit3 size={15} />
@@ -2189,13 +2189,13 @@ export const ProfilePage: React.FC = () => {
 
       {/* Skills Tags */}
       {skillsList.length === 0 ? (
-        <p className="text-xs text-slate-400 py-1">No skills added yet.</p>
+        <p className="text-xs text-[var(--text-muted)] py-1">No skills added yet.</p>
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {skillsList.map((skill, idx) => (
             <span
               key={idx}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 dark:bg-dark-850 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--bg-primary)] text-[var(--text-secondary)] border border-[var(--border-subtle)]"
             >
               <span>{skill}</span>
               {isMe && (
@@ -2215,7 +2215,7 @@ export const ProfilePage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-dark-950 py-4 sm:py-8 px-2.5 sm:px-6 lg:px-8 font-sans transition-colors selection:bg-brand-600 selection:text-white w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-[var(--bg-primary)] py-4 sm:py-8 px-2.5 sm:px-6 lg:px-8 font-sans transition-colors selection:bg-brand-600 selection:text-white w-full max-w-full overflow-x-hidden">
       {isMe ? (
         <SEO title="Your Profile | HookZ" noindex={true} />
       ) : (
@@ -2275,7 +2275,7 @@ export const ProfilePage: React.FC = () => {
                 <div className="flex items-center gap-2 self-start sm:self-center shrink-0 flex-wrap">
                   <Link
                     to="/admin"
-                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-md shadow-brand-900/30 transition-all hover:scale-[1.02] cursor-pointer"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl btn-primary text-white text-xs font-semibold shadow-md shadow-brand-900/30 transition-all hover:scale-[1.02] cursor-pointer"
                     title="Open Full Admin Portal"
                   >
                     <ShieldCheck size={14} />
@@ -2286,7 +2286,7 @@ export const ProfilePage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setAdminBarExpanded((prev) => !prev)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 border border-white/10 text-xs font-medium transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)] text-slate-200 border border-white/10 text-xs font-medium transition-all cursor-pointer"
                     title="Toggle Quick Platform Metrics and Tools"
                   >
                     <Sliders size={13} />
@@ -2303,7 +2303,7 @@ export const ProfilePage: React.FC = () => {
               <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-5 gap-2 pt-1 border-t border-white/10">
                 <Link
                   to="/admin?tab=USERS"
-                  className="flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-sky-500/40 text-xs text-slate-200 hover:text-white transition-all group"
+                  className="flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)] border border-white/10 hover:border-sky-500/40 text-xs text-slate-200 hover:text-white transition-all group"
                   title="Moderate registered users and manage badges"
                 >
                   <div className="flex items-center gap-1.5 truncate">
@@ -2311,7 +2311,7 @@ export const ProfilePage: React.FC = () => {
                     <span className="truncate">Users</span>
                   </div>
                   {adminStats?.totalUsers != null && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/10 text-slate-300 font-mono">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[var(--bg-surface)] text-slate-300 font-mono">
                       {adminStats.totalUsers}
                     </span>
                   )}
@@ -2319,7 +2319,7 @@ export const ProfilePage: React.FC = () => {
 
                 <Link
                   to="/admin?tab=STARTUPS"
-                  className="flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-amber-500/40 text-xs text-slate-200 hover:text-white transition-all group"
+                  className="flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)] border border-white/10 hover:border-amber-500/40 text-xs text-slate-200 hover:text-white transition-all group"
                   title="Verify startups and approve ecosystem listings"
                 >
                   <div className="flex items-center gap-1.5 truncate">
@@ -2327,7 +2327,7 @@ export const ProfilePage: React.FC = () => {
                     <span className="truncate">Startups</span>
                   </div>
                   {adminStats?.totalStartups != null && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-white/10 text-slate-300 font-mono">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[var(--bg-surface)] text-slate-300 font-mono">
                       {adminStats.totalStartups}
                     </span>
                   )}
@@ -2335,7 +2335,7 @@ export const ProfilePage: React.FC = () => {
 
                 <Link
                   to="/admin?tab=REPORTS"
-                  className="flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-rose-500/40 text-xs text-slate-200 hover:text-white transition-all group"
+                  className="flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)] border border-white/10 hover:border-rose-500/40 text-xs text-slate-200 hover:text-white transition-all group"
                   title="Review community reports and safety flags"
                 >
                   <div className="flex items-center gap-1.5 truncate">
@@ -2347,7 +2347,7 @@ export const ProfilePage: React.FC = () => {
                       className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
                         adminStats.pendingReports > 0
                           ? 'bg-rose-500/30 text-rose-300 font-bold border border-rose-500/40'
-                          : 'bg-white/10 text-slate-300'
+                          : 'bg-[var(--bg-surface)] text-slate-300'
                       }`}
                     >
                       {adminStats.pendingReports}
@@ -2357,14 +2357,14 @@ export const ProfilePage: React.FC = () => {
 
                 <Link
                   to="/admin/problems"
-                  className="flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-indigo-500/40 text-xs text-slate-200 hover:text-white transition-all group"
+                  className="flex items-center justify-between gap-1.5 px-3 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-[var(--bg-surface)] border border-white/10 hover:border-indigo-500/40 text-xs text-slate-200 hover:text-white transition-all group"
                   title="Manage worldwide problem statements"
                 >
                   <div className="flex items-center gap-1.5 truncate">
-                    <Sparkles size={14} className="text-indigo-400 shrink-0 group-hover:scale-110 transition-transform" />
+                    <Sparkles size={14} className="text-[var(--brand-primary)] shrink-0 group-hover:scale-110 transition-transform" />
                     <span className="truncate">Problems</span>
                   </div>
-                  <ChevronRight size={13} className="text-slate-400 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+                  <ChevronRight size={13} className="text-[var(--text-muted)] opacity-60 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
 
                 <Link
@@ -2393,7 +2393,7 @@ export const ProfilePage: React.FC = () => {
                           else if (res && typeof res === 'object') setAdminStats(res);
                         }).catch(() => null);
                       }}
-                      className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
+                      className="text-[11px] text-[var(--text-muted)] hover:text-white flex items-center gap-1 transition-colors cursor-pointer"
                     >
                       <RefreshCw size={11} />
                       <span>Refresh</span>
@@ -2401,38 +2401,38 @@ export const ProfilePage: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
-                      <p className="text-[11px] text-slate-400">Total Users</p>
+                    <div className="p-2.5 rounded-lg bg-[var(--bg-surface)] border border-white/5">
+                      <p className="text-[11px] text-[var(--text-muted)]">Total Users</p>
                       <p className="text-base sm:text-lg font-bold text-white mt-0.5 font-mono">
                         {adminStats?.totalUsers ?? '—'}
                       </p>
                     </div>
-                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
-                      <p className="text-[11px] text-slate-400">Startups</p>
+                    <div className="p-2.5 rounded-lg bg-[var(--bg-surface)] border border-white/5">
+                      <p className="text-[11px] text-[var(--text-muted)]">Startups</p>
                       <p className="text-base sm:text-lg font-bold text-white mt-0.5 font-mono">
                         {adminStats?.totalStartups ?? '—'}
                       </p>
                     </div>
-                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
-                      <p className="text-[11px] text-slate-400">Opportunities</p>
+                    <div className="p-2.5 rounded-lg bg-[var(--bg-surface)] border border-white/5">
+                      <p className="text-[11px] text-[var(--text-muted)]">Opportunities</p>
                       <p className="text-base sm:text-lg font-bold text-white mt-0.5 font-mono">
                         {adminStats?.totalOpportunities ?? '—'}
                       </p>
                     </div>
-                    <div className="p-2.5 rounded-lg bg-white/5 border border-white/5">
-                      <p className="text-[11px] text-slate-400">Pending Reports</p>
+                    <div className="p-2.5 rounded-lg bg-[var(--bg-surface)] border border-white/5">
+                      <p className="text-[11px] text-[var(--text-muted)]">Pending Reports</p>
                       <p className={`text-base sm:text-lg font-bold mt-0.5 font-mono ${(adminStats?.pendingReports || 0) > 0 ? 'text-rose-400' : 'text-white'}`}>
                         {adminStats?.pendingReports ?? 0}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-white/5 flex-wrap gap-2">
+                  <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] pt-1 border-t border-white/5 flex-wrap gap-2">
                     <span className="flex items-center gap-1">
                       <ShieldCheck size={12} className="text-emerald-400" />
                       Executive Tool Engine Online
                     </span>
-                    <span className="text-slate-400">
+                    <span className="text-[var(--text-muted)]">
                       Supabase DB & Prisma Engine Authoritative
                     </span>
                   </div>
@@ -2462,7 +2462,7 @@ export const ProfilePage: React.FC = () => {
         <div className="card-base overflow-hidden w-full max-w-full min-w-0">
           
           {/* Cover Section */}
-          <div className="h-44 sm:h-52 relative overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-b border-white/10">
+          <div className="h-44 sm:h-52 relative overflow-hidden product-cover border-b border-[var(--border-subtle)]">
             {p.coverImage ? (
               <img
                 src={p.coverImage}
@@ -2507,9 +2507,9 @@ export const ProfilePage: React.FC = () => {
                   </button>
                   <button
                     onClick={handleOpenEdit}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white text-slate-900 text-xs font-semibold transition-all shadow-xs hover:bg-slate-50 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--bg-surface)] text-[var(--text-primary)] text-xs font-semibold transition-all shadow-xs hover:bg-[var(--bg-primary)] cursor-pointer"
                   >
-                    <Edit3 size={14} className="text-brand-600" />
+                    <Edit3 size={14} className="text-[var(--brand-primary)]" />
                     <span>Edit Profile</span>
                   </button>
                 </>
@@ -2518,7 +2518,7 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* Profile Header Row with solid white background so details never overlap cover image */}
-          <div className="px-4 sm:px-8 pb-6 pt-3 relative bg-white dark:bg-[var(--bg-surface)] border-t border-slate-100 dark:border-white/[0.06] w-full max-w-full overflow-visible z-10">
+          <div className="px-4 sm:px-8 pb-6 pt-3 relative bg-[var(--bg-surface)] border-t border-[var(--border-subtle)] w-full max-w-full overflow-visible z-10">
             <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mb-6 w-full min-w-0">
               
               {/* Profile Photo */}
@@ -2529,7 +2529,7 @@ export const ProfilePage: React.FC = () => {
                       src={avatar!}
                       alt={displayName}
                       decoding="async"
-                      className="w-full h-full rounded-full object-cover border-4 border-white dark:border-[var(--bg-surface)] shadow-md bg-white"
+                      className="w-full h-full rounded-full object-cover border-4 border-white dark:border-[var(--bg-surface)] shadow-md bg-[var(--bg-surface)]"
                     />
                   ) : (
                     <div className="w-full h-full rounded-full border-4 border-white dark:border-[var(--bg-surface)] shadow-md bg-brand-600 text-white flex flex-col items-center justify-center font-bold">
@@ -2563,11 +2563,11 @@ export const ProfilePage: React.FC = () => {
 
                 <div className="space-y-1.5 min-w-0">
                   <div className="flex items-center gap-2.5 flex-wrap min-w-0">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight break-words">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] tracking-tight leading-tight break-words">
                       {displayName}
                     </h1>
                     {(profileUser?.username || p.username) && (
-                      <span className="text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/50 px-2.5 py-0.5 rounded-md border border-brand-100 dark:border-brand-900/50 break-words">
+                      <span className="text-xs sm:text-sm font-semibold text-[var(--brand-primary)] bg-[var(--brand-soft)] px-2.5 py-0.5 rounded-md border border-[var(--border-subtle)] break-words">
                         @{profileUser?.username || p.username}
                       </span>
                     )}
@@ -2581,26 +2581,26 @@ export const ProfilePage: React.FC = () => {
                     {isMe && <RoleBadge role={profileUser.role || p.preferredRole || 'STUDENT'} />}
                   </div>
 
-                  <p className="text-sm sm:text-base font-normal text-slate-600 dark:text-slate-300 break-words">
+                  <p className="text-sm sm:text-base font-normal text-[var(--text-secondary)] break-words">
                     {p.headline || (isMe ? 'Add your headline (e.g. CS Sophomore | Full Stack Builder)' : 'Student Builder at HookZ')}
                   </p>
 
                   {p.oneLineBio && (
-                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white break-words">
+                    <p className="text-xs sm:text-sm font-bold text-[var(--text-primary)] break-words">
                       {p.oneLineBio}
                     </p>
                   )}
 
-                  <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex-wrap pt-0.5 min-w-0">
+                  <div className="flex items-center gap-3 text-xs sm:text-sm text-[var(--text-muted)] flex-wrap pt-0.5 min-w-0">
                     {p.education && (
-                      <span className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300 break-words">
-                        <GraduationCap size={15} className="text-brand-600 shrink-0" />
+                      <span className="flex items-center gap-1.5 font-medium text-[var(--text-secondary)] break-words">
+                        <GraduationCap size={15} className="text-[var(--brand-primary)] shrink-0" />
                         <span>{p.education}</span>
                       </span>
                     )}
                     {p.location && (
                       <span className="flex items-center gap-1.5 break-words">
-                        <MapPin size={15} className="text-brand-600 shrink-0" />
+                        <MapPin size={15} className="text-[var(--brand-primary)] shrink-0" />
                         <span>{p.location}</span>
                       </span>
                     )}
@@ -2636,7 +2636,7 @@ export const ProfilePage: React.FC = () => {
                             <button
                               onClick={handleDisconnect}
                               disabled={connActionLoading}
-                              className="p-2 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer"
+                              className="p-2 rounded-xl border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer"
                               title="Remove connection"
                             >
                               <UserX size={14} />
@@ -2690,7 +2690,7 @@ export const ProfilePage: React.FC = () => {
                           className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium cursor-pointer"
                           title="Pitch an idea"
                         >
-                          <Rocket size={15} className="text-brand-600" />
+                          <Rocket size={15} className="text-[var(--brand-primary)]" />
                           <span>Pitch</span>
                         </button>
                         <button
@@ -2706,12 +2706,12 @@ export const ProfilePage: React.FC = () => {
                           className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium cursor-pointer"
                           title="Share Profile with Connections"
                         >
-                          <Share2 size={15} className="text-brand-600" />
+                          <Share2 size={15} className="text-[var(--brand-primary)]" />
                           <span>Share</span>
                         </button>
                         <button
                           onClick={() => setBlockModalOpen(true)}
-                          className="flex-1 sm:flex-none p-2 rounded-xl border border-slate-200 dark:border-dark-800 text-slate-400 hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer"
+                          className="flex-1 sm:flex-none p-2 rounded-xl border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-rose-600 hover:border-rose-300 transition-colors cursor-pointer"
                           title="Block this user"
                         >
                           <UserX size={15} />
@@ -2736,7 +2736,7 @@ export const ProfilePage: React.FC = () => {
                       className="flex-1 sm:flex-none btn-secondary inline-flex items-center justify-center gap-2 px-3.5 py-2 text-xs font-medium cursor-pointer"
                       title="Share your profile with connections"
                     >
-                      <Share2 size={15} className="text-brand-600" />
+                      <Share2 size={15} className="text-[var(--brand-primary)]" />
                       <span>Share</span>
                     </button>
                     <button
@@ -2752,24 +2752,24 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* Profile Statistics Row (ONLY Connections & Verified Skills, REMOVED Startups Created) */}
-            <div className="pt-4 border-t border-slate-100 dark:border-white/[0.06] grid grid-cols-2 gap-4 text-left">
+            <div className="pt-4 border-t border-[var(--border-subtle)] grid grid-cols-2 gap-4 text-left">
               <button
                 onClick={handleOpenConnectionsModal}
                 className="group text-left cursor-pointer transition-colors"
               >
-                <div className="text-lg font-semibold text-slate-900 dark:text-[#F8FAFC] group-hover:text-brand-600 transition-colors">
+                <div className="text-lg font-semibold text-[var(--text-primary)] group-hover:text-[var(--brand-primary)] transition-colors">
                   {connectionsCount}
                 </div>
-                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5 group-hover:text-brand-600 transition-colors">
+                <div className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mt-0.5 group-hover:text-[var(--brand-primary)] transition-colors">
                   Connections
                 </div>
               </button>
 
-              <div className="border-l border-slate-100 dark:border-white/[0.06] pl-6">
-                <div className="text-lg font-semibold text-slate-900 dark:text-[#F8FAFC]">
+              <div className="border-l border-[var(--border-subtle)] pl-6">
+                <div className="text-lg font-semibold text-[var(--text-primary)]">
                   {skillsList.length}
                 </div>
-                <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">
+                <div className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mt-0.5">
                   Verified Skills
                 </div>
               </div>
@@ -2816,13 +2816,13 @@ export const ProfilePage: React.FC = () => {
             {/* 1. ABOUT SECTION */}
             <div className="card-base p-4 sm:p-7 space-y-4 min-w-0 max-w-full overflow-hidden break-words">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">
                   About
                 </h2>
                 {isMe && (
                   <button
                     onClick={handleOpenEdit}
-                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
+                    className="p-1.5 text-[var(--text-muted)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-primary)] rounded-lg transition-colors cursor-pointer"
                     title="Edit About"
                   >
                     <Edit3 size={15} />
@@ -2833,13 +2833,13 @@ export const ProfilePage: React.FC = () => {
               {/* MOBILE VIEW (under About only keep skills) */}
               <div className="block sm:hidden space-y-2.5">
                 {skillsList.length === 0 ? (
-                  <p className="text-xs text-slate-400 italic">No skills added yet.</p>
+                  <p className="text-xs text-[var(--text-muted)] italic">No skills added yet.</p>
                 ) : (
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {skillsList.map((skill, idx) => (
                       <span
                         key={idx}
-                        className="px-2.5 py-1 rounded-md text-xs font-semibold bg-brand-50/80 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-800"
+                        className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-brand-200/60 dark:border-brand-800"
                       >
                         {skill}
                       </span>
@@ -2850,20 +2850,20 @@ export const ProfilePage: React.FC = () => {
 
               {/* DESKTOP VIEW: Full bio and interests */}
               <div className="hidden sm:block space-y-4">
-                <p className="text-sm font-normal text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line break-words">
+                <p className="text-sm font-normal text-[var(--text-secondary)] leading-relaxed whitespace-pre-line break-words">
                   {p.bio || 'No background description shared yet. Add a short summary about your hackathon journey, interests, and what you are building!'}
                 </p>
 
                 {interestsList.length > 0 && (
-                  <div className="pt-3 border-t border-slate-100 dark:border-dark-800 space-y-2">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <div className="pt-3 border-t border-[var(--border-subtle)] space-y-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                       Interests & Focus
                     </h4>
                     <div className="flex flex-wrap gap-1.5">
                       {interestsList.map((interest, idx) => (
                         <span
                           key={idx}
-                          className="px-2.5 py-1 rounded-md text-xs font-medium bg-slate-50 dark:bg-dark-850 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-dark-700"
+                          className="px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--bg-primary)] text-[var(--text-secondary)] border border-[var(--border-subtle)]"
                         >
                           {interest}
                         </span>
@@ -2882,14 +2882,14 @@ export const ProfilePage: React.FC = () => {
             {/* 2. EXPERIENCE SECTION */}
             <div className="card-base p-4 sm:p-7 space-y-5 min-w-0 max-w-full overflow-hidden break-words">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                  <Briefcase size={18} className="text-brand-600" />
+                <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
+                  <Briefcase size={18} className="text-[var(--brand-primary)]" />
                   <span>Experience</span>
                 </h2>
                 {isMe && (
                   <button
                     onClick={handleOpenEdit}
-                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
+                    className="p-1.5 text-[var(--text-muted)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-primary)] rounded-lg transition-colors cursor-pointer"
                     title="Edit Experience"
                   >
                     <Edit3 size={15} />
@@ -2898,18 +2898,18 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               {parsedExperiences.length > 0 ? (
-                <div className="relative pl-5 border-l-2 border-slate-200 dark:border-dark-800 space-y-5">
+                <div className="relative pl-5 border-l-2 border-[var(--border-subtle)] space-y-5">
                   {parsedExperiences.map((exp, idx) => (
                     <div key={exp.id || idx} className="relative group min-w-0 max-w-full overflow-hidden break-words">
                       <div className="absolute -left-[27px] top-1.5 w-3.5 h-3.5 rounded-full bg-brand-600 border-2 border-white dark:border-dark-900" />
                       <div className="space-y-1">
                         <div className="flex items-center justify-between gap-2 flex-wrap">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-sm font-bold text-slate-900 dark:text-white break-words">
+                            <h3 className="text-sm font-bold text-[var(--text-primary)] break-words">
                               {exp.category || p.preferredRole || 'Builder'}
                             </h3>
                             {exp.company && (
-                              <span className="text-xs font-bold uppercase tracking-wider text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-950/70 px-2 py-0.5 rounded border border-brand-200/60 dark:border-brand-900/60 font-mono">
+                              <span className="text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)] bg-[var(--brand-soft)] px-2 py-0.5 rounded border border-brand-200/60 dark:border-brand-900/60 font-mono">
                                 {exp.company.toUpperCase()}
                               </span>
                             )}
@@ -2919,7 +2919,7 @@ export const ProfilePage: React.FC = () => {
                               type="button"
                               onClick={() => handleDeleteExperienceDirect(idx)}
                               title="Delete experience"
-                              className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                              className="text-[var(--text-muted)] hover:text-rose-600 dark:hover:text-rose-400 p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
                             >
                               <Trash2 size={13} />
                             </button>
@@ -2927,7 +2927,7 @@ export const ProfilePage: React.FC = () => {
                         </div>
 
                         {exp.description && (
-                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 pt-0.5 whitespace-pre-line leading-relaxed break-words">
+                          <p className="text-xs sm:text-sm text-[var(--text-secondary)] pt-0.5 whitespace-pre-line leading-relaxed break-words">
                             {exp.description}
                           </p>
                         )}
@@ -2936,13 +2936,13 @@ export const ProfilePage: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-xl">
+                <div className="text-center py-6 border border-dashed border-[var(--border-subtle)] rounded-xl">
                   <Briefcase size={24} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
-                  <p className="text-xs text-slate-500 dark:text-slate-400">No experience details added yet.</p>
+                  <p className="text-xs text-[var(--text-muted)]">No experience details added yet.</p>
                   {isMe && (
                     <button
                       onClick={handleOpenEdit}
-                      className="mt-2 text-xs font-semibold text-brand-600 hover:underline cursor-pointer"
+                      className="mt-2 text-xs font-semibold text-[var(--brand-primary)] hover:underline cursor-pointer"
                     >
                       + Add Experience
                     </button>
@@ -2954,14 +2954,14 @@ export const ProfilePage: React.FC = () => {
             {/* 3. EDUCATION SECTION */}
             <div className="card-base p-4 sm:p-7 space-y-4 min-w-0 max-w-full overflow-hidden break-words">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                  <GraduationCap size={18} className="text-brand-600" />
+                <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
+                  <GraduationCap size={18} className="text-[var(--brand-primary)]" />
                   <span>Education</span>
                 </h2>
                 {isMe && (
                   <button
                     onClick={handleOpenEdit}
-                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
+                    className="p-1.5 text-[var(--text-muted)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-primary)] rounded-lg transition-colors cursor-pointer"
                     title="Edit Education"
                   >
                     <Edit3 size={15} />
@@ -2970,27 +2970,27 @@ export const ProfilePage: React.FC = () => {
               </div>
 
               {p.education ? (
-                <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-slate-50/70 dark:bg-dark-850 border border-slate-200/80 dark:border-dark-800 min-w-0 max-w-full overflow-hidden break-words">
-                  <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 border border-brand-200/50 flex items-center justify-center font-bold text-sm shrink-0">
+                <div className="flex items-start gap-3.5 p-3.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] min-w-0 max-w-full overflow-hidden break-words">
+                  <div className="w-10 h-10 rounded-xl bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-brand-200/50 flex items-center justify-center font-bold text-sm shrink-0">
                     <BookOpen size={18} />
                   </div>
                   <div className="space-y-1 min-w-0 max-w-full overflow-hidden break-words">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap break-words">
+                    <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2 flex-wrap break-words">
                       <span className="break-words">{p.education}</span>
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-[var(--text-muted)]">
                       College / University Program
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-xl">
+                <div className="text-center py-6 border border-dashed border-[var(--border-subtle)] rounded-xl">
                   <GraduationCap size={24} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
-                  <p className="text-xs text-slate-500 dark:text-slate-400">No education details listed.</p>
+                  <p className="text-xs text-[var(--text-muted)]">No education details listed.</p>
                   {isMe && (
                     <button
                       onClick={handleOpenEdit}
-                      className="mt-2 text-xs font-semibold text-brand-600 hover:underline cursor-pointer"
+                      className="mt-2 text-xs font-semibold text-[var(--brand-primary)] hover:underline cursor-pointer"
                     >
                       + Add Education
                     </button>
@@ -3003,12 +3003,12 @@ export const ProfilePage: React.FC = () => {
             <div className="card-base p-4 sm:p-7 space-y-4 min-w-0 max-w-full overflow-hidden break-words">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                    <Award size={18} className="text-brand-600" />
+                  <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
+                    <Award size={18} className="text-[var(--brand-primary)]" />
                     <span>Hackathon History</span>
                   </h2>
                   {parsedHackathons.length > 0 && (
-                    <span className="text-xs font-semibold text-brand-600 bg-brand-50 dark:bg-brand-950/50 px-2 py-0.5 rounded-full">
+                    <span className="text-xs font-semibold text-[var(--brand-primary)] bg-[var(--brand-soft)] px-2 py-0.5 rounded-full">
                       {parsedHackathons.length}
                     </span>
                   )}
@@ -3016,7 +3016,7 @@ export const ProfilePage: React.FC = () => {
                 {isMe && (
                   <button
                     onClick={handleOpenEdit}
-                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
+                    className="p-1.5 text-[var(--text-muted)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-primary)] rounded-lg transition-colors cursor-pointer"
                     title="Edit Hackathon History"
                   >
                     <Edit3 size={15} />
@@ -3029,12 +3029,12 @@ export const ProfilePage: React.FC = () => {
                   {parsedHackathons.map((hack: any, idx: number) => (
                     <div
                       key={idx}
-                      className="p-4 rounded-xl border border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850 hover:bg-white dark:hover:bg-dark-900 hover:border-slate-300 transition-all space-y-2 min-w-0 max-w-full overflow-hidden break-words"
+                      className="p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] hover:bg-[var(--bg-surface)] hover:border-[var(--border-subtle)] transition-all space-y-2 min-w-0 max-w-full overflow-hidden break-words"
                     >
                       <div className="flex items-start justify-between gap-3 flex-wrap">
                         <div className="space-y-1 min-w-0 max-w-full overflow-hidden break-words">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-sm font-bold text-slate-900 dark:text-white break-words">
+                            <h3 className="text-sm font-bold text-[var(--text-primary)] break-words">
                               {hack.name || 'Hackathon Event'}
                             </h3>
                             {(hack.award || hack.result) && (
@@ -3044,9 +3044,9 @@ export const ProfilePage: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
-                            {hack.role && <span className="font-semibold text-brand-600">{hack.role}</span>}
-                            {hack.project && <span>• Project: <strong className="text-slate-800 dark:text-slate-200">{hack.project}</strong></span>}
+                          <div className="flex items-center gap-2 text-xs text-[var(--text-muted)] flex-wrap">
+                            {hack.role && <span className="font-semibold text-[var(--brand-primary)]">{hack.role}</span>}
+                            {hack.project && <span>• Project: <strong className="text-[var(--text-primary)]">{hack.project}</strong></span>}
                             {hack.date && <span>• {hack.date}</span>}
                           </div>
                         </div>
@@ -3055,7 +3055,7 @@ export const ProfilePage: React.FC = () => {
                             href={hack.link.startsWith('http') ? hack.link : `https://${hack.link}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline max-w-full min-w-0"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--brand-primary)] hover:underline max-w-full min-w-0"
                           >
                             <span className="truncate max-w-[160px] sm:max-w-xs">Project Link</span>
                             <ExternalLink size={12} className="shrink-0" />
@@ -3066,7 +3066,7 @@ export const ProfilePage: React.FC = () => {
                   ))}
 
                   {rawAchievements && (
-                    <div className="p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20 text-xs text-slate-800 dark:text-slate-200 space-y-1">
+                    <div className="p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20 text-xs text-[var(--text-primary)] space-y-1">
                       <div className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
                         <Award size={14} className="text-amber-600" />
                         <span>Key Achievements & Recognitions</span>
@@ -3077,7 +3077,7 @@ export const ProfilePage: React.FC = () => {
                 </div>
               ) : rawAchievements ? (
                 <div className="space-y-3">
-                  <div className="p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20 text-xs text-slate-800 dark:text-slate-200 space-y-1">
+                  <div className="p-3.5 rounded-xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/40 dark:bg-amber-950/20 text-xs text-[var(--text-primary)] space-y-1">
                     <div className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
                       <Award size={14} className="text-amber-600" />
                       <span>Key Achievements & Recognitions</span>
@@ -3086,13 +3086,13 @@ export const ProfilePage: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-xl">
+                <div className="text-center py-6 border border-dashed border-[var(--border-subtle)] rounded-xl">
                   <Award size={24} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
-                  <p className="text-xs text-slate-500 dark:text-slate-400">No hackathon history or achievements listed yet.</p>
+                  <p className="text-xs text-[var(--text-muted)]">No hackathon history or achievements listed yet.</p>
                   {isMe && (
                     <button
                       onClick={handleOpenEdit}
-                      className="mt-2 text-xs font-semibold text-brand-600 hover:underline cursor-pointer"
+                      className="mt-2 text-xs font-semibold text-[var(--brand-primary)] hover:underline cursor-pointer"
                     >
                       + Add Hackathon / Achievement
                     </button>
@@ -3105,12 +3105,12 @@ export const ProfilePage: React.FC = () => {
             <div className="card-base p-4 sm:p-7 space-y-4 min-w-0 max-w-full overflow-hidden break-words">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                    <FolderKanban size={18} className="text-brand-600" />
+                  <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight flex items-center gap-2">
+                    <FolderKanban size={18} className="text-[var(--brand-primary)]" />
                     <span>Projects</span>
                   </h2>
                   {(parsedProjects.length > 0 || (profileUser.startups && profileUser.startups.length > 0)) && (
-                    <span className="text-xs font-semibold text-brand-600 bg-brand-50 dark:bg-brand-950/50 px-2 py-0.5 rounded-full">
+                    <span className="text-xs font-semibold text-[var(--brand-primary)] bg-[var(--brand-soft)] px-2 py-0.5 rounded-full">
                       {parsedProjects.length + (profileUser.startups?.length || 0)}
                     </span>
                   )}
@@ -3118,7 +3118,7 @@ export const ProfilePage: React.FC = () => {
                 {isMe && (
                   <button
                     onClick={handleOpenEdit}
-                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
+                    className="p-1.5 text-[var(--text-muted)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-primary)] rounded-lg transition-colors cursor-pointer"
                     title="Edit Projects"
                   >
                     <Edit3 size={15} />
@@ -3131,14 +3131,14 @@ export const ProfilePage: React.FC = () => {
                   {parsedProjects.map((proj: any, idx: number) => (
                     <div
                       key={proj.id || idx}
-                      className="p-4 rounded-xl border border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850 hover:bg-white dark:hover:bg-dark-900 hover:border-slate-300 transition-all flex flex-col justify-between space-y-3 min-w-0 overflow-hidden break-words"
+                      className="p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] hover:bg-[var(--bg-surface)] hover:border-[var(--border-subtle)] transition-all flex flex-col justify-between space-y-3 min-w-0 overflow-hidden break-words"
                     >
                       <div className="space-y-1.5 min-w-0 break-words">
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-white break-words">
+                        <h3 className="text-sm font-bold text-[var(--text-primary)] break-words">
                           {proj.name || 'Project'}
                         </h3>
                         {proj.description && (
-                          <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed break-words">
+                          <p className="text-xs text-[var(--text-secondary)] line-clamp-3 leading-relaxed break-words">
                             {proj.description}
                           </p>
                         )}
@@ -3147,7 +3147,7 @@ export const ProfilePage: React.FC = () => {
                             {proj.techStack.split(',').map((t: string, tidx: number) => (
                               <span
                                 key={tidx}
-                                className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-100 dark:border-brand-900/40"
+                                className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)]"
                               >
                                 {t.trim()}
                               </span>
@@ -3157,13 +3157,13 @@ export const ProfilePage: React.FC = () => {
                       </div>
 
                       {(proj.githubUrl || proj.demoUrl) && (
-                        <div className="pt-2 border-t border-slate-200/80 dark:border-dark-700/60 flex items-center gap-3 text-xs">
+                        <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center gap-3 text-xs">
                           {proj.githubUrl && (
                             <a
                               href={proj.githubUrl.startsWith('http') ? proj.githubUrl : `https://${proj.githubUrl}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300 hover:text-brand-600"
+                              className="inline-flex items-center gap-1 font-semibold text-[var(--text-secondary)] hover:text-[var(--brand-primary)]"
                             >
                               <span>Code</span>
                               <ExternalLink size={12} />
@@ -3174,7 +3174,7 @@ export const ProfilePage: React.FC = () => {
                               href={proj.demoUrl.startsWith('http') ? proj.demoUrl : `https://${proj.demoUrl}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1 font-semibold text-brand-600 hover:underline"
+                              className="inline-flex items-center gap-1 font-semibold text-[var(--brand-primary)] hover:underline"
                             >
                               <span>Live Demo</span>
                               <ExternalLink size={12} />
@@ -3188,30 +3188,30 @@ export const ProfilePage: React.FC = () => {
                   {profileUser.startups?.map((s) => (
                     <div
                       key={s.id}
-                      className="p-4 rounded-xl border border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850 hover:bg-white dark:hover:bg-dark-900 hover:border-slate-300 transition-all flex flex-col justify-between space-y-3 min-w-0 overflow-hidden break-words"
+                      className="p-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] hover:bg-[var(--bg-surface)] hover:border-[var(--border-subtle)] transition-all flex flex-col justify-between space-y-3 min-w-0 overflow-hidden break-words"
                     >
                       <div className="space-y-1.5 min-w-0 break-words">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-100">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)]">
                             {s.stage}
                           </span>
-                          <span className="text-xs text-slate-500 truncate">{s.industry}</span>
+                          <span className="text-xs text-[var(--text-muted)] truncate">{s.industry}</span>
                         </div>
-                        <h3 className="text-sm font-bold text-slate-900 dark:text-white break-words">
+                        <h3 className="text-sm font-bold text-[var(--text-primary)] break-words">
                           {s.name}
                         </h3>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed break-words">
+                        <p className="text-xs text-[var(--text-secondary)] line-clamp-3 leading-relaxed break-words">
                           {s.oneLineDescription || 'Student venture.'}
                         </p>
                       </div>
 
-                      <div className="pt-2 border-t border-slate-200/80 dark:border-dark-700/60 flex items-center justify-between text-xs">
+                      <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="text-slate-500 font-medium">Founder</span>
+                          <span className="text-[var(--text-muted)] font-medium">Founder</span>
                           {isMe && (
                             <Link
                               to={`/startups/${s.id}?edit=true`}
-                              className="inline-flex items-center gap-1 font-semibold text-brand-600 hover:text-brand-700 bg-brand-50 dark:bg-brand-950/60 px-2 py-0.5 rounded text-[11px] border border-brand-200/60 dark:border-brand-900/60"
+                              className="inline-flex items-center gap-1 font-semibold text-[var(--brand-primary)] hover:text-[var(--brand-primary)] bg-[var(--brand-soft)] px-2 py-0.5 rounded text-[11px] border border-brand-200/60 dark:border-brand-900/60"
                               title="Edit Startup"
                             >
                               <Edit3 size={11} />
@@ -3221,7 +3221,7 @@ export const ProfilePage: React.FC = () => {
                         </div>
                         <Link
                           to={`/startups/${s.id}`}
-                          className="inline-flex items-center gap-1 font-semibold text-brand-600 hover:underline"
+                          className="inline-flex items-center gap-1 font-semibold text-[var(--brand-primary)] hover:underline"
                         >
                           <span>View Project</span>
                           <ChevronRight size={13} />
@@ -3231,13 +3231,13 @@ export const ProfilePage: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 border border-dashed border-slate-200 dark:border-dark-800 rounded-xl">
+                <div className="text-center py-6 border border-dashed border-[var(--border-subtle)] rounded-xl">
                   <FolderKanban size={24} className="mx-auto text-slate-300 dark:text-slate-600 mb-2" />
-                  <p className="text-xs text-slate-500 dark:text-slate-400">No projects added yet.</p>
+                  <p className="text-xs text-[var(--text-muted)]">No projects added yet.</p>
                   {isMe && (
                     <button
                       onClick={handleOpenEdit}
-                      className="mt-2 text-xs font-semibold text-brand-600 hover:underline cursor-pointer"
+                      className="mt-2 text-xs font-semibold text-[var(--brand-primary)] hover:underline cursor-pointer"
                     >
                       + Add Project
                     </button>
@@ -3260,20 +3260,20 @@ export const ProfilePage: React.FC = () => {
             {isMe && (
               <div className="card-base p-4 sm:p-5 space-y-3.5 min-w-0 max-w-full overflow-hidden break-words">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                     Profile Completeness
                   </h3>
-                  <span className="text-xs font-bold text-brand-600">{completionPercentage}%</span>
+                  <span className="text-xs font-bold text-[var(--brand-primary)]">{completionPercentage}%</span>
                 </div>
 
-                <div className="w-full h-1.5 bg-slate-100 dark:bg-dark-800 rounded-full overflow-hidden">
+                <div className="w-full h-1.5 bg-[var(--bg-soft)] rounded-full overflow-hidden">
                   <div
                     className="h-full bg-brand-600 transition-all duration-300 rounded-full"
                     style={{ width: `${completionPercentage}%` }}
                   />
                 </div>
 
-                <div className="space-y-1.5 text-xs text-slate-500 pt-1">
+                <div className="space-y-1.5 text-xs text-[var(--text-muted)] pt-1">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 size={13} className={p.avatar ? 'text-emerald-600' : 'text-slate-300'} />
                     <span>Profile photo</span>
@@ -3303,14 +3303,14 @@ export const ProfilePage: React.FC = () => {
             {/* 7. SOCIAL LINKS SECTION */}
             <div className="card-base p-4 sm:p-6 space-y-4 min-w-0 max-w-full overflow-hidden break-words">
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Globe size={16} className="text-brand-600" />
+                <h3 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  <Globe size={16} className="text-[var(--brand-primary)]" />
                   <span>Social Links</span>
                 </h3>
                 {isMe && (
                   <button
                     onClick={handleOpenEdit}
-                    className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-slate-50 dark:hover:bg-dark-800 rounded-lg transition-colors cursor-pointer"
+                    className="p-1.5 text-[var(--text-muted)] hover:text-[var(--brand-primary)] hover:bg-[var(--bg-primary)] rounded-lg transition-colors cursor-pointer"
                     title="Edit Social Links"
                   >
                     <Edit3 size={15} />
@@ -3324,13 +3324,13 @@ export const ProfilePage: React.FC = () => {
                     href={p.linkedinUrl.startsWith('http') ? p.linkedinUrl : `https://${p.linkedinUrl}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 dark:border-dark-800 hover:bg-slate-50 dark:hover:bg-dark-850 text-slate-700 dark:text-slate-300 hover:text-brand-600 transition-colors"
+                    className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--border-subtle)] hover:bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:text-[var(--brand-primary)] transition-colors"
                   >
                     <span className="flex items-center gap-2 font-medium">
-                      <Globe size={14} className="text-brand-600" />
+                      <Globe size={14} className="text-[var(--brand-primary)]" />
                       <span>LinkedIn</span>
                     </span>
-                    <ExternalLink size={12} className="text-slate-400" />
+                    <ExternalLink size={12} className="text-[var(--text-muted)]" />
                   </a>
                 )}
                 {p.githubUrl && (
@@ -3338,13 +3338,13 @@ export const ProfilePage: React.FC = () => {
                     href={p.githubUrl.startsWith('http') ? p.githubUrl : `https://${p.githubUrl}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 dark:border-dark-800 hover:bg-slate-50 dark:hover:bg-dark-850 text-slate-700 dark:text-slate-300 hover:text-brand-600 transition-colors"
+                    className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--border-subtle)] hover:bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:text-[var(--brand-primary)] transition-colors"
                   >
                     <span className="flex items-center gap-2 font-medium">
-                      <ExternalLink size={14} className="text-brand-600" />
+                      <ExternalLink size={14} className="text-[var(--brand-primary)]" />
                       <span>GitHub</span>
                     </span>
-                    <ExternalLink size={12} className="text-slate-400" />
+                    <ExternalLink size={12} className="text-[var(--text-muted)]" />
                   </a>
                 )}
                 {p.websiteUrl && (
@@ -3352,17 +3352,17 @@ export const ProfilePage: React.FC = () => {
                     href={p.websiteUrl.startsWith('http') ? p.websiteUrl : `https://${p.websiteUrl}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 dark:border-dark-800 hover:bg-slate-50 dark:hover:bg-dark-850 text-slate-700 dark:text-slate-300 hover:text-brand-600 transition-colors"
+                    className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--border-subtle)] hover:bg-[var(--bg-primary)] text-[var(--text-secondary)] hover:text-[var(--brand-primary)] transition-colors"
                   >
                     <span className="flex items-center gap-2 font-medium">
-                      <Globe size={14} className="text-brand-600" />
+                      <Globe size={14} className="text-[var(--brand-primary)]" />
                       <span>Personal Website</span>
                     </span>
-                    <ExternalLink size={12} className="text-slate-400" />
+                    <ExternalLink size={12} className="text-[var(--text-muted)]" />
                   </a>
                 )}
                 {!p.linkedinUrl && !p.githubUrl && !p.websiteUrl && (
-                  <p className="text-xs text-slate-400 py-1">No external social links added.</p>
+                  <p className="text-xs text-[var(--text-muted)] py-1">No external social links added.</p>
                 )}
               </div>
             </div>
@@ -3378,7 +3378,7 @@ export const ProfilePage: React.FC = () => {
         <div className="fixed sm:hidden bottom-5 right-5 z-40">
           <button
             onClick={handleOpenEdit}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-2xl shadow-indigo-600/60 border border-indigo-400/40 active:scale-95 transition-all cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold text-white btn-primary shadow-2xl shadow-indigo-600/60 border border-indigo-400/40 active:scale-95 transition-all cursor-pointer"
             aria-label="Edit Profile"
           >
             <Edit3 size={15} />
@@ -3391,26 +3391,26 @@ export const ProfilePage: React.FC = () => {
       {isMe && (
         <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Edit Profile Details" maxWidth="2xl">
           <div className="card-base p-4 mb-5 flex items-center justify-between gap-4">
-            <div><h4 className="text-sm font-semibold">Appearance</h4><p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Make HookZ feel like your space.</p></div>
+            <div><h4 className="text-sm font-semibold">Appearance</h4><p className="text-xs text-[var(--text-muted)] mt-1">Make HookZ feel like your space.</p></div>
             <button type="button" role="switch" aria-checked={theme === 'dark'} aria-label="Dark theme" onClick={toggleTheme} className="btn-secondary text-xs">
               {theme === 'dark' ? 'Dark theme on' : 'Dark theme off'}
             </button>
           </div>
           <form onSubmit={handleSaveProfile} className="space-y-4 font-sans">
             {/* --- SECTION 1: BASIC INFO --- */}
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+            <div className="p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)] flex items-center gap-1.5">
                   <Edit3 size={14} /> Basic Information & Branding
                 </h4>
-                <span className="text-[11px] text-slate-500 font-medium">Public details</span>
+                <span className="text-[11px] text-[var(--text-muted)] font-medium">Public details</span>
               </div>
 
               {/* Photos & Branding */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Avatar Uploader */}
-                <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2">
-                  <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
+                <div className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2">
+                  <label className="block text-xs font-semibold text-[var(--text-primary)]">
                     Profile Photo (Avatar)
                   </label>
                   <div className="flex items-center gap-2">
@@ -3418,7 +3418,7 @@ export const ProfilePage: React.FC = () => {
                       <img
                         src={formData.avatar}
                         alt=""
-                        className="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-dark-700 shadow-xs shrink-0"
+                        className="w-11 h-11 rounded-full object-cover border border-[var(--border-subtle)] shadow-xs shrink-0"
                       />
                     ) : (
                       <div className="w-11 h-11 rounded-full bg-brand-600 text-white font-bold text-xs flex items-center justify-center shrink-0 border border-brand-500/30">
@@ -3436,7 +3436,7 @@ export const ProfilePage: React.FC = () => {
                       onClick={() => handleRequestGalleryPermission('avatar')}
                       className="btn-secondary flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium cursor-pointer"
                     >
-                      <Camera size={13} className="text-brand-600" />
+                      <Camera size={13} className="text-[var(--brand-primary)]" />
                       <span>{formData.avatar ? 'Change Photo' : 'Upload Photo'}</span>
                     </button>
                     {formData.avatar && (
@@ -3461,12 +3461,12 @@ export const ProfilePage: React.FC = () => {
                 </div>
 
                 {/* Cover Uploader */}
-                <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2">
-                  <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">
+                <div className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2">
+                  <label className="block text-xs font-semibold text-[var(--text-primary)]">
                     Background Cover Image
                   </label>
                   <div className="flex items-center gap-2">
-                    <div className="w-14 h-10 rounded-md bg-slate-800 overflow-hidden border border-slate-200 dark:border-dark-700 shrink-0">
+                    <div className="w-14 h-10 rounded-md bg-slate-800 overflow-hidden border border-[var(--border-subtle)] shrink-0">
                       {formData.coverImage ? (
                         <img src={formData.coverImage} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -3478,7 +3478,7 @@ export const ProfilePage: React.FC = () => {
                       onClick={() => handleRequestGalleryPermission('cover')}
                       className="btn-secondary flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium cursor-pointer"
                     >
-                      <ImageIcon size={13} className="text-brand-600" />
+                      <ImageIcon size={13} className="text-[var(--brand-primary)]" />
                       <span>{formData.coverImage ? 'Change Cover' : 'Upload Cover'}</span>
                     </button>
                     {formData.coverImage && (
@@ -3516,14 +3516,14 @@ export const ProfilePage: React.FC = () => {
                 const initialRoleObj = PROFILE_ROLE_OPTIONS.find((r) => r.id === initialRole);
 
                 return (
-                  <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2.5">
+                  <div className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2.5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div>
-                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                          <Users size={14} className="text-brand-600" />
+                        <label className="text-xs font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                          <Users size={14} className="text-[var(--brand-primary)]" />
                           <span>Account Role (I am joining as a)</span>
                         </label>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        <p className="text-[11px] text-[var(--text-muted)]">
                           Your primary role on HookZ. Limited to 3 edits total.
                         </p>
                       </div>
@@ -3534,8 +3534,8 @@ export const ProfilePage: React.FC = () => {
                           <span>Role Locked (3/3 used)</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shrink-0">
-                          <Sparkles size={11} className="text-indigo-600 dark:text-indigo-400" />
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)] shrink-0">
+                          <Sparkles size={11} className="text-[var(--brand-primary)]" />
                           <span>{chancesRemaining}/3 role {chancesRemaining === 1 ? 'change' : 'changes'} left</span>
                         </span>
                       )}
@@ -3551,7 +3551,7 @@ export const ProfilePage: React.FC = () => {
                           role: e.target.value,
                         }));
                       }}
-                      className="input-base w-full px-3 py-1.5 text-xs font-semibold bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                      className="input-base w-full px-3 py-1.5 text-xs font-semibold bg-[var(--bg-surface)] border-[var(--border-subtle)] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                     >
                       {PROFILE_ROLE_OPTIONS.map((opt) => (
                         <option key={opt.id} value={opt.id}>
@@ -3568,8 +3568,8 @@ export const ProfilePage: React.FC = () => {
                     )}
 
                     {!isLocked && isChanging && (
-                      <div className="p-2 rounded bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900 text-xs text-indigo-900 dark:text-indigo-200 flex items-start gap-1.5">
-                        <Sparkles size={13} className="shrink-0 mt-0.5 text-indigo-600" />
+                      <div className="p-2 rounded bg-[var(--brand-soft)] border border-[var(--border-subtle)] text-xs text-[var(--brand-primary)] flex items-start gap-1.5">
+                        <Sparkles size={13} className="shrink-0 mt-0.5 text-[var(--brand-primary)]" />
                         <span>Switching role from <strong>{initialRoleObj?.label || initialRole}</strong> to <strong>{currentRoleObj?.label || selectedRole}</strong> will use 1 chance.</span>
                       </div>
                     )}
@@ -3580,7 +3580,7 @@ export const ProfilePage: React.FC = () => {
               {/* Full Name & Username */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Full Name</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Full Name</label>
                   <input
                     type="text"
                     required
@@ -3603,7 +3603,7 @@ export const ProfilePage: React.FC = () => {
                     return (
                       <div>
                         <div className="flex items-center justify-between mb-1">
-                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          <label className="block text-xs font-semibold text-[var(--text-secondary)]">
                             Username
                           </label>
                           {isUsernameLocked ? (
@@ -3611,11 +3611,11 @@ export const ProfilePage: React.FC = () => {
                               <Lock size={10} /> Locked ({daysRemaining}d)
                             </span>
                           ) : (
-                            <span className="text-[10px] text-slate-400">1 change / 30 days</span>
+                            <span className="text-[10px] text-[var(--text-muted)]">1 change / 30 days</span>
                           )}
                         </div>
                         <div className="relative">
-                          <span className="absolute left-2.5 top-1.5 text-xs text-slate-400 select-none">@</span>
+                          <span className="absolute left-2.5 top-1.5 text-xs text-[var(--text-muted)] select-none">@</span>
                           <input
                             type="text"
                             value={formData.username || ''}
@@ -3632,7 +3632,7 @@ export const ProfilePage: React.FC = () => {
                             }`}
                           />
                           {usernameStatus.checking && (
-                            <RefreshCw size={12} className="absolute right-2.5 top-2 text-slate-400 animate-spin" />
+                            <RefreshCw size={12} className="absolute right-2.5 top-2 text-[var(--text-muted)] animate-spin" />
                           )}
                           {!usernameStatus.checking && usernameStatus.available === true && formData.username && formData.username !== formData.initialUsername && (
                             <CheckCircle2 size={13} className="absolute right-2.5 top-2 text-emerald-500" />
@@ -3653,8 +3653,8 @@ export const ProfilePage: React.FC = () => {
                               {usernameStatus.message || 'This username is already taken. Please choose another username.'}
                             </p>
                             {usernameStatus.suggestions.length > 0 && (
-                              <div className="p-2 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-750">
-                                <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                              <div className="p-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
+                                <span className="text-[10px] font-semibold text-[var(--text-secondary)] block mb-1">
                                   Available suggestions (click to use):
                                 </span>
                                 <div className="flex flex-wrap gap-1">
@@ -3666,7 +3666,7 @@ export const ProfilePage: React.FC = () => {
                                         setFormData({ ...formData, username: sug });
                                         triggerUsernameCheck(sug);
                                       }}
-                                      className="px-2 py-0.5 rounded text-[10px] font-semibold bg-white dark:bg-dark-800 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-900/60 hover:bg-brand-50 dark:hover:bg-brand-950/60 shadow-2xs transition-colors cursor-pointer"
+                                      className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[var(--bg-surface)] text-[var(--brand-primary)] border border-[var(--border-subtle)] hover:bg-[var(--brand-soft)] shadow-2xs transition-colors cursor-pointer"
                                     >
                                       @{sug}
                                     </button>
@@ -3689,13 +3689,13 @@ export const ProfilePage: React.FC = () => {
 
               {/* Location */}
               <div className="relative">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1 flex items-center justify-between">
                   <span>Location</span>
                   {(() => {
                     const res = resolveIndianLocation(formData.location);
                     if (!res) return null;
                     return (
-                      <span className="text-[10px] text-brand-600 dark:text-brand-400 font-semibold">
+                      <span className="text-[10px] text-[var(--brand-primary)] font-semibold">
                         {res.district ? `${res.district}, ` : ''}{res.state}
                       </span>
                     );
@@ -3728,14 +3728,14 @@ export const ProfilePage: React.FC = () => {
                         setLocationSuggestions([]);
                         setShowLocDropdown(false);
                       }}
-                      className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                      className="absolute right-2 top-2 text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                     >
                       <X size={12} />
                     </button>
                   )}
                 </div>
                 {showLocDropdown && locationSuggestions.length > 0 && (
-                  <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-lg shadow-xl py-1 text-xs">
+                  <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg shadow-xl py-1 text-xs">
                     {locationSuggestions.map((loc, idx) => (
                       <button
                         key={idx}
@@ -3745,12 +3745,12 @@ export const ProfilePage: React.FC = () => {
                           setFormData({ ...formData, location: formatted });
                           setShowLocDropdown(false);
                         }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 flex items-center justify-between cursor-pointer"
+                        className="w-full text-left px-3 py-1.5 hover:bg-[var(--bg-soft)] flex items-center justify-between cursor-pointer"
                       >
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        <span className="font-semibold text-[var(--text-primary)]">
                           {loc.district ? `${loc.district}, ` : ''}{loc.state}
                         </span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-dark-800 text-slate-500 capitalize">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-soft)] text-[var(--text-muted)] capitalize">
                           {loc.type}
                         </span>
                       </button>
@@ -3763,8 +3763,8 @@ export const ProfilePage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Headline</label>
-                    <span className={`text-[10px] font-medium ${(formData.headline?.trim().split(/\s+/).filter(Boolean).length || 0) > 50 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                    <label className="block text-xs font-semibold text-[var(--text-secondary)]">Headline</label>
+                    <span className={`text-[10px] font-medium ${(formData.headline?.trim().split(/\s+/).filter(Boolean).length || 0) > 50 ? 'text-rose-500 font-bold' : 'text-[var(--text-muted)]'}`}>
                       {formData.headline?.trim().split(/\s+/).filter(Boolean).length || 0}/50 words
                     </span>
                   </div>
@@ -3784,10 +3784,10 @@ export const ProfilePage: React.FC = () => {
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="block text-xs font-semibold text-[var(--text-secondary)]">
                       <span>One-Line Bio</span>
                     </label>
-                    <span className={`text-[10px] font-medium ${(formData.oneLineBio?.length || 0) > 160 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                    <span className={`text-[10px] font-medium ${(formData.oneLineBio?.length || 0) > 160 ? 'text-rose-500 font-bold' : 'text-[var(--text-muted)]'}`}>
                       {formData.oneLineBio?.length || 0}/160
                     </span>
                   </div>
@@ -3807,12 +3807,12 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* --- SECTION 2: ABOUT & BIO (Up to 2000 chars) --- */}
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+            <div className="p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)] flex items-center gap-1.5">
                   <Edit3 size={14} /> About & Bio
                 </h4>
-                <span className="text-[11px] text-slate-500 font-medium">
+                <span className="text-[11px] text-[var(--text-muted)] font-medium">
                   {String(formData.bio || '').length} / 2000 chars
                 </span>
               </div>
@@ -3829,12 +3829,12 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* --- SECTION 3: SKILLS (Tag-based multi-select) --- */}
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+            <div className="p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)] flex items-center gap-1.5">
                   <Sparkles size={14} /> Skills & Expertise
                 </h4>
-                <span className="text-[11px] text-slate-500 font-medium">Tag-based multi-select</span>
+                <span className="text-[11px] text-[var(--text-muted)] font-medium">Tag-based multi-select</span>
               </div>
 
               {/* Selected Skill Badges */}
@@ -3865,14 +3865,14 @@ export const ProfilePage: React.FC = () => {
 
                 return (
                   <div className="space-y-2.5">
-                    <div className="flex flex-wrap gap-1.5 min-h-[32px] p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                    <div className="flex flex-wrap gap-1.5 min-h-[32px] p-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
                       {currentSkills.length === 0 ? (
-                        <span className="text-xs text-slate-400 italic">No skills added yet. Select or type below.</span>
+                        <span className="text-xs text-[var(--text-muted)] italic">No skills added yet. Select or type below.</span>
                       ) : (
                         currentSkills.map((sk: string, idx: number) => (
                           <span
                             key={idx}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 border border-brand-200 dark:border-brand-800"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)]"
                           >
                             <span>{sk}</span>
                             <button
@@ -3922,7 +3922,7 @@ export const ProfilePage: React.FC = () => {
                     {/* Popular Quick Suggestions */}
                     {popularSuggestions.length > 0 && (
                       <div className="pt-1">
-                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">
+                        <span className="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider block mb-1.5">
                           Quick Suggestions:
                         </span>
                         <div className="flex flex-wrap gap-1">
@@ -3931,7 +3931,7 @@ export const ProfilePage: React.FC = () => {
                               key={sugg}
                               type="button"
                               onClick={() => handleAddSkill(sugg)}
-                              className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 hover:bg-brand-50 hover:text-brand-600 dark:bg-slate-800 dark:hover:bg-brand-950 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+                              className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-[var(--bg-soft)] hover:bg-[var(--brand-soft)] hover:text-[var(--brand-primary)] border border-[var(--border-subtle)] transition-colors cursor-pointer"
                             >
                               + {sugg}
                             </button>
@@ -3945,39 +3945,39 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* --- SECTION 4: WORK EXPERIENCE --- */}
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+            <div className="p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)] flex items-center gap-1.5">
                   <Briefcase size={14} /> Experience & Roles
                 </h4>
                 <button
                   type="button"
                   onClick={handleAddExperienceItem}
-                  className="px-2.5 py-1 text-xs font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/60 dark:text-brand-300 rounded border border-brand-200 dark:border-brand-800 transition-colors flex items-center gap-1 cursor-pointer"
+                  className="px-2.5 py-1 text-xs font-semibold text-[var(--brand-primary)] bg-[var(--brand-soft)] hover:bg-[var(--brand-soft)] rounded border border-[var(--border-subtle)] transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   <Plus size={12} /> Add Experience
                 </button>
               </div>
 
               {(!formData.experiences || formData.experiences.length === 0) ? (
-                <div className="p-4 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 text-center">
-                  <p className="text-xs text-slate-500">No experiences added yet.</p>
+                <div className="p-4 rounded-lg border border-dashed border-[var(--border-subtle)] text-center">
+                  <p className="text-xs text-[var(--text-muted)]">No experiences added yet.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {formData.experiences.map((exp: any, idx: number) => (
                     <div
                       key={exp.id || idx}
-                      className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2 relative"
+                      className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2 relative"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
                           Entry #{idx + 1}
                         </span>
                         <button
                           type="button"
                           onClick={() => handleRemoveExperienceItem(idx)}
-                          className="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                          className="p-1 rounded text-[var(--text-muted)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
                           title="Remove"
                         >
                           <Trash2 size={13} />
@@ -3986,7 +3986,7 @@ export const ProfilePage: React.FC = () => {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                             Role / Title
                           </label>
                           <input
@@ -3998,7 +3998,7 @@ export const ProfilePage: React.FC = () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                             Organization / Category
                           </label>
                           <select
@@ -4019,7 +4019,7 @@ export const ProfilePage: React.FC = () => {
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                        <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                           Description of Work & Impact
                         </label>
                         <textarea
@@ -4037,16 +4037,16 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* --- SECTION 5: EDUCATION --- */}
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+            <div className="p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)] flex items-center gap-1.5">
                   <GraduationCap size={14} /> Education & College
                 </h4>
-                <span className="text-[11px] text-slate-500 font-medium">Degree & institution</span>
+                <span className="text-[11px] text-[var(--text-muted)] font-medium">Degree & institution</span>
               </div>
 
               <div className="relative">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                   College / University (Indian Autocomplete)
                 </label>
                 <div className="relative">
@@ -4070,7 +4070,7 @@ export const ProfilePage: React.FC = () => {
                   />
                 </div>
                 {showCollegeDropdown && collegeSuggestions.length > 0 && (
-                  <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-lg shadow-xl py-1 text-xs">
+                  <div className="absolute z-50 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-lg shadow-xl py-1 text-xs">
                     {collegeSuggestions.map((col, idx) => {
                       const colName = typeof col === 'string' ? col : col?.name || '';
                       const colCategory = typeof col === 'string' ? 'COLLEGE' : (col?.category || 'COLLEGE').toUpperCase();
@@ -4084,15 +4084,15 @@ export const ProfilePage: React.FC = () => {
                             setFormData({ ...formData, education: `${colName} (${colCategory})` });
                             setShowCollegeDropdown(false);
                           }}
-                          className="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-dark-800 flex items-center justify-between cursor-pointer"
+                          className="w-full text-left px-3 py-1.5 hover:bg-[var(--bg-soft)] flex items-center justify-between cursor-pointer"
                         >
                           <div className="truncate pr-2">
-                            <span className="font-semibold text-slate-900 dark:text-white">{colName}</span>
+                            <span className="font-semibold text-[var(--text-primary)]">{colName}</span>
                             {(colCity || colState) && (
-                              <span className="text-slate-400 ml-1">({[colCity, colState].filter(Boolean).join(', ')})</span>
+                              <span className="text-[var(--text-muted)] ml-1">({[colCity, colState].filter(Boolean).join(', ')})</span>
                             )}
                           </div>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 font-semibold shrink-0">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--brand-soft)] text-[var(--brand-primary)] font-semibold shrink-0">
                             {colCategory}
                           </span>
                         </button>
@@ -4104,9 +4104,9 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* --- SECTION 6: HACKATHON HISTORY --- */}
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+            <div className="p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)] flex items-center gap-1.5">
                   <Award size={14} /> Hackathon History & Awards
                 </h4>
                 <button
@@ -4116,25 +4116,25 @@ export const ProfilePage: React.FC = () => {
                     list.push({ id: `hack-${Date.now()}`, name: '', date: '', result: '', link: '' });
                     setFormData({ ...formData, hackathons: list });
                   }}
-                  className="px-2.5 py-1 text-xs font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/60 dark:text-brand-300 rounded border border-brand-200 dark:border-brand-800 transition-colors flex items-center gap-1 cursor-pointer"
+                  className="px-2.5 py-1 text-xs font-semibold text-[var(--brand-primary)] bg-[var(--brand-soft)] hover:bg-[var(--brand-soft)] rounded border border-[var(--border-subtle)] transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   <Plus size={12} /> Add Hackathon
                 </button>
               </div>
 
               {(!formData.hackathons || formData.hackathons.length === 0) ? (
-                <div className="p-4 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 text-center">
-                  <p className="text-xs text-slate-500">No hackathons added yet. Add past hackathons or wins.</p>
+                <div className="p-4 rounded-lg border border-dashed border-[var(--border-subtle)] text-center">
+                  <p className="text-xs text-[var(--text-muted)]">No hackathons added yet. Add past hackathons or wins.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {formData.hackathons.map((hack: any, idx: number) => (
                     <div
                       key={hack.id || idx}
-                      className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2 relative"
+                      className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2 relative"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
                           Hackathon #{idx + 1}
                         </span>
                         <button
@@ -4144,7 +4144,7 @@ export const ProfilePage: React.FC = () => {
                             list.splice(idx, 1);
                             setFormData({ ...formData, hackathons: list });
                           }}
-                          className="p-1 rounded text-slate-400 hover:text-red-500 cursor-pointer"
+                          className="p-1 rounded text-[var(--text-muted)] hover:text-red-500 cursor-pointer"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -4152,7 +4152,7 @@ export const ProfilePage: React.FC = () => {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                             Hackathon Name
                           </label>
                           <input
@@ -4168,7 +4168,7 @@ export const ProfilePage: React.FC = () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                             Result / Award
                           </label>
                           <input
@@ -4187,7 +4187,7 @@ export const ProfilePage: React.FC = () => {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                             Date / Year
                           </label>
                           <input
@@ -4203,7 +4203,7 @@ export const ProfilePage: React.FC = () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                             Project / Devpost Link
                           </label>
                           <input
@@ -4224,8 +4224,8 @@ export const ProfilePage: React.FC = () => {
                 </div>
               )}
 
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
-                <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <div className="pt-3 border-t border-[var(--border-subtle)]">
+                <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                   Key Achievements & Recognitions
                 </label>
                 <textarea
@@ -4239,9 +4239,9 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* --- SECTION 7: PROJECTS --- */}
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+            <div className="p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)] flex items-center gap-1.5">
                   <FolderKanban size={14} /> Projects & Showcase
                 </h4>
                 <button
@@ -4251,25 +4251,25 @@ export const ProfilePage: React.FC = () => {
                     list.push({ id: `proj-${Date.now()}`, name: '', description: '', techStack: '', githubUrl: '', demoUrl: '' });
                     setFormData({ ...formData, projects: list });
                   }}
-                  className="px-2.5 py-1 text-xs font-semibold text-brand-600 bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/60 dark:text-brand-300 rounded border border-brand-200 dark:border-brand-800 transition-colors flex items-center gap-1 cursor-pointer"
+                  className="px-2.5 py-1 text-xs font-semibold text-[var(--brand-primary)] bg-[var(--brand-soft)] hover:bg-[var(--brand-soft)] rounded border border-[var(--border-subtle)] transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   <Plus size={12} /> Add Project
                 </button>
               </div>
 
               {(!formData.projects || formData.projects.length === 0) ? (
-                <div className="p-4 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 text-center">
-                  <p className="text-xs text-slate-500">No projects added yet.</p>
+                <div className="p-4 rounded-lg border border-dashed border-[var(--border-subtle)] text-center">
+                  <p className="text-xs text-[var(--text-muted)]">No projects added yet.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {formData.projects.map((proj: any, idx: number) => (
                     <div
                       key={proj.id || idx}
-                      className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2 relative"
+                      className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2 relative"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        <span className="text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
                           Project #{idx + 1}
                         </span>
                         <button
@@ -4279,7 +4279,7 @@ export const ProfilePage: React.FC = () => {
                             list.splice(idx, 1);
                             setFormData({ ...formData, projects: list });
                           }}
-                          className="p-1 rounded text-slate-400 hover:text-red-500 cursor-pointer"
+                          className="p-1 rounded text-[var(--text-muted)] hover:text-red-500 cursor-pointer"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -4287,7 +4287,7 @@ export const ProfilePage: React.FC = () => {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                             Project Name
                           </label>
                           <input
@@ -4303,7 +4303,7 @@ export const ProfilePage: React.FC = () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                             Tech Stack
                           </label>
                           <input
@@ -4321,7 +4321,7 @@ export const ProfilePage: React.FC = () => {
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                        <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                           Description
                         </label>
                         <textarea
@@ -4339,7 +4339,7 @@ export const ProfilePage: React.FC = () => {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                             GitHub Repo URL
                           </label>
                           <input
@@ -4355,7 +4355,7 @@ export const ProfilePage: React.FC = () => {
                           />
                         </div>
                         <div>
-                          <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          <label className="block text-[11px] font-semibold text-[var(--text-secondary)] mb-1">
                             Live Demo URL
                           </label>
                           <input
@@ -4378,17 +4378,17 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* --- SECTION 8: SOCIAL LINKS --- */}
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+            <div className="p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--brand-primary)] flex items-center gap-1.5">
                   <Globe size={14} /> Social & Portfolio Links
                 </h4>
-                <span className="text-[11px] text-slate-500 font-medium">Connect external profiles</span>
+                <span className="text-[11px] text-[var(--text-muted)] font-medium">Connect external profiles</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">GitHub URL</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">GitHub URL</label>
                   <input
                     type="url"
                     value={formData.githubUrl || ''}
@@ -4398,7 +4398,7 @@ export const ProfilePage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">LinkedIn URL</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">LinkedIn URL</label>
                   <input
                     type="url"
                     value={formData.linkedinUrl || ''}
@@ -4408,7 +4408,7 @@ export const ProfilePage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Twitter / X URL</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Twitter / X URL</label>
                   <input
                     type="url"
                     value={formData.startupInterests || ''}
@@ -4418,7 +4418,7 @@ export const ProfilePage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Portfolio / Website URL</label>
+                  <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">Portfolio / Website URL</label>
                   <input
                     type="url"
                     value={formData.websiteUrl || ''}
@@ -4443,7 +4443,7 @@ export const ProfilePage: React.FC = () => {
                   <AlertTriangle size={14} />
                   <span>Danger Zone: Permanent Account Deletion</span>
                 </h5>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="text-[11px] text-[var(--text-muted)]">
                   Permanently erase your student profile, ideas, messages, and connections.
                 </p>
               </div>
@@ -4453,13 +4453,13 @@ export const ProfilePage: React.FC = () => {
                   setEditOpen(false);
                   setDeleteAccountModalOpen(true);
                 }}
-                className="px-3 py-1.5 rounded-md text-xs font-semibold text-red-600 dark:text-red-400 bg-white dark:bg-dark-900 border border-red-300 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950 transition-colors cursor-pointer shrink-0"
+                className="px-3 py-1.5 rounded-md text-xs font-semibold text-red-600 dark:text-red-400 bg-[var(--bg-surface)] border border-red-300 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950 transition-colors cursor-pointer shrink-0"
               >
                 Delete Account
               </button>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-dark-800 sticky bottom-0 bg-white dark:bg-slate-900 py-2">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border-subtle)] sticky bottom-0 bg-[var(--bg-surface)] py-2">
               <button
                 type="button"
                 onClick={() => setEditOpen(false)}
@@ -4530,7 +4530,7 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <label className="block text-xs font-semibold text-[var(--text-secondary)]">
               Type <span className="font-mono text-red-600 dark:text-red-400 font-bold">delete</span> below to confirm:
             </label>
             <input
@@ -4551,7 +4551,7 @@ export const ProfilePage: React.FC = () => {
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border-subtle)]">
             <button
               type="button"
               disabled={isDeletingAccount}
@@ -4610,33 +4610,33 @@ export const ProfilePage: React.FC = () => {
         maxWidth="md"
       >
         <div className="text-center space-y-4 py-2 font-sans">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-brand-600 mx-auto flex items-center justify-center shadow-inner">
+          <div className="w-16 h-16 rounded-2xl bg-[var(--brand-soft)] text-[var(--brand-primary)] mx-auto flex items-center justify-center shadow-inner">
             <Camera size={32} />
           </div>
           <div className="space-y-2">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+            <h3 className="text-lg font-bold text-[var(--text-primary)]">
               Access Device Photo Gallery
             </h3>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed px-2">
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed px-2">
               HookZ requires your permission to access your device gallery/photos to select a{' '}
-              <span className="font-bold text-brand-600">
+              <span className="font-bold text-[var(--brand-primary)]">
                 {targetImageType === 'avatar' ? 'profile photo' : 'background cover image'}
               </span>
               . You will review the selected image before it is kept and saved.
             </p>
           </div>
-          <div className="flex items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-3 pt-4 border-t border-[var(--border-subtle)]">
             <button
               type="button"
               onClick={() => setGalleryPermissionOpen(false)}
-              className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleGrantGalleryPermission}
-              className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 transition-all shadow-md shadow-indigo-500/20 active:scale-95 cursor-pointer"
+              className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white btn-primary transition-all shadow-md shadow-indigo-500/20 active:scale-95 cursor-pointer"
             >
               Allow & Open Gallery
             </button>
@@ -4666,22 +4666,22 @@ export const ProfilePage: React.FC = () => {
           onClick={() => setConnectionsModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-md bg-white dark:bg-dark-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-dark-800 overflow-hidden"
+            className="relative w-full max-w-md bg-[var(--bg-surface)] rounded-2xl shadow-2xl border border-[var(--border-subtle)] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-dark-800">
+            <div className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]">
               <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                <h2 className="text-base font-bold text-[var(--text-primary)]">
                   Connections ({connectionsCount})
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
                   {isMe ? 'Your network connections' : `${(profileUser?.profile as any)?.fullName?.split(' ')[0] || 'Their'}'s connections`}
                 </p>
               </div>
               <button
                 onClick={() => setConnectionsModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors"
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] transition-colors"
               >
                 <X size={18} />
               </button>
@@ -4692,15 +4692,15 @@ export const ProfilePage: React.FC = () => {
               {connectionsListLoading ? (
                 <div className="py-10 flex flex-col items-center gap-3">
                   <div className="w-6 h-6 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-xs text-slate-400">Loading connections...</p>
+                  <p className="text-xs text-[var(--text-muted)]">Loading connections...</p>
                 </div>
               ) : connectionsList.length === 0 ? (
                 <div className="py-12 text-center px-6">
-                  <div className="w-12 h-12 mx-auto rounded-full bg-slate-100 dark:bg-dark-800 flex items-center justify-center mb-3">
-                    <Users size={20} className="text-slate-400" />
+                  <div className="w-12 h-12 mx-auto rounded-full bg-[var(--bg-soft)] flex items-center justify-center mb-3">
+                    <Users size={20} className="text-[var(--text-muted)]" />
                   </div>
-                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">No connections yet</p>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-sm font-semibold text-[var(--text-secondary)]">No connections yet</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-1">
                     {isMe ? 'Start connecting with other founders and builders!' : 'This member has no connections yet.'}
                   </p>
                 </div>
@@ -4708,7 +4708,7 @@ export const ProfilePage: React.FC = () => {
                 connectionsList.map((conn) => (
                   <div
                     key={conn.connectionId}
-                    className="flex items-center gap-3 p-4 hover:bg-slate-50 dark:hover:bg-dark-850 transition-colors"
+                    className="flex items-center gap-3 p-4 hover:bg-[var(--bg-primary)] transition-colors"
                   >
                     {/* Avatar */}
                     <Link
@@ -4734,11 +4734,11 @@ export const ProfilePage: React.FC = () => {
                       <Link
                         to={`/profile/${conn.userId}`}
                         onClick={() => setConnectionsModalOpen(false)}
-                        className="font-semibold text-sm text-slate-900 dark:text-white hover:text-brand-600 transition-colors block truncate"
+                        className="font-semibold text-sm text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors block truncate"
                       >
                         {conn.fullName}
                       </Link>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                      <p className="text-xs text-[var(--text-muted)] truncate">
                         {conn.headline || conn.preferredRole}
                       </p>
                     </div>
@@ -4750,7 +4750,7 @@ export const ProfilePage: React.FC = () => {
                           setConnectionsModalOpen(false);
                           navigate(`/messages?user=${conn.userId}`);
                         }}
-                        className="p-1.5 rounded-lg bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-950 transition-colors"
+                        className="p-1.5 rounded-lg bg-[var(--brand-soft)] text-[var(--brand-primary)] hover:bg-[var(--brand-soft)] transition-colors"
                         title="Chat"
                       >
                         <MessageSquare size={14} />
@@ -4760,7 +4760,7 @@ export const ProfilePage: React.FC = () => {
                         <button
                           onClick={() => handleRemoveFromModal(conn.connectionId)}
                           disabled={removingConnId === conn.connectionId}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors disabled:opacity-50"
+                          className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors disabled:opacity-50"
                           title="Remove connection"
                         >
                           {removingConnId === conn.connectionId ? (
@@ -4778,11 +4778,11 @@ export const ProfilePage: React.FC = () => {
 
             {/* Modal Footer */}
             {isMe && (
-              <div className="p-3 border-t border-slate-100 dark:border-dark-800 bg-slate-50/60 dark:bg-dark-850/50">
+              <div className="p-3 border-t border-[var(--border-subtle)] bg-[var(--bg-primary)]">
                 <Link
                   to="/network"
                   onClick={() => setConnectionsModalOpen(false)}
-                  className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-950/40 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold text-[var(--brand-primary)] hover:bg-[var(--brand-soft)] transition-colors"
                 >
                   <Users size={14} />
                   <span>Manage All Connections in Network</span>
@@ -4806,12 +4806,12 @@ export const ProfilePage: React.FC = () => {
               <UserX size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h3 className="text-sm font-bold text-[var(--text-primary)]">
                 {isBlocked
                   ? `Unblock ${(profileUser?.profile as any)?.fullName || 'this user'}?`
                   : `Block ${(profileUser?.profile as any)?.fullName || 'this user'}?`}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
                 {isBlocked
                   ? "They will be able to view your profile, send messages, and connect with you again."
                   : "They will not be able to message you, pitch ideas, or see your activity. You can unblock them at any time."}
@@ -4819,7 +4819,7 @@ export const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-dark-800">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border-subtle)]">
             <button
               type="button"
               onClick={() => setBlockModalOpen(false)}

@@ -153,7 +153,7 @@ export const AdminDashboardPage: React.FC = () => {
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             HookZ Platform Moderation & Administration
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400">
+          <p className="text-xs sm:text-sm text-[var(--text-muted)]">
             Audit user accounts, grant official badges, review reports, and enforce ecosystem integrity.
           </p>
         </div>
@@ -162,22 +162,22 @@ export const AdminDashboardPage: React.FC = () => {
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card-base p-4">
-          <div className="text-xs font-semibold uppercase text-slate-400">Total Users</div>
-          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+          <div className="text-xs font-semibold uppercase text-[var(--text-muted)]">Total Users</div>
+          <div className="text-2xl font-bold text-[var(--text-primary)] mt-1">
             {stats?.totalUsers || users.length || 0}
           </div>
         </div>
 
         <div className="card-base p-4">
-          <div className="text-xs font-semibold uppercase text-slate-400">Startups</div>
-          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+          <div className="text-xs font-semibold uppercase text-[var(--text-muted)]">Startups</div>
+          <div className="text-2xl font-bold text-[var(--text-primary)] mt-1">
             {stats?.totalStartups || startups.length || 0}
           </div>
         </div>
 
         <div className="card-base p-4">
-          <div className="text-xs font-semibold uppercase text-slate-400">Connections</div>
-          <div className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+          <div className="text-xs font-semibold uppercase text-[var(--text-muted)]">Connections</div>
+          <div className="text-2xl font-bold text-[var(--text-primary)] mt-1">
             {stats?.totalConnections || 0}
           </div>
         </div>
@@ -191,13 +191,13 @@ export const AdminDashboardPage: React.FC = () => {
       </div>
 
       {/* Admin Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-dark-800 pb-1 overflow-x-auto scrollbar-none">
+      <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] pb-1 overflow-x-auto scrollbar-none">
         <button
           onClick={() => setActiveTab('USERS')}
           className={`flex items-center gap-1.5 px-3.5 py-2 rounded-t-md text-xs font-semibold transition-all border-b-2 -mb-px ${
             activeTab === 'USERS'
-              ? 'border-brand-600 text-brand-600 dark:text-brand-400 bg-brand-50/50 dark:bg-brand-950/20'
-              : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300'
+              ? 'border-brand-600 text-[var(--brand-primary)] bg-[var(--brand-soft)]'
+              : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-subtle)]'
           }`}
         >
           <Users size={14} />
@@ -208,8 +208,8 @@ export const AdminDashboardPage: React.FC = () => {
           onClick={() => setActiveTab('STARTUPS')}
           className={`flex items-center gap-1.5 px-3.5 py-2 rounded-t-md text-xs font-semibold transition-all border-b-2 -mb-px ${
             activeTab === 'STARTUPS'
-              ? 'border-brand-600 text-brand-600 dark:text-brand-400 bg-brand-50/50 dark:bg-brand-950/20'
-              : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300'
+              ? 'border-brand-600 text-[var(--brand-primary)] bg-[var(--brand-soft)]'
+              : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-subtle)]'
           }`}
         >
           <Compass size={14} />
@@ -221,7 +221,7 @@ export const AdminDashboardPage: React.FC = () => {
           className={`flex items-center gap-1.5 px-3.5 py-2 rounded-t-md text-xs font-semibold transition-all border-b-2 -mb-px ${
             activeTab === 'REPORTS'
               ? 'border-rose-600 text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20'
-              : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:border-slate-300'
+              : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-subtle)]'
           }`}
         >
           <AlertTriangle size={14} />
@@ -238,12 +238,12 @@ export const AdminDashboardPage: React.FC = () => {
 
       {/* Tab Panels */}
       {loading ? (
-        <div className="h-64 card-base bg-slate-50 dark:bg-dark-900 animate-pulse" />
+        <div className="h-64 card-base bg-[var(--bg-primary)] animate-pulse" />
       ) : activeTab === 'USERS' ? (
         /* USERS TABLE */
         <div className="space-y-4">
           <div className="relative max-w-sm">
-            <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+            <Search size={14} className="absolute left-3 top-2.5 text-[var(--text-muted)]" />
             <input
               type="text"
               value={userSearch}
@@ -255,7 +255,7 @@ export const AdminDashboardPage: React.FC = () => {
 
           <div className="overflow-x-auto card-base">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-dark-800/60 text-slate-500 border-b border-slate-200 dark:border-dark-800 font-medium">
+              <thead className="bg-[var(--bg-primary)] text-[var(--text-muted)] border-b border-[var(--border-subtle)] font-medium">
                 <tr>
                   <th className="p-3.5">User</th>
                   <th className="p-3.5">Role</th>
@@ -266,12 +266,12 @@ export const AdminDashboardPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-dark-800/60">
                 {filteredUsers.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-dark-800/40 transition-colors">
+                  <tr key={u.id} className="hover:bg-[var(--bg-primary)] transition-colors">
                     <td className="p-3.5">
-                      <div className="font-semibold text-slate-900 dark:text-white">
+                      <div className="font-semibold text-[var(--text-primary)]">
                         {u.profile?.fullName || 'No name'}
                       </div>
-                      <div className="text-[11px] text-slate-400">{u.email}</div>
+                      <div className="text-[11px] text-[var(--text-muted)]">{u.email}</div>
                     </td>
                     <td className="p-3.5">
                       <RoleBadge role={u.role} />
@@ -321,7 +321,7 @@ export const AdminDashboardPage: React.FC = () => {
         /* STARTUPS TABLE */
         <div className="overflow-x-auto card-base">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 dark:bg-dark-800/60 text-slate-500 border-b border-slate-200 dark:border-dark-800 font-medium">
+            <thead className="bg-[var(--bg-primary)] text-[var(--text-muted)] border-b border-[var(--border-subtle)] font-medium">
               <tr>
                 <th className="p-3.5">Startup</th>
                 <th className="p-3.5">Founder</th>
@@ -332,18 +332,18 @@ export const AdminDashboardPage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-dark-800/60">
               {startups.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-dark-800/40 transition-colors">
+                <tr key={s.id} className="hover:bg-[var(--bg-primary)] transition-colors">
                   <td className="p-3.5">
-                    <Link to={`/startups/${s.id}`} className="font-semibold text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400">
+                    <Link to={`/startups/${s.id}`} className="font-semibold text-[var(--text-primary)] hover:text-[var(--brand-primary)]">
                       {s.name}
                     </Link>
-                    <div className="text-[11px] text-slate-400">{s.industry}</div>
+                    <div className="text-[11px] text-[var(--text-muted)]">{s.industry}</div>
                   </td>
-                  <td className="p-3.5 text-slate-600 dark:text-slate-300">
+                  <td className="p-3.5 text-[var(--text-secondary)]">
                     {s.founder?.profile?.fullName || s.founder?.email || 'Founder'}
                   </td>
                   <td className="p-3.5">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 border border-brand-200/60 dark:border-brand-900/40">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-brand-200/60 dark:border-brand-900/40">
                       {s.stage}
                     </span>
                   </td>
@@ -353,7 +353,7 @@ export const AdminDashboardPage: React.FC = () => {
                         <Check size={13} /> Verified
                       </span>
                     ) : (
-                      <span className="text-slate-400">Unverified</span>
+                      <span className="text-[var(--text-muted)]">Unverified</span>
                     )}
                   </td>
                   <td className="p-3.5 text-right">
@@ -374,7 +374,7 @@ export const AdminDashboardPage: React.FC = () => {
         /* REPORTS STREAM */
         <div className="space-y-4">
           {reports.length === 0 ? (
-            <p className="text-xs text-slate-400 py-6 text-center">No reports currently submitted.</p>
+            <p className="text-xs text-[var(--text-muted)] py-6 text-center">No reports currently submitted.</p>
           ) : (
             reports.map((r) => (
               <div
@@ -386,14 +386,14 @@ export const AdminDashboardPage: React.FC = () => {
                     <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40">
                       {r.reason}
                     </span>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-[var(--text-muted)]">
                       Target: {r.targetType} ({r.targetId})
                     </span>
                   </div>
-                  <p className="text-xs text-slate-700 dark:text-slate-300">
+                  <p className="text-xs text-[var(--text-secondary)]">
                     {r.description || 'No detailed note provided by reporter.'}
                   </p>
-                  <div className="text-[11px] text-slate-400">
+                  <div className="text-[11px] text-[var(--text-muted)]">
                     Reported by: {r.reporter?.profile?.fullName || r.reporter?.email || r.reporterId}
                   </div>
                 </div>
@@ -405,7 +405,7 @@ export const AdminDashboardPage: React.FC = () => {
                         ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40'
                         : r.status === 'ACTIONED'
                         ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40'
-                        : 'bg-slate-100 dark:bg-dark-800 text-slate-500 border border-slate-200/60 dark:border-dark-700'
+                        : 'bg-[var(--bg-soft)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
                     }`}
                   >
                     {r.status}

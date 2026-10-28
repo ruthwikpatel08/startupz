@@ -1,15 +1,41 @@
-/* Product-only propagation. Approved landing/auth surfaces are outside this scope. */
-.hookz-product { font-family: Inter, system-ui, sans-serif; }
-.hookz-product :is(nav, aside) { border-color: var(--border-subtle); }
-.hookz-product aside { background: var(--bg-surface); padding: 24px 16px; }
+/* Approved landing tokens, applied only to product routes and their dialogs. */
+.hookz-product { font-family: Inter, system-ui, sans-serif; color: var(--text-primary); }
+.hookz-product > header { background: var(--bg-surface); border-color: var(--border-subtle); }
+.hookz-product > header .brand-wordmark { font-size: 24px; }
+.hookz-product aside { background: var(--bg-surface); border-color: var(--border-subtle); padding: 28px 16px; }
 .hookz-product aside a { border-radius: var(--radius-md); min-height: 44px; }
-.hookz-product .card-base { border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
-.hookz-product :is(input:not([type=checkbox]):not([type=radio]), select, textarea) { border-color: var(--border-subtle); border-radius: var(--radius-md); background-color: var(--bg-surface); color: var(--text-primary); }
-.hookz-product :is(input, select, textarea):focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
-.hookz-product :is(.btn-primary, .btn-secondary) { min-height: 40px; border-radius: var(--radius-md); }
-.hookz-product :is(h1, h2, h3) { font-family: var(--font-display); }
-.hookz-product main > div > .max-w-7xl { padding-top: 32px; }
+.hookz-product aside a[aria-current=page] { background: var(--brand-soft); color: var(--brand-primary); box-shadow: none; }
+.hookz-product aside a[aria-current=page] svg { color: inherit; }
+.hookz-product main { background: var(--bg-primary); }
+.hookz-product :is(h1, h2, h3), .hookz-product-overlay :is(h2, h3) { font-family: var(--font-display); letter-spacing: -.035em; }
+.hookz-product main h1, .hookz-product .product-page-title, .product-home > section:first-of-type h2 { font-size: clamp(28px, 3vw, 38px); font-weight: 750; line-height: 1.12; letter-spacing: -.045em; }
+.hookz-product :is(.card-base, .product-feature) { border-radius: var(--radius-lg); border: 1px solid var(--border-subtle); box-shadow: var(--shadow-sm); }
+.hookz-product .card-base:hover { box-shadow: var(--shadow-md); }
+.hookz-product .product-feature { background: var(--brand-soft); color: var(--text-primary); border-radius: 20px; }
+.hookz-product .product-cover { background: linear-gradient(115deg, var(--brand-soft), color-mix(in srgb, var(--secondary) 45%, var(--bg-surface)), color-mix(in srgb, var(--accent) 40%, var(--bg-surface))); }
+.hookz-product :is(.shadow-xl, .shadow-2xl, .shadow-lg) { box-shadow: var(--shadow-md); }
+.hookz-product :is(.shadow-sm, .shadow-xs, .shadow-2xs) { box-shadow: var(--shadow-sm); }
+:is(.hookz-product, .hookz-product-overlay) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]), select, textarea) { border-color: var(--border-subtle); border-radius: var(--radius-lg); background-color: var(--bg-surface); color: var(--text-primary); }
+:is(.hookz-product, .hookz-product-overlay) :is(input, select, textarea)::placeholder { color: var(--text-muted); }
+:is(.hookz-product, .hookz-product-overlay) :is(input, select, textarea):focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; }
+:is(.hookz-product, .hookz-product-overlay) :is(input[type=checkbox], input[type=radio]) { accent-color: var(--brand-primary); }
+:is(.hookz-product, .hookz-product-overlay) :is(.btn-primary, .btn-secondary, .btn-tertiary) { min-height: 40px; border-radius: var(--radius-lg); }
+.hookz-product main > div > .max-w-7xl { max-width: 1220px; padding-top: 32px; }
 .hookz-product [role=status] { color: var(--text-secondary); }
 .hookz-product [role=tablist] { background: var(--bg-soft); border-radius: var(--radius-md); }
 .hookz-product [role=tab][aria-selected=true] { background: var(--bg-surface); color: var(--brand-primary); box-shadow: var(--shadow-sm); }
-@media (max-width: 640px) { .hookz-product main > div > .max-w-7xl { padding-top: 20px; } }
+.hookz-product .animate-pulse { background-color: var(--bg-soft); }
+.hookz-product-overlay > .relative { border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); color: var(--text-primary); }
+.hookz-product-overlay::backdrop { background: #12101999; }
+.product-home > section > div { max-width: 1220px; margin-inline: auto; }
+.product-home > section:first-of-type { padding-top: 40px; }
+.product-home > section:first-of-type h2 + p { margin-top: 10px; font-size: 14px; line-height: 1.7; max-width: 500px; }
+.product-home .product-person { min-height: 260px; padding: 24px; }
+.product-home .product-person p { font-size: 13px; line-height: 1.65; }
+.product-home .product-person a.truncate { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
+.product-home .product-person > div:last-child { padding-top: 18px; margin-top: 18px; }
+@media (max-width: 640px) {
+  .hookz-product main > div > .max-w-7xl { padding-top: 24px; }
+  .product-home > section:first-of-type { padding-top: 24px; }
+  .product-home .product-person { padding: 20px; }
+}

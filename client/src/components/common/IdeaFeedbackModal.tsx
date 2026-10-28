@@ -91,7 +91,7 @@ export const IdeaFeedbackModal: React.FC<IdeaFeedbackModalProps> = ({
       {loading ? (
         <div className="flex flex-col items-center justify-center py-12 space-y-3">
           <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-slate-500 font-semibold animate-pulse">
+          <p className="text-xs text-[var(--text-muted)] font-semibold animate-pulse">
             Analyzing problem-solution fit, risk factors, and customer dynamics...
           </p>
         </div>
@@ -100,42 +100,42 @@ export const IdeaFeedbackModal: React.FC<IdeaFeedbackModalProps> = ({
           {/* Score & Banner */}
           <div className="flex items-center justify-between p-4 rounded-lg bg-slate-900 dark:bg-slate-850 text-white border border-slate-800">
             <div>
-              <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5 mb-1">
-                <Sparkles size={13} className="text-brand-400" /> AI Viability Index
+              <div className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] font-semibold flex items-center gap-1.5 mb-1">
+                <Sparkles size={13} className="text-[var(--brand-primary)]" /> AI Viability Index
               </div>
               <div className="text-2xl font-bold tracking-tight">
-                {feedback.overallScore || 85}<span className="text-sm font-normal text-slate-400">/100</span>{' '}
+                {feedback.overallScore || 85}<span className="text-sm font-normal text-[var(--text-muted)]">/100</span>{' '}
                 <span className="text-xs font-semibold text-emerald-400 ml-1.5">Strong Potential</span>
               </div>
             </div>
-            <div className="text-xs max-w-xs text-right text-slate-400 hidden sm:block">
+            <div className="text-xs max-w-xs text-right text-[var(--text-muted)] hidden sm:block">
               Calculated across problem statement clarity, market differentiation, and defensibility.
             </div>
           </div>
 
           {/* 3 Pillars */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div className="font-semibold text-xs text-slate-700 dark:text-slate-300 mb-1">
+            <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+              <div className="font-semibold text-xs text-[var(--text-secondary)] mb-1">
                 Problem Clarity
               </div>
-              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
+              <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
                 {feedback.problemClarity || 'Addresses a concrete, recurring friction in the domain.'}
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div className="font-semibold text-xs text-slate-700 dark:text-slate-300 mb-1">
+            <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+              <div className="font-semibold text-xs text-[var(--text-secondary)] mb-1">
                 Solution Viability
               </div>
-              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
+              <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
                 {feedback.solutionClarity || 'Technically feasible with immediate MVP potential.'}
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div className="font-semibold text-xs text-slate-700 dark:text-slate-300 mb-1">
+            <div className="p-3 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)]">
+              <div className="font-semibold text-xs text-[var(--text-secondary)] mb-1">
                 Target Audience
               </div>
-              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
+              <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
                 {feedback.targetCustomerClarity || 'High willingness to pay if friction is reduced.'}
               </p>
             </div>
@@ -149,7 +149,7 @@ export const IdeaFeedbackModal: React.FC<IdeaFeedbackModalProps> = ({
               </h5>
               <ul className="space-y-1.5 pl-1">
                 {feedback.strengths.map((s: string, idx: number) => (
-                  <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
+                  <li key={idx} className="flex items-start gap-2 text-xs text-[var(--text-secondary)]">
                     <span className="text-emerald-600 dark:text-emerald-400 font-bold">•</span>
                     <span>{s}</span>
                   </li>
@@ -166,7 +166,7 @@ export const IdeaFeedbackModal: React.FC<IdeaFeedbackModalProps> = ({
               </h5>
               <ul className="space-y-1.5 pl-1">
                 {feedback.potentialRisks.map((r: string, idx: number) => (
-                  <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
+                  <li key={idx} className="flex items-start gap-2 text-xs text-[var(--text-secondary)]">
                     <span className="text-amber-600 dark:text-amber-400 font-bold">•</span>
                     <span>{r}</span>
                   </li>
@@ -177,14 +177,14 @@ export const IdeaFeedbackModal: React.FC<IdeaFeedbackModalProps> = ({
 
           {/* Validation Questions */}
           {feedback.validationQuestions && feedback.validationQuestions.length > 0 && (
-            <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800">
-              <h5 className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mb-2 text-xs uppercase tracking-wider">
-                <HelpCircle size={15} className="text-brand-600 dark:text-brand-400" /> Customer Discovery Questions
+            <div className="p-3.5 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
+              <h5 className="font-semibold text-[var(--text-primary)] flex items-center gap-1.5 mb-2 text-xs uppercase tracking-wider">
+                <HelpCircle size={15} className="text-[var(--brand-primary)]" /> Customer Discovery Questions
               </h5>
               <ul className="space-y-1.5 pl-1">
                 {feedback.validationQuestions.map((q: string, idx: number) => (
-                  <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
-                    <span className="text-brand-600 dark:text-brand-400 font-bold">•</span>
+                  <li key={idx} className="flex items-start gap-2 text-xs text-[var(--text-secondary)]">
+                    <span className="text-[var(--brand-primary)] font-bold">•</span>
                     <span>{q}</span>
                   </li>
                 ))}
@@ -192,7 +192,7 @@ export const IdeaFeedbackModal: React.FC<IdeaFeedbackModalProps> = ({
             </div>
           )}
 
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+          <div className="pt-3 border-t border-[var(--border-subtle)] flex justify-end">
             <button
               onClick={onClose}
               className="btn-primary !text-xs !py-2 !px-4"

@@ -366,7 +366,7 @@ export const LandingPage: React.FC = () => {
   }, [otherProfiles, connectionStatusMap]);
 
   return (
-    <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
+    <div className="product-home flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
       <SEO
         title="HookZ — Startup Networking Platform"
         description="HookZ is a startup networking platform where founders, co-founders, mentors and investors connect, discover opportunities and build startups together."
@@ -379,23 +379,23 @@ export const LandingPage: React.FC = () => {
           <div className="w-full mb-10">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">
                   Students, Specialists & Community Talent
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
                   Discover ambitious students, engineers, designers & builders across the ecosystem
                 </p>
               </div>
 
               {/* Category Filter Tabs */}
-              <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg self-start sm:self-auto shrink-0">
+              <div className="flex items-center gap-1.5 p-1 bg-[var(--bg-soft)] rounded-lg self-start sm:self-auto shrink-0">
                 <button
                   type="button"
                   onClick={() => setRoleFilter('all')}
                   className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
                     roleFilter === 'all'
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   All
@@ -405,8 +405,8 @@ export const LandingPage: React.FC = () => {
                   onClick={() => setRoleFilter('students')}
                   className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
                     roleFilter === 'students'
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   Students
@@ -416,8 +416,8 @@ export const LandingPage: React.FC = () => {
                   onClick={() => setRoleFilter('others')}
                   className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
                     roleFilter === 'others'
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   Others
@@ -442,13 +442,13 @@ export const LandingPage: React.FC = () => {
 
               if (displayedProfiles.length === 0) {
                 return (
-                  <div className="text-center py-8 px-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                  <div className="text-center py-8 px-4 rounded-xl border border-dashed border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+                    <p className="text-sm text-[var(--text-muted)]">
                       No profiles found in this category.
                     </p>
                     <Link
                       to="/cofounders"
-                      className="inline-block mt-3 text-xs font-semibold text-brand-600 hover:text-brand-500"
+                      className="inline-block mt-3 text-xs font-semibold text-[var(--brand-primary)] hover:text-[var(--brand-primary)]"
                     >
                       Browse Talent Directory &rarr;
                     </Link>
@@ -457,7 +457,7 @@ export const LandingPage: React.FC = () => {
               }
 
               return (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {displayedProfiles.map((p) => {
                     const displayName = p.full_name || 'Community Member';
                     const displayRole = p.role_label || 'Other';
@@ -479,7 +479,7 @@ export const LandingPage: React.FC = () => {
                     return (
                       <div
                         key={p.user_id || p.id || p.email}
-                        className="card-base p-4 flex flex-col justify-between h-full min-w-0"
+                        className="card-base product-person p-5 flex flex-col justify-between h-full min-w-0"
                       >
                         <div>
                           {/* TOP HEADER ROW: Avatar + Name & Username ONLY */}
@@ -494,13 +494,13 @@ export const LandingPage: React.FC = () => {
                               {/* Line 1: User's Full Name */}
                               <Link
                                 to={profileUrl}
-                                className="text-[15px] font-semibold text-slate-900 dark:text-[#F8FAFC] hover:text-brand-600 transition-colors truncate block"
+                                className="text-[15px] font-semibold text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors truncate block"
                               >
                                 {displayName}
                               </Link>
 
                               {/* Line 2: @username directly underneath */}
-                              <p className="text-xs text-slate-500 dark:text-slate-400 font-normal truncate mt-0.5">
+                              <p className="text-xs text-[var(--text-muted)] font-normal truncate mt-0.5">
                                 @{username}
                               </p>
                             </div>
@@ -510,23 +510,23 @@ export const LandingPage: React.FC = () => {
                           {/* Consolidated Badges Row: RoleBadge + Active Builder */}
                           <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
                             <RoleBadge role={displayRole} size="sm" />
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shrink-0">
-                              <Sparkles size={10} className="text-brand-600 dark:text-brand-400" />
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-[var(--bg-soft)] text-[var(--text-secondary)] border border-[var(--border-subtle)] shrink-0">
+                              <Sparkles size={10} className="text-[var(--brand-primary)]" />
                               <span>Active Builder</span>
                             </span>
                           </div>
 
                           {/* Location & Skill Row */}
-                          <div className="mt-3 flex items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400 w-full">
+                          <div className="mt-3 flex items-center justify-between gap-2 text-xs text-[var(--text-muted)] w-full">
                             <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                              <MapPin size={12} className="shrink-0 text-slate-400 dark:text-slate-500" />
+                              <MapPin size={12} className="shrink-0 text-[var(--text-muted)]" />
                               <span className="truncate" title={p.location || 'Remote'}>
                                 {p.location || 'Remote'}
                               </span>
                             </div>
                             {primarySkill ? (
                               <span
-                                className="shrink-0 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 font-medium truncate max-w-[130px]"
+                                className="shrink-0 whitespace-nowrap text-xs text-[var(--text-muted)] font-medium truncate max-w-[130px]"
                                 title={primarySkill}
                               >
                                 {primarySkill}
@@ -536,17 +536,17 @@ export const LandingPage: React.FC = () => {
 
                           {/* Single Bio / Headline Block (Rendered strictly once!) */}
                           <div className="mt-2.5 min-h-[32px]">
-                            <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                            <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
                               {p.one_line_bio || p.oneLineBio || p.headline || 'Specialist available for collaborations'}
                             </p>
                           </div>
                         </div>
 
                         {/* Card Footer with mt-auto for row-level horizontal alignment */}
-                        <div className="pt-3 mt-3 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between gap-2">
+                        <div className="pt-3 mt-3 border-t border-[var(--border-subtle)] flex items-center justify-between gap-2">
                           <Link
                             to={profileUrl}
-                            className="text-xs font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+                            className="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                           >
                             Profile
                           </Link>
@@ -555,7 +555,7 @@ export const LandingPage: React.FC = () => {
                             {/* Startup Connection (Pitch) Button */}
                             <button
                               onClick={() => handlePitchClick(targetUserObj)}
-                              className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-medium transition-colors cursor-pointer"
+                              className="btn-secondary !text-xs"
                               title="Propose Co-Founding a Startup"
                             >
                               Pitch
@@ -573,7 +573,7 @@ export const LandingPage: React.FC = () => {
                             ) : (
                               <button
                                 onClick={() => handleConnectClick(targetUserObj)}
-                                className="px-3.5 py-1.5 rounded-lg bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white text-xs font-semibold transition-colors cursor-pointer"
+                                className="btn-primary !text-xs"
                               >
                                 + Connect
                               </button>
@@ -593,18 +593,18 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* 1.5 LATEST PLATFORM UPDATES SECTION */}
-      <section className="py-14 bg-slate-50/80 dark:bg-slate-900/40 border-y border-slate-200 dark:border-slate-800">
+      <section className="py-14 bg-[var(--bg-primary)] border-y border-[var(--border-subtle)]">
         <div className="w-full max-w-full px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-800 mb-1.5">
-                <Sparkles size={12} className="text-brand-600" />
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-[var(--bg-surface)] text-[var(--text-secondary)] text-xs font-medium border border-[var(--border-subtle)] mb-1.5">
+                <Sparkles size={12} className="text-[var(--brand-primary)]" />
                 <span>Platform Highlights</span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+              <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-primary)]">
                 What's New on HookZ
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
                 HookZ is a platform built for students. Connect with other students for hackathons, build project teams, make friends, and showcase your achievements. If you're serious about a startup idea, you can share it here too.
               </p>
             </div>
@@ -621,15 +621,15 @@ export const LandingPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setAiScoutOpen(true)}
-              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer text-left w-full"
+              className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--border-subtle)] transition-colors group block cursor-pointer text-left w-full"
             >
-              <div className="w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center mb-3 group-hover:text-brand-600 transition-colors border border-slate-200 dark:border-slate-700">
+              <div className="w-8 h-8 rounded-md bg-[var(--bg-soft)] text-[var(--text-secondary)] flex items-center justify-center mb-3 group-hover:text-[var(--brand-primary)] transition-colors border border-[var(--border-subtle)]">
                 <Zap size={16} />
               </div>
-              <h3 className="font-semibold text-slate-900 dark:text-white text-xs mb-1 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+              <h3 className="font-semibold text-[var(--text-primary)] text-xs mb-1 group-hover:text-[var(--brand-primary)] transition-colors">
                 AI Scout Candidate Matcher →
               </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
                 Find students, builders, and teammates with complementary skills for your next hackathon or project.
               </p>
             </button>
@@ -637,15 +637,15 @@ export const LandingPage: React.FC = () => {
             {/* 2. Profiles */}
             <Link
               to="/cofounders?category=students"
-              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
+              className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--border-subtle)] transition-colors group block cursor-pointer"
             >
-              <div className="w-8 h-8 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center mb-3 group-hover:text-brand-600 transition-colors border border-slate-200 dark:border-slate-700">
+              <div className="w-8 h-8 rounded-md bg-[var(--bg-soft)] text-[var(--text-secondary)] flex items-center justify-center mb-3 group-hover:text-[var(--brand-primary)] transition-colors border border-[var(--border-subtle)]">
                 <ShieldCheck size={16} />
               </div>
-              <h3 className="font-semibold text-slate-900 dark:text-white text-xs mb-1 group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+              <h3 className="font-semibold text-[var(--text-primary)] text-xs mb-1 group-hover:text-[var(--brand-primary)] transition-colors">
                 Student & Builder Profiles →
               </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
                 Identity badges, role indicators, project showcases, and verified student profiles.
               </p>
             </Link>
@@ -658,13 +658,13 @@ export const LandingPage: React.FC = () => {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-[11px] font-semibold tracking-wider uppercase text-brand-600 dark:text-brand-400">
+            <span className="text-[11px] font-semibold tracking-wider uppercase text-[var(--brand-primary)]">
               Lifecycle
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-1">
+            <h2 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] mt-1">
               How HookZ Works
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">
+            <p className="text-[var(--text-muted)] text-xs sm:text-sm mt-1">
               Connect with fellow students, form hackathon teams, collaborate on projects, and showcase your achievements.
             </p>
           </div>
@@ -672,44 +672,44 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Link
               to="/profile/me"
-              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
+              className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--border-subtle)] transition-colors group block cursor-pointer"
             >
               <span className="text-xl font-bold text-slate-300 dark:text-slate-700 mb-1 block">01</span>
-              <h3 className="text-xs font-semibold text-slate-900 dark:text-white mb-1 group-hover:text-brand-600 transition-colors">Create Your Profile →</h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              <h3 className="text-xs font-semibold text-[var(--text-primary)] mb-1 group-hover:text-[var(--brand-primary)] transition-colors">Create Your Profile →</h3>
+              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
                 Showcase your skills, year, college, and interests.
               </p>
             </Link>
 
             <Link
               to="/cofounders"
-              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
+              className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--border-subtle)] transition-colors group block cursor-pointer"
             >
               <span className="text-xl font-bold text-slate-300 dark:text-slate-700 mb-1 block">02</span>
-              <h3 className="text-xs font-semibold text-slate-900 dark:text-white mb-1 group-hover:text-brand-600 transition-colors">Find Teammates →</h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              <h3 className="text-xs font-semibold text-[var(--text-primary)] mb-1 group-hover:text-[var(--brand-primary)] transition-colors">Find Teammates →</h3>
+              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
                 Discover students with complementary skills for your next hackathon.
               </p>
             </Link>
 
             <Link
               to="/projects"
-              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
+              className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--border-subtle)] transition-colors group block cursor-pointer"
             >
               <span className="text-xl font-bold text-slate-300 dark:text-slate-700 mb-1 block">03</span>
-              <h3 className="text-xs font-semibold text-slate-900 dark:text-white mb-1 group-hover:text-brand-600 transition-colors">Build Together →</h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              <h3 className="text-xs font-semibold text-[var(--text-primary)] mb-1 group-hover:text-[var(--brand-primary)] transition-colors">Build Together →</h3>
+              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
                 Create a project workspace to collaborate on ideas, files, and tasks.
               </p>
             </Link>
 
             <Link
               to="/feed"
-              className="p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-colors group block cursor-pointer"
+              className="p-4 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-[var(--border-subtle)] transition-colors group block cursor-pointer"
             >
               <span className="text-xl font-bold text-slate-300 dark:text-slate-700 mb-1 block">04</span>
-              <h3 className="text-xs font-semibold text-slate-900 dark:text-white mb-1 group-hover:text-brand-600 transition-colors">Launch & Share →</h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              <h3 className="text-xs font-semibold text-[var(--text-primary)] mb-1 group-hover:text-[var(--brand-primary)] transition-colors">Launch & Share →</h3>
+              <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
                 Post your wins, projects, and (if ambitious) your startup idea.
               </p>
             </Link>

@@ -38,7 +38,7 @@ export const MobileBottomBar: React.FC = () => {
   const isOpportunities = location.pathname.startsWith('/opportunities');
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-dark-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-3 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] shadow-modal select-none">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-surface)] backdrop-blur-md border-t border-[var(--border-subtle)] px-3 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] shadow-modal select-none">
       <div className="flex items-center justify-around max-w-md mx-auto relative">
         
         {/* 1) Home */}
@@ -46,8 +46,8 @@ export const MobileBottomBar: React.FC = () => {
           to="/"
           className={`flex flex-col items-center justify-center py-1 px-2 min-w-[56px] transition-colors ${
             isHome
-              ? 'text-brand-600 dark:text-brand-400 font-bold'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'text-[var(--brand-primary)] font-bold'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
           }`}
         >
           <Home size={19} className={isHome ? 'stroke-[2.5]' : 'stroke-2'} />
@@ -59,8 +59,8 @@ export const MobileBottomBar: React.FC = () => {
           to="/feed"
           className={`flex flex-col items-center justify-center py-1 px-2 min-w-[56px] transition-colors ${
             isFeed
-              ? 'text-brand-600 dark:text-brand-400 font-bold'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'text-[var(--brand-primary)] font-bold'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
           }`}
         >
           <Share2 size={19} className={isFeed ? 'stroke-[2.5]' : 'stroke-2'} />
@@ -84,8 +84,8 @@ export const MobileBottomBar: React.FC = () => {
           <span
             className={`text-[10px] mt-1 font-bold leading-none ${
               isProjects
-                ? 'text-brand-600 dark:text-brand-400'
-                : 'text-slate-700 dark:text-slate-300'
+                ? 'text-[var(--brand-primary)]'
+                : 'text-[var(--text-secondary)]'
             }`}
           >
             Projects
@@ -97,8 +97,8 @@ export const MobileBottomBar: React.FC = () => {
           to="/business"
           className={`flex flex-col items-center justify-center py-1 px-2 min-w-[56px] transition-colors ${
             isBusiness
-              ? 'text-brand-600 dark:text-brand-400 font-bold'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'text-[var(--brand-primary)] font-bold'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
           }`}
         >
           <Briefcase size={19} className={isBusiness ? 'stroke-[2.5]' : 'stroke-2'} />
@@ -110,8 +110,8 @@ export const MobileBottomBar: React.FC = () => {
           to="/opportunities"
           className={`flex flex-col items-center justify-center py-1 px-2 min-w-[56px] transition-colors ${
             isOpportunities
-              ? 'text-brand-600 dark:text-brand-400 font-bold'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+              ? 'text-[var(--brand-primary)] font-bold'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
           }`}
         >
           <GraduationCap size={19} className={isOpportunities ? 'stroke-[2.5]' : 'stroke-2'} />

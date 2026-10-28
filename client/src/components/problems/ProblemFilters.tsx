@@ -50,7 +50,7 @@ export const ProblemFilters: React.FC<ProblemFiltersProps> = ({
       <div className="relative">
         <Search
           size={14}
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none"
         />
         <input
           type="text"
@@ -62,7 +62,7 @@ export const ProblemFilters: React.FC<ProblemFiltersProps> = ({
         {search && (
           <button
             onClick={() => onSearchChange('')}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)]  transition-colors"
           >
             <X size={14} />
           </button>
@@ -71,8 +71,8 @@ export const ProblemFilters: React.FC<ProblemFiltersProps> = ({
 
       {/* Category Domains Selector */}
       <div>
-        <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-          <Filter size={12} className="text-slate-400" />
+        <label className="block text-xs font-medium text-[var(--text-secondary)]  mb-1 flex items-center gap-1.5">
+          <Filter size={12} className="text-[var(--text-muted)]" />
           <span>Category Domains</span>
         </label>
         <select
@@ -90,12 +90,12 @@ export const ProblemFilters: React.FC<ProblemFiltersProps> = ({
       </div>
 
       {/* Secondary Row: Regions, Impact Level & Tags */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-100 dark:border-dark-800">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[var(--border-subtle)] ">
         
         {/* Region Selector */}
         <div>
-          <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-            <Globe2 size={12} className="text-slate-400" />
+          <label className="block text-xs font-medium text-[var(--text-secondary)]  mb-1 flex items-center gap-1.5">
+            <Globe2 size={12} className="text-[var(--text-muted)]" />
             <span>Region</span>
           </label>
           <select
@@ -114,8 +114,8 @@ export const ProblemFilters: React.FC<ProblemFiltersProps> = ({
 
         {/* Impact Level Selector */}
         <div>
-          <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-            <Flame size={12} className="text-slate-400" />
+          <label className="block text-xs font-medium text-[var(--text-secondary)]  mb-1 flex items-center gap-1.5">
+            <Flame size={12} className="text-[var(--text-muted)]" />
             <span>Impact Urgency</span>
           </label>
           <select
@@ -132,8 +132,8 @@ export const ProblemFilters: React.FC<ProblemFiltersProps> = ({
 
         {/* Tags Selector */}
         <div>
-          <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-            <TagIcon size={12} className="text-slate-400" />
+          <label className="block text-xs font-medium text-[var(--text-secondary)]  mb-1 flex items-center gap-1.5">
+            <TagIcon size={12} className="text-[var(--text-muted)]" />
             <span>Focus Tag</span>
           </label>
           <select
@@ -152,9 +152,9 @@ export const ProblemFilters: React.FC<ProblemFiltersProps> = ({
       </div>
 
       {/* Status Bar: Results count & Reset action */}
-      <div className="flex items-center justify-between pt-1 text-xs text-slate-500 dark:text-slate-400">
+      <div className="flex items-center justify-between pt-1 text-xs text-[var(--text-muted)] ">
         <div>
-          Found <strong className="text-slate-900 dark:text-white font-semibold">{totalResults}</strong> authoritative problem statement{totalResults === 1 ? '' : 's'}
+          Found <strong className="text-[var(--text-primary)]  font-semibold">{totalResults}</strong> authoritative problem statement{totalResults === 1 ? '' : 's'}
         </div>
 
         {hasActiveFilters && (

@@ -39,7 +39,7 @@ export const getCategoryColor = (category: string): string => {
     return 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800';
   }
   if (cat.includes('education') || cat.includes('skill')) {
-    return 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800';
+    return 'bg-[var(--brand-soft)]  text-[var(--brand-primary)]  border-indigo-200 dark:border-indigo-800';
   }
   if (cat.includes('economy') || cat.includes('inequality')) {
     return 'bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800';
@@ -50,7 +50,7 @@ export const getCategoryColor = (category: string): string => {
   if (cat.includes('women') || cat.includes('social')) {
     return 'bg-pink-50 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-800';
   }
-  return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+  return 'bg-[var(--bg-soft)]  text-[var(--text-secondary)]  border-[var(--border-subtle)] ';
 };
 
 export const ProblemCard: React.FC<ProblemCardProps> = ({
@@ -92,7 +92,7 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
   const impact = problem.impactLevel || problem.impact_level || 7;
 
   return (
-    <div className="card-base p-5 flex flex-col justify-between space-y-3.5 hover:border-slate-300 dark:hover:border-dark-700 transition-colors">
+    <div className="card-base p-5 flex flex-col justify-between space-y-3.5 hover:border-[var(--border-subtle)]  transition-colors">
       
       {/* Top Meta: Categories & Impact Score */}
       <div>
@@ -109,7 +109,7 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
               </span>
             ))}
             {problem.categories && problem.categories.length > 2 && (
-              <span className="text-[10px] font-medium text-slate-400">
+              <span className="text-[10px] font-medium text-[var(--text-muted)]">
                 +{problem.categories.length - 2}
               </span>
             )}
@@ -131,23 +131,23 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
 
         {/* Problem Title */}
         <Link to={`/problems/${problem.id}`} className="block">
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 transition-colors line-clamp-2 mb-1.5 leading-snug">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)]  hover:text-[var(--brand-primary)]  transition-colors line-clamp-2 mb-1.5 leading-snug">
             {problem.title}
           </h3>
         </Link>
 
         {/* Truncated Description */}
-        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mb-3 leading-relaxed">
+        <p className="text-xs text-[var(--text-secondary)]  line-clamp-2 mb-3 leading-relaxed">
           {problem.description}
         </p>
 
         {/* Regions & Tags */}
         <div className="space-y-1.5 mb-2">
           {problem.regions && problem.regions.length > 0 && (
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-              <Globe2 size={13} className="text-slate-400 shrink-0" />
+            <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] ">
+              <Globe2 size={13} className="text-[var(--text-muted)] shrink-0" />
               <span className="truncate">
-                Region: <strong className="text-slate-700 dark:text-slate-300 font-medium">{problem.regions.join(', ')}</strong>
+                Region: <strong className="text-[var(--text-secondary)]  font-medium">{problem.regions.join(', ')}</strong>
               </span>
             </div>
           )}
@@ -158,13 +158,13 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
               {problem.tags.slice(0, 3).map((tag, idx) => (
                 <span
                   key={idx}
-                  className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-dark-800"
+                  className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-soft)]  text-[var(--text-secondary)]  border border-[var(--border-subtle)] "
                 >
                   #{tag}
                 </span>
               ))}
               {problem.tags.length > 3 && (
-                <span className="text-[10px] text-slate-400 font-medium self-center">
+                <span className="text-[10px] text-[var(--text-muted)] font-medium self-center">
                   +{problem.tags.length - 3}
                 </span>
               )}
@@ -174,7 +174,7 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
       </div>
 
       {/* Card Footer Actions */}
-      <div className="pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between gap-2 mt-auto">
+      <div className="pt-3 border-t border-[var(--border-subtle)]  flex items-center justify-between gap-2 mt-auto">
         <div className="flex items-center gap-1">
           {/* Save/Bookmark Button */}
           <button
@@ -184,7 +184,7 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
             className={`p-1.5 rounded-md transition-colors ${
               isSaved
                 ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 border border-amber-200 dark:border-amber-900/60'
-                : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] '
             }`}
             title={isSaved ? 'Saved to My Problems' : 'Save to My Problems'}
           >
@@ -200,7 +200,7 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
           {onShare && (
             <button
               onClick={() => onShare(problem)}
-              className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              className="p-1.5 rounded-md text-[var(--text-muted)] hover:text-[var(--text-secondary)]  transition-colors"
               title="Share Challenge"
             >
               <Share2 size={14} />
@@ -213,7 +213,7 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
               href={sanitizeExternalUrl(problem.sourceUrl || problem.source_url)}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-1.5 rounded-md text-slate-400 hover:text-brand-600 transition-colors"
+              className="p-1.5 rounded-md text-[var(--text-muted)] hover:text-[var(--brand-primary)] transition-colors"
               title="View Official UN / WHO / Global Citation Source"
               onClick={(e) => e.stopPropagation()}
             >
@@ -223,11 +223,11 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
 
           {/* Creator & Admin Management Controls */}
           {(user?.isAdmin || (user?.id && (user.id === (problem as any).authorId || user.id === (problem as any).userId || user.id === (problem as any).creatorId))) && (
-            <div className="flex items-center gap-1 ml-1 border-l border-slate-200 dark:border-dark-800 pl-1.5">
+            <div className="flex items-center gap-1 ml-1 border-l border-[var(--border-subtle)]  pl-1.5">
               {user?.isAdmin && (
                 <Link
                   to={`/admin/problems/${problem.id}/edit`}
-                  className="p-1 rounded text-slate-400 hover:text-brand-600 transition-colors"
+                  className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--brand-primary)] transition-colors"
                   title="Edit Problem Statement (Admin)"
                 >
                   <Edit size={13} />
@@ -252,7 +252,7 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
                     }
                   }
                 }}
-                className="p-1 rounded text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
+                className="p-1 rounded text-[var(--text-muted)] hover:text-rose-500 transition-colors cursor-pointer"
                 title="Delete Problem Statement"
               >
                 <Trash2 size={13} />

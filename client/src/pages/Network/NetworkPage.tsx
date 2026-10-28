@@ -633,22 +633,22 @@ export const NetworkPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-            <Users className="text-brand-600 dark:text-brand-400" size={24} /> My Startup Network
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[var(--text-primary)] flex items-center gap-2">
+            <Users className="text-[var(--brand-primary)]" size={24} /> My Startup Network
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-0.5">
             Manage your connections, invitations, and co-founder venture proposals.
           </p>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center gap-1 p-1 rounded-md bg-slate-100 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 flex-wrap">
+        <div className="flex items-center gap-1 p-1 rounded-md bg-[var(--bg-soft)] border border-[var(--border-subtle)] flex-wrap">
           <button
             onClick={() => setActiveTab('CONNECTED')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors cursor-pointer ${
               activeTab === 'CONNECTED'
-                ? 'bg-white dark:bg-dark-900 text-slate-900 dark:text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             <UserCheck size={14} />
@@ -659,8 +659,8 @@ export const NetworkPage: React.FC = () => {
             onClick={() => setActiveTab('PENDING')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors relative cursor-pointer ${
               activeTab === 'PENDING'
-                ? 'bg-white dark:bg-dark-900 text-slate-900 dark:text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             <Clock size={14} />
@@ -676,8 +676,8 @@ export const NetworkPage: React.FC = () => {
             onClick={() => setActiveTab('PROPOSALS')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors relative cursor-pointer ${
               activeTab === 'PROPOSALS'
-                ? 'bg-white dark:bg-dark-900 text-slate-900 dark:text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
             }`}
           >
             <Rocket size={14} />
@@ -695,7 +695,7 @@ export const NetworkPage: React.FC = () => {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div key={n} className="h-40 card-base bg-slate-100 dark:bg-dark-850 animate-pulse" />
+            <div key={n} className="h-40 card-base bg-[var(--bg-soft)] animate-pulse" />
           ))}
         </div>
       ) : activeTab === 'CONNECTED' ? (
@@ -720,7 +720,7 @@ export const NetworkPage: React.FC = () => {
               return (
                 <div
                   key={c.connectionId}
-                  className="card-base p-4 sm:p-5 flex flex-col justify-between space-y-3 hover:border-slate-300 dark:hover:border-dark-700 transition-colors"
+                  className="card-base p-4 sm:p-5 flex flex-col justify-between space-y-3 hover:border-[var(--border-subtle)] transition-colors"
                 >
                   <div className="space-y-2.5">
                     <div className="flex items-start gap-3">
@@ -736,24 +736,24 @@ export const NetworkPage: React.FC = () => {
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <Link
                             to={`/profile/${u?.id}`}
-                            className="font-semibold text-xs text-slate-900 dark:text-white hover:text-brand-600 transition-colors truncate"
+                            className="font-semibold text-xs text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors truncate"
                           >
                             {name}
                           </Link>
                         </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">{headline}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">{location}</p>
+                        <p className="text-[11px] text-[var(--text-muted)] line-clamp-1">{headline}</p>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{location}</p>
                       </div>
                     </div>
 
                     {(u?.profile?.oneLineBio || (u?.profile as any)?.one_line_bio) && (
-                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-2">
+                      <p className="text-xs font-bold text-[var(--text-primary)] line-clamp-2">
                         {u.profile.oneLineBio || (u.profile as any).one_line_bio}
                       </p>
                     )}
                   </div>
 
-                  <div className="pt-2.5 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between">
+                  <div className="pt-2.5 border-t border-[var(--border-subtle)] flex items-center justify-between">
                     <button
                       onClick={() => navigate(`/messages?user=${u?.id}`)}
                       className="btn-primary py-1 px-3 text-xs font-semibold inline-flex items-center gap-1.5"
@@ -766,7 +766,7 @@ export const NetworkPage: React.FC = () => {
                       onClick={() => handleRemove(c.connectionId, u?.id)}
                       disabled={actionLoading[c.connectionId]}
                       title="Disconnect"
-                      className="p-1 rounded text-slate-400 hover:text-rose-600 transition-colors"
+                      className="p-1 rounded text-[var(--text-muted)] hover:text-rose-600 transition-colors"
                     >
                       <UserX size={15} />
                     </button>
@@ -781,15 +781,15 @@ export const NetworkPage: React.FC = () => {
         <div className="space-y-6">
           {/* Received Requests */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
               <span>Invitations Received</span>
-              <span className="px-2 py-0.5 rounded text-xs bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-semibold border border-brand-200/50 dark:border-brand-900/50">
+              <span className="px-2 py-0.5 rounded text-xs bg-[var(--brand-soft)] text-[var(--brand-primary)] font-semibold border border-brand-200/50 dark:border-brand-900/50">
                 {pendingReceived.length}
               </span>
             </h3>
 
             {pendingReceived.length === 0 ? (
-              <p className="text-xs text-slate-400 py-2">No pending connection invitations received.</p>
+              <p className="text-xs text-[var(--text-muted)] py-2">No pending connection invitations received.</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {pendingReceived.map((req) => {
@@ -816,25 +816,25 @@ export const NetworkPage: React.FC = () => {
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <Link
                               to={`/profile/${s?.id}`}
-                              className="font-semibold text-xs text-slate-900 dark:text-white hover:text-brand-600 truncate block"
+                              className="font-semibold text-xs text-[var(--text-primary)] hover:text-[var(--brand-primary)] truncate block"
                             >
                               {name}
                             </Link>
-                            <span className="text-[11px] text-slate-400 font-mono">
+                            <span className="text-[11px] text-[var(--text-muted)] font-mono">
                               @{username}
                             </span>
                           </div>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">{headline}</p>
+                          <p className="text-[11px] text-[var(--text-muted)] line-clamp-1">{headline}</p>
                         </div>
                       </div>
 
                       {req.note && (
-                        <div className="p-2.5 rounded-md bg-slate-50 dark:bg-dark-850 border border-slate-200/80 dark:border-dark-800 text-xs text-slate-700 dark:text-slate-300 italic">
+                        <div className="p-2.5 rounded-md bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-xs text-[var(--text-secondary)] italic">
                           "{req.note}"
                         </div>
                       )}
 
-                      <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-dark-800">
+                      <div className="flex items-center gap-2 pt-1 border-t border-[var(--border-subtle)]">
                         <button
                           onClick={() => handleRespond(
                             req.id,
@@ -869,16 +869,16 @@ export const NetworkPage: React.FC = () => {
           </div>
 
           {/* Sent Requests */}
-          <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-dark-800">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+          <div className="space-y-3 pt-4 border-t border-[var(--border-subtle)]">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
               <span>Invitations Sent</span>
-              <span className="px-2 py-0.5 rounded text-xs bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-400 font-semibold border border-slate-200/60 dark:border-dark-800">
+              <span className="px-2 py-0.5 rounded text-xs bg-[var(--bg-soft)] text-[var(--text-secondary)] font-semibold border border-[var(--border-subtle)]">
                 {pendingSent.length}
               </span>
             </h3>
 
             {pendingSent.length === 0 ? (
-              <p className="text-xs text-slate-400 py-2">No pending outgoing invitations.</p>
+              <p className="text-xs text-[var(--text-muted)] py-2">No pending outgoing invitations.</p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {pendingSent.map((req) => {
@@ -897,10 +897,10 @@ export const NetworkPage: React.FC = () => {
                           className="!w-8 !h-8"
                         />
                         <div className="min-w-0">
-                          <h4 className="font-semibold text-xs text-slate-900 dark:text-white truncate">
+                          <h4 className="font-semibold text-xs text-[var(--text-primary)] truncate">
                             {name}
                           </h4>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{r?.profile?.headline || r?.role}</p>
+                          <p className="text-[11px] text-[var(--text-muted)] truncate">{r?.profile?.headline || r?.role}</p>
                         </div>
                       </div>
 
@@ -911,7 +911,7 @@ export const NetworkPage: React.FC = () => {
                         <button
                           onClick={() => handleRemove(req.id)}
                           disabled={actionLoading[req.id]}
-                          className="text-[11px] text-slate-400 hover:text-rose-600 transition-colors cursor-pointer px-1 py-0.5"
+                          className="text-[11px] text-[var(--text-muted)] hover:text-rose-600 transition-colors cursor-pointer px-1 py-0.5"
                           title="Withdraw invitation"
                         >
                           Withdraw
@@ -929,10 +929,10 @@ export const NetworkPage: React.FC = () => {
         <div className="space-y-6">
           {/* Received Proposals */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-              <Rocket size={16} className="text-brand-600 dark:text-brand-400" />
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+              <Rocket size={16} className="text-[var(--brand-primary)]" />
               <span>Startup Co-Founding Proposals Received</span>
-              <span className="px-2 py-0.5 rounded text-xs bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 font-semibold border border-brand-200/50 dark:border-brand-900/50">
+              <span className="px-2 py-0.5 rounded text-xs bg-[var(--brand-soft)] text-[var(--brand-primary)] font-semibold border border-brand-200/50 dark:border-brand-900/50">
                 {receivedProposals.length}
               </span>
             </h3>
@@ -965,10 +965,10 @@ export const NetworkPage: React.FC = () => {
                               className="!w-9 !h-9 rounded-lg"
                             />
                             <div className="min-w-0">
-                              <h4 className="font-semibold text-xs text-slate-900 dark:text-white truncate">
+                              <h4 className="font-semibold text-xs text-[var(--text-primary)] truncate">
                                 {name}
                               </h4>
-                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{s?.profile?.headline}</p>
+                              <p className="text-[10px] text-[var(--text-muted)] truncate">{s?.profile?.headline}</p>
                             </div>
                           </div>
 
@@ -977,28 +977,28 @@ export const NetworkPage: React.FC = () => {
                               ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60'
                               : prop.status === 'DECLINED'
                               ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60'
-                              : 'bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 border-brand-200 dark:border-brand-900/60'
+                              : 'bg-[var(--brand-soft)] text-[var(--brand-primary)] border-[var(--border-subtle)]'
                           }`}>
                             {prop.status}
                           </span>
                         </div>
 
                         {/* Idea Title */}
-                        <div className="p-3 rounded-md bg-slate-50 dark:bg-dark-850 border border-slate-200/80 dark:border-dark-800 space-y-1">
-                          <span className="text-[10px] uppercase font-semibold text-brand-600 dark:text-brand-400 tracking-wide block">
+                        <div className="p-3 rounded-md bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-1">
+                          <span className="text-[10px] uppercase font-semibold text-[var(--brand-primary)] tracking-wide block">
                             Proposed Venture Idea:
                           </span>
-                          <h4 className="font-semibold text-xs text-slate-900 dark:text-white">
+                          <h4 className="font-semibold text-xs text-[var(--text-primary)]">
                             {prop.ideaTitle}
                           </h4>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed pt-0.5">
+                          <p className="text-xs text-[var(--text-secondary)] leading-relaxed pt-0.5">
                             {prop.pitchDescription}
                           </p>
                         </div>
 
                         {/* Terms */}
                         <div className="flex items-center gap-2 text-xs flex-wrap">
-                          <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-dark-850 text-slate-700 dark:text-slate-300 font-medium border border-slate-200/60 dark:border-dark-800 text-[11px]">
+                          <span className="px-2 py-0.5 rounded bg-[var(--bg-soft)] text-[var(--text-secondary)] font-medium border border-[var(--border-subtle)] text-[11px]">
                             Role: {prop.proposedRole}
                           </span>
                           <span className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium border border-emerald-200/50 dark:border-emerald-900/50 text-[11px]">
@@ -1009,7 +1009,7 @@ export const NetworkPage: React.FC = () => {
 
                       {/* Response actions if pending */}
                       {prop.status === 'PENDING' ? (
-                        <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-dark-800">
+                        <div className="flex items-center gap-2 pt-2 border-t border-[var(--border-subtle)]">
                           <button
                             onClick={() => handleRespondProposal(prop.id, 'ACCEPTED')}
                             disabled={actionLoading[prop.id]}
@@ -1028,7 +1028,7 @@ export const NetworkPage: React.FC = () => {
                           </button>
                         </div>
                       ) : (
-                        <div className="pt-2 border-t border-slate-100 dark:border-dark-800 text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center justify-between flex-wrap gap-2">
+                        <div className="pt-2 border-t border-[var(--border-subtle)] text-xs font-medium text-[var(--text-muted)] flex items-center justify-between flex-wrap gap-2">
                           <span>{prop.status === 'ACCEPTED' ? '🎉 Offer Accepted! You are now connected partners.' : 'Offer declined.'}</span>
                           {prop.status === 'ACCEPTED' && (
                             <button
@@ -1050,8 +1050,8 @@ export const NetworkPage: React.FC = () => {
 
           {/* Sent Proposals */}
           {sentProposals.length > 0 && (
-            <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-dark-800">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+            <div className="space-y-3 pt-4 border-t border-[var(--border-subtle)]">
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
                 <span>Proposals Sent by You ({sentProposals.length})</span>
               </h3>
 
@@ -1072,7 +1072,7 @@ export const NetworkPage: React.FC = () => {
                             size="xs"
                             className="!w-7 !h-7"
                           />
-                          <span className="font-semibold text-xs text-slate-900 dark:text-white">{name}</span>
+                          <span className="font-semibold text-xs text-[var(--text-primary)]">{name}</span>
                         </div>
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${
                           prop.status === 'ACCEPTED'
@@ -1084,15 +1084,15 @@ export const NetworkPage: React.FC = () => {
                           {prop.status}
                         </span>
                       </div>
-                      <div className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
+                      <div className="text-xs font-medium text-[var(--text-primary)] truncate">
                         "{prop.ideaTitle}"
                       </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                      <div className="text-[11px] text-[var(--text-muted)]">
                         {prop.proposedRole} • {prop.proposedEquity}
                       </div>
 
                       {prop.status === 'ACCEPTED' && (
-                        <div className="pt-1.5 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between">
+                        <div className="pt-1.5 border-t border-[var(--border-subtle)] flex items-center justify-between">
                           <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Partner Accepted!</span>
                           <button
                             onClick={() => navigate(`/messages?user=${prop.receiverId || prop.receiver?.id}`)}

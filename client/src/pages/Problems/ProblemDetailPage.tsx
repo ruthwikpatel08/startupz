@@ -98,9 +98,9 @@ export const ProblemDetailPage: React.FC = () => {
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6 animate-pulse">
-        <div className="h-5 w-32 bg-slate-200 dark:bg-dark-800 rounded" />
-        <div className="h-9 w-3/4 bg-slate-200 dark:bg-dark-800 rounded-lg" />
-        <div className="h-64 card-base bg-slate-50 dark:bg-dark-900" />
+        <div className="h-5 w-32 bg-[var(--bg-soft)] rounded" />
+        <div className="h-9 w-3/4 bg-[var(--bg-soft)] rounded-lg" />
+        <div className="h-64 card-base bg-[var(--bg-primary)]" />
       </div>
     );
   }
@@ -109,10 +109,10 @@ export const ProblemDetailPage: React.FC = () => {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center space-y-4">
         <SEO title="Problem Statement Not Found | HookZ" noindex={true} />
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+        <h2 className="text-xl font-bold text-[var(--text-primary)]">
           Problem Statement Not Found
         </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-[var(--text-muted)]">
           The requested global challenge may have been updated or removed.
         </p>
         <Link
@@ -146,7 +146,7 @@ export const ProblemDetailPage: React.FC = () => {
         <div className="flex items-center justify-between">
           <Link
             to="/problems"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           >
             <ArrowLeft size={14} />
             <span>Back to Problem Statements</span>
@@ -158,7 +158,7 @@ export const ProblemDetailPage: React.FC = () => {
               {user?.isAdmin && (
                 <Link
                   to={`/admin/problems/${problem.id}/edit`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/40 hover:bg-brand-100 transition-colors border border-brand-200/60 dark:border-brand-900/40"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-[var(--brand-primary)] bg-[var(--brand-soft)] hover:bg-[var(--brand-soft)] transition-colors border border-brand-200/60 dark:border-brand-900/40"
                 >
                   <Edit size={13} />
                   <span>Edit</span>
@@ -193,8 +193,8 @@ export const ProblemDetailPage: React.FC = () => {
               ))}
 
               {problem.regions && problem.regions.length > 0 && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-350 border border-slate-200/60 dark:border-dark-700">
-                  <Globe2 size={12} className="text-brand-600 dark:text-brand-400" />
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-medium bg-[var(--bg-soft)] text-[var(--text-secondary)] border border-[var(--border-subtle)]">
+                  <Globe2 size={12} className="text-[var(--brand-primary)]" />
                   <span>{problem.regions.join(', ')}</span>
                 </span>
               )}
@@ -215,14 +215,14 @@ export const ProblemDetailPage: React.FC = () => {
           </div>
 
           {/* Heading */}
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white leading-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--text-primary)] leading-tight">
             {problem.title}
           </h1>
 
           {/* Date & Citation */}
-          <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--text-muted)]">
             <div className="flex items-center gap-1.5">
-              <Calendar size={13} className="text-slate-400" />
+              <Calendar size={13} className="text-[var(--text-muted)]" />
               <span>
                 Added {new Date(problem.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
               </span>
@@ -232,7 +232,7 @@ export const ProblemDetailPage: React.FC = () => {
                 href={sanitizeExternalUrl(source)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium"
+                className="inline-flex items-center gap-1 text-[var(--brand-primary)] hover:text-[var(--brand-primary)] font-medium"
               >
                 <span>Official Global Citation</span>
                 <ExternalLink size={12} />
@@ -241,7 +241,7 @@ export const ProblemDetailPage: React.FC = () => {
           </div>
 
           {/* Action Buttons Bar */}
-          <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-100 dark:border-dark-800">
+          <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-[var(--border-subtle)]">
             <button
               onClick={handleToggleSave}
               disabled={saveLoading}
@@ -280,18 +280,18 @@ export const ProblemDetailPage: React.FC = () => {
 
         {/* Detailed Problem Description Section */}
         <div className="card-base p-6 sm:p-8 space-y-6">
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-base font-semibold text-[var(--text-primary)] flex items-center gap-2">
             <span>Challenge Overview & Market Friction</span>
           </h2>
 
-          <div className="prose dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 text-sm leading-relaxed space-y-4">
+          <div className="prose dark:prose-invert max-w-none text-[var(--text-secondary)] text-sm leading-relaxed space-y-4">
             <p className="whitespace-pre-line">{problem.description}</p>
           </div>
 
           {/* Tags */}
           {problem.tags && problem.tags.length > 0 && (
-            <div className="pt-4 border-t border-slate-100 dark:border-dark-800 space-y-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <div className="pt-4 border-t border-[var(--border-subtle)] space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                 Thematic Keywords & Subtopics
               </span>
               <div className="flex flex-wrap gap-1.5">
@@ -299,7 +299,7 @@ export const ProblemDetailPage: React.FC = () => {
                   <Link
                     key={idx}
                     to={`/problems?tag=${encodeURIComponent(tag)}`}
-                    className="px-2.5 py-1 rounded text-xs font-medium bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-dark-700 hover:border-brand-500 dark:hover:border-dark-600 transition-colors"
+                    className="px-2.5 py-1 rounded text-xs font-medium bg-[var(--bg-soft)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:border-brand-500 dark:hover:border-dark-600 transition-colors"
                   >
                     #{tag}
                   </Link>
@@ -310,14 +310,14 @@ export const ProblemDetailPage: React.FC = () => {
 
           {/* Official Reference Citation Card */}
           {source && (
-            <div className="p-4 rounded-lg bg-slate-50 dark:bg-dark-800/60 border border-slate-200 dark:border-dark-700 flex items-center justify-between gap-4">
+            <div className="p-4 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <ShieldCheck size={20} className="text-emerald-600 shrink-0" />
                 <div>
-                  <h4 className="text-xs font-semibold text-slate-900 dark:text-white">
+                  <h4 className="text-xs font-semibold text-[var(--text-primary)]">
                     Authoritative Research & Data Source
                   </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-md mt-0.5">
+                  <p className="text-xs text-[var(--text-muted)] truncate max-w-md mt-0.5">
                     {source}
                   </p>
                 </div>
@@ -342,11 +342,11 @@ export const ProblemDetailPage: React.FC = () => {
         <div className="card-base p-6 sm:p-8 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Users size={18} className="text-brand-600 dark:text-brand-400" />
+              <h2 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <Users size={18} className="text-[var(--brand-primary)]" />
                 <span>Ecosystem Collaboration & Team Formation</span>
               </h2>
-              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+              <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-1">
                 Great startups start with great co-founders. Connect with builders, engineers, and mentors committed to this challenge.
               </p>
             </div>
@@ -369,23 +369,23 @@ export const ProblemDetailPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-            <div className="p-4 rounded-lg bg-slate-50 dark:bg-dark-800/60 border border-slate-200 dark:border-dark-700 space-y-1">
-              <div className="text-xs font-semibold text-slate-900 dark:text-white">1. Formulate Solution</div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            <div className="p-4 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-1">
+              <div className="text-xs font-semibold text-[var(--text-primary)]">1. Formulate Solution</div>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                 Use AI suggestions above or your own market domain insights to draft a startup concept.
               </p>
             </div>
 
-            <div className="p-4 rounded-lg bg-slate-50 dark:bg-dark-800/60 border border-slate-200 dark:border-dark-700 space-y-1">
-              <div className="text-xs font-semibold text-slate-900 dark:text-white">2. Recruit Co-Founders</div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            <div className="p-4 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-1">
+              <div className="text-xs font-semibold text-[var(--text-primary)]">2. Recruit Co-Founders</div>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                 Match with developers, operators, or researchers possessing the recommended complementary skills.
               </p>
             </div>
 
-            <div className="p-4 rounded-lg bg-slate-50 dark:bg-dark-800/60 border border-slate-200 dark:border-dark-700 space-y-1">
-              <div className="text-xs font-semibold text-slate-900 dark:text-white">3. Connect With Capital</div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            <div className="p-4 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-1">
+              <div className="text-xs font-semibold text-[var(--text-primary)]">3. Connect With Capital</div>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                 Pitch ESG, ClimateTech, and impact venture funds actively looking for founders solving this problem.
               </p>
             </div>

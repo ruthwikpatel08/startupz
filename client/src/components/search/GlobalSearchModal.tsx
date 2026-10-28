@@ -136,20 +136,20 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
         
         {/* Search Input Bar */}
         <form onSubmit={handleSearchSubmit} className="relative">
-          <Search size={16} className="absolute left-3.5 top-3 text-slate-400 pointer-events-none" />
+          <Search size={16} className="absolute left-3.5 top-3 text-[var(--text-muted)] pointer-events-none" />
           <input
             ref={inputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by name, username (@username), role, or startup..."
-            className="w-full pl-10 pr-9 py-2.5 text-sm rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600/20 transition-all font-normal"
+            className="w-full pl-10 pr-9 py-2.5 text-sm rounded-md bg-[var(--bg-surface)]  border border-[var(--border-subtle)]  text-[var(--text-primary)]  placeholder:text-[var(--text-muted)] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600/20 transition-all font-normal"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              className="absolute right-3 top-3 text-[var(--text-muted)] hover:text-[var(--text-secondary)] "
             >
               <X size={15} />
             </button>
@@ -158,12 +158,12 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
 
         {/* Live Matching Real Users Section */}
         {matchedUsers.length > 0 && (
-          <div className="space-y-2 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <div className="space-y-2 p-3 rounded-lg bg-[var(--bg-primary)]  border border-[var(--border-subtle)] ">
+            <div className="flex items-center justify-between text-xs font-semibold text-[var(--text-secondary)] ">
               <span className="flex items-center gap-1.5">
-                <Users size={14} className="text-brand-600 dark:text-brand-400" /> Members ({matchedUsers.length})
+                <Users size={14} className="text-[var(--brand-primary)] " /> Members ({matchedUsers.length})
               </span>
-              <span className="text-[11px] text-slate-400">Direct match</span>
+              <span className="text-[11px] text-[var(--text-muted)]">Direct match</span>
             </div>
 
             <div className="space-y-1">
@@ -172,7 +172,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
                   key={u.id}
                   type="button"
                   onClick={() => handleSelectOption(`/profile/${u.id}`)}
-                  className="w-full flex items-center justify-between p-2 rounded-md bg-white dark:bg-slate-900 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-800 transition-colors text-left group"
+                  className="w-full flex items-center justify-between p-2 rounded-md bg-[var(--bg-surface)]  hover:bg-[var(--bg-soft)]  border border-[var(--border-subtle)]  transition-colors text-left group"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <Avatar
@@ -182,20 +182,20 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
                     />
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-semibold text-xs text-slate-900 dark:text-white truncate">
+                        <span className="font-semibold text-xs text-[var(--text-primary)]  truncate">
                           {u.fullName}
                         </span>
-                        <span className="text-[11px] text-brand-600 dark:text-brand-400 font-mono">
+                        <span className="text-[11px] text-[var(--brand-primary)]  font-mono">
                           @{u.username}
                         </span>
                       </div>
-                      <span className="text-[11px] text-slate-500 block truncate">
+                      <span className="text-[11px] text-[var(--text-muted)] block truncate">
                         {u.role}
                       </span>
                     </div>
                   </div>
 
-                  <span className="text-xs text-slate-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 font-medium shrink-0 ml-2">
+                  <span className="text-xs text-[var(--text-muted)] group-hover:text-[var(--brand-primary)]  font-medium shrink-0 ml-2">
                     View profile →
                   </span>
                 </button>
@@ -206,7 +206,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
 
         {/* Quick Popular Keyword Pills */}
         <div className="space-y-1.5">
-          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+          <div className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">
             Popular Searches
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -219,7 +219,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
                   navigate(`/search?q=${encodeURIComponent(tag)}`);
                   onClose();
                 }}
-                className="px-2.5 py-1 rounded-md text-xs font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-brand-600 hover:text-brand-600 dark:hover:border-brand-500 dark:hover:text-brand-400 transition-colors"
+                className="px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--bg-surface)]  border border-[var(--border-subtle)]  text-[var(--text-secondary)]  hover:border-brand-600 hover:text-[var(--brand-primary)] dark:hover:border-brand-500  transition-colors"
               >
                 {tag}
               </button>
@@ -232,7 +232,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
           <button
             type="button"
             onClick={() => handleSelectOption(`/search?q=${encodeURIComponent(searchQuery.trim())}`)}
-            className="w-full text-left p-2.5 rounded-md bg-brand-50 dark:bg-brand-950/40 hover:bg-brand-100/70 dark:hover:bg-brand-900/40 border border-brand-200 dark:border-brand-900 flex items-center justify-between text-brand-700 dark:text-brand-300 text-xs font-semibold transition-colors"
+            className="w-full text-left p-2.5 rounded-md bg-[var(--brand-soft)]  hover:bg-[var(--brand-soft)]  border border-brand-200 dark:border-brand-900 flex items-center justify-between text-[var(--brand-primary)]  text-xs font-semibold transition-colors"
           >
             <div className="flex items-center gap-2">
               <Search size={14} />
@@ -243,7 +243,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
         )}
 
         {/* Direct Category Shortcuts */}
-        <div className="space-y-0.5 pt-2 border-t border-slate-100 dark:border-slate-800 max-h-48 overflow-y-auto">
+        <div className="space-y-0.5 pt-2 border-t border-[var(--border-subtle)]  max-h-48 overflow-y-auto">
           {filteredSuggestions.map((item, idx) => {
             const Icon = item.icon;
             return (
@@ -251,13 +251,13 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
                 key={idx}
                 type="button"
                 onClick={() => handleSelectOption(item.url)}
-                className="w-full text-left p-2 rounded-md hover:bg-slate-100/80 dark:hover:bg-slate-800/80 flex items-center justify-between text-slate-700 dark:text-slate-300 transition-colors group"
+                className="w-full text-left p-2 rounded-md hover:bg-[var(--bg-soft)]  flex items-center justify-between text-[var(--text-secondary)]  transition-colors group"
               >
                 <div className="flex items-center gap-2.5 truncate">
-                  <Icon size={14} className="text-slate-400 group-hover:text-brand-600 shrink-0" />
+                  <Icon size={14} className="text-[var(--text-muted)] group-hover:text-[var(--brand-primary)] shrink-0" />
                   <span className="font-medium text-xs">{item.term}</span>
                 </div>
-                <span className="text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0 ml-2">
+                <span className="text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded bg-[var(--bg-soft)]  text-[var(--text-muted)] shrink-0 ml-2">
                   {item.type}
                 </span>
               </button>
@@ -266,7 +266,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
         </div>
 
         {/* Footer Note */}
-        <div className="pt-2 text-center text-[11px] text-slate-400 border-t border-slate-100 dark:border-slate-800">
+        <div className="pt-2 text-center text-[11px] text-[var(--text-muted)] border-t border-[var(--border-subtle)] ">
           Press Enter to run global search or click any member to open profile.
         </div>
 

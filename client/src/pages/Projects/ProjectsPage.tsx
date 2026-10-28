@@ -1776,13 +1776,13 @@ export const ProjectsPage: React.FC = () => {
       case 'code':
         return <Code size={14} className="text-blue-500" />;
       case 'design':
-        return <Palette size={14} className="text-purple-500" />;
+        return <Palette size={14} className="text-[var(--brand-primary)]" />;
       case 'marketing':
         return <Megaphone size={14} className="text-amber-500" />;
       case 'product':
         return <Rocket size={14} className="text-emerald-500" />;
       default:
-        return <Briefcase size={14} className="text-slate-400" />;
+        return <Briefcase size={14} className="text-[var(--text-muted)]" />;
     }
   };
 
@@ -1885,30 +1885,28 @@ export const ProjectsPage: React.FC = () => {
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-18 right-6 z-50 p-4 rounded-xl bg-slate-900 text-white border border-slate-700 shadow-modal text-xs font-medium flex items-center gap-2.5 animate-in fade-in slide-in-from-top-3 max-w-md">
-          <Bell size={16} className="text-brand-400 shrink-0" />
+        <div className="fixed top-18 right-6 z-50 p-4 rounded-xl bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-subtle)] shadow-modal text-xs font-medium flex items-center gap-2.5 animate-in fade-in slide-in-from-top-3 max-w-md">
+          <Bell size={16} className="text-[var(--brand-primary)] shrink-0" />
           <span className="flex-1">{toastMessage}</span>
-          <button onClick={() => setToastMessage(null)} className="text-slate-400 hover:text-white">
+          <button onClick={() => setToastMessage(null)} className="text-[var(--text-muted)] hover:text-white">
             <X size={14} />
           </button>
         </div>
       )}
 
       {/* Hero Banner */}
-      <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white border border-white/10 shadow-[0_1px_3px_rgba(0,0,0,0.3)] flex flex-col md:flex-row md:items-center justify-between gap-6 min-w-0 overflow-hidden">
+      <div className="product-feature p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 min-w-0 overflow-hidden">
         <div className="max-w-xl space-y-2.5">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-white/[0.08] text-brand-300 text-[11px] font-medium border border-white/10">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[var(--brand-primary)] text-xs font-semibold">
             <Rocket size={12} /> Pre-Establishment Builder Workspace
           </div>
           <h1
-            className="text-2xl sm:text-3xl font-bold tracking-tight !text-[#F8FAFC]"
-            style={{ color: '#F8FAFC' }}
+            className="product-page-title"
           >
             Projects: Collaborate on Ideas
           </h1>
           <p
-            className="text-xs sm:text-sm !text-[#CBD5E1] leading-relaxed font-normal"
-            style={{ color: '#CBD5E1' }}
+            className="text-sm text-[var(--text-secondary)] leading-relaxed"
           >
             Have an idea before officially incorporating a startup? Create a project, choose to publish it public or keep it private, split roles with your team, and chat together in your project group.
           </p>
@@ -1922,7 +1920,7 @@ export const ProjectsPage: React.FC = () => {
             }
             setCreateModalOpen(true);
           }}
-          className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg !py-2.5 !px-5 whitespace-nowrap self-start md:self-auto cursor-pointer inline-flex items-center gap-2 font-semibold shadow-xs transition-colors"
+          className="btn-primary whitespace-nowrap self-start md:self-auto"
         >
           <Plus size={16} />
           <span>Create Project</span>
@@ -1931,13 +1929,13 @@ export const ProjectsPage: React.FC = () => {
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-dark-850 rounded-xl border border-slate-200 dark:border-dark-800 self-start">
+        <div className="flex items-center gap-1.5 p-1 bg-[var(--bg-soft)] rounded-xl border border-[var(--border-subtle)] self-start">
           <button
             onClick={() => setFilterTab('all')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               filterTab === 'all'
-                ? 'bg-white dark:bg-dark-900 text-slate-900 dark:text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
             }`}
           >
             All Projects
@@ -1946,8 +1944,8 @@ export const ProjectsPage: React.FC = () => {
             onClick={() => setFilterTab('open_roles')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               filterTab === 'open_roles'
-                ? 'bg-white dark:bg-dark-900 text-slate-900 dark:text-white shadow-xs'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
             }`}
           >
             Seeking Roles
@@ -1957,8 +1955,8 @@ export const ProjectsPage: React.FC = () => {
               onClick={() => setFilterTab('my_projects')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 filterTab === 'my_projects'
-                  ? 'bg-white dark:bg-dark-900 text-slate-900 dark:text-white shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               My Projects & Roles
@@ -1967,7 +1965,7 @@ export const ProjectsPage: React.FC = () => {
         </div>
 
         <div className="relative w-full sm:w-72">
-          <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+          <Search size={14} className="absolute left-3 top-2.5 text-[var(--text-muted)]" />
           <input
             type="text"
             value={searchQuery}
@@ -1981,16 +1979,16 @@ export const ProjectsPage: React.FC = () => {
       {/* Projects Grid */}
       {filteredProjects.length === 0 ? (
         <div className="card-base p-12 text-center space-y-3">
-          <FolderKanban size={32} className="mx-auto text-slate-400" />
-          <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+          <FolderKanban size={32} className="mx-auto text-[var(--text-muted)]" />
+          <h3 className="font-bold text-sm text-[var(--text-primary)]">
             No projects match your filter
           </h3>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+          <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
             Try adjusting your search criteria or create a new builder project to split roles.
           </p>
           <button
             onClick={() => setCreateModalOpen(true)}
-            className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg !text-xs !py-1.5 !px-3 inline-flex items-center gap-1 font-semibold transition-colors cursor-pointer"
+            className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-[var(--brand-soft)] rounded-lg !text-xs !py-1.5 !px-3 inline-flex items-center gap-1 font-semibold transition-colors cursor-pointer"
           >
             <Plus size={13} /> Post First Project
           </button>
@@ -2033,9 +2031,9 @@ export const ProjectsPage: React.FC = () => {
               <div
                 key={project.id}
                 id={`project-${project.id}`}
-                className={`card-base p-5 flex flex-col justify-between space-y-4 hover:border-slate-300 dark:hover:border-dark-700 transition-all duration-500 min-w-0 overflow-hidden break-words ${
+                className={`card-base p-5 flex flex-col justify-between space-y-4 hover:border-[var(--border-subtle)] transition-all duration-500 min-w-0 overflow-hidden break-words ${
                   highlightedProjectId === project.id
-                    ? 'ring-4 ring-brand-500 ring-offset-2 dark:ring-offset-dark-900 shadow-2xl scale-[1.01] bg-brand-50/25 dark:bg-brand-950/25'
+                    ? 'ring-4 ring-brand-500 ring-offset-2 dark:ring-offset-dark-900 shadow-2xl scale-[1.01] bg-[var(--brand-soft)]'
                     : ''
                 }`}
               >
@@ -2043,13 +2041,13 @@ export const ProjectsPage: React.FC = () => {
                   {/* Card Top: Title & Status Badges */}
                   <div className="space-y-2 min-w-0">
                     <div className="flex items-start justify-between gap-3 flex-wrap min-w-0">
-                      <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white leading-snug break-words">
+                      <h3 className="font-bold text-base sm:text-lg text-[var(--text-primary)] leading-snug break-words">
                         {project.title}
                       </h3>
 
                       {/* Status Badges Group */}
                       <div className="flex items-center gap-1.5 flex-wrap shrink-0">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/[0.08] shrink-0">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wider bg-[var(--bg-soft)] text-[var(--text-secondary)] border border-[var(--border-subtle)] shrink-0">
                           {project.stage}
                         </span>
 
@@ -2057,8 +2055,8 @@ export const ProjectsPage: React.FC = () => {
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border shrink-0 ${
                             project.visibility === 'PUBLIC'
-                              ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-white/[0.08]'
-                              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08]'
+                              ? 'bg-[var(--bg-soft)] text-[var(--text-secondary)] border-[var(--border-subtle)]'
+                              : 'bg-[var(--bg-soft)] text-[var(--text-muted)] border-[var(--border-subtle)]'
                           }`}
                         >
                           {project.visibility === 'PUBLIC' ? <Globe size={10} className="text-emerald-500" /> : <Lock size={10} />}
@@ -2067,10 +2065,10 @@ export const ProjectsPage: React.FC = () => {
 
                         {/* Total Members Count Badge */}
                         <span
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-white/[0.08] shrink-0"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-[var(--bg-soft)] text-[var(--text-secondary)] border border-[var(--border-subtle)] shrink-0"
                           title={`${totalMembersCount} team member${totalMembersCount > 1 ? 's' : ''} in this project`}
                         >
-                          <Users size={11} className="text-slate-400" />
+                          <Users size={11} className="text-[var(--text-muted)]" />
                           <span>{totalMembersCount} {totalMembersCount === 1 ? 'Member' : 'Members'}</span>
                         </span>
 
@@ -2079,7 +2077,7 @@ export const ProjectsPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleToggleVisibility(project.id, project.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC')}
-                            className="text-[11px] text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 underline ml-0.5 shrink-0 cursor-pointer transition-colors"
+                            className="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] underline ml-0.5 shrink-0 cursor-pointer transition-colors"
                             title="Click to toggle visibility"
                           >
                             Switch to {project.visibility === 'PUBLIC' ? 'Private' : 'Public'}
@@ -2092,7 +2090,7 @@ export const ProjectsPage: React.FC = () => {
                     {project.ideaSummary && (
                       <div className="min-w-0 break-words">
                         <p
-                          className={`text-xs text-slate-600 dark:text-slate-300 leading-relaxed break-words ${
+                          className={`text-xs text-[var(--text-secondary)] leading-relaxed break-words ${
                             expandedProjectText[project.id + '-idea'] ? '' : 'line-clamp-2 sm:line-clamp-3'
                           }`}
                         >
@@ -2107,7 +2105,7 @@ export const ProjectsPage: React.FC = () => {
                                 [project.id + '-idea']: !prev[project.id + '-idea'],
                               }))
                             }
-                            className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline pt-0.5 cursor-pointer inline-flex items-center gap-0.5"
+                            className="text-[11px] font-semibold text-[var(--brand-primary)] hover:underline pt-0.5 cursor-pointer inline-flex items-center gap-0.5"
                           >
                             {expandedProjectText[project.id + '-idea'] ? 'Show less' : '...more'}
                           </button>
@@ -2117,12 +2115,12 @@ export const ProjectsPage: React.FC = () => {
                   </div>
 
                   {/* Problem Addressed */}
-                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-dark-850/60 border border-slate-100 dark:border-dark-800 text-xs min-w-0 break-words">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300 block mb-0.5">
+                  <div className="p-2.5 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-xs min-w-0 break-words">
+                    <span className="font-semibold text-[var(--text-secondary)] block mb-0.5">
                       Problem Solved:
                     </span>
                     <p
-                      className={`text-slate-500 dark:text-slate-400 break-words ${
+                      className={`text-[var(--text-muted)] break-words ${
                         expandedProjectText[project.id + '-prob'] ? '' : 'line-clamp-2 sm:line-clamp-3'
                       }`}
                     >
@@ -2137,7 +2135,7 @@ export const ProjectsPage: React.FC = () => {
                             [project.id + '-prob']: !prev[project.id + '-prob'],
                           }))
                         }
-                        className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline pt-0.5 cursor-pointer inline-flex items-center gap-0.5"
+                        className="text-[11px] font-semibold text-[var(--brand-primary)] hover:underline pt-0.5 cursor-pointer inline-flex items-center gap-0.5"
                       >
                         {expandedProjectText[project.id + '-prob'] ? 'Show less' : '...more'}
                       </button>
@@ -2147,10 +2145,10 @@ export const ProjectsPage: React.FC = () => {
                   {/* Roles Splitter Table / Cards */}
                   <div className="space-y-2 pt-1">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                        <Users size={14} className="text-brand-600" /> Team Roles Split ({totalMembersCount} {totalMembersCount === 1 ? 'member' : 'members'}):
+                      <span className="font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                        <Users size={14} className="text-[var(--brand-primary)]" /> Team Roles Split ({totalMembersCount} {totalMembersCount === 1 ? 'member' : 'members'}):
                       </span>
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-[11px] text-[var(--text-muted)]">
                         {openRolesCount > 0 ? `${openRolesCount} role(s) open` : allFilled ? 'All roles filled ✓' : 'In progress'}
                       </span>
                     </div>
@@ -2183,21 +2181,21 @@ export const ProjectsPage: React.FC = () => {
                               isTargetHighlightedRole ? 'ring-2 ring-brand-500 shadow-md ' : ''
                             }${
                               isAssigned
-                                ? 'bg-slate-50/70 dark:bg-dark-850/40 border-slate-200/60 dark:border-dark-800'
+                                ? 'bg-[var(--bg-primary)] border-[var(--border-subtle)]'
                                 : hasApplicants
                                 ? 'bg-amber-50/60 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/60'
                                 : isInvited
-                                ? 'bg-indigo-50/60 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-900/60'
-                                : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800'
+                                ? 'bg-[var(--brand-soft)] border-[var(--border-subtle)]'
+                                : 'bg-[var(--bg-surface)] border-[var(--border-subtle)]'
                             }`}
                           >
                             {/* Role Header: Icon, Name and Status Badge */}
                             <div className="flex items-center justify-between gap-2 min-w-0">
                               <div className="flex items-center gap-2 min-w-0">
-                                <span className="p-1 rounded bg-slate-100 dark:bg-dark-800 shrink-0">
+                                <span className="p-1 rounded bg-[var(--bg-soft)] shrink-0">
                                   {getRoleIcon(role.iconType)}
                                 </span>
-                                <span className="font-semibold text-slate-800 dark:text-slate-200 truncate" title={role.roleName}>
+                                <span className="font-semibold text-[var(--text-primary)] truncate" title={role.roleName}>
                                   {role.roleName}
                                 </span>
                               </div>
@@ -2216,7 +2214,7 @@ export const ProjectsPage: React.FC = () => {
                                     </span>
                                   </div>
                                 ) : isInvited ? (
-                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400">
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-[var(--brand-soft)] text-[var(--brand-primary)]">
                                     Invited
                                   </span>
                                 ) : hasApplicants ? (
@@ -2224,7 +2222,7 @@ export const ProjectsPage: React.FC = () => {
                                     {applicantsList.length} Applicant{applicantsList.length > 1 ? 's' : ''}
                                   </span>
                                 ) : (
-                                  <span className="text-[10px] text-slate-400 italic">
+                                  <span className="text-[10px] text-[var(--text-muted)] italic">
                                     Open
                                   </span>
                                 )}
@@ -2232,10 +2230,10 @@ export const ProjectsPage: React.FC = () => {
                             </div>
 
                             {/* Role Actions Footer */}
-                            <div className="flex items-center justify-between gap-1.5 flex-wrap pt-1.5 border-t border-slate-100 dark:border-dark-800/70 min-w-0">
+                            <div className="flex items-center justify-between gap-1.5 flex-wrap pt-1.5 border-t border-[var(--border-subtle)] min-w-0">
                               {isAssigned ? (
                                 <div className="flex items-center gap-1 w-full justify-between min-w-0">
-                                  <span className="text-[10px] text-slate-400">Role Assigned</span>
+                                  <span className="text-[10px] text-[var(--text-muted)]">Role Assigned</span>
                                   {isCreator && role.roleName !== 'Project Lead' && (
                                     <div className="flex items-center gap-1 shrink-0 ml-auto">
                                       <button
@@ -2260,7 +2258,7 @@ export const ProjectsPage: React.FC = () => {
                               ) : isInvited ? (
                                 isMyInvitedRole ? (
                                   <div className="flex items-center gap-1.5 flex-wrap w-full justify-between min-w-0">
-                                    <span className="text-[11px] text-brand-600 dark:text-brand-400 font-bold">
+                                    <span className="text-[11px] text-[var(--brand-primary)] font-bold">
                                       Invited You!
                                     </span>
                                     <div className="flex items-center gap-1.5 shrink-0">
@@ -2274,7 +2272,7 @@ export const ProjectsPage: React.FC = () => {
                                       <button
                                         type="button"
                                         onClick={() => handleRespondInvite(project.id, role.id, 'DECLINE')}
-                                        className="px-2.5 py-1 rounded text-[11px] font-bold bg-slate-200 dark:bg-dark-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 cursor-pointer"
+                                        className="px-2.5 py-1 rounded text-[11px] font-bold bg-[var(--bg-soft)] text-[var(--text-secondary)] hover:bg-slate-300 cursor-pointer"
                                       >
                                         Decline
                                       </button>
@@ -2282,7 +2280,7 @@ export const ProjectsPage: React.FC = () => {
                                   </div>
                                 ) : isProjectLead ? (
                                   <div className="flex items-center gap-1.5 flex-wrap w-full justify-between min-w-0">
-                                    <span className="text-[10px] text-indigo-700 dark:text-indigo-400 font-medium truncate max-w-[170px]">
+                                    <span className="text-[10px] text-[var(--brand-primary)] font-medium truncate max-w-[170px]">
                                       Invited: {role.invitedUser?.fullName}
                                     </span>
                                     <button
@@ -2295,7 +2293,7 @@ export const ProjectsPage: React.FC = () => {
                                     </button>
                                   </div>
                                 ) : (
-                                  <span className="text-[10px] text-slate-400 italic">
+                                  <span className="text-[10px] text-[var(--text-muted)] italic">
                                     Invitation sent to {role.invitedUser?.fullName}
                                   </span>
                                 )
@@ -2311,7 +2309,7 @@ export const ProjectsPage: React.FC = () => {
                                       <Users size={11} /> Review Profiles ({applicantsList.length})
                                     </button>
                                   ) : (
-                                    <span className="text-[10px] text-slate-400 italic">
+                                    <span className="text-[10px] text-[var(--text-muted)] italic">
                                       Open for applicants
                                     </span>
                                   )}
@@ -2348,7 +2346,7 @@ export const ProjectsPage: React.FC = () => {
                                     </span>
                                   ) : (
                                     <>
-                                      <span className="text-[10px] text-slate-400 truncate mr-1">
+                                      <span className="text-[10px] text-[var(--text-muted)] truncate mr-1">
                                         {hasApplicants ? `${applicantsList.length} applicant${applicantsList.length > 1 ? 's' : ''}` : 'No applicants yet'}
                                       </span>
                                       <button
@@ -2374,7 +2372,7 @@ export const ProjectsPage: React.FC = () => {
                     {project.tags.map((t, idx) => (
                       <span
                         key={idx}
-                        className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-slate-100 dark:bg-dark-850 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-dark-700/60 truncate max-w-full"
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-[var(--bg-soft)] text-[var(--text-secondary)] border border-[var(--border-subtle)] truncate max-w-full"
                       >
                         #{t}
                       </span>
@@ -2383,7 +2381,7 @@ export const ProjectsPage: React.FC = () => {
                 </div>
 
                 {/* Card Footer: Creator info & Action buttons */}
-                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-dark-800 flex items-center justify-between gap-3 text-xs flex-wrap">
+                <div className="mt-4 pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between gap-3 text-xs flex-wrap">
                   <div className="flex items-center gap-2 min-w-0">
                     <Avatar
                       src={project.creator.avatar}
@@ -2392,10 +2390,10 @@ export const ProjectsPage: React.FC = () => {
                       className="!w-6 !h-6 shrink-0"
                     />
                     <div className="min-w-0">
-                      <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">
+                      <p className="text-[11px] font-semibold text-[var(--text-primary)] truncate">
                         {project.creator.fullName}
                       </p>
-                      <p className="text-[10px] text-slate-400 truncate">
+                      <p className="text-[10px] text-[var(--text-muted)] truncate">
                         {project.creator.role ? `${project.creator.role} • ` : ''}{project.createdAt}
                       </p>
                     </div>
@@ -2407,7 +2405,7 @@ export const ProjectsPage: React.FC = () => {
                     {(isProjectLead || isAcceptedMember) && (
                       <Link
                         to={`/messages?projectGroupId=proj-group-${project.id}`}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/40 border border-brand-200/60 dark:border-brand-900/60 hover:bg-brand-100 transition-colors shrink-0"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-[var(--brand-primary)] bg-[var(--brand-soft)] border border-brand-200/60 dark:border-brand-900/60 hover:bg-[var(--brand-soft)] transition-colors shrink-0"
                         title="Open project group team chat"
                       >
                         <MessageSquare size={12} />
@@ -2421,7 +2419,7 @@ export const ProjectsPage: React.FC = () => {
                       className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer shrink-0 ${
                         savedProjectIds.has(project.id)
                           ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-800 dark:border-slate-700'
-                          : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 border-slate-200/80 dark:border-white/[0.08] dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50'
+                          : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)]'
                       }`}
                       title={savedProjectIds.has(project.id) ? 'Remove from Saved' : 'Save Project'}
                     >
@@ -2439,7 +2437,7 @@ export const ProjectsPage: React.FC = () => {
                           type: 'project',
                         })
                       }
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 transition-colors cursor-pointer shrink-0"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] transition-colors cursor-pointer shrink-0"
                       title="Share project with connections"
                     >
                       <Share2 size={12} />
@@ -2467,14 +2465,14 @@ export const ProjectsPage: React.FC = () => {
 
       {/* Leader Post-Completion Prompt Modal */}
       {roleCompletionModal && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto font-sans">
+        <div className="hookz-product-overlay fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto font-sans">
           <div
             className="fixed inset-0 w-full h-full bg-slate-900/60 backdrop-blur-xs transition-opacity"
             onClick={() => setRoleCompletionModal(null)}
             aria-hidden="true"
           />
           <div
-            className="relative z-10 max-w-md w-full bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-6 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-auto"
+            className="relative z-10 max-w-md w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl p-6 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center mx-auto">
@@ -2482,11 +2480,11 @@ export const ProjectsPage: React.FC = () => {
             </div>
 
             <div className="text-center space-y-1.5">
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              <h3 className="text-base font-bold text-[var(--text-primary)]">
                 Team Complete: All Roles Filled!
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                Every role in <strong className="text-slate-800 dark:text-slate-200">{roleCompletionModal.title}</strong> has been accepted. Would you like to keep this project Public for the community to follow, or make it Private to build exclusively with your team?
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                Every role in <strong className="text-[var(--text-primary)]">{roleCompletionModal.title}</strong> has been accepted. Would you like to keep this project Public for the community to follow, or make it Private to build exclusively with your team?
               </p>
             </div>
 
@@ -2515,7 +2513,7 @@ export const ProjectsPage: React.FC = () => {
 
       {/* Create Project Modal */}
       {createModalOpen && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto font-sans">
+        <div className="hookz-product-overlay fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto font-sans">
           {/* Full-viewport transparent backdrop covering 100% of entire page */}
           <div
             className="fixed inset-0 w-full h-full bg-slate-900/60 backdrop-blur-xs transition-opacity"
@@ -2523,25 +2521,26 @@ export const ProjectsPage: React.FC = () => {
             aria-hidden="true"
           />
           <div
-            className="relative z-10 max-w-xl w-full max-h-[90vh] overflow-y-auto bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-6 sm:p-7 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-auto"
+            role="dialog" aria-modal="true" aria-label="Create Builder Project & Split Roles"
+            className="relative z-10 max-w-xl w-full max-h-[90vh] overflow-y-auto bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl p-6 sm:p-7 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-dark-800">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
               <div className="flex items-center gap-2.5">
-                <span className="p-2 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400">
+                <span className="p-2 rounded-xl bg-[var(--brand-soft)] text-[var(--brand-primary)]">
                   <Rocket size={18} />
                 </span>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-base font-bold text-[var(--text-primary)]">
                     Create Builder Project & Split Roles
                   </h3>
-                  <p className="text-xs text-slate-500">Post a project workspace and find collaborators</p>
+                  <p className="text-xs text-[var(--text-muted)]">Post a project workspace and find collaborators</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setCreateModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-secondary)] cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -2550,7 +2549,7 @@ export const ProjectsPage: React.FC = () => {
             <form onSubmit={handleCreateProject} className="space-y-4">
               {/* 1. Project Name (Max 60 chars) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                   Project Name <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -2567,9 +2566,9 @@ export const ProjectsPage: React.FC = () => {
                   ) : newTitle.length >= TITLE_MAX ? (
                     <span className="text-rose-500 font-medium">Reached {TITLE_MAX} character limit</span>
                   ) : (
-                    <span className="text-slate-400">Max {TITLE_MAX} characters</span>
+                    <span className="text-[var(--text-muted)]">Max {TITLE_MAX} characters</span>
                   )}
-                  <span className={`font-mono ml-auto ${newTitle.length >= TITLE_MAX ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                  <span className={`font-mono ml-auto ${newTitle.length >= TITLE_MAX ? 'text-rose-500 font-bold' : 'text-[var(--text-muted)]'}`}>
                     {newTitle.length}/{TITLE_MAX}
                   </span>
                 </div>
@@ -2577,7 +2576,7 @@ export const ProjectsPage: React.FC = () => {
 
               {/* 2. Short Description / Tagline (Max 100 chars) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                   Short Description / Tagline <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -2594,9 +2593,9 @@ export const ProjectsPage: React.FC = () => {
                   ) : newTagline.length >= TAGLINE_MAX ? (
                     <span className="text-rose-500 font-medium">Reached {TAGLINE_MAX} character limit</span>
                   ) : (
-                    <span className="text-slate-400">Max {TAGLINE_MAX} characters</span>
+                    <span className="text-[var(--text-muted)]">Max {TAGLINE_MAX} characters</span>
                   )}
-                  <span className={`font-mono ml-auto ${newTagline.length >= TAGLINE_MAX ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                  <span className={`font-mono ml-auto ${newTagline.length >= TAGLINE_MAX ? 'text-rose-500 font-bold' : 'text-[var(--text-muted)]'}`}>
                     {newTagline.length}/{TAGLINE_MAX}
                   </span>
                 </div>
@@ -2604,7 +2603,7 @@ export const ProjectsPage: React.FC = () => {
 
               {/* 3. Problem Statement (Max 500 chars, required) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                   Problem Statement <span className="text-rose-500">*</span>
                 </label>
                 <textarea
@@ -2621,9 +2620,9 @@ export const ProjectsPage: React.FC = () => {
                   ) : newProblem.length >= PROBLEM_MAX ? (
                     <span className="text-rose-500 font-medium">Reached {PROBLEM_MAX} character limit</span>
                   ) : (
-                    <span className="text-slate-400">Max {PROBLEM_MAX} characters</span>
+                    <span className="text-[var(--text-muted)]">Max {PROBLEM_MAX} characters</span>
                   )}
-                  <span className={`font-mono ml-auto ${newProblem.length >= PROBLEM_MAX ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                  <span className={`font-mono ml-auto ${newProblem.length >= PROBLEM_MAX ? 'text-rose-500 font-bold' : 'text-[var(--text-muted)]'}`}>
                     {newProblem.length}/{PROBLEM_MAX}
                   </span>
                 </div>
@@ -2631,7 +2630,7 @@ export const ProjectsPage: React.FC = () => {
 
               {/* 4. Solution / Approach (Max 500 chars, required) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                   Solution / Approach <span className="text-rose-500">*</span>
                 </label>
                 <textarea
@@ -2648,9 +2647,9 @@ export const ProjectsPage: React.FC = () => {
                   ) : newSolution.length >= SOLUTION_MAX ? (
                     <span className="text-rose-500 font-medium">Reached {SOLUTION_MAX} character limit</span>
                   ) : (
-                    <span className="text-slate-400">Max {SOLUTION_MAX} characters</span>
+                    <span className="text-[var(--text-muted)]">Max {SOLUTION_MAX} characters</span>
                   )}
-                  <span className={`font-mono ml-auto ${newSolution.length >= SOLUTION_MAX ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                  <span className={`font-mono ml-auto ${newSolution.length >= SOLUTION_MAX ? 'text-rose-500 font-bold' : 'text-[var(--text-muted)]'}`}>
                     {newSolution.length}/{SOLUTION_MAX}
                   </span>
                 </div>
@@ -2658,8 +2657,8 @@ export const ProjectsPage: React.FC = () => {
 
               {/* 5. Detailed Description (No character limit) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Detailed Description <span className="text-slate-400 font-normal">(Optional)</span>
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
+                  Detailed Description <span className="text-[var(--text-muted)] font-normal">(Optional)</span>
                 </label>
                 <textarea
                   rows={4}
@@ -2672,15 +2671,15 @@ export const ProjectsPage: React.FC = () => {
 
               {/* 6. Tech Stack (Tag Input, min 1 required) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                   Tech Stack <span className="text-rose-500">*</span>
                 </label>
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2">
+                <div className="p-3 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2">
                   <div className="flex flex-wrap gap-1.5 min-h-[28px] items-center">
                     {newTechStack.map((tech) => (
                       <span
                         key={tech}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 border border-brand-200 dark:border-brand-800 shadow-2xs"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)] shadow-2xs"
                       >
                         <span>{tech}</span>
                         <button
@@ -2693,7 +2692,7 @@ export const ProjectsPage: React.FC = () => {
                       </span>
                     ))}
                     {newTechStack.length === 0 && (
-                      <span className="text-xs text-slate-400 italic">No tags added yet. Add at least 1 technology tag.</span>
+                      <span className="text-xs text-[var(--text-muted)] italic">No tags added yet. Add at least 1 technology tag.</span>
                     )}
                   </div>
 
@@ -2729,7 +2728,7 @@ export const ProjectsPage: React.FC = () => {
 
               {/* Visibility Choice: Publish or Keep in Private */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
                   Project Visibility <span className="text-rose-500">*</span>
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -2737,16 +2736,16 @@ export const ProjectsPage: React.FC = () => {
                     onClick={() => setNewVisibility('PUBLIC')}
                     className={`p-3 rounded-xl border text-left cursor-pointer transition-all flex items-start gap-2.5 ${
                       newVisibility === 'PUBLIC'
-                        ? 'border-brand-500 bg-brand-50/60 dark:bg-brand-950/40 ring-1 ring-brand-500'
-                        : 'border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850/40'
+                        ? 'border-brand-500 bg-[var(--brand-soft)] ring-1 ring-brand-500'
+                        : 'border-[var(--border-subtle)] bg-[var(--bg-primary)]'
                     }`}
                   >
-                    <Globe size={16} className={newVisibility === 'PUBLIC' ? 'text-brand-600' : 'text-slate-400'} />
+                    <Globe size={16} className={newVisibility === 'PUBLIC' ? 'text-[var(--brand-primary)]' : 'text-[var(--text-muted)]'} />
                     <div>
-                      <p className="text-xs font-bold text-slate-900 dark:text-white">
+                      <p className="text-xs font-bold text-[var(--text-primary)]">
                         Publish (Public)
                       </p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
+                      <p className="text-[11px] text-[var(--text-muted)] leading-tight mt-0.5">
                         Discoverable by community. Anyone can view and apply for open roles.
                       </p>
                     </div>
@@ -2756,16 +2755,16 @@ export const ProjectsPage: React.FC = () => {
                     onClick={() => setNewVisibility('PRIVATE')}
                     className={`p-3 rounded-xl border text-left cursor-pointer transition-all flex items-start gap-2.5 ${
                       newVisibility === 'PRIVATE'
-                        ? 'border-brand-500 bg-brand-50/60 dark:bg-brand-950/40 ring-1 ring-brand-500'
-                        : 'border-slate-200 dark:border-dark-800 bg-slate-50/50 dark:bg-dark-850/40'
+                        ? 'border-brand-500 bg-[var(--brand-soft)] ring-1 ring-brand-500'
+                        : 'border-[var(--border-subtle)] bg-[var(--bg-primary)]'
                     }`}
                   >
-                    <Lock size={16} className={newVisibility === 'PRIVATE' ? 'text-brand-600' : 'text-slate-400'} />
+                    <Lock size={16} className={newVisibility === 'PRIVATE' ? 'text-[var(--brand-primary)]' : 'text-[var(--text-muted)]'} />
                     <div>
-                      <p className="text-xs font-bold text-slate-900 dark:text-white">
+                      <p className="text-xs font-bold text-[var(--text-primary)]">
                         Keep in Private
                       </p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
+                      <p className="text-[11px] text-[var(--text-muted)] leading-tight mt-0.5">
                         Only you and accepted team members can see this project.
                       </p>
                     </div>
@@ -2774,7 +2773,7 @@ export const ProjectsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1">
                   Development Stage
                 </label>
                 <select
@@ -2791,28 +2790,28 @@ export const ProjectsPage: React.FC = () => {
               </div>
 
               {/* Roles Splitter Builder */}
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-800 space-y-2.5">
-                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+              <div className="p-3.5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2.5">
+                <label className="block text-xs font-bold text-[var(--text-primary)]">
                   Split Roles Needed in Your Team:
                 </label>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-[var(--text-muted)]">
                   Define specific responsibilities for collaborators. You will be assigned as Project Lead automatically.
                 </p>
 
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-[var(--brand-soft)] text-[var(--brand-primary)]">
                     ✓ Project Lead (You)
                   </span>
                   {rolesList.map((rName) => (
                     <span
                       key={rName}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-800 dark:text-slate-200 shadow-2xs"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-primary)] shadow-2xs"
                     >
                       <span>{rName}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveRole(rName)}
-                        className="text-slate-400 hover:text-rose-500 cursor-pointer"
+                        className="text-[var(--text-muted)] hover:text-rose-500 cursor-pointer"
                       >
                         <X size={12} />
                       </button>
@@ -2846,7 +2845,7 @@ export const ProjectsPage: React.FC = () => {
               </div>
 
               {/* Submit / Cancel Actions */}
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-dark-800">
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-[var(--border-subtle)]">
                 <button
                   type="button"
                   onClick={() => setCreateModalOpen(false)}
@@ -2874,46 +2873,46 @@ export const ProjectsPage: React.FC = () => {
 
       {/* Assign Connection to Role Modal */}
       {assignModalRole && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto font-sans">
+        <div className="hookz-product-overlay fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto font-sans">
           <div
             className="fixed inset-0 w-full h-full bg-slate-900/60 backdrop-blur-xs transition-opacity"
             onClick={() => setAssignModalRole(null)}
             aria-hidden="true"
           />
           <div
-            className="relative z-10 max-w-md w-full bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-6 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-auto"
+            className="relative z-10 max-w-md w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl p-6 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-dark-800">
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
               <div className="flex items-center gap-2.5">
-                <span className="p-2 rounded-xl bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400">
+                <span className="p-2 rounded-xl bg-[var(--brand-soft)] text-[var(--brand-primary)]">
                   <UserPlus size={18} />
                 </span>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-base font-bold text-[var(--text-primary)]">
                     Assign Role to Connection
                   </h3>
-                  <p className="text-xs text-slate-500">
-                    Role: <strong className="text-brand-600 dark:text-brand-400">{assignModalRole.roleName}</strong>
+                  <p className="text-xs text-[var(--text-muted)]">
+                    Role: <strong className="text-[var(--brand-primary)]">{assignModalRole.roleName}</strong>
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setAssignModalRole(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-secondary)] cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
               Select one of your connections to send a role invitation. The role will be officially filled only once they accept.
             </p>
 
             {/* Search connections */}
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+              <Search size={14} className="absolute left-3 top-2.5 text-[var(--text-muted)]" />
               <input
                 type="text"
                 value={connectionSearchQuery}
@@ -2926,7 +2925,7 @@ export const ProjectsPage: React.FC = () => {
             {/* Connections list */}
             <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
               {loadingConnections ? (
-                <div className="py-8 text-center text-xs text-slate-400">
+                <div className="py-8 text-center text-xs text-[var(--text-muted)]">
                   Loading your connections...
                 </div>
               ) : (
@@ -2941,8 +2940,8 @@ export const ProjectsPage: React.FC = () => {
                   if (filtered.length === 0) {
                     return (
                       <div className="py-8 text-center space-y-2">
-                        <Users size={24} className="mx-auto text-slate-400" />
-                        <p className="text-xs text-slate-500">
+                        <Users size={24} className="mx-auto text-[var(--text-muted)]" />
+                        <p className="text-xs text-[var(--text-muted)]">
                           {connectionsList.length === 0
                             ? "You don't have any accepted connections yet. Connect with other builders first!"
                             : 'No matching connections found.'}
@@ -2954,16 +2953,16 @@ export const ProjectsPage: React.FC = () => {
                   return filtered.map((conn) => (
                     <div
                       key={conn.id}
-                      className="p-2.5 rounded-xl border border-slate-200 dark:border-dark-800 hover:border-brand-500 flex items-center justify-between gap-3 bg-slate-50/50 dark:bg-dark-850/40 transition-colors"
+                      className="p-2.5 rounded-xl border border-[var(--border-subtle)] hover:border-brand-500 flex items-center justify-between gap-3 bg-[var(--bg-primary)] transition-colors"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <Avatar src={conn.avatar} name={conn.fullName} size="sm" className="!w-8 !h-8 shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          <p className="text-xs font-bold text-[var(--text-primary)] truncate">
                             {conn.fullName}
                           </p>
                           {conn.headline && (
-                            <p className="text-[11px] text-slate-400 truncate">
+                            <p className="text-[11px] text-[var(--text-muted)] truncate">
                               {conn.headline}
                             </p>
                           )}
@@ -2993,7 +2992,7 @@ export const ProjectsPage: React.FC = () => {
               )}
             </div>
 
-            <div className="pt-2 border-t border-slate-100 dark:border-dark-800 flex justify-end">
+            <div className="pt-2 border-t border-[var(--border-subtle)] flex justify-end">
               <button
                 type="button"
                 onClick={() => setAssignModalRole(null)}
@@ -3009,30 +3008,30 @@ export const ProjectsPage: React.FC = () => {
 
       {/* Team Lead Review Role Applicants Modal */}
       {reviewRoleModal && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto font-sans">
+        <div className="hookz-product-overlay fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto font-sans">
           <div
             className="fixed inset-0 w-full h-full bg-slate-900/60 backdrop-blur-xs transition-opacity"
             onClick={() => setReviewRoleModal(null)}
             aria-hidden="true"
           />
           <div
-            className="relative z-10 max-w-lg w-full bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 rounded-2xl p-6 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-auto"
+            className="relative z-10 max-w-lg w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl p-6 shadow-modal space-y-4 animate-in fade-in zoom-in-95 my-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between border-b border-slate-100 dark:border-dark-800 pb-3">
+            <div className="flex items-start justify-between border-b border-[var(--border-subtle)] pb-3">
               <div>
-                <h4 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <h4 className="font-bold text-base text-[var(--text-primary)] flex items-center gap-2">
                   <Users size={18} className="text-amber-600" />
                   Review Applicants: {reviewRoleModal.role.roleName}
                 </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
                   Applicants who applied for this role on "{reviewRoleModal.project.title}". Review profiles and select whom to accept.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setReviewRoleModal(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-md cursor-pointer"
+                className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] p-1 rounded-md cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -3052,7 +3051,7 @@ export const ProjectsPage: React.FC = () => {
 
                 if (activeApplicants.length === 0) {
                   return (
-                    <div className="p-6 text-center text-xs text-slate-500 dark:text-slate-400">
+                    <div className="p-6 text-center text-xs text-[var(--text-muted)]">
                       No pending applicants for this role currently.
                     </div>
                   );
@@ -3061,23 +3060,23 @@ export const ProjectsPage: React.FC = () => {
                 return activeApplicants.map((app) => (
                   <div
                     key={app.userId}
-                    className="p-3.5 rounded-xl border border-slate-200 dark:border-dark-800 bg-slate-50/70 dark:bg-dark-850/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    className="p-3.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-primary)] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                   >
                     <div className="flex items-start gap-3 min-w-0">
                       <Avatar src={app.avatar} name={app.fullName} size="sm" className="!w-9 !h-9 mt-0.5 shrink-0" />
                       <div className="min-w-0 space-y-0.5">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                          <span className="font-bold text-xs sm:text-sm text-[var(--text-primary)] truncate">
                             {app.fullName}
                           </span>
                           {app.username && (
-                            <span className="text-[11px] text-slate-400 truncate">
+                            <span className="text-[11px] text-[var(--text-muted)] truncate">
                               @{app.username}
                             </span>
                           )}
                         </div>
                         {app.roleDescription && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                          <p className="text-[11px] text-[var(--text-muted)] line-clamp-1">
                             {app.roleDescription}
                           </p>
                         )}
@@ -3085,7 +3084,7 @@ export const ProjectsPage: React.FC = () => {
                           to={`/profile/${app.userId}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline pt-0.5"
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--brand-primary)] hover:underline pt-0.5"
                         >
                           View Full Profile <ExternalLink size={10} />
                         </Link>
@@ -3103,7 +3102,7 @@ export const ProjectsPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleDeclineApplicant(reviewRoleModal.project.id, reviewRoleModal.role.id, app.userId)}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 dark:bg-dark-800 hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/40 text-slate-700 dark:text-slate-300 cursor-pointer transition-colors"
+                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--bg-soft)] hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/40 text-[var(--text-secondary)] cursor-pointer transition-colors"
                       >
                         Decline
                       </button>
@@ -3113,7 +3112,7 @@ export const ProjectsPage: React.FC = () => {
               })()}
             </div>
 
-            <div className="pt-2 border-t border-slate-100 dark:border-dark-800 flex justify-end">
+            <div className="pt-2 border-t border-[var(--border-subtle)] flex justify-end">
               <button
                 type="button"
                 onClick={() => setReviewRoleModal(null)}

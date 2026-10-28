@@ -983,7 +983,7 @@ export const NotificationsDropdown: React.FC = () => {
             handleNotificationClick(toastNotif);
             setToastNotif(null);
           }}
-          className="fixed top-16 left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-50 bg-white dark:bg-dark-900 border border-brand-500/50 shadow-modal rounded-xl p-3 flex items-start gap-3 cursor-pointer animate-in slide-in-from-top-3 duration-200"
+          className="fixed top-16 left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-50 bg-[var(--bg-surface)] border border-brand-500/50 shadow-modal rounded-xl p-3 flex items-start gap-3 cursor-pointer animate-in slide-in-from-top-3 duration-200"
         >
           <div className="w-8 h-8 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0 mt-0.5">
             {toastNotif.type.includes('LIKE') || toastNotif.type.includes('UPVOTE') ? (
@@ -995,8 +995,8 @@ export const NotificationsDropdown: React.FC = () => {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{toastNotif.title}</p>
-            <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-2 leading-tight">{toastNotif.message}</p>
+            <p className="text-xs font-bold text-[var(--text-primary)] truncate">{toastNotif.title}</p>
+            <p className="text-[11px] text-[var(--text-secondary)] line-clamp-2 leading-tight">{toastNotif.message}</p>
           </div>
           <button
             type="button"
@@ -1004,7 +1004,7 @@ export const NotificationsDropdown: React.FC = () => {
               e.stopPropagation();
               setToastNotif(null);
             }}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
+            className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] p-0.5 cursor-pointer"
           >
             <X size={14} />
           </button>
@@ -1019,8 +1019,8 @@ export const NotificationsDropdown: React.FC = () => {
         aria-label="View notifications"
         className={`relative p-1.5 rounded-md transition-colors cursor-pointer ${
           isOpen
-            ? 'bg-brand-50 dark:bg-brand-950/70 text-brand-600 dark:text-brand-400'
-            : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 hover:text-slate-900 dark:hover:text-white'
+            ? 'bg-[var(--brand-soft)] text-[var(--brand-primary)]'
+            : 'text-[var(--text-muted)] hover:bg-[var(--bg-soft)] hover:text-[var(--text-primary)]'
         }`}
         title="Notifications"
       >
@@ -1044,12 +1044,12 @@ export const NotificationsDropdown: React.FC = () => {
             onClick={() => setIsOpen(false)}
           />
 
-          <div className="fixed left-3 right-3 top-14 mt-1.5 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 bg-white dark:bg-dark-900 rounded-xl shadow-modal border border-slate-200 dark:border-slate-800 z-50 overflow-hidden flex flex-col max-h-[calc(100vh-70px)] sm:max-h-[580px] animate-in fade-in zoom-in-95 duration-150">
+          <div className="fixed left-3 right-3 top-14 mt-1.5 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96 bg-[var(--bg-surface)] rounded-xl shadow-modal border border-[var(--border-subtle)] z-50 overflow-hidden flex flex-col max-h-[calc(100vh-70px)] sm:max-h-[580px] animate-in fade-in zoom-in-95 duration-150">
             {/* Header */}
-            <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/60 dark:bg-dark-850/50">
+            <div className="p-3.5 border-b border-[var(--border-subtle)] flex items-center justify-between bg-[var(--bg-primary)]">
               <div className="flex items-center gap-2">
-                <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <Bell size={14} className="text-brand-600 dark:text-brand-400" />
+                <h3 className="text-xs sm:text-sm font-bold text-[var(--text-primary)] flex items-center gap-1.5">
+                  <Bell size={14} className="text-[var(--brand-primary)]" />
                   <span>Notifications</span>
                 </h3>
                 {unreadCount > 0 && (
@@ -1064,7 +1064,7 @@ export const NotificationsDropdown: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleMarkAllAsRead}
-                    className="text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors inline-flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] font-medium text-[var(--brand-primary)] hover:text-[var(--brand-primary)] transition-colors inline-flex items-center gap-1 cursor-pointer"
                   >
                     <CheckCheck size={12} />
                     <span>Mark all read</span>
@@ -1073,7 +1073,7 @@ export const NotificationsDropdown: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsOpen(false)}
-                  className="sm:hidden p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md cursor-pointer ml-1"
+                  className="sm:hidden p-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] rounded-md cursor-pointer ml-1"
                   aria-label="Close notifications"
                 >
                   <X size={15} />
@@ -1082,13 +1082,13 @@ export const NotificationsDropdown: React.FC = () => {
             </div>
 
           {/* Filter Tabs */}
-          <div className="flex items-center px-3 pt-2 pb-1 border-b border-slate-100 dark:border-slate-800 gap-2 text-xs">
+          <div className="flex items-center px-3 pt-2 pb-1 border-b border-[var(--border-subtle)] gap-2 text-xs">
             <button
               onClick={() => setActiveTab('all')}
               className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
                 activeTab === 'all'
-                  ? 'bg-slate-100 dark:bg-dark-800 text-slate-900 dark:text-white'
-                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  ? 'bg-[var(--bg-soft)] text-[var(--text-primary)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               All ({notifications.length})
@@ -1097,8 +1097,8 @@ export const NotificationsDropdown: React.FC = () => {
               onClick={() => setActiveTab('unread')}
               className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
                 activeTab === 'unread'
-                  ? 'bg-slate-100 dark:bg-dark-800 text-slate-900 dark:text-white'
-                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  ? 'bg-[var(--bg-soft)] text-[var(--text-primary)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               Unread ({unreadCount})
@@ -1109,13 +1109,13 @@ export const NotificationsDropdown: React.FC = () => {
           <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80">
             {filteredNotifications.length === 0 ? (
               <div className="py-12 px-4 text-center space-y-2">
-                <div className="w-10 h-10 mx-auto rounded-full bg-slate-100 dark:bg-dark-800 flex items-center justify-center text-slate-400">
+                <div className="w-10 h-10 mx-auto rounded-full bg-[var(--bg-soft)] flex items-center justify-center text-[var(--text-muted)]">
                   <Bell size={18} />
                 </div>
-                <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                <h4 className="text-xs font-semibold text-[var(--text-primary)]">
                   {activeTab === 'unread' ? 'No unread notifications' : 'No notifications yet'}
                 </h4>
-                <p className="text-[11px] text-slate-500 max-w-[220px] mx-auto">
+                <p className="text-[11px] text-[var(--text-muted)] max-w-[220px] mx-auto">
                   When someone connects with you or sends a startup proposal, you'll see it here!
                 </p>
               </div>
@@ -1141,8 +1141,8 @@ export const NotificationsDropdown: React.FC = () => {
                     onClick={() => handleNotificationClick(n)}
                     className={`p-3 sm:p-3.5 transition-colors cursor-pointer relative group flex gap-3 ${
                       n.isRead
-                        ? 'bg-white dark:bg-dark-900 hover:bg-slate-50 dark:hover:bg-dark-850/60'
-                        : 'bg-brand-50/30 dark:bg-brand-950/20 hover:bg-brand-50/50 dark:hover:bg-brand-950/30'
+                        ? 'bg-[var(--bg-surface)] hover:bg-[var(--bg-primary)]'
+                        : 'bg-[var(--brand-soft)] hover:bg-[var(--brand-soft)]'
                     }`}
                   >
                     {/* Unread indicator dot */}
@@ -1202,15 +1202,15 @@ export const NotificationsDropdown: React.FC = () => {
                     {/* Notification Content */}
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center justify-between gap-1">
-                        <span className="font-semibold text-xs text-slate-900 dark:text-white truncate">
+                        <span className="font-semibold text-xs text-[var(--text-primary)] truncate">
                           {n.title}
                         </span>
-                        <span className="text-[10px] text-slate-400 shrink-0">
+                        <span className="text-[10px] text-[var(--text-muted)] shrink-0">
                           {formatTimeAgo(n.createdAt)}
                         </span>
                       </div>
 
-                      <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug line-clamp-2">
+                      <p className="text-[11px] text-[var(--text-secondary)] leading-snug line-clamp-2">
                         {n.message}
                       </p>
 
@@ -1237,14 +1237,14 @@ export const NotificationsDropdown: React.FC = () => {
                               )}
                             </div>
                           ) : (n._actionStatus === 'DECLINED' || n.title?.includes('Declined')) ? (
-                            <span className="text-[10px] text-slate-400">Request Declined</span>
+                            <span className="text-[10px] text-[var(--text-muted)]">Request Declined</span>
                           ) : (
                             <>
                               <button
                                 type="button"
                                 disabled={actionLoading[n.id]}
                                 onClick={(e) => handleQuickRespondConnection(e, n, 'ACCEPT')}
-                                className="px-2.5 py-1 rounded text-[11px] font-semibold bg-brand-600 hover:bg-brand-700 text-white shadow-xs inline-flex items-center gap-1 cursor-pointer transition-colors"
+                                className="px-2.5 py-1 rounded text-[11px] font-semibold btn-primary text-white shadow-xs inline-flex items-center gap-1 cursor-pointer transition-colors"
                               >
                                 <Check size={11} />
                                 <span>{actionLoading[n.id] ? 'Accepting...' : 'Accept'}</span>
@@ -1253,7 +1253,7 @@ export const NotificationsDropdown: React.FC = () => {
                                 type="button"
                                 disabled={actionLoading[n.id]}
                                 onClick={(e) => handleQuickRespondConnection(e, n, 'REJECT')}
-                                className="px-2 py-1 rounded text-[11px] font-medium bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-700 text-slate-700 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
+                                className="px-2 py-1 rounded text-[11px] font-medium bg-[var(--bg-soft)] hover:bg-[var(--bg-soft)] text-[var(--text-secondary)] inline-flex items-center gap-1 cursor-pointer transition-colors"
                               >
                                 <X size={11} />
                                 <span>Decline</span>
@@ -1286,7 +1286,7 @@ export const NotificationsDropdown: React.FC = () => {
                               )}
                             </div>
                           ) : n._actionStatus === 'DECLINED' ? (
-                            <span className="text-[10px] text-slate-400">Proposal Declined</span>
+                            <span className="text-[10px] text-[var(--text-muted)]">Proposal Declined</span>
                           ) : (
                             <>
                               <button
@@ -1302,7 +1302,7 @@ export const NotificationsDropdown: React.FC = () => {
                                 type="button"
                                 disabled={actionLoading[n.id]}
                                 onClick={(e) => handleQuickRespondProposal(e, n, 'DECLINED')}
-                                className="px-2 py-1 rounded text-[11px] font-medium bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-700 text-slate-700 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
+                                className="px-2 py-1 rounded text-[11px] font-medium bg-[var(--bg-soft)] hover:bg-[var(--bg-soft)] text-[var(--text-secondary)] inline-flex items-center gap-1 cursor-pointer transition-colors"
                               >
                                 <X size={11} />
                                 <span>Decline</span>
@@ -1333,7 +1333,7 @@ export const NotificationsDropdown: React.FC = () => {
                               </button>
                             </div>
                           ) : n._actionStatus === 'DECLINED' || n.title?.includes('Declined') ? (
-                            <span className="text-[10px] text-slate-400">Role Declined</span>
+                            <span className="text-[10px] text-[var(--text-muted)]">Role Declined</span>
                           ) : (
                             <>
                               <button
@@ -1349,7 +1349,7 @@ export const NotificationsDropdown: React.FC = () => {
                                 type="button"
                                 disabled={actionLoading[n.id]}
                                 onClick={(e) => handleQuickRespondRoleInvite(e, n, 'DECLINE')}
-                                className="px-2 py-1 rounded text-[11px] font-medium bg-slate-100 hover:bg-slate-200 dark:bg-dark-800 dark:hover:bg-dark-700 text-slate-700 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
+                                className="px-2 py-1 rounded text-[11px] font-medium bg-[var(--bg-soft)] hover:bg-[var(--bg-soft)] text-[var(--text-secondary)] inline-flex items-center gap-1 cursor-pointer transition-colors"
                               >
                                 <X size={11} />
                                 <span>Decline</span>
@@ -1369,7 +1369,7 @@ export const NotificationsDropdown: React.FC = () => {
                               setIsOpen(false);
                               navigate(`/messages?user=${n.senderId}`);
                             }}
-                            className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:underline inline-flex items-center gap-1"
+                            className="text-[11px] font-semibold text-[var(--brand-primary)] hover:underline inline-flex items-center gap-1"
                           >
                             <MessageSquare size={11} />
                             <span>{isMessage ? 'Reply in Chat' : 'Start Chat'}</span>
@@ -1383,7 +1383,7 @@ export const NotificationsDropdown: React.FC = () => {
                       type="button"
                       onClick={(e) => handleDismiss(e, n.id)}
                       title="Dismiss notification"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-slate-400 hover:text-rose-600 rounded self-start"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-[var(--text-muted)] hover:text-rose-600 rounded self-start"
                     >
                       <Trash2 size={12} />
                     </button>
@@ -1394,11 +1394,11 @@ export const NotificationsDropdown: React.FC = () => {
           </div>
 
           {/* Footer */}
-          <div className="p-2.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-dark-850/50 flex items-center justify-between text-xs">
+          <div className="p-2.5 border-t border-[var(--border-subtle)] bg-[var(--bg-primary)] flex items-center justify-between text-xs">
             <Link
               to="/network"
               onClick={() => setIsOpen(false)}
-              className="text-[11px] font-semibold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 inline-flex items-center gap-1"
+              className="text-[11px] font-semibold text-[var(--brand-primary)] hover:text-[var(--brand-primary)] inline-flex items-center gap-1"
             >
               <span>Manage all invitations in Network</span>
               <ChevronRight size={12} />

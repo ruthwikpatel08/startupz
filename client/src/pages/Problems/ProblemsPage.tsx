@@ -285,24 +285,24 @@ export const ProblemsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
         {/* Hero Section */}
-        <div className="card-base p-6 sm:p-8 bg-white dark:bg-dark-900 text-slate-900 dark:text-white border-slate-200 dark:border-slate-800 shadow-xs">
+        <div className="card-base p-6 sm:p-8 bg-[var(--bg-surface)] text-[var(--text-primary)] border-[var(--border-subtle)] shadow-xs">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="max-w-3xl space-y-3.5">
               
               {/* Badge & Language Toggle */}
               <div className="flex flex-wrap items-center gap-2.5">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 border border-brand-200 dark:border-brand-800/60">
-                  <Globe size={13} className="text-brand-600 dark:text-brand-400" />
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-medium bg-[var(--brand-soft)] text-[var(--brand-primary)] border border-[var(--border-subtle)]">
+                  <Globe size={13} className="text-[var(--brand-primary)]" />
                   <span>{t.heroBadge}</span>
                 </div>
 
                 {/* i18n Selector */}
-                <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-md p-0.5 text-xs font-medium">
-                  <Languages size={13} className="text-slate-500 dark:text-slate-400 ml-1.5" />
+                <div className="flex items-center gap-0.5 bg-[var(--bg-soft)] rounded-md p-0.5 text-xs font-medium">
+                  <Languages size={13} className="text-[var(--text-muted)] ml-1.5" />
                   <button
                     onClick={() => setCurrentLang('en')}
                     className={`px-2 py-0.5 rounded transition-colors ${
-                      currentLang === 'en' ? 'bg-white text-slate-900 shadow-xs dark:bg-slate-700 dark:text-white' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900'
+                      currentLang === 'en' ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     EN
@@ -310,7 +310,7 @@ export const ProblemsPage: React.FC = () => {
                   <button
                     onClick={() => setCurrentLang('es')}
                     className={`px-2 py-0.5 rounded transition-colors ${
-                      currentLang === 'es' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'
+                      currentLang === 'es' ? 'bg-slate-700 text-white' : 'text-[var(--text-muted)] hover:text-white'
                     }`}
                   >
                     ES
@@ -318,7 +318,7 @@ export const ProblemsPage: React.FC = () => {
                   <button
                     onClick={() => setCurrentLang('hi')}
                     className={`px-2 py-0.5 rounded transition-colors ${
-                      currentLang === 'hi' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white'
+                      currentLang === 'hi' ? 'bg-slate-700 text-white' : 'text-[var(--text-muted)] hover:text-white'
                     }`}
                   >
                     HI
@@ -340,15 +340,15 @@ export const ProblemsPage: React.FC = () => {
               <div className="grid grid-cols-3 gap-4 pt-2 max-w-md">
                 <div className="border-l-2 border-brand-500 pl-3">
                   <div className="text-lg font-bold text-white">10+</div>
-                  <div className="text-[11px] text-slate-400 font-medium">{t.stat1Desc}</div>
+                  <div className="text-[11px] text-[var(--text-muted)] font-medium">{t.stat1Desc}</div>
                 </div>
                 <div className="border-l-2 border-slate-700 pl-3">
                   <div className="text-lg font-bold text-white">9</div>
-                  <div className="text-[11px] text-slate-400 font-medium">{t.stat2Desc}</div>
+                  <div className="text-[11px] text-[var(--text-muted)] font-medium">{t.stat2Desc}</div>
                 </div>
                 <div className="border-l-2 border-slate-700 pl-3">
                   <div className="text-lg font-bold text-white">AI-Native</div>
-                  <div className="text-[11px] text-slate-400 font-medium">{t.stat3Desc}</div>
+                  <div className="text-[11px] text-[var(--text-muted)] font-medium">{t.stat3Desc}</div>
                 </div>
               </div>
             </div>
@@ -369,7 +369,7 @@ export const ProblemsPage: React.FC = () => {
                 to="/cofounders"
                 className="btn-secondary py-2 px-4 text-xs font-medium inline-flex items-center justify-center gap-1.5"
               >
-                <HeartHandshake size={14} className="text-brand-500" />
+                <HeartHandshake size={14} className="text-[var(--brand-primary)]" />
                 <span>Find Teammates by Mission</span>
               </Link>
             </div>
@@ -403,14 +403,14 @@ export const ProblemsPage: React.FC = () => {
                 key={idx}
                 className="h-80 card-base p-6 animate-pulse space-y-4"
               >
-                <div className="h-5 w-1/3 bg-slate-200 dark:bg-dark-800 rounded" />
-                <div className="h-5 w-3/4 bg-slate-200 dark:bg-dark-800 rounded" />
+                <div className="h-5 w-1/3 bg-[var(--bg-soft)] rounded" />
+                <div className="h-5 w-3/4 bg-[var(--bg-soft)] rounded" />
                 <div className="space-y-2">
-                  <div className="h-4 w-full bg-slate-100 dark:bg-slate-800 rounded-lg" />
-                  <div className="h-4 w-5/6 bg-slate-100 dark:bg-slate-800 rounded-lg" />
-                  <div className="h-4 w-2/3 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+                  <div className="h-4 w-full bg-[var(--bg-soft)] rounded-lg" />
+                  <div className="h-4 w-5/6 bg-[var(--bg-soft)] rounded-lg" />
+                  <div className="h-4 w-2/3 bg-[var(--bg-soft)] rounded-lg" />
                 </div>
-                <div className="h-10 w-full bg-slate-100 dark:bg-slate-800 rounded-xl mt-6" />
+                <div className="h-10 w-full bg-[var(--bg-soft)] rounded-xl mt-6" />
               </div>
             ))}
           </div>
@@ -419,10 +419,10 @@ export const ProblemsPage: React.FC = () => {
             <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
               <AlertCircle size={20} />
             </div>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
               Unable to Load Problem Statements
             </h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+            <p className="text-xs text-[var(--text-secondary)] max-w-md mx-auto leading-relaxed">
               {error}
             </p>
             <div className="pt-1">
@@ -444,15 +444,15 @@ export const ProblemsPage: React.FC = () => {
               onAction={handleResetFilters}
             />
           ) : (
-            <div className="card-base p-8 sm:p-10 text-center space-y-4 border-dashed border-2 border-slate-300 dark:border-dark-700 bg-slate-50/40 dark:bg-dark-850/40">
-              <div className="w-12 h-12 rounded-xl bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400 flex items-center justify-center mx-auto border border-brand-200/60 dark:border-brand-900/60">
+            <div className="card-base p-8 sm:p-10 text-center space-y-4 border-dashed border-2 border-[var(--border-subtle)] bg-[var(--bg-primary)]">
+              <div className="w-12 h-12 rounded-xl bg-[var(--brand-soft)] text-[var(--brand-primary)] flex items-center justify-center mx-auto border border-brand-200/60 dark:border-brand-900/60">
                 <Globe2 size={22} />
               </div>
               <div className="max-w-xl mx-auto space-y-2">
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                <h3 className="text-base sm:text-lg font-bold text-[var(--text-primary)]">
                   World Challenges Archive Open for Submissions
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
                   There are currently no active problem statements listed in the archive. Founders and domain specialists can propose real-world crisis challenges aligned with SDGs to inspire builder teams on HookZ.
                 </p>
               </div>
@@ -470,7 +470,7 @@ export const ProblemsPage: React.FC = () => {
                   <RefreshCw size={13} /> Check Again
                 </button>
               </div>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500">
+              <p className="text-[11px] text-[var(--text-muted)]">
                 Verified global challenges appear here once published.
               </p>
             </div>

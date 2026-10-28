@@ -13,8 +13,7 @@ try {
     CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     ${initial.match(/CREATE TABLE users \([\s\S]*?\n\);/)[0]}
     ${initial.match(/CREATE TABLE profiles \([\s\S]*?\n\);/)[0]}
-    ALTER TABLE profiles ADD COLUMN email text;
-    CREATE TABLE consent_logs(id uuid DEFAULT gen_random_uuid(), user_id uuid REFERENCES auth.users(id), user_email text, purpose text, consent_version text, status text, details text);`);
+    ALTER TABLE profiles ADD COLUMN email text;`);
   const ids = Array.from({ length: 5 }, (_, i) => `00000000-0000-4000-8000-${String(i + 1).padStart(12, '0')}`);
   for (const [index, id] of ids.entries()) {
     await db.query('INSERT INTO auth.users VALUES ($1, $2)', [id, index === 0 ? {} : { onboarding_completed: false }]);
@@ -32,6 +31,13 @@ try {
     { role: 'Other', fullName: 'Rohan Mehta', otherRole: 'Community organizer', skills: ['Mentoring'], lookingFor: ['Mentoring students'], location: 'Remote', bio: '' },
   ];
   const submit = (answers, consent = true) => db.query('SELECT complete_onboarding($1,$2,true) AS profile', [answers, consent]);
+  await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)", [ids[1]]);
+  await assert.rejects(submit(cases[0]), /consent_logs.*does not exist/);
+  assert.equal((await db.query('SELECT onboarding_completed FROM profiles WHERE user_id=$1', [ids[1]])).rows[0].onboarding_completed, false);
+  const repair = fs.readFileSync('supabase/migrations/016_onboarding_consent_dependency.sql', 'utf8');
+  await db.exec(repair);
+  await db.exec(repair);
+  await db.query("SELECT set_config('request.jwt.claim.sub','',false)");
   await assert.rejects(submit(cases[0]), /Sign in/);
   for (const [index, answers] of cases.entries()) {
     await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)", [ids[index + 1]]);

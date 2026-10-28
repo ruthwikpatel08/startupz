@@ -65,8 +65,8 @@ export const ReportModal: React.FC<ReportModalProps> = ({
             <ShieldAlert size={18} />
           </div>
           <div className="space-y-1">
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Sign In Required</h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+            <h4 className="text-sm font-semibold text-[var(--text-primary)]">Sign In Required</h4>
+            <p className="text-xs text-[var(--text-muted)] max-w-xs mx-auto">
               Please sign in to submit a safety report to our moderation team.
             </p>
           </div>
@@ -95,8 +95,8 @@ export const ReportModal: React.FC<ReportModalProps> = ({
           <div className="w-10 h-10 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-800">
             <CheckCircle size={20} />
           </div>
-          <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Report Received</h4>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <h4 className="text-sm font-semibold text-[var(--text-primary)]">Report Received</h4>
+          <p className="text-xs text-[var(--text-muted)]">
             Thank you for helping keep HookZ safe. Our moderation team will investigate this report promptly.
           </p>
         </div>
@@ -110,7 +110,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">
               Reason for reporting
             </label>
             <select
@@ -128,7 +128,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">
               Additional Details (Optional)
             </label>
             <textarea
@@ -146,7 +146,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-subtle)]">
             <button
               type="button"
               onClick={onClose}

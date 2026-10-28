@@ -184,7 +184,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-40 w-full bg-white dark:bg-[var(--bg-surface)] border-b border-slate-200/80 dark:border-white/[0.08] transition-colors">
+      <header className="fixed top-0 left-0 right-0 z-40 w-full bg-[var(--bg-surface)] border-b border-[var(--border-subtle)] transition-colors">
         <div className="w-full px-2.5 sm:px-6 lg:px-6">
           <div className="flex items-center justify-between h-14 gap-2 sm:gap-4 w-full">
             
@@ -193,16 +193,14 @@ export const Navbar: React.FC = () => {
               <Link
                 to="/feed"
                 title="HookZ"
-                className="flex items-center gap-2 cursor-pointer group"
+                className="brand-wordmark cursor-pointer group"
               >
                 <img
                   src="/logo-icon.png"
                   alt="HookZ"
-                  className="w-7 h-7 rounded-md object-contain shadow-xs group-hover:scale-105 transition-transform"
+                  className="object-contain group-hover:scale-105 transition-transform"
                 />
-                <span className="text-base font-extrabold startupz-logo-title tracking-tight text-slate-900 dark:text-white">
-                  Hook<span className="text-brand-600">Z</span>
-                </span>
+                <span>HookZ</span>
               </Link>
             </div>
 
@@ -211,11 +209,11 @@ export const Navbar: React.FC = () => {
               <div className="hidden md:flex flex-1 max-w-[48%] min-w-0 justify-center px-2">
                 <button
                   onClick={() => setSearchModalOpen(true)}
-                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:border-slate-300 dark:hover:border-slate-700 transition-colors w-full text-left cursor-pointer group shadow-xs"
+                  className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs bg-[var(--bg-primary)] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--border-subtle)] transition-colors w-full text-left cursor-pointer group shadow-xs"
                 >
-                  <Search size={14} className="text-slate-400 group-hover:text-brand-600 transition-colors shrink-0" />
+                  <Search size={14} className="text-[var(--text-muted)] group-hover:text-[var(--brand-primary)] transition-colors shrink-0" />
                   <span className="truncate">Search students, projects, skills & usernames...</span>
-                  <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded text-[10px] bg-white dark:bg-dark-900 border border-slate-200 dark:border-slate-700 text-slate-400 ml-auto shrink-0 font-mono">
+                  <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded text-[10px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-muted)] ml-auto shrink-0 font-mono">
                     ⌘K
                   </kbd>
                 </button>
@@ -230,10 +228,10 @@ export const Navbar: React.FC = () => {
                   type="button"
                   onClick={() => navigate('/search')}
                   aria-label="Search platform"
-                  className="md:hidden p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
+                  className="md:hidden p-1.5 rounded-md text-[var(--text-muted)] hover:bg-[var(--bg-soft)] transition-colors cursor-pointer"
                   title="Search usernames & platform"
                 >
-                  <Search size={16} className="text-slate-600 dark:text-slate-300" />
+                  <Search size={16} className="text-[var(--text-secondary)]" />
                 </button>
               )}
 
@@ -241,7 +239,7 @@ export const Navbar: React.FC = () => {
               {!isAuthPage && (
                 <button
                   onClick={() => setAiScoutOpen(true)}
-                  className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-xs font-semibold text-white bg-black hover:bg-neutral-900 border border-black dark:border-neutral-800 transition-colors shrink-0 cursor-pointer shadow-xs"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-xs font-semibold btn-primary transition-colors shrink-0 cursor-pointer shadow-xs"
                   title="AI People Finder Bot"
                 >
                   <Sparkles size={13} className="text-white" />
@@ -258,8 +256,8 @@ export const Navbar: React.FC = () => {
                   <Link
                     to="/messages"
                     aria-label="Messages"
-                    className={`relative p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors ${
-                      isActive('/messages') ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60' : ''
+                    className={`relative p-1.5 rounded-md text-[var(--text-muted)] hover:bg-[var(--bg-soft)] transition-colors ${
+                      isActive('/messages') ? 'text-[var(--brand-primary)] bg-[var(--brand-soft)]' : ''
                     }`}
                   >
                     <MessageSquare size={16} />
@@ -274,8 +272,8 @@ export const Navbar: React.FC = () => {
                   <Link
                     to="/network"
                     aria-label="Network Connections"
-                    className={`hidden sm:inline-flex p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors ${
-                      isActive('/network') ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60' : ''
+                    className={`hidden sm:inline-flex p-1.5 rounded-md text-[var(--text-muted)] hover:bg-[var(--bg-soft)] transition-colors ${
+                      isActive('/network') ? 'text-[var(--brand-primary)] bg-[var(--brand-soft)]' : ''
                     }`}
                   >
                     <Users size={16} />
@@ -285,8 +283,8 @@ export const Navbar: React.FC = () => {
                   <Link
                     to="/saved"
                     aria-label="Saved items"
-                    className={`hidden sm:inline-flex p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors ${
-                      isActive('/saved') ? 'text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60' : ''
+                    className={`hidden sm:inline-flex p-1.5 rounded-md text-[var(--text-muted)] hover:bg-[var(--bg-soft)] transition-colors ${
+                      isActive('/saved') ? 'text-[var(--brand-primary)] bg-[var(--brand-soft)]' : ''
                     }`}
                   >
                     <Bookmark size={16} />
@@ -295,7 +293,7 @@ export const Navbar: React.FC = () => {
                   {/* Post Idea Action Button */}
                   <Link
                     to="/startups/create"
-                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 border border-[var(--brand-primary)] shadow-subtle transition-colors"
+                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-[var(--brand-primary)] bg-transparent hover:bg-[var(--brand-soft)] border border-[var(--brand-primary)] shadow-subtle transition-colors"
                   >
                     <Plus size={13} />
                     <span>Post Idea</span>
@@ -305,7 +303,7 @@ export const Navbar: React.FC = () => {
                   <button
                     onClick={toggleTheme}
                     aria-label="Toggle theme"
-                    className="p-1.5 rounded-md text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-md text-[var(--text-muted)] hover:bg-[var(--bg-soft)] transition-colors cursor-pointer"
                   >
                     {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
                   </button>
@@ -330,7 +328,7 @@ export const Navbar: React.FC = () => {
                         setMobileMenuOpen(false);
                       }}
                       aria-label="My Profile Menu"
-                      className="flex items-center justify-center p-0.5 rounded-full border border-slate-200 dark:border-slate-700 hover:border-brand-600 transition-colors focus:outline-none cursor-pointer shrink-0"
+                      className="flex items-center justify-center p-0.5 rounded-full border border-[var(--border-subtle)] hover:border-brand-600 transition-colors focus:outline-none cursor-pointer shrink-0"
                     >
                       <Avatar
                         src={user.profile?.avatar}
@@ -346,12 +344,12 @@ export const Navbar: React.FC = () => {
                           className="fixed inset-0 bg-black/20 dark:bg-black/40 z-40 sm:hidden"
                           onClick={() => setProfileDropdownOpen(false)}
                         />
-                        <div className="absolute right-0 mt-1.5 w-56 max-w-[calc(100vw-1rem)] bg-white dark:bg-dark-900 rounded-lg shadow-modal border border-slate-200 dark:border-slate-800 py-1.5 z-50 animate-fade-in">
-                          <div className="px-3.5 py-2 border-b border-slate-100 dark:border-slate-800">
-                            <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                        <div className="absolute right-0 mt-1.5 w-56 max-w-[calc(100vw-1rem)] bg-[var(--bg-surface)] rounded-lg shadow-modal border border-[var(--border-subtle)] py-1.5 z-50 animate-fade-in">
+                          <div className="px-3.5 py-2 border-b border-[var(--border-subtle)]">
+                            <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
                               {user.profile?.fullName || 'Founder'}
                             </p>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                            <p className="text-[11px] text-[var(--text-muted)] truncate">
                               {user.email}
                             </p>
                           </div>
@@ -363,9 +361,9 @@ export const Navbar: React.FC = () => {
                                 setProfileDropdownOpen(false);
                                 setAiScoutOpen(true);
                               }}
-                              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-950/40 text-left transition-colors cursor-pointer"
+                              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-[var(--brand-primary)] hover:bg-[var(--brand-soft)] text-left transition-colors cursor-pointer"
                             >
-                              <Sparkles size={14} className="text-brand-600 dark:text-brand-400" />
+                              <Sparkles size={14} className="text-[var(--brand-primary)]" />
                               <span>AI - Scout (Finder)</span>
                             </button>
                             <button
@@ -374,51 +372,51 @@ export const Navbar: React.FC = () => {
                                 setProfileDropdownOpen(false);
                                 window.dispatchEvent(new CustomEvent('startupz_open_notifications'));
                               }}
-                              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 text-left transition-colors cursor-pointer"
+                              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] text-left transition-colors cursor-pointer"
                             >
-                              <Bell size={14} className="text-brand-600 dark:text-brand-400" />
+                              <Bell size={14} className="text-[var(--brand-primary)]" />
                               <span>Notifications</span>
                             </button>
                             <Link
                               to="/network"
                               onClick={() => setProfileDropdownOpen(false)}
-                              className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors"
+                              className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] transition-colors"
                             >
-                              <Users size={14} className="text-brand-600 dark:text-brand-400" />
+                              <Users size={14} className="text-[var(--brand-primary)]" />
                               <span>My Network</span>
                             </Link>
                             <Link
                               to={`/profile/${user.id}`}
                               onClick={() => setProfileDropdownOpen(false)}
-                              className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
+                              className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]"
                             >
-                              <UserIcon size={14} className="text-slate-400" />
+                              <UserIcon size={14} className="text-[var(--text-muted)]" />
                               <span>My Profile</span>
                             </Link>
                             <Link
                               to="/saved"
                               onClick={() => setProfileDropdownOpen(false)}
-                              className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
+                              className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]"
                             >
-                              <Bookmark size={14} className="text-slate-400" />
+                              <Bookmark size={14} className="text-[var(--text-muted)]" />
                               <span>Saved Items</span>
                             </Link>
                             <Link
                               to={`/profile/${user.id}?edit=true`}
                               onClick={() => setProfileDropdownOpen(false)}
-                              className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800"
+                              className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]"
                             >
-                              <Settings size={14} className="text-slate-400" />
+                              <Settings size={14} className="text-[var(--text-muted)]" />
                               <span>Settings</span>
                             </Link>
                             <button type="button" onClick={toggleTheme} aria-pressed={theme === 'dark'}
-                              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800">
+                              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]">
                               {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
                               <span>{theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}</span>
                             </button>
                           </div>
 
-                          <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
+                          <div className="pt-1 border-t border-[var(--border-subtle)]">
                             <button
                               type="button"
                               onClick={async () => {
@@ -442,7 +440,7 @@ export const Navbar: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleGoogleClick}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 bg-white dark:bg-dark-850 hover:bg-slate-50 dark:hover:bg-dark-800 shadow-subtle transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md text-[var(--text-secondary)] border border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:bg-[var(--bg-primary)] shadow-subtle transition-colors cursor-pointer"
                     title="Sign in with Google"
                   >
                     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
@@ -468,14 +466,14 @@ export const Navbar: React.FC = () => {
 
                   <Link
                     to="/login"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800 transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] transition-colors cursor-pointer"
                   >
-                    <LogIn size={13} className="text-slate-400" />
+                    <LogIn size={13} className="text-[var(--text-muted)]" />
                     <span>Log In</span>
                   </Link>
                   <Link
                     to="/register"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md text-white bg-brand-600 hover:bg-brand-700 shadow-subtle transition-colors shrink-0"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md text-white btn-primary shadow-subtle transition-colors shrink-0"
                   >
                     <span>Join</span>
                   </Link>
@@ -487,10 +485,10 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile Drawer Navigation */}
         {mobileMenuOpen && (
-          <div className="lg:hidden px-4 pt-3 pb-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-dark-900 space-y-3 max-h-[85vh] overflow-y-auto">
+          <div className="lg:hidden px-4 pt-3 pb-6 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] space-y-3 max-h-[85vh] overflow-y-auto">
             {/* Logged-In User Profile */}
             {user && (
-              <div className="p-3 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800 space-y-2.5">
+              <div className="p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] space-y-2.5">
                 <div className="flex items-center gap-2.5">
                   <Avatar
                     src={user.profile?.avatar}
@@ -499,10 +497,10 @@ export const Navbar: React.FC = () => {
                     className="!w-9 !h-9"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                    <p className="text-xs font-semibold text-[var(--text-primary)] truncate">
                       {user.profile?.fullName || 'Founder'}
                     </p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    <p className="text-[11px] text-[var(--text-muted)] truncate">
                       {user.profile?.username ? `@${user.profile.username}` : user.email}
                     </p>
                   </div>
@@ -531,9 +529,9 @@ export const Navbar: React.FC = () => {
                 setMobileMenuOpen(false);
                 navigate('/search');
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs bg-slate-50 dark:bg-dark-850 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800 cursor-pointer"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-xs bg-[var(--bg-primary)] text-[var(--text-muted)] border border-[var(--border-subtle)] cursor-pointer"
             >
-              <Search size={14} className="text-slate-400" />
+              <Search size={14} className="text-[var(--text-muted)]" />
               <span>Search platform, skills, founders...</span>
             </button>
 
@@ -545,7 +543,7 @@ export const Navbar: React.FC = () => {
                     setMobileMenuOpen(false);
                     setAiScoutOpen(true);
                   }}
-                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-lg text-xs font-semibold text-white bg-black hover:bg-neutral-900 border border-black shadow-xs"
+                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-lg text-xs font-semibold btn-primary shadow-xs"
                 >
                   <Sparkles size={15} className="text-white" />
                   <span>AI - Scout Finder</span>
@@ -558,11 +556,11 @@ export const Navbar: React.FC = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center gap-2 p-2.5 rounded-lg text-xs font-medium border transition-colors ${
                     isActive('/')
-                      ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300'
-                      : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800'
+                      ? 'border-brand-600 bg-[var(--brand-soft)] text-[var(--brand-primary)]'
+                      : 'border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
                   }`}
                 >
-                  <Home size={15} className="text-brand-600" />
+                  <Home size={15} className="text-[var(--brand-primary)]" />
                   <span>1. Home</span>
                 </Link>
 
@@ -571,8 +569,8 @@ export const Navbar: React.FC = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center gap-2 p-2.5 rounded-lg text-xs font-medium border transition-colors ${
                     isActive('/feed')
-                      ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300'
-                      : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800'
+                      ? 'border-brand-600 bg-[var(--brand-soft)] text-[var(--brand-primary)]'
+                      : 'border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
                   }`}
                 >
                   <Flame size={15} className="text-amber-500" />
@@ -584,8 +582,8 @@ export const Navbar: React.FC = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center gap-2 p-2.5 rounded-lg text-xs font-medium border transition-colors ${
                     isActive('/business')
-                      ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300'
-                      : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800'
+                      ? 'border-brand-600 bg-[var(--brand-soft)] text-[var(--brand-primary)]'
+                      : 'border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
                   }`}
                 >
                   <Building2 size={15} className="text-blue-500" />
@@ -597,8 +595,8 @@ export const Navbar: React.FC = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`flex items-center gap-2 p-2.5 rounded-lg text-xs font-medium border transition-colors ${
                     isActive('/projects')
-                      ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300'
-                      : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800'
+                      ? 'border-brand-600 bg-[var(--brand-soft)] text-[var(--brand-primary)]'
+                      : 'border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
                   }`}
                 >
                   <FolderKanban size={15} className="text-emerald-500" />
@@ -610,11 +608,11 @@ export const Navbar: React.FC = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`col-span-2 flex items-center justify-center gap-2 p-2.5 rounded-lg text-xs font-medium border transition-colors ${
                     isActive('/opportunities')
-                      ? 'border-brand-600 bg-brand-50 text-brand-700 dark:bg-brand-950/50 dark:text-brand-300'
-                      : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-800'
+                      ? 'border-brand-600 bg-[var(--brand-soft)] text-[var(--brand-primary)]'
+                      : 'border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
                   }`}
                 >
-                  <Briefcase size={15} className="text-purple-500" />
+                  <Briefcase size={15} className="text-[var(--brand-primary)]" />
                   <span>5. Opportunities</span>
                 </Link>
               </div>
@@ -622,14 +620,14 @@ export const Navbar: React.FC = () => {
 
             {/* Mobile Auth / Profile Section */}
             {!user ? (
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
+              <div className="pt-3 border-t border-[var(--border-subtle)] space-y-2">
                 <button
                   type="button"
                   onClick={() => {
                     setMobileMenuOpen(false);
                     handleGoogleClick();
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-dark-850 text-xs font-medium text-slate-800 dark:text-slate-100 shadow-subtle cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-xs font-medium text-[var(--text-primary)] shadow-subtle cursor-pointer"
                 >
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24">
                     <path
@@ -670,12 +668,12 @@ export const Navbar: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+              <div className="pt-2 border-t border-[var(--border-subtle)] space-y-1.5">
                 <div className="grid grid-cols-3 gap-1.5">
                   <Link
                     to="/startups/create"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-md text-center py-1.5 text-xs font-semibold transition-colors"
+                    className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-[var(--brand-soft)] rounded-md text-center py-1.5 text-xs font-semibold transition-colors"
                   >
                     + Post Idea
                   </Link>

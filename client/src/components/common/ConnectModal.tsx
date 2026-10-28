@@ -202,12 +202,12 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title={`Connect with ${displayName}`}>
       {!currentUser ? (
         <div className="flex flex-col items-center justify-center py-6 text-center space-y-4">
-          <div className="w-10 h-10 rounded-md bg-slate-100 dark:bg-dark-800 text-slate-600 dark:text-slate-400 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+          <div className="w-10 h-10 rounded-md bg-[var(--bg-soft)] text-[var(--text-secondary)] flex items-center justify-center border border-[var(--border-subtle)]">
             <Lock size={18} />
           </div>
           <div className="space-y-1">
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Sign In Required to Connect</h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+            <h4 className="text-sm font-semibold text-[var(--text-primary)]">Sign In Required to Connect</h4>
+            <p className="text-xs text-[var(--text-muted)] max-w-xs mx-auto">
               Join HookZ or log in to send connection requests and collaborate with {displayName}.
             </p>
           </div>
@@ -236,27 +236,27 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
           <div className="w-10 h-10 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-800">
             <CheckCircle size={20} />
           </div>
-          <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Connection Request Sent</h4>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <h4 className="text-sm font-semibold text-[var(--text-primary)]">Connection Request Sent</h4>
+          <p className="text-xs text-[var(--text-muted)]">
             {displayName} will receive your invitation and note.
           </p>
         </div>
       ) : (
         <form onSubmit={handleSend} className="space-y-4">
-          <div className="flex items-center gap-3 p-2.5 rounded-md bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-3 p-2.5 rounded-md bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
             <Avatar src={displayAvatar} name={displayName} size="md" />
             <div className="min-w-0">
-              <div className="font-semibold text-xs text-slate-900 dark:text-white truncate">
+              <div className="font-semibold text-xs text-[var(--text-primary)] truncate">
                 {displayName}
               </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+              <div className="text-[11px] text-[var(--text-muted)] truncate">
                 {displayHeadline}
               </div>
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">
+            <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-1">
               Personalized Note (Optional)
             </label>
             <textarea
@@ -276,13 +276,13 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
           )}
 
           {/* Explicit DPDP Consent */}
-          <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-dark-800 border border-slate-200 dark:border-slate-700">
-            <label className="flex items-start gap-2 cursor-pointer text-[11px] text-slate-600 dark:text-slate-300 select-none">
+          <div className="p-2.5 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)]">
+            <label className="flex items-start gap-2 cursor-pointer text-[11px] text-[var(--text-secondary)] select-none">
               <input
                 type="checkbox"
                 checked={consentShareProfile}
                 onChange={(e) => setConsentShareProfile(e.target.checked)}
-                className="mt-0.5 rounded-sm border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer shrink-0"
+                className="mt-0.5 rounded-sm border-[var(--border-subtle)] text-[var(--brand-primary)] focus:ring-brand-500 cursor-pointer shrink-0"
               />
               <span className="leading-tight">
                 I explicitly consent to sharing my profile, contact details, and note with {displayName} to establish a professional connection under the DPDP Act 2023. <span className="text-rose-500 font-bold">*</span>
@@ -290,7 +290,7 @@ export const ConnectModal: React.FC<ConnectModalProps> = ({
             </label>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-end gap-2 pt-1 border-t border-[var(--border-subtle)]">
             <button
               type="button"
               onClick={onClose}
