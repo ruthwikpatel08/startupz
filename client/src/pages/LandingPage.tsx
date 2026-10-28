@@ -17,14 +17,12 @@ import {
   MessageSquare,
   Network,
   UserPlus,
-  Check,
-  MapPin,
 } from 'lucide-react';
 import { AIScoutModal } from '../components/ai/AIScoutModal';
 import { ConnectModal } from '../components/common/ConnectModal';
 import { StartupConnectionModal } from '../components/common/StartupConnectionModal';
-import { Avatar } from '../components/common/Avatar';
-import { RoleBadge, VerificationBadge } from '../components/common/Badge';
+import { DiscoveryProfileCard } from '../components/common/DiscoveryProfileCard';
+
 import { supabase, fetchUserConnections } from '../lib/supabase';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -477,110 +475,19 @@ export const LandingPage: React.FC = () => {
                     };
 
                     return (
-                      <div
+                      <DiscoveryProfileCard
                         key={p.user_id || p.id || p.email}
-                        className="card-base product-person p-5 flex flex-col justify-between h-full min-w-0"
-                      >
-                        <div>
-                          {/* TOP HEADER ROW: Avatar + Name & Username ONLY */}
-                          <div className="flex items-center gap-3 w-full min-w-0">
-                            <Avatar
-                              src={p.avatar}
-                              name={displayName}
-                              size="lg"
-                              className="w-11 h-11 shrink-0"
-                            />
-                            <div className="min-w-0 flex-1">
-                              {/* Line 1: User's Full Name */}
-                              <Link
-                                to={profileUrl}
-                                className="text-[15px] font-semibold text-[var(--text-primary)] hover:text-[var(--brand-primary)] transition-colors truncate block"
-                              >
-                                {displayName}
-                              </Link>
-
-                              {/* Line 2: @username directly underneath */}
-                              <p className="text-xs text-[var(--text-muted)] font-normal truncate mt-0.5">
-                                @{username}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* FULL-WIDTH CARD BODY (Spans 100% of card width) */}
-                          {/* Consolidated Badges Row: RoleBadge + Active Builder */}
-                          <div className="flex items-center gap-1.5 mt-2.5 flex-wrap">
-                            <RoleBadge role={displayRole} size="sm" />
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-[var(--bg-soft)] text-[var(--text-secondary)] border border-[var(--border-subtle)] shrink-0">
-                              <Sparkles size={10} className="text-[var(--brand-primary)]" />
-                              <span>Active Builder</span>
-                            </span>
-                          </div>
-
-                          {/* Location & Skill Row */}
-                          <div className="mt-3 flex items-center justify-between gap-2 text-xs text-[var(--text-muted)] w-full">
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                              <MapPin size={12} className="shrink-0 text-[var(--text-muted)]" />
-                              <span className="truncate" title={p.location || 'Remote'}>
-                                {p.location || 'Remote'}
-                              </span>
-                            </div>
-                            {primarySkill ? (
-                              <span
-                                className="shrink-0 whitespace-nowrap text-xs text-[var(--text-muted)] font-medium truncate max-w-[130px]"
-                                title={primarySkill}
-                              >
-                                {primarySkill}
-                              </span>
-                            ) : null}
-                          </div>
-
-                          {/* Single Bio / Headline Block (Rendered strictly once!) */}
-                          <div className="mt-2.5 min-h-[32px]">
-                            <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed">
-                              {p.one_line_bio || p.oneLineBio || p.headline || 'Specialist available for collaborations'}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Card Footer with mt-auto for row-level horizontal alignment */}
-                        <div className="pt-3 mt-3 border-t border-[var(--border-subtle)] flex items-center justify-between gap-2">
-                          <Link
-                            to={profileUrl}
-                            className="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                          >
-                            Profile
-                          </Link>
-
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {/* Startup Connection (Pitch) Button */}
-                            <button
-                              onClick={() => handlePitchClick(targetUserObj)}
-                              className="btn-secondary !text-xs"
-                              title="Propose Co-Founding a Startup"
-                            >
-                              Pitch
-                            </button>
-
-                            {/* User Connection Button */}
-                            {connStatus === 'ACCEPTED' ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                                <Check size={12} /> Connected
-                              </span>
-                            ) : connStatus === 'PENDING' ? (
-                              <span className="px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-700 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                                Pending
-                              </span>
-                            ) : (
-                              <button
-                                onClick={() => handleConnectClick(targetUserObj)}
-                                className="btn-primary !text-xs"
-                              >
-                                + Connect
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                        name={displayName}
+                        username={username}
+                        avatar={p.avatar}
+                        role={displayRole}
+                        topSkill={primarySkill}
+                        bio={[p.bio, p.one_line_bio].find(value => typeof value === 'string' && value.trim())?.trim() || ''}
+                        profileUrl={profileUrl}
+                        connectionStatus={connStatus}
+                        onCollaborate={() => handlePitchClick(targetUserObj)}
+                        onConnect={() => handleConnectClick(targetUserObj)}
+                      />
                     );
                   })}
                 </div>

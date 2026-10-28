@@ -3,10 +3,17 @@ const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const {spawn}=require('node:child_process');
-const output='docs/phase2-recovery/screenshots';
+const output=process.argv.includes('--cards') ? 'docs/discovery-card/screenshots' : 'docs/phase2-recovery/screenshots';
 fs.mkdirSync(output,{recursive:true});
 const id='00000000-0000-4000-8000-000000000001';
 const people=['Aanya Shah','Rohan Mehta','Maya Chen'].map((full_name,i)=>({id:`00000000-0000-4000-8000-00000000000${i+2}`,user_id:`00000000-0000-4000-8000-00000000000${i+2}`,full_name,username:full_name.split(' ')[0].toLowerCase(),preferred_role:'STUDENT',headline:['Frontend developer','Product designer','ML engineer'][i],skills:['React, TypeScript','Figma, Design systems','Python, Machine learning'][i],location:['Bengaluru','Hyderabad','Pune'][i],bio:'Building useful things with curious people. Looking for a team for the next campus hackathon.',onboarding_completed:true,created_at:'2026-10-28T08:00:00Z'}));
+if(process.argv.includes('--cards')) {
+ people[0].bio='I turn ambitious ideas into useful campus tools, and love building thoughtful interfaces with a curious team. '.repeat(4);
+ people[0].location='Remote';
+ people[1].full_name='Rohan Mehta With An Exceptionally Long Family Name';
+ people[1].skills=['', 'Design systems and accessible interfaces with a very long skill label', 'Figma'];
+ people[2].skills='';people[2].bio='';people[2].headline='Frontend';
+}
 const profile={id,user_id:id,email:'visual@example.test',full_name:'Alex Builder',username:'alex_builder',preferred_role:'STUDENT',headline:'Frontend developer · Student',skills:'React, TypeScript',education:'Test University',bio:'Making campus life a little better, one project at a time.',onboarding_completed:true};
 const authUser={id,email:profile.email,aud:'authenticated',role:'authenticated',app_metadata:{provider:'email'},user_metadata:{onboarding_completed:true},created_at:'2026-10-28T08:00:00Z'};
 const token=['eyJhbGciOiJIUzI1NiJ9',Buffer.from(JSON.stringify({sub:id,exp:Math.floor(Date.now()/1000)+3600,role:'authenticated'})).toString('base64url'),'test-signature'].join('.');
@@ -20,7 +27,7 @@ const startup={id:'theme-startup',name:'Campus Collective',oneLineDescription:'S
  const results=[];
  try {
   browser=await chromium.launch({headless:true,channel:'msedge'});
-  for(const width of (process.argv.includes('--mobile') ? [375] : [1440,375])) for(const theme of ['light','dark']) {
+  for(const width of (process.argv.includes('--cards') ? [1440,768,375,320] : process.argv.includes('--mobile') ? [375] : [1440,375])) for(const theme of ['light','dark']) {
    const page=await browser.newPage({viewport:{width,height:1000},reducedMotion:'reduce'});
    const errors=[];page.on('pageerror',e=>errors.push(e.message));
    await page.addInitScript(({authUser,token,theme})=>{
@@ -36,6 +43,41 @@ const startup={id:'theme-startup',name:'Campus Collective',oneLineDescription:'S
    });
    await page.route('**/api/**',route=>route.fulfill({json:{users:[],matches:[],posts:[post],projects:[project],startups:[startup],conversations:[],notifications:[],connections:[],results:[],items:[],total:0,problems:[{title:'Accessible campus navigation',description:'Help students find step-free routes across campus.',tags:['Accessibility'],sourceUrl:'javascript:alert(1)'}],user:{...authUser,profile:{id,userId:id,fullName:profile.full_name}}}}));
    const snap=async name=>{assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`${name} overflow ${width}/${theme}`);await page.screenshot({path:`${output}/${name}-${width}-${theme}.png`,fullPage:true});};
+   if(process.argv.includes('--cards')) {
+    await page.goto('http://127.0.0.1:5181/',{waitUntil:'networkidle'});
+    const cards=page.locator('.discovery-profile-card');
+    assert.equal(await cards.count(),3);
+    assert.doesNotMatch(await cards.allTextContents().then(x=>x.join(' ')),/Active Builder|Remote|Frontend/);
+    assert.equal((await cards.first().locator('.discovery-profile-skill').innerText()).replace(/\s+/g,' '),'Top skill: React');
+    assert.match(await cards.nth(1).locator('.discovery-profile-skill').innerText(),/Design systems/);
+    assert.equal(await cards.nth(2).locator('.discovery-profile-skill').count(),0);
+    assert.equal(await cards.nth(2).locator('.discovery-profile-bio').innerText(),'No bio added yet.');
+    assert.equal(await cards.first().locator('.discovery-profile-bio').evaluate(el=>el.scrollHeight>el.clientHeight),true,'Long bio clamps');
+    assert.equal(await cards.getByRole('button',{name:'Collaborate',exact:true}).count(),3);
+    assert.equal(await cards.getByRole('link',{name:'See Profile',exact:true}).count(),3);
+    for(const card of await cards.all())assert.equal(await card.evaluate(el=>el.scrollWidth<=el.clientWidth),true,'Card contents fit');
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await cards.first().getByRole('button',{name:'Collaborate',exact:true}).click();
+    await page.getByRole('dialog',{name:'Propose Startup Collaboration'}).waitFor();
+    await page.keyboard.press('Escape');
+    await cards.first().getByRole('button',{name:'+ Connect',exact:true}).click();
+    await page.getByRole('dialog',{name:'Connect with Aanya Shah'}).waitFor();
+    await page.keyboard.press('Escape');
+    await cards.first().getByRole('link',{name:'See Profile',exact:true}).focus();
+    assert.notEqual(await cards.first().getByRole('link',{name:'See Profile',exact:true}).evaluate(el=>getComputedStyle(el).outlineStyle),'none');
+    await page.locator('.product-home h2').first().click();
+    await cards.first().hover();
+    assert.equal(await cards.first().evaluate(el=>getComputedStyle(el).transform),'none','Reduced motion disables lift');
+    await page.emulateMedia({reducedMotion:'no-preference'});
+    await page.waitForFunction(()=>getComputedStyle(document.querySelector('.discovery-profile-card')).transform==='matrix(1, 0, 0, 1, 0, -4)');
+    await page.emulateMedia({reducedMotion:'reduce'});
+    await page.mouse.move(0,0);
+    await cards.first().screenshot({path:output+'/card-'+width+'-'+theme+'.png'});
+    if(width===1440)await cards.first().locator('..').screenshot({path:output+'/cards-'+width+'-'+theme+'.png'});
+    assert.deepEqual(errors,[]);
+    console.log('PASS card hierarchy, skill formats, absent fields, clamping, action wiring, focus and fit: '+width+'px '+theme);
+    await page.close();continue;
+   }
    if(process.argv.includes('--controls')) {
     await page.goto('http://127.0.0.1:5181/',{waitUntil:'networkidle'});
     await page.getByRole('button',{name:'My Profile Menu',exact:true}).click();
@@ -58,10 +100,10 @@ const startup={id:'theme-startup',name:'Campus Collective',oneLineDescription:'S
     await page.goto(`http://127.0.0.1:5181${route}`,{waitUntil:'networkidle'});
     await page.locator('.hookz-product').waitFor();
     if(name==='home') {
-     assert.equal(await page.locator('.product-person').count(),3,'Populated Home cards');
-     const card=await page.locator('.product-person').first().evaluate(el=>({radius:getComputedStyle(el).borderRadius,bg:getComputedStyle(el).backgroundColor,border:getComputedStyle(el).borderColor}));
+     assert.equal(await page.locator('.discovery-profile-card').count(),3,'Populated Home cards');
+     const card=await page.locator('.discovery-profile-card').first().evaluate(el=>({radius:getComputedStyle(el).borderRadius,bg:getComputedStyle(el).backgroundColor,border:getComputedStyle(el).borderColor}));
      assert.deepEqual(card,{radius:'16px',bg:theme==='light'?'rgb(255, 255, 255)':'rgb(27, 24, 37)',border:theme==='light'?'rgb(228, 225, 237)':'rgb(54, 48, 68)'});
-     const button=await page.locator('.product-person .btn-primary').first().evaluate(el=>({radius:getComputedStyle(el).borderRadius,background:getComputedStyle(el).backgroundImage}));
+     const button=await page.locator('.discovery-profile-card .btn-primary').first().evaluate(el=>({radius:getComputedStyle(el).borderRadius,background:getComputedStyle(el).backgroundImage}));
      assert.equal(button.radius,'16px');
      assert.equal(button.background,'linear-gradient(165deg, rgb(131, 89, 244), rgb(102, 56, 221))');
     }
@@ -98,6 +140,6 @@ const startup={id:'theme-startup',name:'Campus Collective',oneLineDescription:'S
    await page.close();
   }
   assert.ok(fs.readFileSync('client/public/logo-icon.png').equals(fs.readFileSync('client/src/assets/logo-icon.png')),'Onboarding and landing share the approved logo');
-  if(!process.argv.includes('--controls'))fs.writeFileSync('docs/phase2-recovery/theme-checks.json',JSON.stringify(results,null,2));
+  if(!process.argv.includes('--controls')&&!process.argv.includes('--cards'))fs.writeFileSync('docs/phase2-recovery/theme-checks.json',JSON.stringify(results,null,2));
  }finally{await browser?.close();vite.kill();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

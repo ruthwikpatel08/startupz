@@ -30,12 +30,7 @@
 .product-home > section > div { max-width: 1220px; margin-inline: auto; }
 .product-home > section:first-of-type { padding-top: 40px; }
 .product-home > section:first-of-type h2 + p { margin-top: 10px; font-size: 14px; line-height: 1.7; max-width: 500px; }
-.product-home .product-person { min-height: 260px; padding: 24px; }
-.product-home .product-person p { font-size: 13px; line-height: 1.65; }
-.product-home .product-person a.truncate { font-family: var(--font-display); font-size: 18px; font-weight: 700; }
-.product-home .product-person > div:last-child { padding-top: 18px; margin-top: 18px; }
 @media (max-width: 640px) {
   .hookz-product main > div > .max-w-7xl { padding-top: 24px; }
   .product-home > section:first-of-type { padding-top: 24px; }
-  .product-home .product-person { padding: 20px; }
 }
