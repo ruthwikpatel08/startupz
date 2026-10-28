@@ -1,4 +1,5 @@
 import React from 'react';
+import './product.css';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -171,7 +172,7 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col theme-page transition-colors selection:bg-brand-600 selection:text-white relative w-full max-w-full overflow-x-hidden">
+    <div className={`${!isAuthOrMeetingPage ? 'hookz-product' : ''} min-h-screen flex flex-col theme-page transition-colors selection:bg-brand-600 selection:text-white relative w-full max-w-full overflow-x-hidden`}>
       {!isAuthOrMeetingPage && <Navbar />}
       <NewUserCategoryModal />
       <div className={`flex-1 flex w-full max-w-full min-w-0 overflow-x-hidden ${isAuthOrMeetingPage ? '' : 'pt-14'}`}>

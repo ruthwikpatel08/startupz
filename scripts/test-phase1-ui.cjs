@@ -126,7 +126,7 @@ fs.mkdirSync(output, { recursive: true });
       await page.screenshot({ path: path.join(output, `onboarding-${role}-preview.png`), fullPage: true });
       await page.getByRole('button', { name: 'Enter HookZ' }).click();
       if (role === 'Student') {
-        await page.getByRole('alert').filter({ hasText: /couldn.t save/ }).waitFor();
+        await page.getByRole('alert').filter({ hasText: /couldn.t save/i }).waitFor();
         assert.equal(await page.getByRole('heading', { name: "You're all set!" }).count(), 1);
         await page.getByRole('button', { name: 'Enter HookZ' }).click();
       }
@@ -163,6 +163,15 @@ fs.mkdirSync(output, { recursive: true });
       page.on('pageerror', error => errors.push(error.message));
       for (const route of ['/cofounders', '/projects', '/feed', '/business', '/opportunities', '/investors', '/mentors', '/problems', '/startups', '/failed-startups', '/search', '/memberships', '/privacy', '/terms', '/dsar', '/forgot-password', '/reset-password', '/page-not-found']) {
         await page.goto(`http://127.0.0.1:5179${route}`, { waitUntil: 'networkidle' });
+        if (route === '/opportunities') {
+          await page.getByRole('heading', { name: 'Problem Statements', exact: true }).waitFor();
+          assert.doesNotMatch(await page.locator('main').innerText(), /Apply Now|Post Opportunity|Internships|How Founders Hire/);
+          await page.route('**/api/problems/discover-ai', r => r.fulfill({ json: { problems: [{ title: 'Accessible campus navigation', description: 'Help students find step-free routes across campus.', tags: ['Accessibility'], sourceUrl: 'javascript:alert(1)' }] } }));
+          await page.getByRole('button', { name: 'Generate statements' }).click();
+          await page.getByRole('heading', { name: 'Accessible campus navigation' }).waitFor();
+          await page.getByText('View statement', { exact: true }).click();
+          assert.equal(await page.getByRole('link', { name: 'Read source' }).count(), 0);
+        }
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `overflow: ${route}/${theme}`);
         assert.ok((await page.locator('main').innerText()).length > 30, `empty route: ${route}`);
         assert.equal(await page.getByText('Something went wrong', { exact: true }).count(), 0, `error boundary: ${route}`);

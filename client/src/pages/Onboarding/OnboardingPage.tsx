@@ -8,6 +8,7 @@ import { Avatar } from '../../components/common/Avatar';
 import { INDIAN_COLLEGES_AND_UNIVERSITIES } from '../../data/indiaData';
 import { getQuestions, validateAnswer, submissionAnswers, type Answers, type JoiningRole } from './questions';
 import './OnboardingPage.css';
+import logoIcon from '../../assets/logo-icon.png';
 
 export const OnboardingPage: React.FC = () => {
   const { user, session, loading, updateUser } = useAuth();
@@ -58,7 +59,9 @@ export const OnboardingPage: React.FC = () => {
       updateUser(mapSupabaseToAppUser(session.user, data));
       navigate('/', { replace: true });
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'We couldn’t save your profile. Your answers are still here — please try again.');
+      const detail = error && typeof error === 'object' && 'message' in error ? String(error.message) : 'Unknown save error';
+      if (import.meta.env.DEV) console.error('Onboarding save failed:', error);
+      setError(import.meta.env.DEV ? `Couldn’t save your profile: ${detail}` : 'We couldn’t save your profile. Your answers are still here — please try again.');
     } finally { savingRef.current = false; setSaving(false); }
   };
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -106,6 +109,6 @@ export const OnboardingPage: React.FC = () => {
       </div>
       {step > 0 && <button type="button" className="onboarding-back" disabled={saving} onClick={() => goToStep(step - 1)}><ArrowLeft size={16} /> Back</button>}
     </div>
-    <div className="onboarding-bottom"><span>Made for the ones who make things.</span><span>HookZ ✳</span></div>
+    <div className="onboarding-bottom"><span>Made for the ones who make things.</span><span className="inline-flex items-center gap-2"><img src={logoIcon} alt="" className="w-6 h-6 object-contain" />HookZ</span></div>
   </div>;
 };
