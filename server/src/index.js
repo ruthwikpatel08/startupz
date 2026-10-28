@@ -57,7 +57,10 @@ app.use((req, res, next) => {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
     const proto = req.headers['x-forwarded-proto'];
     if (proto && proto !== 'https') {
-      return res.redirect(301, `https://${req.headers.host}${req.url}`);
+      const rawHost = req.headers.host || '';
+      const safeHostPattern = /^[a-zA-Z0-9.\-]+(:\d+)?$/;
+      const safeHost = safeHostPattern.test(rawHost) ? rawHost : (process.env.PUBLIC_DOMAIN || 'hookz.in');
+      return res.redirect(301, `https://${safeHost}${req.originalUrl || req.url}`);
     }
   }
 
@@ -150,29 +153,35 @@ app.get('/api/health/db', async (req, res) => {
         status: 'initializing',
         database: 'connected',
         tablesReady: false,
-        message: 'Database connection active; tables pending migration or initialization.',
+      });
+    }
+
+    if (isAuthorizedMaintenanceRequest(req)) {
+      const userCount = await prisma.user.count().catch(() => 0);
+      const startupCount = await prisma.startup.count().catch(() => 0);
+      const failedStartupCount = prisma.failedStartup ? await prisma.failedStartup.count().catch(() => 0) : 0;
+      const problemCount = prisma.problem ? await prisma.problem.count().catch(() => 0) : 0;
+      return res.json({
+        status: 'ok',
+        database: 'connected',
+        tablesReady: true,
+        userCount,
+        startupCount,
+        failedStartupCount,
+        problemCount,
         provider: process.env.DATABASE_URL ? (process.env.DATABASE_URL.startsWith('postgres') ? 'postgresql' : 'sqlite') : 'sqlite',
       });
     }
 
-    const userCount = await prisma.user.count().catch(() => 0);
-    const startupCount = await prisma.startup.count().catch(() => 0);
-    const failedStartupCount = prisma.failedStartup ? await prisma.failedStartup.count().catch(() => 0) : 0;
-    const problemCount = prisma.problem ? await prisma.problem.count().catch(() => 0) : 0;
-    res.json({
+    return res.json({
       status: 'ok',
       database: 'connected',
       tablesReady: true,
-      userCount,
-      startupCount,
-      failedStartupCount,
-      problemCount,
-      provider: process.env.DATABASE_URL ? (process.env.DATABASE_URL.startsWith('postgres') ? 'postgresql' : 'sqlite') : 'sqlite',
     });
   } catch (err) {
     res.status(500).json({
       status: 'error',
-      message: err.message,
+      message: 'Database check failed',
     });
   }
 });

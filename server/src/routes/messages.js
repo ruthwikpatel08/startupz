@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { isUserBlockedPair } from './users.js';
+import { messagingLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
@@ -219,7 +220,7 @@ router.get('/:conversationId', requireAuth, async (req, res) => {
 });
 
 // POST /api/messages
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, messagingLimiter, async (req, res) => {
   try {
     const { receiverId, content } = req.body;
 

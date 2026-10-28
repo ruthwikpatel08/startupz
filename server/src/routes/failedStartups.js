@@ -138,12 +138,53 @@ router.post('/solutions/:solutionId/upvote', requireAuth, async (req, res) => {
   try {
     const { solutionId } = req.params;
 
-    const updated = await prisma.raisedSolution.update({
+    const solution = await prisma.raisedSolution.findUnique({
       where: { id: solutionId },
-      data: { upvotesCount: { increment: 1 } },
     });
+    if (!solution) {
+      return res.status(404).json({ error: 'Solution not found.' });
+    }
 
-    return res.json({ upvoted: true, upvotesCount: updated.upvotesCount });
+    const existingVote = await prisma.savedItem.findUnique({
+      where: {
+        userId_itemType_itemId: {
+          userId: req.user.id,
+          itemType: 'SOLUTION_UPVOTE',
+          itemId: solutionId,
+        },
+      },
+    }).catch(() => null);
+
+    let updated;
+    let upvoted = false;
+
+    if (existingVote) {
+      await prisma.savedItem.delete({
+        where: { id: existingVote.id },
+      }).catch(() => null);
+
+      updated = await prisma.raisedSolution.update({
+        where: { id: solutionId },
+        data: { upvotesCount: Math.max(0, solution.upvotesCount - 1) },
+      });
+      upvoted = false;
+    } else {
+      await prisma.savedItem.create({
+        data: {
+          userId: req.user.id,
+          itemType: 'SOLUTION_UPVOTE',
+          itemId: solutionId,
+        },
+      });
+
+      updated = await prisma.raisedSolution.update({
+        where: { id: solutionId },
+        data: { upvotesCount: { increment: 1 } },
+      });
+      upvoted = true;
+    }
+
+    return res.json({ upvoted, upvotesCount: updated.upvotesCount });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to upvote solution.' });
   }

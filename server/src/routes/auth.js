@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../db.js';
 import { requireAuth, revokeToken } from '../middleware/auth.js';
 import { JWT_SECRET } from '../config/jwt.js';
+import { supabaseAdmin } from '../supabase.js';
 import {
   authLoginLimiter,
   authRegisterLimiter,
@@ -335,7 +336,7 @@ router.post('/google', authLoginLimiter, async (req, res) => {
 // POST /api/auth/sync - Ensure any logged-in real user is saved in DB and receives a valid token
 router.post('/sync', authSyncLimiter, async (req, res) => {
   try {
-    const { id, email, fullName, role = 'FOUNDER', headline, location, bio, avatar, skills, username, password } = req.body;
+    const { id, email, fullName, role = 'FOUNDER', headline, location, bio, avatar, skills, username } = req.body;
     const cleanEmail = (email || '').trim().toLowerCase();
     if (!cleanEmail) {
       return res.status(400).json({ error: 'Email is required for synchronization.' });
@@ -343,6 +344,33 @@ router.post('/sync', authSyncLimiter, async (req, res) => {
 
     const cleanName = fullName || cleanEmail.split('@')[0];
     const safeRole = sanitizeUserRole(role); // Prevent privilege escalation to ADMIN (SEC-02)
+
+    // Authenticate the caller to prevent unauthorized account takeover/synchronization
+    let callerUserId = null;
+    let callerEmail = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.slice(7).trim();
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded && decoded.userId) {
+          callerUserId = decoded.userId;
+        }
+      } catch {
+        // Not a HookZ token; check if it is a valid Supabase access token
+        if (supabaseAdmin) {
+          try {
+            const { data: { user: supaUser }, error } = await supabaseAdmin.auth.getUser(token);
+            if (supaUser && !error) {
+              callerUserId = supaUser.id;
+              callerEmail = (supaUser.email || '').toLowerCase().trim();
+            }
+          } catch {
+            // Ignore token verification errors
+          }
+        }
+      }
+    }
 
     let user = await prisma.user.findFirst({
       where: {
@@ -355,9 +383,12 @@ router.post('/sync', authSyncLimiter, async (req, res) => {
     });
 
     if (!user) {
-      const generatedPassword = (password && typeof password === 'string' && password.length >= 6)
-        ? await bcrypt.hash(password, 10)
-        : await bcrypt.hash(`AuthSync_${Math.random()}_2026!`, 10);
+      // If caller is authenticated under a different email, prevent spoofing
+      if (callerEmail && callerEmail !== cleanEmail) {
+        return res.status(403).json({ error: 'Authenticated email does not match sync request email.' });
+      }
+
+      const generatedPassword = await bcrypt.hash(`AuthSync_${Date.now()}_${Math.random().toString(36)}!`, 10);
       user = await prisma.user.create({
         data: {
           id: id || undefined,
@@ -383,12 +414,12 @@ router.post('/sync', authSyncLimiter, async (req, res) => {
         include: { profile: true },
       });
     } else {
-      if (password && typeof password === 'string' && password.length >= 6) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { password: hashedPassword },
-        }).catch(() => null);
+      // Existing user: caller MUST be authenticated as this user to modify their profile or get a token
+      const isOwner = (callerUserId && (callerUserId === user.id || callerUserId === user.profile?.userId)) ||
+                      (callerEmail && callerEmail === user.email);
+
+      if (!isOwner) {
+        return res.status(401).json({ error: 'Authentication required to synchronize an existing account.' });
       }
 
       // Only update role if valid non-admin role and user is not currently an admin
@@ -405,7 +436,7 @@ router.post('/sync', authSyncLimiter, async (req, res) => {
           userId: user.id,
           fullName: cleanName,
           username: username || user.profile?.username || cleanEmail.split('@')[0],
-          headline: headline || user.profile?.headline || `${upperRole} | Startup Builder`,
+          headline: headline || user.profile?.headline || `${safeRole} | Startup Builder`,
           location: location || user.profile?.location || 'Remote',
           bio: bio || null,
           skills: skills || null,
@@ -500,9 +531,11 @@ router.post('/forgot-password', authPasswordResetLimiter, async (req, res) => {
     ? jwt.sign({ email: user.email, purpose: 'password_reset', passHash }, JWT_SECRET, { expiresIn: '15m' })
     : null;
 
+  // Never leak resetToken in production response. Only exposed if explicitly requested in isolated local dev test
+  const isDev = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
   return res.json({
     message: 'If an account exists with this email, password reset instructions have been generated.',
-    resetToken,
+    ...(isDev && process.env.EXPOSE_RESET_TOKEN_IN_DEV === 'true' ? { resetToken } : {}),
   });
 });
 

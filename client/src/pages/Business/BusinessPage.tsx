@@ -304,7 +304,7 @@ export const BusinessPage: React.FC = () => {
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activeTab === 'startups'
               ? 'bg-indigo-50/80 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800/60 shadow-xs font-semibold'
-              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
           <Compass size={15} className={`shrink-0 ${activeTab === 'startups' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
@@ -320,7 +320,7 @@ export const BusinessPage: React.FC = () => {
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activeTab === 'network'
               ? 'bg-indigo-50/80 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800/60 shadow-xs font-semibold'
-              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
           <Users size={15} className={`shrink-0 ${activeTab === 'network' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
@@ -337,7 +337,7 @@ export const BusinessPage: React.FC = () => {
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activeTab === 'graveyard'
               ? 'bg-rose-50/80 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-900/60 shadow-xs font-semibold'
-              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
           <Skull size={15} className={`shrink-0 ${activeTab === 'graveyard' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}`} />
@@ -364,7 +364,7 @@ export const BusinessPage: React.FC = () => {
             <div className="flex items-center gap-2 shrink-0">
               <Link
                 to="/startups/create"
-                className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg text-xs sm:text-sm py-2 px-3.5 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg text-xs sm:text-sm py-2 px-3.5 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Plus size={14} /> Post Startup
               </Link>
@@ -387,7 +387,7 @@ export const BusinessPage: React.FC = () => {
             <div className="p-10 text-center card-base space-y-3.5">
               <Compass size={32} className="mx-auto text-slate-400" />
               <p className="text-sm text-slate-500">No startups listed yet. Be the first to launch!</p>
-              <Link to="/startups/create" className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg text-xs sm:text-sm py-2 px-4 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer">
+              <Link to="/startups/create" className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg text-xs sm:text-sm py-2 px-4 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer">
                 <Plus size={14} /> Post Startup
               </Link>
             </div>
@@ -898,7 +898,7 @@ export const BusinessPage: React.FC = () => {
                           ) : (
                             <button
                               onClick={() => handleConnectClick(targetUserObj)}
-                              className="px-3.5 py-1.5 rounded-lg bg-[#34a1eb] hover:bg-[#2892d7] text-white text-xs font-semibold transition-colors cursor-pointer"
+                              className="px-3.5 py-1.5 rounded-lg bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white text-xs font-semibold transition-colors cursor-pointer"
                             >
                               + Connect
                             </button>

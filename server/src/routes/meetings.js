@@ -1,6 +1,6 @@
 import express from 'express';
 import { prisma } from '../db.js';
-import { requireAuth, optionalAuth } from '../middleware/auth.js';
+import { requireAuth, optionalAuth, isUserAdminCheck } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -142,12 +142,30 @@ router.get('/:roomCode', optionalAuth, async (req, res) => {
           status: 'ACTIVE',
           scheduledAt: new Date(),
           durationMinutes: 45,
-          host: req.user || { email: 'Host' },
+          host: req.user ? { profile: req.user.profile } : { email: 'Host' },
         },
       });
     }
 
-    return res.json({ meeting });
+    const isParticipant = req.user && (
+      req.user.id === meeting.hostId ||
+      req.user.id === meeting.guestId ||
+      isUserAdminCheck(req.user)
+    );
+
+    const safeMeeting = {
+      ...meeting,
+      host: meeting.host ? {
+        ...meeting.host,
+        email: isParticipant ? meeting.host.email : undefined,
+      } : null,
+      guest: meeting.guest ? {
+        ...meeting.guest,
+        email: isParticipant ? meeting.guest.email : undefined,
+      } : null,
+    };
+
+    return res.json({ meeting: safeMeeting });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to get meeting room.' });
   }
@@ -159,9 +177,26 @@ router.put('/:id/status', requireAuth, async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
+    const meeting = await prisma.videoMeeting.findUnique({ where: { id } });
+    if (!meeting) {
+      return res.status(404).json({ error: 'Meeting not found.' });
+    }
+
+    const isParticipant = meeting.hostId === req.user.id || meeting.guestId === req.user.id;
+    const isAdmin = isUserAdminCheck(req.user);
+    if (!isParticipant && !isAdmin) {
+      return res.status(403).json({ error: 'You do not have permission to modify this meeting.' });
+    }
+
+    const allowedStatuses = new Set(['SCHEDULED', 'ACTIVE', 'COMPLETED', 'CANCELLED']);
+    const upperStatus = String(status || '').toUpperCase().trim();
+    if (!allowedStatuses.has(upperStatus)) {
+      return res.status(400).json({ error: 'Invalid meeting status.' });
+    }
+
     const updated = await prisma.videoMeeting.update({
       where: { id },
-      data: { status },
+      data: { status: upperStatus },
     });
 
     return res.json({ meeting: updated });

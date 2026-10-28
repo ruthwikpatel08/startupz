@@ -1067,7 +1067,7 @@ export const FindCoFounderPage: React.FC = () => {
                         ) : (
                           <button
                             onClick={() => setConnectUser(cand)}
-                            className="px-3.5 py-1.5 rounded-lg bg-[#34a1eb] hover:bg-[#2892d7] text-white text-xs font-semibold transition-colors cursor-pointer"
+                            className="px-3.5 py-1.5 rounded-lg bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white text-xs font-semibold transition-colors cursor-pointer"
                           >
                             + Connect
                           </button>

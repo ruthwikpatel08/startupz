@@ -60,6 +60,9 @@ export function mapSupabaseToAppUser(
   profileRow?: any
 ): User {
   const metadata = authUser.user_metadata || {};
+  // The persisted profile wins over stale signup metadata. Missing flags on
+  // legacy profiles retain access; a new account without a profile needs setup.
+  const onboardingCompleted = profileRow?.onboarding_completed ?? metadata.onboarding_completed ?? Boolean(profileRow);
   const isGoogle =
     authUser.app_metadata?.provider === 'google' ||
     authUser.identities?.some((id) => id.provider === 'google') ||
@@ -109,8 +112,8 @@ export function mapSupabaseToAppUser(
     usernameChangedAt: profileRow?.username_changed_at ?? profileRow?.usernameChangedAt ?? metadata.username_changed_at ?? null,
     username_changed_at: profileRow?.username_changed_at ?? profileRow?.usernameChangedAt ?? metadata.username_changed_at ?? null,
     isCategorySelected: profileRow?.is_category_selected === true,
-    onboardingCompleted: profileRow?.onboarding_completed !== false && metadata.onboarding_completed !== false,
-    onboarding_completed: profileRow?.onboarding_completed !== false && metadata.onboarding_completed !== false,
+    onboardingCompleted,
+    onboarding_completed: onboardingCompleted,
     createdAt: profileRow?.created_at || authUser.created_at,
     updatedAt: profileRow?.updated_at || authUser.updated_at,
   };
@@ -135,8 +138,8 @@ export function mapSupabaseToAppUser(
       authUser.email?.toLowerCase() === 'admin@startupz.com' ||
       profile.username?.toLowerCase() === 'ruthwikpatel08' ||
       profile.username?.toLowerCase() === 'gokulvamshi',
-    onboardingCompleted: profileRow?.onboarding_completed !== false && metadata.onboarding_completed !== false,
-    onboarding_completed: profileRow?.onboarding_completed !== false && metadata.onboarding_completed !== false,
+    onboardingCompleted,
+    onboarding_completed: onboardingCompleted,
     createdAt: authUser.created_at,
     updatedAt: authUser.updated_at,
     profile,

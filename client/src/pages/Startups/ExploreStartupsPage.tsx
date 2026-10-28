@@ -370,7 +370,7 @@ export const ExploreStartupsPage: React.FC = () => {
 
         <Link
           to="/startups/create"
-          className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg inline-flex items-center gap-2 text-xs font-semibold py-2 px-3.5 transition-colors shrink-0"
+          className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg inline-flex items-center gap-2 text-xs font-semibold py-2 px-3.5 transition-colors shrink-0"
         >
           <Plus size={15} /> Publish Startup Venture
         </Link>
@@ -492,7 +492,7 @@ export const ExploreStartupsPage: React.FC = () => {
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
               <Link
                 to="/startups/create"
-                className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg inline-flex items-center gap-2 text-xs font-semibold py-2 px-3.5 transition-colors"
+                className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg inline-flex items-center gap-2 text-xs font-semibold py-2 px-3.5 transition-colors"
               >
                 <Plus size={14} /> Publish a Startup Venture
               </Link>

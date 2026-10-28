@@ -5,7 +5,7 @@ import { SEO } from '../../components/common/SEO';
 
 export const PrivacyNoticePage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F17] py-12 px-4 sm:px-6 lg:px-8 transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-[var(--bg-primary)] py-12 px-4 sm:px-6 lg:px-8 transition-colors">
       <SEO
         title="Privacy Notice — Digital Personal Data Protection (DPDP) Act Compliance"
         description="HookZ Privacy Notice detailing data collection, processing purposes, retention, third-party sharing, user rights, and grievance redressal under the Digital Personal Data Protection Act, 2023."

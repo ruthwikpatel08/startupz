@@ -1,0 +1,994 @@
+--- a/client/index.html
++++ b/client/index.html
+@@ -11,7 +11,7 @@
+   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+   <meta name="author" content="HookZ" />
+   <meta name="application-name" content="HookZ" />
+-  <meta name="theme-color" content="#4f46e5" />
++  <meta name="theme-color" content="#7047eb" />
+ 
+   <!-- Open Graph / Facebook / LinkedIn -->
+   <meta property="og:site_name" content="HookZ" />
+@@ -79,7 +79,7 @@
+ 
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
++  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Inter+Tight:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+ </head>
+ 
+ <body
+--- a/client/src/components/common/Avatar.tsx
++++ b/client/src/components/common/Avatar.tsx
+@@ -36,14 +36,14 @@
+     !src.includes('avataaars')
+   );
+ 
+-  const cleanName = (name || 'Startup Builder').trim();
++  const cleanName = (name || 'HookZ Builder').trim();
+   const initials = cleanName
+     .split(' ')
+     .filter(Boolean)
+     .map((n) => n[0])
+     .join('')
+     .substring(0, 2)
+-    .toUpperCase() || 'SZ';
++    .toUpperCase() || 'HZ';
+ 
+   const sizeCls = sizeClasses[size] || sizeClasses.md;
+ 
+--- a/client/src/components/common/Footer.tsx
++++ b/client/src/components/common/Footer.tsx
+@@ -31,7 +31,7 @@
+               </span>
+             </Link>
+             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm">
+-              The dedicated professional network connecting founders, talent, mentors, and investors in one structured ecosystem.
++              Find your hackathon teammates, build something together, and share work you're proud of. Made for student builders.
+             </p>
+             <div className="flex items-center gap-3 text-slate-400">
+               <a href="https://twitter.com" target="_blank" rel="noreferrer" className="hover:text-brand-600 transition-colors" aria-label="Twitter"><Globe size={15} /></a>
+--- a/client/src/components/common/Modal.tsx
++++ b/client/src/components/common/Modal.tsx
+@@ -1,4 +1,4 @@
+-import React, { useEffect } from 'react';
++import React, { useEffect, useRef, useId } from 'react';
+ import { createPortal } from 'react-dom';
+ import { X } from 'lucide-react';
+ 
+@@ -17,19 +17,22 @@
+   children,
+   maxWidth = 'md',
+ }) => {
++  const dialogRef = useRef<HTMLDialogElement>(null);
++  const titleId = useId();
+   useEffect(() => {
+-    const handleKeyDown = (e: KeyboardEvent) => {
+-      if (e.key === 'Escape') onClose();
+-    };
+     if (isOpen) {
++      const dialog = dialogRef.current;
++      const previousFocus = document.activeElement as HTMLElement | null;
++      dialog?.showModal();
++      const previousOverflow = document.body.style.overflow;
+       document.body.style.overflow = 'hidden';
+-      window.addEventListener('keydown', handleKeyDown);
++      return () => {
++        dialog?.close();
++        document.body.style.overflow = previousOverflow;
++        if (previousFocus?.isConnected) previousFocus.focus();
++      };
+     }
+-    return () => {
+-      document.body.style.overflow = 'unset';
+-      window.removeEventListener('keydown', handleKeyDown);
+-    };
+-  }, [isOpen, onClose]);
++  }, [isOpen]);
+ 
+   if (!isOpen) return null;
+ 
+@@ -43,19 +46,16 @@
+   };
+ 
+   const modalElement = (
+-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+-      {/* Backdrop */}
+-      <div
+-        className="fixed inset-0 bg-slate-900/50 backdrop-blur-[2px] transition-opacity"
+-        onClick={onClose}
+-      />
++    <dialog ref={dialogRef} aria-labelledby={titleId} onCancel={onClose}
++      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
++      className="m-auto p-4 sm:p-6 bg-transparent text-inherit border-0 w-full max-w-none max-h-none backdrop:bg-slate-950/60 backdrop:backdrop-blur-sm">
+ 
+       {/* Modal Dialog */}
+       <div
+-        className={`relative w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-dark-900 rounded-xl shadow-modal border border-slate-200 dark:border-slate-800 p-6 z-10 transition-all my-auto max-h-[90vh] overflow-y-auto`}
++        className={`relative w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-dark-900 rounded-2xl shadow-modal border border-slate-200 dark:border-slate-800 p-6 z-10 animate-fade-in mx-auto max-h-[85dvh] overflow-y-auto`}
+       >
+         <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-200 dark:border-slate-800">
+-          <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white tracking-tight">{title}</h3>
++          <h3 id={titleId} className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white tracking-tight">{title}</h3>
+           <button
+             onClick={onClose}
+             className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+@@ -66,7 +66,7 @@
+         </div>
+         <div>{children}</div>
+       </div>
+-    </div>
++    </dialog>
+   );
+ 
+   return typeof document !== 'undefined'
+--- a/client/src/components/common/Navbar.tsx
++++ b/client/src/components/common/Navbar.tsx
+@@ -184,7 +184,7 @@
+ 
+   return (
+     <>
+-      <header className="fixed top-0 left-0 right-0 z-40 w-full bg-white dark:bg-[#0F1624] border-b border-slate-200/80 dark:border-white/[0.08] transition-colors">
++      <header className="fixed top-0 left-0 right-0 z-40 w-full bg-white dark:bg-[var(--bg-surface)] border-b border-slate-200/80 dark:border-white/[0.08] transition-colors">
+         <div className="w-full px-2.5 sm:px-6 lg:px-6">
+           <div className="flex items-center justify-between h-14 gap-2 sm:gap-4 w-full">
+             
+@@ -295,7 +295,7 @@
+                   {/* Post Idea Action Button */}
+                   <Link
+                     to="/startups/create"
+-                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 border border-[#34a1eb] shadow-subtle transition-colors"
++                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 border border-[var(--brand-primary)] shadow-subtle transition-colors"
+                   >
+                     <Plus size={13} />
+                     <span>Post Idea</span>
+@@ -411,6 +411,11 @@
+                               <Settings size={14} className="text-slate-400" />
+                               <span>Settings</span>
+                             </Link>
++                            <button type="button" onClick={toggleTheme} aria-pressed={theme === 'dark'}
++                              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800">
++                              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
++                              <span>{theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}</span>
++                            </button>
+                           </div>
+ 
+                           <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
+@@ -670,7 +675,7 @@
+                   <Link
+                     to="/startups/create"
+                     onClick={() => setMobileMenuOpen(false)}
+-                    className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-md text-center py-1.5 text-xs font-semibold transition-colors"
++                    className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-md text-center py-1.5 text-xs font-semibold transition-colors"
+                   >
+                     + Post Idea
+                   </Link>
+--- a/client/src/components/common/Sidebar.tsx
++++ b/client/src/components/common/Sidebar.tsx
+@@ -52,12 +52,12 @@
+   const isOpportunitiesActive = location.pathname.startsWith('/opportunities');
+ 
+   return (
+-    <aside className="hidden lg:flex flex-col w-60 xl:w-64 shrink-0 border-r border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#0F1624] fixed left-0 top-14 bottom-0 h-[calc(100vh-3.5rem)] py-4 px-3 select-none z-30 transition-colors overflow-y-auto">
++    <aside className="hidden lg:flex flex-col w-60 xl:w-64 shrink-0 border-r border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[var(--bg-surface)] fixed left-0 top-14 bottom-0 h-[calc(100vh-3.5rem)] py-4 px-3 select-none z-30 transition-colors overflow-y-auto">
+       
+       {/* Primary 5 Tools Vertical Nav */}
+       <div className="space-y-1.5">
+         <div className="px-3.5 pb-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+-          Core Platform Tools
++          Your workspace
+         </div>
+ 
+         {/* 1) Home */}
+@@ -133,7 +133,7 @@
+       <div className="mt-auto pt-4 border-t border-slate-100 dark:border-dark-800 space-y-2">
+         <Link
+           to="/projects"
+-          className="w-full py-2.5 px-3.5 rounded-lg text-sm font-semibold text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 border border-[#34a1eb] shadow-subtle flex items-center justify-center gap-2 transition-colors"
++          className="w-full py-2.5 px-3.5 rounded-lg text-sm font-semibold text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 border border-[var(--brand-primary)] shadow-subtle flex items-center justify-center gap-2 transition-colors"
+         >
+           <Plus size={15} />
+           <span>New Builder Project</span>
+--- a/client/src/index.css
++++ b/client/src/index.css
+@@ -3,188 +3,109 @@
+ @tailwind utilities;
+ 
+ :root {
+-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+-  color-scheme: light dark;
+-
+-  --bg-primary: #F8FAFC;
+-  --bg-surface: #FFFFFF;
+-  --text-primary: #0F172A;
+-  --text-secondary: #334155;
+-  --text-muted: #64748B;
+-  --border-subtle: #E2E8F0;
+-  --brand-primary: #4F46E5;
+-  --brand-hover: #4338CA;
+-  --status-success: #16803C;
+-  --status-warning: #B7791F;
+-  --status-error: #C53030;
++  font-family: 'Inter', system-ui, sans-serif;
++  color-scheme: light;
++  --bg-primary: #f7f7fb;
++  --bg-surface: #ffffff;
++  --bg-soft: #eeedf5;
++  --text-primary: #201d32;
++  --text-secondary: #555168;
++  --text-muted: #716c83;
++  --border-subtle: #e4e1ed;
++  --brand-primary: #7047eb;
++  --brand-hover: #5b32cf;
++  --brand-soft: #f0ebff;
++  --secondary: #e8b8a2;
++  --accent: #d5f478;
++  --status-success: #18734e;
++  --status-warning: #936314;
++  --status-error: #c13450;
++  --font-display: 'Inter Tight', 'Inter', system-ui, sans-serif;
++  --text-xs: .75rem;
++  --text-sm: .875rem;
++  --text-body: 1rem;
++  --text-title: clamp(2rem, 4vw, 3.5rem);
++  --text-display: clamp(3.25rem, 6vw, 6rem);
++  --space-1: .25rem;
++  --space-2: .5rem;
++  --space-3: .75rem;
++  --space-4: 1rem;
++  --space-6: 1.5rem;
++  --space-8: 2rem;
++  --space-12: 3rem;
++  --space-16: 4rem;
++  --radius-sm: .5rem;
++  --radius-md: .75rem;
++  --radius-lg: 1rem;
++  --radius-xl: 1.5rem;
++  --shadow-sm: 0 2px 4px #21133706, 0 0 0 1px #21133702;
++  --shadow-md: 0 10px 30px -16px #37245326;
++  --shadow-lg: 0 28px 80px -30px #37245340;
++  --ease-out: cubic-bezier(.22, 1, .36, 1);
++  --ease-spring: cubic-bezier(.2, .8, .2, 1.15);
++  --motion-fast: 160ms;
++  --motion-normal: 280ms;
+ }
+-
+ .dark {
+-  --bg-primary: #090D16;
+-  --bg-surface: #0F1624;
+-  --text-primary: #F8FAFC;
+-  --text-secondary: #94A3B8;
+-  --text-muted: #64748B;
+-  --border-subtle: rgba(255, 255, 255, 0.08);
++  color-scheme: dark;
++  --bg-primary: #121019;
++  --bg-surface: #1b1825;
++  --bg-soft: #262132;
++  --text-primary: #f4f1fc;
++  --text-secondary: #c2bcd2;
++  --text-muted: #a29ab6;
++  --border-subtle: #363044;
++  --brand-primary: #a98aff;
++  --brand-hover: #bba3ff;
++  --brand-soft: #2b2046;
++  --shadow-sm: 0 2px 4px #0002;
++  --shadow-md: 0 10px 30px -16px #0008;
++  --shadow-lg: 0 28px 80px -30px #000b;
+ }
+-
+-html {
+-  box-sizing: border-box;
+-  overflow-x: hidden;
+-  max-width: 100%;
+-  width: 100%;
++@layer base {
++  * { box-sizing: border-box; }
++  body { margin: 0; min-width: 320px; background: var(--bg-primary); color: var(--text-primary); -webkit-font-smoothing: antialiased; }
++  #root { min-height: 100vh; isolation: isolate; }
++  h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; letter-spacing: -.035em; }
++  p, h1, h2, h3, h4, h5, h6 { overflow-wrap: break-word; }
++  img, video, canvas, svg, iframe { max-width: 100%; }
++  button, input, select, textarea { font: inherit; }
++  button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
++  button:not(:disabled), summary { cursor: pointer; }
++  :focus-visible { outline: 3px solid var(--brand-primary); outline-offset: 4px; }
++  ::selection { background: #d5f478; color: #201d32; }
+ }
+-
+-*, *:before, *:after {
+-  box-sizing: inherit;
++@layer components {
++  .btn-primary, .btn-secondary, .btn-tertiary, .btn-danger {
++    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl disabled:opacity-50 disabled:pointer-events-none;
++    transition: transform var(--motion-fast) var(--ease-spring), background var(--motion-fast), box-shadow var(--motion-fast);
++  }
++  .btn-primary { color: white; background: linear-gradient(165deg, #8359f4, #6638dd); box-shadow: inset 0 1px 0 #ffffff40, 0 3px 7px #7047eb26; border: 1px solid #ffffff18; }
++  .btn-primary:hover { background: linear-gradient(165deg, #7446ea, #592bc8); box-shadow: 0 5px 14px #7047eb33; transform: translateY(-2px); }
++  .btn-secondary { color: var(--text-primary); background: var(--bg-surface); border: 1px solid var(--border-subtle); box-shadow: var(--shadow-sm); }
++  .btn-secondary:hover { background: var(--bg-soft); transform: translateY(-2px); }
++  .btn-tertiary { color: var(--text-secondary); }
++  .btn-tertiary:hover { background: var(--bg-soft); }
++  .btn-danger { @apply text-white bg-rose-600 hover:bg-rose-700; }
++  .input-base { @apply w-full px-3.5 py-2.5 text-sm rounded-xl; color: var(--text-primary); background: var(--bg-surface); border: 1px solid var(--border-subtle); transition: border-color var(--motion-fast), box-shadow var(--motion-fast); }
++  .input-base::placeholder { color: var(--text-muted); }
++  .input-base:focus { border-color: var(--brand-primary); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary) 15%, transparent); }
++  .card-base { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); transition: border-color var(--motion-normal), box-shadow var(--motion-normal); }
++  .card-base:hover { border-color: color-mix(in srgb, var(--brand-primary) 30%, var(--border-subtle)); box-shadow: var(--shadow-md); }
++  .brand-wordmark { display: inline-flex; align-items: center; gap: .65rem; font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; letter-spacing: -.07em; color: var(--text-primary); }
++  .brand-wordmark img { width: 32px; height: 32px; object-fit: contain; }
++  .theme-surface { background: var(--bg-surface); color: var(--text-primary); }
++  .theme-page { background: var(--bg-primary); color: var(--text-primary); }
++  .theme-muted { color: var(--text-muted); }
++  .theme-grid { background-image: linear-gradient(var(--border-subtle) 1px, transparent 1px), linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px); background-size: 64px 64px; }
++  .skip-link { position: fixed; top: 8px; left: 8px; z-index: 100; transform: translateY(-160%); }
++  .skip-link:focus { transform: translateY(0); }
++  .skip-link:not(:focus) { clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; white-space: nowrap; padding: 0; }
+ }
+-
+-body {
+-  margin: 0;
+-  padding: 0;
+-  min-width: 320px;
+-  width: 100%;
+-  max-width: 100%;
+-  min-height: 100vh;
+-  overflow-x: hidden;
+-  background-color: var(--bg-primary);
+-  color: var(--text-primary);
+-  -webkit-font-smoothing: antialiased;
+-  -moz-osx-font-smoothing: grayscale;
++::-webkit-scrollbar { width: 6px; height: 6px; }
++::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 8px; }
++.no-scrollbar { scrollbar-width: none; }
++.no-scrollbar::-webkit-scrollbar { display: none; }
++@media (prefers-reduced-motion: reduce) {
++  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+ }
+-
+-#root {
+-  width: 100%;
+-  max-width: 100%;
+-  overflow-x: hidden;
+-  min-height: 100vh;
+-  position: relative;
+-}
+-
+-/* Prevent horizontal overflow across all laptop viewports & screen sizes */
+-img, video, canvas, svg, iframe, embed, object {
+-  max-width: 100%;
+-}
+-
+-pre, code, table {
+-  max-width: 100%;
+-}
+-
+-p, h1, h2, h3, h4, h5, h6, span {
+-  overflow-wrap: break-word;
+-}
+-
+-/* Light Theme Font Thickness & Rich Appearance */
+-html:not(.dark) body {
+-  font-weight: 500;
+-  color: #0F172A;
+-  -webkit-font-smoothing: subpixel-antialiased;
+-  -moz-osx-font-smoothing: auto;
+-}
+-
+-html:not(.dark) p,
+-html:not(.dark) span,
+-html:not(.dark) label,
+-html:not(.dark) li,
+-html:not(.dark) a {
+-  font-weight: 500;
+-}
+-
+-html:not(.dark) h1:not([class*="text-white"]):not([class*="text-["]):not([class*="text-brand"]):not([class*="hlp-"]):not(.hlp-root *),
+-html:not(.dark) h2:not([class*="text-white"]):not([class*="text-["]):not([class*="text-brand"]):not([class*="hlp-"]):not(.hlp-root *),
+-html:not(.dark) h3:not([class*="text-white"]):not([class*="text-["]):not([class*="text-brand"]):not([class*="hlp-"]):not(.hlp-root *),
+-html:not(.dark) h4:not([class*="text-white"]):not([class*="text-["]):not([class*="text-brand"]):not([class*="hlp-"]):not(.hlp-root *),
+-html:not(.dark) h5:not([class*="text-white"]):not([class*="text-["]):not([class*="text-brand"]):not([class*="hlp-"]):not(.hlp-root *),
+-html:not(.dark) h6:not([class*="text-white"]):not([class*="text-["]):not([class*="text-brand"]):not([class*="hlp-"]):not(.hlp-root *) {
+-  font-weight: 700;
+-  color: #0F172A;
+-}
+-
+-html:not(.dark) .text-slate-500,
+-html:not(.dark) .text-slate-600 {
+-  color: #334155;
+-  font-weight: 500;
+-}
+-
+-html:not(.dark) .text-slate-400 {
+-  color: #475569;
+-}
+-
+-/* Logos & Brand Names - Extra Thick & Bold */
+-.startupz-logo-title,
+-.brand-logo-text,
+-[data-logo="true"] {
+-  font-weight: 800 !important;
+-  letter-spacing: -0.025em;
+-}
+-
+-/* System Logs, Code, and Badges - Thick and Crisp */
+-code,
+-pre,
+-.log-text,
+-[data-log="true"],
+-.font-mono {
+-  font-weight: 600 !important;
+-  letter-spacing: 0.015em;
+-}
+-
+-/* Subtle, elegant scrollbars */
+-::-webkit-scrollbar {
+-  width: 5px;
+-  height: 5px;
+-}
+-::-webkit-scrollbar-track {
+-  background: transparent;
+-}
+-::-webkit-scrollbar-thumb {
+-  background: rgba(152, 162, 179, 0.4);
+-  border-radius: 4px;
+-}
+-::-webkit-scrollbar-thumb:hover {
+-  background: rgba(152, 162, 179, 0.7);
+-}
+-
+-.dark ::-webkit-scrollbar-thumb {
+-  background: rgba(102, 112, 133, 0.4);
+-}
+-.dark ::-webkit-scrollbar-thumb:hover {
+-  background: rgba(102, 112, 133, 0.7);
+-}
+-
+-/* Scrollbar utilities */
+-.no-scrollbar::-webkit-scrollbar {
+-  display: none;
+-}
+-.no-scrollbar {
+-  -ms-overflow-style: none;
+-  scrollbar-width: none;
+-}
+-
+-@layer components {
+-  /* HookZ Button System */
+-  .btn-primary {
+-    @apply inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 active:bg-brand-800 rounded-lg shadow-[0_1px_2px_rgba(79,70,229,0.15)] transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none;
+-  }
+-
+-  .btn-secondary {
+-    @apply inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#0F1624] hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-slate-200/80 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.14] rounded-lg shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none;
+-  }
+-
+-  .btn-tertiary {
+-    @apply inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-lg transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none;
+-  }
+-
+-  .btn-danger {
+-    @apply inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-sm transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none;
+-  }
+-
+-  /* HookZ Input System */
+-  .input-base {
+-    @apply w-full px-3 py-2 text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-[#0F1624] border border-slate-200/80 dark:border-white/[0.08] rounded-lg placeholder:text-slate-400 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors duration-150;
+-  }
+-
+-  /* HookZ Card System */
+-  .card-base {
+-    @apply bg-white dark:bg-[#0F1624] border border-slate-200/80 dark:border-white/[0.08] rounded-xl shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-slate-300/80 dark:hover:border-white/[0.14] transition-colors duration-150;
+-  }
+-}
+--- a/client/src/pages/Business/BusinessPage.tsx
++++ b/client/src/pages/Business/BusinessPage.tsx
+@@ -304,7 +304,7 @@
+           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
+             activeTab === 'startups'
+               ? 'bg-indigo-50/80 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800/60 shadow-xs font-semibold'
+-              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
++              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+           }`}
+         >
+           <Compass size={15} className={`shrink-0 ${activeTab === 'startups' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
+@@ -320,7 +320,7 @@
+           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
+             activeTab === 'network'
+               ? 'bg-indigo-50/80 text-indigo-700 border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300 dark:border-indigo-800/60 shadow-xs font-semibold'
+-              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
++              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+           }`}
+         >
+           <Users size={15} className={`shrink-0 ${activeTab === 'network' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
+@@ -337,7 +337,7 @@
+           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
+             activeTab === 'graveyard'
+               ? 'bg-rose-50/80 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-900/60 shadow-xs font-semibold'
+-              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
++              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+           }`}
+         >
+           <Skull size={15} className={`shrink-0 ${activeTab === 'graveyard' ? 'text-rose-600 dark:text-rose-400' : 'text-slate-400'}`} />
+@@ -364,7 +364,7 @@
+             <div className="flex items-center gap-2 shrink-0">
+               <Link
+                 to="/startups/create"
+-                className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg text-xs sm:text-sm py-2 px-3.5 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
++                className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg text-xs sm:text-sm py-2 px-3.5 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+               >
+                 <Plus size={14} /> Post Startup
+               </Link>
+@@ -387,7 +387,7 @@
+             <div className="p-10 text-center card-base space-y-3.5">
+               <Compass size={32} className="mx-auto text-slate-400" />
+               <p className="text-sm text-slate-500">No startups listed yet. Be the first to launch!</p>
+-              <Link to="/startups/create" className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg text-xs sm:text-sm py-2 px-4 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer">
++              <Link to="/startups/create" className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg text-xs sm:text-sm py-2 px-4 font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer">
+                 <Plus size={14} /> Post Startup
+               </Link>
+             </div>
+@@ -898,7 +898,7 @@
+                           ) : (
+                             <button
+                               onClick={() => handleConnectClick(targetUserObj)}
+-                              className="px-3.5 py-1.5 rounded-lg bg-[#34a1eb] hover:bg-[#2892d7] text-white text-xs font-semibold transition-colors cursor-pointer"
++                              className="px-3.5 py-1.5 rounded-lg bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white text-xs font-semibold transition-colors cursor-pointer"
+                             >
+                               + Connect
+                             </button>
+--- a/client/src/pages/CoFounders/FindCoFounderPage.tsx
++++ b/client/src/pages/CoFounders/FindCoFounderPage.tsx
+@@ -1067,7 +1067,7 @@
+                         ) : (
+                           <button
+                             onClick={() => setConnectUser(cand)}
+-                            className="px-3.5 py-1.5 rounded-lg bg-[#34a1eb] hover:bg-[#2892d7] text-white text-xs font-semibold transition-colors cursor-pointer"
++                            className="px-3.5 py-1.5 rounded-lg bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white text-xs font-semibold transition-colors cursor-pointer"
+                           >
+                             + Connect
+                           </button>
+--- a/client/src/pages/Feed/StartupFeedPage.tsx
++++ b/client/src/pages/Feed/StartupFeedPage.tsx
+@@ -1481,8 +1481,8 @@
+           onClick={() => handlePillarChange('ACHIEVEMENTS')}
+           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
+             activePillar === 'ACHIEVEMENTS'
+-              ? 'bg-[#50C878] text-white border-[#50C878] dark:bg-[#50C878] dark:text-white dark:border-[#50C878] shadow-xs font-semibold'
+-              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
++              ? 'bg-brand-600 text-white border-brand-600 dark:bg-brand-600 dark:text-white dark:border-brand-600 shadow-xs font-semibold'
++              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+           }`}
+         >
+           <Award size={15} className={`shrink-0 ${activePillar === 'ACHIEVEMENTS' ? 'text-white' : 'text-slate-400'}`} />
+@@ -1497,8 +1497,8 @@
+           onClick={() => handlePillarChange('IDEAS')}
+           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
+             activePillar === 'IDEAS'
+-              ? 'bg-[#50C878] text-white border-[#50C878] dark:bg-[#50C878] dark:text-white dark:border-[#50C878] shadow-xs font-semibold'
+-              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
++              ? 'bg-brand-600 text-white border-brand-600 dark:bg-brand-600 dark:text-white dark:border-brand-600 shadow-xs font-semibold'
++              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+           }`}
+         >
+           <Rocket size={15} className={`shrink-0 ${activePillar === 'IDEAS' ? 'text-white' : 'text-slate-400'}`} />
+@@ -1513,8 +1513,8 @@
+           onClick={() => handlePillarChange('PROTOTYPES')}
+           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
+             activePillar === 'PROTOTYPES'
+-              ? 'bg-[#50C878] text-white border-[#50C878] dark:bg-[#50C878] dark:text-white dark:border-[#50C878] shadow-xs font-semibold'
+-              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
++              ? 'bg-brand-600 text-white border-brand-600 dark:bg-brand-600 dark:text-white dark:border-brand-600 shadow-xs font-semibold'
++              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+           }`}
+         >
+           <Boxes size={15} className={`shrink-0 ${activePillar === 'PROTOTYPES' ? 'text-white' : 'text-slate-400'}`} />
+@@ -1696,7 +1696,7 @@
+             className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+               filterType === item.id
+                 ? 'bg-slate-900 text-white dark:bg-[#1E293B] dark:text-[#F8FAFC] shadow-xs'
+-                : 'bg-white dark:bg-[#0F1624] border border-slate-200/80 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40'
++                : 'bg-white dark:bg-[var(--bg-surface)] border border-slate-200/80 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40'
+             }`}
+           >
+             {item.label}
+--- a/client/src/pages/LandingPage.tsx
++++ b/client/src/pages/LandingPage.tsx
+@@ -573,7 +573,7 @@
+                             ) : (
+                               <button
+                                 onClick={() => handleConnectClick(targetUserObj)}
+-                                className="px-3.5 py-1.5 rounded-lg bg-[#34a1eb] hover:bg-[#2892d7] text-white text-xs font-semibold transition-colors cursor-pointer"
++                                className="px-3.5 py-1.5 rounded-lg bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white text-xs font-semibold transition-colors cursor-pointer"
+                               >
+                                 + Connect
+                               </button>
+--- a/client/src/pages/Legal/DSARPage.tsx
++++ b/client/src/pages/Legal/DSARPage.tsx
+@@ -162,7 +162,7 @@
+   };
+ 
+   return (
+-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F17] py-12 px-4 sm:px-6 lg:px-8 transition-colors">
++    <div className="min-h-screen bg-slate-50 dark:bg-[var(--bg-primary)] py-12 px-4 sm:px-6 lg:px-8 transition-colors">
+       <SEO
+         title="Data Subject Rights (DSAR) Portal — HookZ DPDP Act Compliance"
+         description="Exercise your statutory rights under the Digital Personal Data Protection Act 2023: Access, Correction, Erasure, Consent Withdrawal, and Nomination."
+--- a/client/src/pages/Legal/PrivacyNoticePage.tsx
++++ b/client/src/pages/Legal/PrivacyNoticePage.tsx
+@@ -5,7 +5,7 @@
+ 
+ export const PrivacyNoticePage: React.FC = () => {
+   return (
+-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F17] py-12 px-4 sm:px-6 lg:px-8 transition-colors">
++    <div className="min-h-screen bg-slate-50 dark:bg-[var(--bg-primary)] py-12 px-4 sm:px-6 lg:px-8 transition-colors">
+       <SEO
+         title="Privacy Notice — Digital Personal Data Protection (DPDP) Act Compliance"
+         description="HookZ Privacy Notice detailing data collection, processing purposes, retention, third-party sharing, user rights, and grievance redressal under the Digital Personal Data Protection Act, 2023."
+--- a/client/src/pages/Legal/TermsPage.tsx
++++ b/client/src/pages/Legal/TermsPage.tsx
+@@ -5,7 +5,7 @@
+ 
+ export const TermsPage: React.FC = () => {
+   return (
+-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F17] py-12 px-4 sm:px-6 lg:px-8 transition-colors">
++    <div className="min-h-screen bg-slate-50 dark:bg-[var(--bg-primary)] py-12 px-4 sm:px-6 lg:px-8 transition-colors">
+       <SEO
+         title="Terms & Conditions — HookZ Platform Terms and Data Protection"
+         description="HookZ Terms of Service including dedicated Data Protection clause under India's Digital Personal Data Protection (DPDP) Act 2023."
+--- a/client/src/pages/Opportunities/OpportunitiesPage.tsx
++++ b/client/src/pages/Opportunities/OpportunitiesPage.tsx
+@@ -1055,7 +1055,7 @@
+           <button
+             type="button"
+             onClick={handleOpenCreateModal}
+-            className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-xl px-3.5 py-2 text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5 transition-colors"
++            className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-xl px-3.5 py-2 text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5 transition-colors"
+           >
+             <Plus size={14} /> Post Opportunity
+           </button>
+@@ -1103,7 +1103,7 @@
+                   }}
+                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                     isSelected
+-                      ? 'bg-[#50C878] text-white border border-[#50C878] shadow-xs'
++                      ? 'bg-brand-600 text-white border border-brand-600 shadow-xs'
+                       : 'bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-dark-700'
+                   }`}
+                 >
+@@ -1127,7 +1127,7 @@
+                 value={search}
+                 onChange={(e) => setSearch(e.target.value)}
+                 placeholder="Search roles, skills, startups..."
+-                className="w-full h-10 pl-10 pr-3.5 text-sm rounded-lg bg-white dark:bg-[#0F1624] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors"
++                className="w-full h-10 pl-10 pr-3.5 text-sm rounded-lg bg-white dark:bg-[var(--bg-surface)] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors"
+               />
+             </div>
+ 
+@@ -1135,7 +1135,7 @@
+               <select
+                 value={role}
+                 onChange={(e) => setRole(e.target.value)}
+-                className="w-full h-10 px-3 text-sm rounded-lg bg-white dark:bg-[#0F1624] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors cursor-pointer"
++                className="w-full h-10 px-3 text-sm rounded-lg bg-white dark:bg-[var(--bg-surface)] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors cursor-pointer"
+               >
+                 {roles.map((r) => (
+                   <option key={r} value={r}>
+@@ -1149,7 +1149,7 @@
+               <select
+                 value={workplaceType}
+                 onChange={(e) => setWorkplaceType(e.target.value)}
+-                className="w-full h-10 px-3 text-sm rounded-lg bg-white dark:bg-[#0F1624] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors cursor-pointer"
++                className="w-full h-10 px-3 text-sm rounded-lg bg-white dark:bg-[var(--bg-surface)] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors cursor-pointer"
+               >
+                 {workplaces.map((w) => (
+                   <option key={w} value={w}>
+@@ -1163,7 +1163,7 @@
+               <select
+                 value={commitment}
+                 onChange={(e) => setCommitment(e.target.value)}
+-                className="w-full h-10 px-3 text-sm rounded-lg bg-white dark:bg-[#0F1624] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors cursor-pointer"
++                className="w-full h-10 px-3 text-sm rounded-lg bg-white dark:bg-[var(--bg-surface)] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors cursor-pointer"
+               >
+                 {commitments.map((c) => (
+                   <option key={c} value={c}>
+--- a/client/src/pages/Profile/ProfilePage.tsx
++++ b/client/src/pages/Profile/ProfilePage.tsx
+@@ -1,6 +1,7 @@
+ import React, { useEffect, useState, useRef } from 'react';
+ import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
+ import { useAuth } from '../../context/AuthContext';
++import { useTheme } from '../../context/ThemeContext';
+ import { api, clearApiCache } from '../../services/api';
+ import { User, Profile } from '../../types';
+ import {
+@@ -235,6 +236,7 @@
+   const { id } = useParams<{ id: string }>();
+   const [searchParams] = useSearchParams();
+   const { user: currentUser, updateUser } = useAuth();
++  const { theme, toggleTheme } = useTheme();
+   const navigate = useNavigate();
+ 
+   const [profileUser, setProfileUser] = useState<User | null>(null);
+@@ -1800,7 +1802,7 @@
+   // Skeleton Loading State
+   if (loading) {
+     return (
+-      <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 font-sans">
++      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 font-sans">
+         <div className="max-w-6xl mx-auto space-y-6 animate-pulse">
+           <div className="h-64 rounded-2xl bg-slate-200 dark:bg-slate-800" />
+           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+@@ -1820,16 +1822,16 @@
+ 
+   if (!profileUser) {
+     return (
+-      <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 py-20 px-4 text-center font-sans">
++      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-20 px-4 text-center font-sans">
+         <SEO title="Profile Not Found | HookZ" noindex={true} />
+-        <div className="max-w-md mx-auto p-8 rounded-2xl bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 shadow-sm space-y-4">
+-          <h2 className="text-xl font-bold text-[#0F172A] dark:text-white">Profile Not Found</h2>
+-          <p className="text-sm text-[#64748B] dark:text-slate-400">
++        <div className="max-w-md mx-auto p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
++          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Profile Not Found</h2>
++          <p className="text-sm text-slate-500 dark:text-slate-400">
+             This founder or member profile is unavailable or may have been removed.
+           </p>
+           <Link
+             to="/cofounders"
+-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-colors"
++            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 transition-colors"
+           >
+             Explore Talent Directory
+           </Link>
+@@ -2516,7 +2518,7 @@
+           </div>
+ 
+           {/* Profile Header Row with solid white background so details never overlap cover image */}
+-          <div className="px-4 sm:px-8 pb-6 pt-3 relative bg-white dark:bg-[#0F1624] border-t border-slate-100 dark:border-white/[0.06] w-full max-w-full overflow-visible z-10">
++          <div className="px-4 sm:px-8 pb-6 pt-3 relative bg-white dark:bg-[var(--bg-surface)] border-t border-slate-100 dark:border-white/[0.06] w-full max-w-full overflow-visible z-10">
+             <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mb-6 w-full min-w-0">
+               
+               {/* Profile Photo */}
+@@ -2527,10 +2529,10 @@
+                       src={avatar!}
+                       alt={displayName}
+                       decoding="async"
+-                      className="w-full h-full rounded-full object-cover border-4 border-white dark:border-[#0F1624] shadow-md bg-white"
++                      className="w-full h-full rounded-full object-cover border-4 border-white dark:border-[var(--bg-surface)] shadow-md bg-white"
+                     />
+                   ) : (
+-                    <div className="w-full h-full rounded-full border-4 border-white dark:border-[#0F1624] shadow-md bg-brand-600 text-white flex flex-col items-center justify-center font-bold">
++                    <div className="w-full h-full rounded-full border-4 border-white dark:border-[var(--bg-surface)] shadow-md bg-brand-600 text-white flex flex-col items-center justify-center font-bold">
+                       <span className="text-2xl sm:text-3xl font-extrabold tracking-wider">{initials}</span>
+                     </div>
+                   )}
+@@ -3376,7 +3378,7 @@
+         <div className="fixed sm:hidden bottom-5 right-5 z-40">
+           <button
+             onClick={handleOpenEdit}
+-            className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold text-white bg-[#4F46E5] hover:bg-[#4338CA] shadow-2xl shadow-indigo-600/60 border border-indigo-400/40 active:scale-95 transition-all cursor-pointer"
++            className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-2xl shadow-indigo-600/60 border border-indigo-400/40 active:scale-95 transition-all cursor-pointer"
+             aria-label="Edit Profile"
+           >
+             <Edit3 size={15} />
+@@ -3388,6 +3390,12 @@
+       {/* EDIT PROFILE MODAL */}
+       {isMe && (
+         <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Edit Profile Details" maxWidth="2xl">
++          <div className="card-base p-4 mb-5 flex items-center justify-between gap-4">
++            <div><h4 className="text-sm font-semibold">Appearance</h4><p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Make HookZ feel like your space.</p></div>
++            <button type="button" role="switch" aria-checked={theme === 'dark'} aria-label="Dark theme" onClick={toggleTheme} className="btn-secondary text-xs">
++              {theme === 'dark' ? 'Dark theme on' : 'Dark theme off'}
++            </button>
++          </div>
+           <form onSubmit={handleSaveProfile} className="space-y-4 font-sans">
+             {/* --- SECTION 1: BASIC INFO --- */}
+             <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
+@@ -4602,7 +4610,7 @@
+         maxWidth="md"
+       >
+         <div className="text-center space-y-4 py-2 font-sans">
+-          <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-[#4F46E5] mx-auto flex items-center justify-center shadow-inner">
++          <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-brand-600 mx-auto flex items-center justify-center shadow-inner">
+             <Camera size={32} />
+           </div>
+           <div className="space-y-2">
+@@ -4611,7 +4619,7 @@
+             </h3>
+             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed px-2">
+               HookZ requires your permission to access your device gallery/photos to select a{' '}
+-              <span className="font-bold text-[#4F46E5]">
++              <span className="font-bold text-brand-600">
+                 {targetImageType === 'avatar' ? 'profile photo' : 'background cover image'}
+               </span>
+               . You will review the selected image before it is kept and saved.
+@@ -4628,7 +4636,7 @@
+             <button
+               type="button"
+               onClick={handleGrantGalleryPermission}
+-              className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-all shadow-md shadow-indigo-500/20 active:scale-95 cursor-pointer"
++              className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 transition-all shadow-md shadow-indigo-500/20 active:scale-95 cursor-pointer"
+             >
+               Allow & Open Gallery
+             </button>
+--- a/client/src/pages/Projects/ProjectsPage.tsx
++++ b/client/src/pages/Projects/ProjectsPage.tsx
+@@ -1922,7 +1922,7 @@
+             }
+             setCreateModalOpen(true);
+           }}
+-          className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg !py-2.5 !px-5 whitespace-nowrap self-start md:self-auto cursor-pointer inline-flex items-center gap-2 font-semibold shadow-xs transition-colors"
++          className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg !py-2.5 !px-5 whitespace-nowrap self-start md:self-auto cursor-pointer inline-flex items-center gap-2 font-semibold shadow-xs transition-colors"
+         >
+           <Plus size={16} />
+           <span>Create Project</span>
+@@ -1990,7 +1990,7 @@
+           </p>
+           <button
+             onClick={() => setCreateModalOpen(true)}
+-            className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg !text-xs !py-1.5 !px-3 inline-flex items-center gap-1 font-semibold transition-colors cursor-pointer"
++            className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg !text-xs !py-1.5 !px-3 inline-flex items-center gap-1 font-semibold transition-colors cursor-pointer"
+           >
+             <Plus size={13} /> Post First Project
+           </button>
+@@ -2421,7 +2421,7 @@
+                       className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer shrink-0 ${
+                         savedProjectIds.has(project.id)
+                           ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-800 dark:border-slate-700'
+-                          : 'bg-white dark:bg-[#0F1624] text-slate-600 border-slate-200/80 dark:border-white/[0.08] dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50'
++                          : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 border-slate-200/80 dark:border-white/[0.08] dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50'
+                       }`}
+                       title={savedProjectIds.has(project.id) ? 'Remove from Saved' : 'Save Project'}
+                     >
+@@ -2439,7 +2439,7 @@
+                           type: 'project',
+                         })
+                       }
+-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 transition-colors cursor-pointer shrink-0"
++                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 transition-colors cursor-pointer shrink-0"
+                       title="Share project with connections"
+                     >
+                       <Share2 size={12} />
+--- a/client/src/pages/Startups/ExploreStartupsPage.tsx
++++ b/client/src/pages/Startups/ExploreStartupsPage.tsx
+@@ -370,7 +370,7 @@
+ 
+         <Link
+           to="/startups/create"
+-          className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg inline-flex items-center gap-2 text-xs font-semibold py-2 px-3.5 transition-colors shrink-0"
++          className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg inline-flex items-center gap-2 text-xs font-semibold py-2 px-3.5 transition-colors shrink-0"
+         >
+           <Plus size={15} /> Publish Startup Venture
+         </Link>
+@@ -492,7 +492,7 @@
+             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+               <Link
+                 to="/startups/create"
+-                className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg inline-flex items-center gap-2 text-xs font-semibold py-2 px-3.5 transition-colors"
++                className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg inline-flex items-center gap-2 text-xs font-semibold py-2 px-3.5 transition-colors"
+               >
+                 <Plus size={14} /> Publish a Startup Venture
+               </Link>
+--- a/client/tailwind.config.js
++++ b/client/tailwind.config.js
+@@ -1,102 +1,27 @@
+ /** @type {import('tailwindcss').Config} */
+ export default {
+-  content: [
+-    "./index.html",
+-    "./src/**/*.{js,ts,jsx,tsx}",
+-  ],
++  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+   darkMode: 'class',
+   theme: {
+     extend: {
+-      screens: {
+-        xs: '475px',
++      screens: { xs: '475px' },
++      colors: {
++        brand: { 50: '#f5f1ff', 100: '#ebe2ff', 200: '#d9c9ff', 300: '#c1a5ff', 400: '#a98aff', 500: '#8c63f4', 600: '#7047eb', 700: '#5b32cf', 800: '#4828a3', 900: '#392478', 950: '#24163f' },
++        slate: { 50: '#f7f7fb', 100: '#eeedf5', 200: '#e4e1ed', 300: '#cfcadf', 400: '#9690a8', 500: '#716c83', 600: '#555168', 700: '#413b53', 800: '#302a40', 900: '#201d32', 950: '#121019' },
++        dark: { 50: '#f4f1fc', 100: '#eeedf5', 600: '#555168', 700: '#413b53', 750: '#363044', 800: '#2b2639', 850: '#231e30', 900: '#1b1825', 950: '#121019' },
++        accent: '#d5f478', secondary: '#e8b8a2',
++        success: { 50: '#ecf9f1', 600: '#18734e', 700: '#105c3c' },
++        warning: { 50: '#fff7df', 600: '#936314', 700: '#755011' },
++        error: { 50: '#fff0f3', 600: '#c13450', 700: '#a02440' },
+       },
+-      colors: {
+-        brand: {
+-          50: '#EEF2FF',
+-          100: '#E0E7FF',
+-          200: '#C7D2FE',
+-          300: '#A5B4FC',
+-          400: '#818CF8',
+-          500: '#6366F1',
+-          600: '#4F46E5', // HookZ primary indigo from Landing Page
+-          700: '#4338CA', // HookZ primary hover
+-          800: '#3730A3',
+-          900: '#312E81',
+-          950: '#1E1B4B',
+-        },
+-        slate: {
+-          50: '#F9FAFB', // Landing page tile background
+-          100: '#F3F4F6',
+-          200: '#E5E7EB', // Landing page border (#e5e7eb)
+-          300: '#D1D5DB', // Landing page input border (#d1d5db)
+-          400: '#9CA3AF',
+-          500: '#6B7280', // Landing page muted text (#6b7280)
+-          600: '#4B5563',
+-          700: '#374151', // Landing page secondary text (#374151)
+-          800: '#1F2937',
+-          900: '#111827', // Landing page primary text (#111827)
+-          950: '#0B0F17',
+-        },
+-        dark: {
+-          50: '#F8FAFC',
+-          100: '#F1F5F9',
+-          800: '#1E2536',
+-          850: '#141A26',
+-          900: '#0F1420',
+-          950: '#0B0F17',
+-        },
+-        success: {
+-          50: '#F0FDF4',
+-          600: '#16803C',
+-          700: '#157032',
+-        },
+-        warning: {
+-          50: '#FEFCE8',
+-          600: '#B7791F',
+-          700: '#975A16',
+-        },
+-        error: {
+-          50: '#FEF2F2',
+-          600: '#C53030',
+-          700: '#9B2C2C',
+-        },
+-      },
+-      fontFamily: {
+-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+-      },
+-      borderRadius: {
+-        sm: '4px',
+-        DEFAULT: '6px',
+-        md: '8px',
+-        lg: '10px',
+-        xl: '12px',
+-        '2xl': '14px',
+-        '3xl': '16px',
+-      },
+-      boxShadow: {
+-        'subtle': '0 1px 2px rgba(16, 24, 40, 0.04)',
+-        'sm': '0 1px 2px rgba(16, 24, 40, 0.04)',
+-        'DEFAULT': '0 1px 3px rgba(16, 24, 40, 0.05), 0 1px 2px rgba(16, 24, 40, 0.03)',
+-        'md': '0 4px 6px -1px rgba(16, 24, 40, 0.06), 0 2px 4px -2px rgba(16, 24, 40, 0.04)',
+-        'lg': '0 10px 15px -3px rgba(16, 24, 40, 0.06), 0 4px 6px -4px rgba(16, 24, 40, 0.03)',
+-        'xl': '0 20px 25px -5px rgba(16, 24, 40, 0.08), 0 8px 10px -6px rgba(16, 24, 40, 0.03)',
+-        'elevated': '0 4px 6px -1px rgba(16, 24, 40, 0.06), 0 2px 4px -2px rgba(16, 24, 40, 0.04)',
+-        'modal': '0 12px 28px -4px rgba(16, 24, 40, 0.12), 0 6px 12px -4px rgba(16, 24, 40, 0.06)',
+-      },
+-      transitionDuration: {
+-        DEFAULT: '150ms',
+-        'subtle': '150ms',
+-      },
+-      animation: {
+-        'fade-in': 'fadeIn 0.15s ease-out',
+-      },
+-      keyframes: {
+-        fadeIn: {
+-          '0%': { opacity: '0' },
+-          '100%': { opacity: '1' },
+-        },
+-      }
++      fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'], display: ['Inter Tight', 'Inter', 'system-ui', 'sans-serif'] },
++      borderRadius: { sm: '6px', DEFAULT: '8px', md: '10px', lg: '12px', xl: '16px', '2xl': '24px', '3xl': '32px' },
++      boxShadow: { subtle: 'var(--shadow-sm)', elevated: 'var(--shadow-md)', modal: 'var(--shadow-lg)' },
++      transitionDuration: { DEFAULT: '160ms', subtle: '160ms' },
++      transitionTimingFunction: { spring: 'var(--ease-spring)' },
++      animation: { 'fade-in': 'fadeIn .35s var(--ease-out)' },
++      keyframes: { fadeIn: { '0%': { opacity: '0', transform: 'translateY(8px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } } },
+     },
+   },
+   plugins: [],
+-}
++};

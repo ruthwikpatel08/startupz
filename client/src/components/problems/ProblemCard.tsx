@@ -4,6 +4,7 @@ import { Problem } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import { broadcastEntityDeleted, recordDeletedEntityId } from '../../lib/supabase';
+import { sanitizeExternalUrl } from '../../utils/urlSecurity';
 import {
   Bookmark,
   ExternalLink,
@@ -209,7 +210,7 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
           {/* Source Link */}
           {(problem.sourceUrl || problem.source_url) && (
             <a
-              href={problem.sourceUrl || problem.source_url || '#'}
+              href={sanitizeExternalUrl(problem.sourceUrl || problem.source_url)}
               target="_blank"
               rel="noopener noreferrer"
               className="p-1.5 rounded-md text-slate-400 hover:text-brand-600 transition-colors"

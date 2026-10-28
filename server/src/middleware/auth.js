@@ -51,7 +51,6 @@ export function enrichAdminFlag(user) {
     'ruthwik9595@gmail.com',
     'gokulvamshi@hookz.in',
     'gokulvamshi@gmail.com',
-    'admin@startupz.com',
   ];
   if (user.email && defaultAdminEmails.includes(user.email.toLowerCase().trim())) {
     user.isAdmin = true;
@@ -90,13 +89,21 @@ export function isUserAdminCheck(user) {
     'ruthwik9595@gmail.com',
     'gokulvamshi@hookz.in',
     'gokulvamshi@gmail.com',
-    'admin@startupz.com',
   ];
   if (user.email && adminEmails.includes(user.email.toLowerCase().trim())) return true;
-  if (user.email && user.email.toLowerCase().includes('ruthwik')) return true;
-  if (user.profile?.username && ['ruthwikpatel08', 'ruthwik', 'gokulvamshi'].includes(user.profile.username.toLowerCase().trim())) return true;
   const ruthwikIds = ['c3e1a001-8888-4444-9999-000000000001', 'b669157c-4d30-42f4-a8bf-4e27dc425e00', 'ruthwikpatel08'];
   if (user.id && ruthwikIds.includes(String(user.id).toLowerCase().trim())) return true;
+
+  const adminEnv = process.env.ADMIN_EMAILS;
+  if (adminEnv && user.email) {
+    const allowlist = adminEnv
+      .toLowerCase()
+      .split(',')
+      .map((e) => e.trim())
+      .filter(Boolean);
+    if (allowlist.includes(user.email.toLowerCase().trim())) return true;
+  }
+
   return false;
 }
 
@@ -110,22 +117,21 @@ export function getUserCandidateIds(user) {
   const ruthwikIds = ['c3e1a001-8888-4444-9999-000000000001', 'b669157c-4d30-42f4-a8bf-4e27dc425e00', 'ruthwikpatel08'];
   const gokulIds = ['c3e1a001-8888-4444-9999-000000000002', '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba', 'gokulvamshi'];
 
-  const hasRuthwik = Array.from(ids).some((id) => ruthwikIds.includes(id)) ||
-    (user.email && user.email.toLowerCase().includes('ruthwik')) ||
-    (user.profile?.username && user.profile.username.toLowerCase().includes('ruthwik'));
-  if (hasRuthwik) {
+  const isExactRuthwik = Array.from(ids).some((id) => ruthwikIds.includes(id)) ||
+    (user.email && ['ruthwikpatel08@gmail.com', 'ruthwik9595@gmail.com'].includes(user.email.toLowerCase().trim()));
+  if (isExactRuthwik) {
     ruthwikIds.forEach((id) => ids.add(id));
   }
 
-  const hasGokul = Array.from(ids).some((id) => gokulIds.includes(id)) ||
-    (user.email && user.email.toLowerCase().includes('gokul')) ||
-    (user.profile?.username && user.profile.username.toLowerCase().includes('gokul'));
-  if (hasGokul) {
+  const isExactGokul = Array.from(ids).some((id) => gokulIds.includes(id)) ||
+    (user.email && ['gokulvamshi@hookz.in', 'gokulvamshi@gmail.com'].includes(user.email.toLowerCase().trim()));
+  if (isExactGokul) {
     gokulIds.forEach((id) => ids.add(id));
   }
 
   return Array.from(ids);
 }
+
 
 export function isOwnerOrAdmin(resourceOwnerId, user, resourceEmail) {
   if (!user) return false;

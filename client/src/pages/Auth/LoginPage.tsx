@@ -1,365 +1,61 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase, getAuthErrorMessage, recordAuthProviderHint, resolveEmailOrUsername, upsertUserProfile, invalidateUserProfileCache } from '../../lib/supabase';
+import React, { useState } from 'react';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { supabase, getAuthErrorMessage, resolveEmailOrUsername } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
-import { Rocket, Lock, Mail, ArrowRight, Sparkles, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw, UserCheck } from 'lucide-react';
 import { SEO } from '../../components/common/SEO';
+import { AuthLayout, GoogleButton } from '../../components/auth/AuthLayout';
 
 export const LoginPage: React.FC = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const isDeletedNotice = searchParams.get('deleted') === 'true';
   const { user, loginWithPasswordOrUsername } = useAuth();
-
-  useEffect(() => {
-    if (user) {
-      navigate('/', { replace: true });
-    }
-  }, [user, navigate]);
-
+  const [params] = useSearchParams();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [resendSuccess, setResendSuccess] = useState(false);
-  const [resending, setResending] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [busy, setBusy] = useState<'email' | 'google' | 'resend' | null>(null);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  if (user) return <Navigate to={user.onboarding_completed === false ? '/onboarding' : '/'} replace />;
 
-  // Real Supabase Google OAuth Flow
-  const handleGoogleSignInClick = async () => {
-    setGoogleLoading(true);
-    setError(null);
+  const google = async () => {
+    setBusy('google'); setError('');
     try {
       localStorage.setItem('startupz_oauth_intent', 'login');
-    } catch {}
-
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth/callback`, queryParams: { prompt: 'select_account', access_type: 'offline' } } });
+      if (error) throw error;
+    } catch (error) { setError(getAuthErrorMessage(error)); setBusy(null); }
+  };
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault(); if (busy) return;
+    setBusy('email'); setError(''); setNotice('');
+    try { await loginWithPasswordOrUsername(identifier.trim(), password); }
+    catch (error) { setError(getAuthErrorMessage(error, identifier.trim())); }
+    finally { setBusy(null); }
+  };
+  const resend = async () => {
+    setBusy('resend'); setError('');
     try {
-      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: {
-            prompt: 'select_account',
-            access_type: 'offline',
-          },
-        },
-      });
-
-      if (oauthError) {
-        setGoogleLoading(false);
-        setError('Google Sign-In is currently unavailable. Please enter your email and password below.');
-        return;
-      }
-
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        setGoogleLoading(false);
-      }
-    } catch (err: any) {
-      setGoogleLoading(false);
-      setError(err?.message || 'Google Sign-In error. Please sign in with your email and password.');
-    }
+      const email = await resolveEmailOrUsername(identifier.trim());
+      if (!email) throw new Error('Enter your email address to resend the confirmation link.');
+      const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
+      if (error) throw error;
+      setNotice('Confirmation email sent. Check your inbox.');
+    } catch (error) { setError(getAuthErrorMessage(error)); }
+    finally { setBusy(null); }
   };
 
-  // Sign In with Email, Gmail, or Username and Password
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setGoogleLoading(false);
-    setLoading(true);
-    setError(null);
-    setResendSuccess(false);
-
-    const cleanIdentifier = identifier.trim();
-    if (!cleanIdentifier) {
-      setError('Please enter your Gmail, username, or email address.');
-      setLoading(false);
-      return;
-    }
-
-    if (!password) {
-      setError('Please enter your password to proceed.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      await loginWithPasswordOrUsername(cleanIdentifier, password);
-      navigate('/');
-    } catch (err: any) {
-      console.warn('Sign-in error:', err);
-      const friendlyMessage = getAuthErrorMessage(err, cleanIdentifier);
-      if (
-        friendlyMessage.toLowerCase().includes('invalid login credentials') ||
-        friendlyMessage.toLowerCase().includes('not found') ||
-        friendlyMessage.toLowerCase().includes('no user')
-      ) {
-        setError('Account not found in our data. Please sign up to create your account.');
-      } else {
-        setError(friendlyMessage);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Resend email verification link via Supabase Auth
-  const handleResendVerification = async () => {
-    const targetEmail = await resolveEmailOrUsername(identifier.trim());
-    if (!targetEmail) {
-      setError('Please enter your email or Gmail in the field below to resend the confirmation link.');
-      return;
-    }
-    setResending(true);
-    setResendSuccess(false);
-    try {
-      const { error: resendErr } = await supabase.auth.resend({
-        type: 'signup',
-        email: targetEmail,
-      });
-      if (resendErr) {
-        setError(getAuthErrorMessage(resendErr, targetEmail));
-      } else {
-        setResendSuccess(true);
-        setError(null);
-      }
-    } catch (err: any) {
-      setError(getAuthErrorMessage(err, targetEmail));
-    } finally {
-      setResending(false);
-    }
-  };
-
-  const isEmailUnconfirmed = error?.includes('verify your email') || error?.includes('verification link');
-
-  return (
-    <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-indigo-50/30 via-white to-slate-50 dark:from-dark-900 dark:via-dark-900 dark:to-dark-950">
-      <SEO title="Sign In | HookZ" noindex={true} />
-      <div className="max-w-md w-full">
-        
-        {/* Main Card */}
-        <div className="card-base p-8 sm:p-9 shadow-subtle border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-dark-900">
-          
-          {/* Top Logo & Header */}
-          <div className="text-center mb-6">
-            <Link to="/" className="inline-flex items-center justify-center mb-3 group">
-              <img
-                src="/logo-icon.png"
-                alt="HookZ"
-                className="w-12 h-12 object-contain group-hover:scale-105 transition-transform"
-              />
-            </Link>
-            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Welcome back to Hook<span className="text-brand-600">Z</span>
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
-              Sign in to connect with teammates, hackathons, and projects
-            </p>
-          </div>
-
-          {/* Continue With Google Button */}
-          <button
-            type="button"
-            onClick={handleGoogleSignInClick}
-            disabled={googleLoading || loading}
-            className="w-full inline-flex items-center justify-center gap-3 py-2.5 px-4 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-dark-850 hover:bg-slate-50 dark:hover:bg-dark-800 border border-slate-300 dark:border-slate-700 rounded-lg shadow-2xs transition-all cursor-pointer disabled:opacity-50"
-          >
-            {googleLoading ? (
-              <>
-                <RefreshCw size={15} className="animate-spin text-brand-600" />
-                <span>Redirecting to Google...</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.39 7.33 24 12 24z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.17 0 9.98 0 12s.45 3.83 1.25 5.42l4.03-3.15z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.27 2.61 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-                  />
-                </svg>
-                <span>Continue with Google</span>
-              </>
-            )}
-          </button>
-
-          {/* Clean Divider ("OR") */}
-          <div className="relative my-5">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200 dark:border-dark-800" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white dark:bg-dark-900 px-3 text-slate-400 font-semibold tracking-wider text-[11px]">
-                OR
-              </span>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {isDeletedNotice && (
-              <div className="p-3 text-xs rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 space-y-1">
-                <div className="flex items-center gap-2 font-semibold">
-                  <CheckCircle2 size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-                  <span>Account Permanently Deleted</span>
-                </div>
-                <p className="text-[11px] leading-relaxed text-emerald-700 dark:text-emerald-300 pl-6">
-                  All your profile data, connections, messages, and listings have been permanently wiped from HookZ. If you log in again, you will be registered as a brand new user.
-                </p>
-              </div>
-            )}
-
-            {error && (
-              <div className="p-3 text-xs rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 space-y-2">
-                <div className="flex items-start gap-2">
-                  <AlertCircle size={15} className="shrink-0 text-rose-500 mt-0.5" />
-                  <span className="font-medium leading-relaxed">{error}</span>
-                </div>
-
-                <div className="pt-2 border-t border-rose-200/60 dark:border-rose-900/60 space-y-1 text-[11px]">
-                  {isEmailUnconfirmed && (
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="text-slate-600 dark:text-slate-400">
-                        Email not confirmed?
-                      </span>
-                      <button
-                        type="button"
-                        disabled={resending}
-                        onClick={handleResendVerification}
-                        className="font-medium text-brand-600 dark:text-brand-400 hover:underline cursor-pointer disabled:opacity-50"
-                      >
-                        {resending ? 'Sending...' : 'Resend verification email'}
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <span className="text-slate-600 dark:text-slate-400">
-                      Forgot your password?
-                    </span>
-                    <Link
-                      to="/forgot-password"
-                      className="font-medium text-brand-600 dark:text-brand-400 hover:underline"
-                    >
-                      Reset password →
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {resendSuccess && (
-              <div className="p-2.5 text-xs rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 flex items-center gap-2">
-                <CheckCircle2 size={15} className="shrink-0 text-emerald-500" />
-                <span>Verification email sent! Please check your inbox.</span>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Email, Gmail, or Username
-              </label>
-              <div className="relative">
-                <Mail size={15} className="absolute left-3 top-2.5 text-slate-400" />
-                <input
-                  type="text"
-                  required
-                  value={identifier}
-                  disabled={loading}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="name@gmail.com, yourname, or email"
-                  className="input-base w-full pl-9 pr-3 py-2 text-xs disabled:opacity-60"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Password
-                </label>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs text-brand-600 dark:text-brand-400 hover:underline font-medium"
-                >
-                  Forgot Password?
-                </Link>
-              </div>
-              <div className="relative">
-                <Lock size={15} className="absolute left-3 top-2.5 text-slate-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  disabled={loading}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="input-base w-full pl-9 pr-9 py-2 text-xs disabled:opacity-60"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary w-full py-2.5 text-xs font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-50 mt-2 shadow-sm cursor-pointer"
-            >
-              {loading ? (
-                <>
-                  <RefreshCw size={14} className="animate-spin" />
-                  <span>Signing in...</span>
-                </>
-              ) : (
-                <>
-                  <span>Sign In</span>
-                  <ArrowRight size={14} />
-                </>
-              )}
-            </button>
-
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center pt-2 leading-relaxed">
-              By signing in, you acknowledge that your personal data is processed pursuant to our{' '}
-              <Link to="/privacy" target="_blank" className="text-brand-600 dark:text-brand-400 font-semibold hover:underline">
-                Privacy Notice
-              </Link>{' '}
-              and{' '}
-              <Link to="/terms" target="_blank" className="text-brand-600 dark:text-brand-400 font-semibold hover:underline">
-                Terms of Service
-              </Link>{' '}
-              under the DPDP Act 2023.
-            </p>
-          </form>
-
-          <div className="mt-6 pt-5 border-t border-slate-100 dark:border-dark-800 text-center">
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              Don't have an account?{' '}
-              <Link to="/register" className="font-bold text-brand-600 dark:text-brand-400 hover:underline">
-                Sign up
-              </Link>
-            </p>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  );
+  return <AuthLayout title="Good to see you again." subtitle="Your people, projects, and next big idea are waiting.">
+    <SEO title="Sign In | HookZ" noindex />
+    <GoogleButton onClick={google} disabled={!!busy} loading={busy === 'google'} />
+    <div className="auth-divider">OR</div>
+    {params.get('deleted') === 'true' && <p className="auth-status" role="status">Your account has been deleted.</p>}
+    {error && <div className="auth-alert" role="alert">{error}{/verify your email|verification link|confirm/i.test(error) && <button type="button" onClick={resend} disabled={!!busy}>Resend confirmation email</button>}</div>}
+    {notice && <p className="auth-status" role="status">{notice}</p>}
+    <form className="auth-form" onSubmit={submit}>
+      <div><label htmlFor="login-email">Email or username</label><input id="login-email" className="input-base" autoComplete="username" required value={identifier} onChange={e => setIdentifier(e.target.value)} placeholder="you@college.edu" disabled={!!busy} /></div>
+      <div><div className="auth-field-heading"><label htmlFor="login-password">Password</label><Link to="/forgot-password">Forgot Password?</Link></div><div className="auth-password"><input id="login-password" className="input-base" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="Your password" disabled={!!busy} /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></div></div>
+      <button className="btn-primary" disabled={!!busy}>{busy === 'email' ? 'Signing in…' : 'Sign In'}<ArrowRight size={16} /></button>
+    </form>
+    <p className="auth-switch">Don't have an account? <Link to="/register">Sign up</Link></p>
+  </AuthLayout>;
 };

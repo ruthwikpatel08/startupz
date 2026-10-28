@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
@@ -17,19 +17,22 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = 'md',
 }) => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
     if (isOpen) {
+      const dialog = dialogRef.current;
+      const previousFocus = document.activeElement as HTMLElement | null;
+      dialog?.showModal();
+      const previousOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        dialog?.close();
+        document.body.style.overflow = previousOverflow;
+        if (previousFocus?.isConnected) previousFocus.focus();
+      };
     }
-    return () => {
-      document.body.style.overflow = 'unset';
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -43,19 +46,16 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   const modalElement = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-slate-900/50 backdrop-blur-[2px] transition-opacity"
-        onClick={onClose}
-      />
+    <dialog ref={dialogRef} aria-labelledby={titleId} onCancel={onClose}
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+      className="m-auto p-4 sm:p-6 bg-transparent text-inherit border-0 w-full max-w-none max-h-none backdrop:bg-slate-950/60 backdrop:backdrop-blur-sm">
 
       {/* Modal Dialog */}
       <div
-        className={`relative w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-dark-900 rounded-xl shadow-modal border border-slate-200 dark:border-slate-800 p-6 z-10 transition-all my-auto max-h-[90vh] overflow-y-auto`}
+        className={`relative w-full ${maxWidthClasses[maxWidth]} bg-white dark:bg-dark-900 rounded-2xl shadow-modal border border-slate-200 dark:border-slate-800 p-6 z-10 animate-fade-in mx-auto max-h-[85dvh] overflow-y-auto`}
       >
         <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-200 dark:border-slate-800">
-          <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white tracking-tight">{title}</h3>
+          <h3 id={titleId} className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white tracking-tight">{title}</h3>
           <button
             onClick={onClose}
             className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
@@ -66,7 +66,7 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
         <div>{children}</div>
       </div>
-    </div>
+    </dialog>
   );
 
   return typeof document !== 'undefined'

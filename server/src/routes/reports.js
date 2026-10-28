@@ -1,11 +1,12 @@
 import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { reportLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
 // POST /api/reports
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, reportLimiter, async (req, res) => {
   try {
     const { targetType, targetId, reason, description } = req.body;
 

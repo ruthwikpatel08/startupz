@@ -11,6 +11,7 @@ import { ConnectModal } from '../../components/common/ConnectModal';
 import { IdeaFeedbackModal } from '../../components/common/IdeaFeedbackModal';
 import { Avatar } from '../../components/common/Avatar';
 import { SEO } from '../../components/common/SEO';
+import { sanitizeExternalUrl } from '../../utils/urlSecurity';
 import {
   Rocket,
   MapPin,
@@ -613,7 +614,7 @@ export const StartupDetailPage: React.FC = () => {
               )}
               {startup.website && (
                 <a
-                  href={startup.website}
+                  href={sanitizeExternalUrl(startup.website)}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-1 text-brand-600 hover:underline"
@@ -623,7 +624,7 @@ export const StartupDetailPage: React.FC = () => {
               )}
               {startup.demoLink && (
                 <a
-                  href={startup.demoLink}
+                  href={sanitizeExternalUrl(startup.demoLink)}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-1 text-cyan-600 hover:underline"

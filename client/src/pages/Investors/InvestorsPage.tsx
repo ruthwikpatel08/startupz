@@ -10,6 +10,7 @@ import { ConnectModal } from '../../components/common/ConnectModal';
 import { Avatar } from '../../components/common/Avatar';
 import { EmptyState } from '../../components/common/EmptyState';
 import { SEO } from '../../components/common/SEO';
+import { sanitizeExternalUrl } from '../../utils/urlSecurity';
 import {
   TrendingUp,
   Search,
@@ -353,7 +354,7 @@ export const InvestorsPage: React.FC = () => {
                         <VerificationBadge type={inv.isVerified ? 'Verified Investor' : null} />
                         {inv.website && (
                           <a
-                            href={inv.website}
+                            href={sanitizeExternalUrl(inv.website)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-slate-400 hover:text-brand-600 transition-colors p-0.5 rounded"

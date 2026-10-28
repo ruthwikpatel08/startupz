@@ -5,7 +5,7 @@ import { SEO } from '../../components/common/SEO';
 
 export const TermsPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F17] py-12 px-4 sm:px-6 lg:px-8 transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-[var(--bg-primary)] py-12 px-4 sm:px-6 lg:px-8 transition-colors">
       <SEO
         title="Terms & Conditions — HookZ Platform Terms and Data Protection"
         description="HookZ Terms of Service including dedicated Data Protection clause under India's Digital Personal Data Protection (DPDP) Act 2023."

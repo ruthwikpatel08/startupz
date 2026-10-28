@@ -1,0 +1,79 @@
+
+> client@0.0.0 build
+> tsc -b && vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 2114 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                 5.69 kB │ gzip:   1.80 kB
+dist/assets/logo-icon-WDqkLc9L.png              8.63 kB
+dist/assets/OnboardingPage-BDIS1beL.css         6.52 kB │ gzip:   1.82 kB
+dist/assets/index-KjMQ6US3.css                128.84 kB │ gzip:  22.68 kB
+dist/assets/x-BSBIvS4R.js                       0.19 kB │ gzip:   0.17 kB
+dist/assets/clock-CTlfoehL.js                   0.20 kB │ gzip:   0.19 kB
+dist/assets/rotate-ccw-CeZEAb02.js              0.24 kB │ gzip:   0.21 kB
+dist/assets/mail-C6UzSGRO.js                    0.25 kB │ gzip:   0.22 kB
+dist/assets/dollar-sign-CcT7K6Gs.js             0.25 kB │ gzip:   0.22 kB
+dist/assets/circle-x-Dp9JNk8H.js                0.26 kB │ gzip:   0.21 kB
+dist/assets/download-BK-_zoto.js                0.27 kB │ gzip:   0.22 kB
+dist/assets/user-check-tepqKZ9p.js              0.28 kB │ gzip:   0.23 kB
+dist/assets/pen-B7v1dUjJ.js                     0.29 kB │ gzip:   0.24 kB
+dist/assets/link-CeneBA2t.js                    0.29 kB │ gzip:   0.22 kB
+dist/assets/ShareProblemModal-DewYlPaS.js       0.30 kB │ gzip:   0.23 kB
+dist/assets/image-By3tyB-S.js                   0.30 kB │ gzip:   0.24 kB
+dist/assets/award--oTuk1Yd.js                   0.31 kB │ gzip:   0.25 kB
+dist/assets/circle-question-mark-N7fwwRHB.js    0.32 kB │ gzip:   0.25 kB
+dist/assets/lightbulb-0dhXiSr4.js               0.32 kB │ gzip:   0.25 kB
+dist/assets/book-open-CaBJIv7Z.js               0.32 kB │ gzip:   0.25 kB
+dist/assets/thumbs-up-CFDkm1im.js               0.34 kB │ gzip:   0.26 kB
+dist/assets/user-x-jclGCu6B.js                  0.34 kB │ gzip:   0.25 kB
+dist/assets/tag-WJqRLuZ_.js                     0.36 kB │ gzip:   0.27 kB
+dist/assets/skull-COeW0IM6.js                   0.38 kB │ gzip:   0.26 kB
+dist/assets/file-text-Bm9jsJUg.js               0.42 kB │ gzip:   0.27 kB
+dist/assets/earth-DMEcdokt.js                   0.45 kB │ gzip:   0.30 kB
+dist/assets/heart-handshake-C34XH1g5.js         0.49 kB │ gzip:   0.32 kB
+dist/assets/urlSecurity-DEjg6F1Z.js             0.49 kB │ gzip:   0.25 kB
+dist/assets/EmptyState-DrX07ycC.js              1.00 kB │ gzip:   0.49 kB
+dist/assets/react-dom-DB6mglG5.js               3.86 kB │ gzip:   1.40 kB
+dist/assets/ForgotPasswordPage-2zZ_EN53.js      4.18 kB │ gzip:   1.59 kB
+dist/assets/ProblemFilters-xRxfk5iy.js          4.23 kB │ gzip:   1.35 kB
+dist/assets/NotFoundPage-kSDWBUHX.js            4.74 kB │ gzip:   1.42 kB
+dist/assets/ResetPasswordPage-Cs7y3XZb.js       4.89 kB │ gzip:   1.71 kB
+dist/assets/ReportModal-C86m8v2R.js             5.21 kB │ gzip:   1.89 kB
+dist/assets/ProblemCard-Cx8sNZrn.js             7.38 kB │ gzip:   2.48 kB
+dist/assets/SavedItemsPage-D1VzPziX.js          9.38 kB │ gzip:   2.78 kB
+dist/assets/ManageProblemsPage-dhRhy25q.js      9.70 kB │ gzip:   2.80 kB
+dist/assets/MembershipsPage-DMBJOVsb.js        10.10 kB │ gzip:   3.24 kB
+dist/assets/TermsPage-CHXuvnrR.js              11.14 kB │ gzip:   3.38 kB
+dist/assets/OnboardingPage-CwtjkxL5.js         13.10 kB │ gzip:   4.99 kB
+dist/assets/AdminDashboardPage-myVCpU-d.js     13.27 kB │ gzip:   3.19 kB
+dist/assets/ProblemsPage-bsdB2t3Q.js           14.12 kB │ gzip:   4.92 kB
+dist/assets/VideoMeetingRoomPage-C9K7kcjq.js   14.72 kB │ gzip:   4.54 kB
+dist/assets/ShareModal-HJhp1qb8.js             15.04 kB │ gzip:   4.50 kB
+dist/assets/GlobalSearchPage-DQMiDmO-.js       15.87 kB │ gzip:   4.14 kB
+dist/assets/DSARPage-uWaVn3cj.js               18.78 kB │ gzip:   4.80 kB
+dist/assets/ProblemDetailPage-hP2PHxa4.js      19.45 kB │ gzip:   4.84 kB
+dist/assets/MentorsPage-7xYsQ4AI.js            19.68 kB │ gzip:   5.32 kB
+dist/assets/InvestorsPage-CqUFshuP.js          22.68 kB │ gzip:   5.99 kB
+dist/assets/PrivacyNoticePage-B-WJ6ToR.js      22.79 kB │ gzip:   4.84 kB
+dist/assets/ExploreStartupsPage-C4Ul5Z11.js    25.67 kB │ gzip:   6.81 kB
+dist/assets/FailedStartupsPage-CrN9LE_1.js     25.99 kB │ gzip:   6.47 kB
+dist/assets/FindCoFounderPage-DWSySFU8.js      26.43 kB │ gzip:   7.23 kB
+dist/assets/CreateStartupPage-DQdKgNBO.js      26.62 kB │ gzip:   5.80 kB
+dist/assets/NetworkPage-vZR11U-j.js            27.54 kB │ gzip:   6.32 kB
+dist/assets/BusinessPage-BEgMv62u.js           32.31 kB │ gzip:   6.89 kB
+dist/assets/createLucideIcon-CS42ROhm.js       51.91 kB │ gzip:  18.64 kB
+dist/assets/StartupDetailPage-CfkDdT8U.js      55.72 kB │ gzip:  10.82 kB
+dist/assets/OpportunitiesPage-CoCTvex0.js      69.32 kB │ gzip:  15.18 kB
+dist/assets/ProjectsPage-DjCQAcDF.js           72.20 kB │ gzip:  16.25 kB
+dist/assets/api-B20MySdC.js                    73.55 kB │ gzip:  18.67 kB
+dist/assets/MessagesPage-07CVtn3a.js           76.65 kB │ gzip:  19.13 kB
+dist/assets/StartupFeedPage-4pjNGFHi.js        92.40 kB │ gzip:  22.67 kB
+dist/assets/ProblemFormPage-B6RcpBmB.js        98.32 kB │ gzip:  28.06 kB
+dist/assets/ProfilePage-5K5wTq_Y.js           143.00 kB │ gzip:  29.08 kB
+dist/assets/supabase-BhAMIHdT.js              248.73 kB │ gzip:  64.02 kB
+dist/assets/index-TCvhKujE.js                 427.19 kB │ gzip: 120.01 kB
+
+✓ built in 1.62s

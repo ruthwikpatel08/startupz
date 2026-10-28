@@ -787,15 +787,31 @@ router.put('/profile', requireAuth, async (req, res) => {
 
     // Authoritatively sync profile updates to Supabase PostgreSQL table (public.profiles) using service-role privileges
     try {
-      const targetUserId = req.body?.id || req.user.id;
-      const targetEmail = (req.body?.email || req.user.email || '').trim().toLowerCase();
+      const targetUserId = req.user.id;
+      const targetEmail = (req.user.email || '').trim().toLowerCase();
       await upsertSupabaseProfile(targetUserId, targetEmail, {
-        ...req.body,
-        ...updatedProfile,
-        username: updatedProfile.username,
-        usernameChangedAt: updatedProfile.usernameChangedAt,
+        fullName: savedProfile.fullName,
+        headline: savedProfile.headline,
+        location: savedProfile.location,
+        bio: savedProfile.bio,
+        avatar: savedProfile.avatar,
+        education: savedProfile.education,
+        portfolioUrl: savedProfile.portfolioUrl,
+        githubUrl: savedProfile.githubUrl,
+        linkedinUrl: savedProfile.linkedinUrl,
+        websiteUrl: savedProfile.websiteUrl,
+        skills: savedProfile.skills,
+        startupInterests: savedProfile.startupInterests,
+        industries: savedProfile.industries,
+        preferredRole: savedProfile.preferredRole,
+        availability: savedProfile.availability,
+        startupExperience: savedProfile.startupExperience,
+        achievements: savedProfile.achievements,
+        openTo: savedProfile.openTo,
+        username: updatedProfile.username || savedProfile.username,
+        usernameChangedAt: updatedProfile.usernameChangedAt || savedProfile.usernameChangedAt,
         roleChangeCount: currentRoleChangeCount,
-        profileCompletion: updatedProfile.profileCompletion,
+        profileCompletion: updatedProfile.profileCompletion || savedProfile.profileCompletion,
       });
     } catch (sbSyncErr) {
       console.warn('Backend Supabase profile sync warning:', sbSyncErr?.message);

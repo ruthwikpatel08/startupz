@@ -7,6 +7,7 @@ import { requireAuth, optionalAuth, isUserAdminCheck, getUserCandidateIds, isOwn
 import { supabaseAdmin } from '../supabase.js';
 import { generateProjectScoutAnalysis } from '../utils/aiClient.js';
 import { initialProjects } from '../realData/initialProjects.js';
+import { aiScoutLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
@@ -549,13 +550,51 @@ const handleUpdateProject = async (req, res) => {
       return res.status(403).json({ error: 'Only the project creator or team lead can edit this project.' });
     }
 
+    const {
+      title,
+      tagline,
+      description,
+      pillar,
+      problem,
+      solution,
+      stage,
+      roles,
+      tags,
+      team,
+      teamMembers,
+      collaborators,
+      mediaUrl,
+      mediaType,
+      links,
+      websiteUrl,
+      githubUrl,
+      prototypeUrl,
+    } = req.body;
+
     const newVisibility = req.body.visibility !== undefined
       ? (String(req.body.visibility).toUpperCase() === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC')
       : (existing.visibility || 'PUBLIC');
 
     const updated = {
       ...existing,
-      ...req.body,
+      ...(title !== undefined ? { title: String(title).trim() } : {}),
+      ...(tagline !== undefined ? { tagline: String(tagline).trim() } : {}),
+      ...(description !== undefined ? { description: String(description).trim() } : {}),
+      ...(pillar !== undefined ? { pillar: String(pillar).trim() } : {}),
+      ...(problem !== undefined ? { problem: String(problem).trim() } : {}),
+      ...(solution !== undefined ? { solution: String(solution).trim() } : {}),
+      ...(stage !== undefined ? { stage: String(stage).trim() } : {}),
+      ...(Array.isArray(roles) ? { roles } : {}),
+      ...(Array.isArray(tags) ? { tags } : {}),
+      ...(Array.isArray(team) ? { team } : {}),
+      ...(Array.isArray(teamMembers) ? { teamMembers } : {}),
+      ...(Array.isArray(collaborators) ? { collaborators } : {}),
+      ...(mediaUrl !== undefined ? { mediaUrl } : {}),
+      ...(mediaType !== undefined ? { mediaType } : {}),
+      ...(links !== undefined ? { links } : {}),
+      ...(websiteUrl !== undefined ? { websiteUrl } : {}),
+      ...(githubUrl !== undefined ? { githubUrl } : {}),
+      ...(prototypeUrl !== undefined ? { prototypeUrl } : {}),
       id: existing.id,
       creator: existing.creator,
       visibility: newVisibility,
@@ -1370,13 +1409,6 @@ export function isProjectLeadOrCreator(project, user) {
       .map((id) => String(id).trim().toLowerCase())
   );
 
-  const ruthwikIds = ['c3e1a001-8888-4444-9999-000000000001', 'b669157c-4d30-42f4-a8bf-4e27dc425e00', 'ruthwikpatel08'];
-  const gokulIds = ['c3e1a001-8888-4444-9999-000000000002', '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba', 'gokulvamshi'];
-
-  // Platform admin/owners always have full permissions on projects
-  if (Array.from(userIds).some((id) => ruthwikIds.includes(id) || gokulIds.includes(id))) return true;
-  if (user.email && (user.email.toLowerCase().includes('ruthwik') || user.email.toLowerCase().includes('gokul'))) return true;
-
   const creatorId = String(
     project.creator?.userId ||
     project.creator?.id ||
@@ -1386,8 +1418,6 @@ export function isProjectLeadOrCreator(project, user) {
   ).trim().toLowerCase();
 
   if (creatorId && userIds.has(creatorId)) return true;
-  if (creatorId && ruthwikIds.includes(creatorId)) return true;
-  if (creatorId && gokulIds.includes(creatorId)) return true;
 
   const leadRole = Array.isArray(project.roles) && project.roles.find(
     (r) => (r.roleName || '').toLowerCase().includes('lead') || r.isLead
@@ -1395,8 +1425,6 @@ export function isProjectLeadOrCreator(project, user) {
   if (leadRole?.assignedTo) {
     const assignedId = String(leadRole.assignedTo.userId || leadRole.assignedTo.id || '').trim().toLowerCase();
     if (assignedId && userIds.has(assignedId)) return true;
-    if (assignedId && ruthwikIds.includes(assignedId)) return true;
-    if (assignedId && gokulIds.includes(assignedId)) return true;
     if (user.email && leadRole.assignedTo.email && user.email.toLowerCase().trim() === leadRole.assignedTo.email.toLowerCase().trim()) return true;
   }
 
@@ -1414,11 +1442,6 @@ export function isProjectLeadOrCreator(project, user) {
   const creatorEmail = (project.creator?.email || '').toLowerCase().trim();
   if (userEmail && creatorEmail && userEmail === creatorEmail) return true;
 
-  const userFullName = (user.profile?.fullName || user.fullName || '').toLowerCase().trim();
-  const creatorFullName = (project.creator?.fullName || '').toLowerCase().trim();
-  const ignoredNames = new Set(['builder', 'connection', 'connected builder', 'project lead', 'member', 'user', 'undefined', 'null']);
-  if (userFullName && creatorFullName && !ignoredNames.has(userFullName) && !ignoredNames.has(creatorFullName) && userFullName === creatorFullName) return true;
-
   return false;
 }
 
@@ -1427,29 +1450,20 @@ export function isProjectLeadOrCreator(project, user) {
  */
 export function isProjectMemberOrCreator(project, user) {
   if (!user || !project) return false;
-  if (isUserAdminCheck(user)) return true;
+  if (user.isAdmin || isUserAdminCheck(user)) return true;
   if (isProjectLeadOrCreator(project, user)) return true;
 
   const userCandidateIds = new Set(getUserCandidateIds(user));
   const userEmail = (user.email || '').toLowerCase().trim();
-  const userFullName = (user.profile?.fullName || user.fullName || '').toLowerCase().trim();
-
-  const ruthwikIds = ['c3e1a001-8888-4444-9999-000000000001', 'b669157c-4d30-42f4-a8bf-4e27dc425e00', 'ruthwikpatel08'];
-  const gokulIds = ['c3e1a001-8888-4444-9999-000000000002', '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba', 'gokulvamshi'];
 
   const matchTarget = (target) => {
     if (!target) return false;
     const tId = String(target.userId || target.user_id || target.id || target._id || '').trim().toLowerCase();
     if (tId && userCandidateIds.has(tId)) return true;
-    if (tId && ruthwikIds.includes(tId) && Array.from(userCandidateIds).some((id) => ruthwikIds.includes(id))) return true;
-    if (tId && gokulIds.includes(tId) && Array.from(userCandidateIds).some((id) => gokulIds.includes(id))) return true;
 
     const tEmail = String(target.email || '').toLowerCase().trim();
     if (userEmail && tEmail && userEmail === tEmail) return true;
 
-    const tName = String(target.fullName || target.name || '').toLowerCase().trim();
-    const ignoredNames = new Set(['builder', 'connection', 'connected builder', 'project lead', 'member', 'user', 'undefined', 'null']);
-    if (userFullName && tName && !ignoredNames.has(tName) && !ignoredNames.has(userFullName) && userFullName === tName) return true;
     return false;
   };
 
@@ -1613,7 +1627,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
 });
 
 // POST /api/projects/:id/ai-scout - HookZ AI Scout Project Chat Assistant
-router.post('/:id/ai-scout', requireAuth, async (req, res) => {
+router.post('/:id/ai-scout', requireAuth, aiScoutLimiter, async (req, res) => {
   try {
     const { id } = req.params;
     const { prompt } = req.body;

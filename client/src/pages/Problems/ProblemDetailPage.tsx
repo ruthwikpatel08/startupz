@@ -8,6 +8,7 @@ import { getCategoryColor } from '../../components/problems/ProblemCard';
 import { AIInsightSection } from '../../components/problems/AIInsightSection';
 import { ShareProblemModal } from '../../components/problems/ShareProblemModal';
 import { SEO } from '../../components/common/SEO';
+import { sanitizeExternalUrl } from '../../utils/urlSecurity';
 import {
   ArrowLeft,
   Bookmark,
@@ -228,7 +229,7 @@ export const ProblemDetailPage: React.FC = () => {
             </div>
             {source && (
               <a
-                href={source}
+                href={sanitizeExternalUrl(source)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium"
@@ -322,7 +323,7 @@ export const ProblemDetailPage: React.FC = () => {
                 </div>
               </div>
               <a
-                href={source}
+                href={sanitizeExternalUrl(source)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-secondary inline-flex items-center gap-1.5 text-xs py-1.5 px-3 shrink-0"

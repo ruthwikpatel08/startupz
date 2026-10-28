@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { api, clearApiCache } from '../../services/api';
 import { User, Profile } from '../../types';
 import {
@@ -235,6 +236,7 @@ export const ProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const { user: currentUser, updateUser } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const [profileUser, setProfileUser] = useState<User | null>(null);
@@ -1800,7 +1802,7 @@ export const ProfilePage: React.FC = () => {
   // Skeleton Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 font-sans">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 font-sans">
         <div className="max-w-6xl mx-auto space-y-6 animate-pulse">
           <div className="h-64 rounded-2xl bg-slate-200 dark:bg-slate-800" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1820,16 +1822,16 @@ export const ProfilePage: React.FC = () => {
 
   if (!profileUser) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 py-20 px-4 text-center font-sans">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-20 px-4 text-center font-sans">
         <SEO title="Profile Not Found | HookZ" noindex={true} />
-        <div className="max-w-md mx-auto p-8 rounded-2xl bg-white dark:bg-slate-900 border border-[#E2E8F0] dark:border-slate-800 shadow-sm space-y-4">
-          <h2 className="text-xl font-bold text-[#0F172A] dark:text-white">Profile Not Found</h2>
-          <p className="text-sm text-[#64748B] dark:text-slate-400">
+        <div className="max-w-md mx-auto p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Profile Not Found</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             This founder or member profile is unavailable or may have been removed.
           </p>
           <Link
             to="/cofounders"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 transition-colors"
           >
             Explore Talent Directory
           </Link>
@@ -2516,7 +2518,7 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* Profile Header Row with solid white background so details never overlap cover image */}
-          <div className="px-4 sm:px-8 pb-6 pt-3 relative bg-white dark:bg-[#0F1624] border-t border-slate-100 dark:border-white/[0.06] w-full max-w-full overflow-visible z-10">
+          <div className="px-4 sm:px-8 pb-6 pt-3 relative bg-white dark:bg-[var(--bg-surface)] border-t border-slate-100 dark:border-white/[0.06] w-full max-w-full overflow-visible z-10">
             <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 mb-6 w-full min-w-0">
               
               {/* Profile Photo */}
@@ -2527,10 +2529,10 @@ export const ProfilePage: React.FC = () => {
                       src={avatar!}
                       alt={displayName}
                       decoding="async"
-                      className="w-full h-full rounded-full object-cover border-4 border-white dark:border-[#0F1624] shadow-md bg-white"
+                      className="w-full h-full rounded-full object-cover border-4 border-white dark:border-[var(--bg-surface)] shadow-md bg-white"
                     />
                   ) : (
-                    <div className="w-full h-full rounded-full border-4 border-white dark:border-[#0F1624] shadow-md bg-brand-600 text-white flex flex-col items-center justify-center font-bold">
+                    <div className="w-full h-full rounded-full border-4 border-white dark:border-[var(--bg-surface)] shadow-md bg-brand-600 text-white flex flex-col items-center justify-center font-bold">
                       <span className="text-2xl sm:text-3xl font-extrabold tracking-wider">{initials}</span>
                     </div>
                   )}
@@ -3376,7 +3378,7 @@ export const ProfilePage: React.FC = () => {
         <div className="fixed sm:hidden bottom-5 right-5 z-40">
           <button
             onClick={handleOpenEdit}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold text-white bg-[#4F46E5] hover:bg-[#4338CA] shadow-2xl shadow-indigo-600/60 border border-indigo-400/40 active:scale-95 transition-all cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-2xl shadow-indigo-600/60 border border-indigo-400/40 active:scale-95 transition-all cursor-pointer"
             aria-label="Edit Profile"
           >
             <Edit3 size={15} />
@@ -3388,6 +3390,12 @@ export const ProfilePage: React.FC = () => {
       {/* EDIT PROFILE MODAL */}
       {isMe && (
         <Modal isOpen={editOpen} onClose={() => setEditOpen(false)} title="Edit Profile Details" maxWidth="2xl">
+          <div className="card-base p-4 mb-5 flex items-center justify-between gap-4">
+            <div><h4 className="text-sm font-semibold">Appearance</h4><p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Make HookZ feel like your space.</p></div>
+            <button type="button" role="switch" aria-checked={theme === 'dark'} aria-label="Dark theme" onClick={toggleTheme} className="btn-secondary text-xs">
+              {theme === 'dark' ? 'Dark theme on' : 'Dark theme off'}
+            </button>
+          </div>
           <form onSubmit={handleSaveProfile} className="space-y-4 font-sans">
             {/* --- SECTION 1: BASIC INFO --- */}
             <div className="p-4 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 shadow-xs space-y-4">
@@ -4602,7 +4610,7 @@ export const ProfilePage: React.FC = () => {
         maxWidth="md"
       >
         <div className="text-center space-y-4 py-2 font-sans">
-          <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-[#4F46E5] mx-auto flex items-center justify-center shadow-inner">
+          <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-brand-600 mx-auto flex items-center justify-center shadow-inner">
             <Camera size={32} />
           </div>
           <div className="space-y-2">
@@ -4611,7 +4619,7 @@ export const ProfilePage: React.FC = () => {
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed px-2">
               HookZ requires your permission to access your device gallery/photos to select a{' '}
-              <span className="font-bold text-[#4F46E5]">
+              <span className="font-bold text-brand-600">
                 {targetImageType === 'avatar' ? 'profile photo' : 'background cover image'}
               </span>
               . You will review the selected image before it is kept and saved.
@@ -4628,7 +4636,7 @@ export const ProfilePage: React.FC = () => {
             <button
               type="button"
               onClick={handleGrantGalleryPermission}
-              className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-[#4F46E5] hover:bg-[#4338CA] transition-all shadow-md shadow-indigo-500/20 active:scale-95 cursor-pointer"
+              className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 transition-all shadow-md shadow-indigo-500/20 active:scale-95 cursor-pointer"
             >
               Allow & Open Gallery
             </button>

@@ -154,7 +154,7 @@ const AppContent: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8F9FB] dark:bg-[#0B0F17]">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] dark:bg-[var(--bg-primary)]">
         <PageLoader />
       </div>
     );
@@ -163,15 +163,22 @@ const AppContent: React.FC = () => {
   const isPublicLanding = !user && location.pathname === '/';
   const isMessagesPage = location.pathname.startsWith('/messages');
 
+  // Apply the setup gate to public feature routes as well as protected routes.
+  // Legal and recovery pages stay reachable while a new member is onboarding.
+  const setupExempt = ['/onboarding', '/auth/callback', '/forgot-password', '/reset-password', '/privacy', '/privacy-notice', '/terms', '/dsar', '/data-rights'];
+  if (user && (user.onboarding_completed === false || user.onboardingCompleted === false) && !setupExempt.includes(location.pathname)) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
   return (
-    <div className={`min-h-screen flex flex-col ${isPublicLanding ? 'bg-white dark:bg-[#0B0F17]' : 'bg-[#F8FAFC] dark:bg-[#090D16]'} text-slate-900 dark:text-[#F8FAFC] transition-colors selection:bg-brand-600 selection:text-white relative w-full max-w-full overflow-x-hidden`}>
-      {!isPublicLanding && <Navbar />}
+    <div className="min-h-screen flex flex-col theme-page transition-colors selection:bg-brand-600 selection:text-white relative w-full max-w-full overflow-x-hidden">
+      {!isAuthOrMeetingPage && <Navbar />}
       <NewUserCategoryModal />
-      <div className={`flex-1 flex w-full max-w-full min-w-0 overflow-x-hidden ${isPublicLanding ? '' : 'pt-14'}`}>
-        {user && <Sidebar />}
+      <div className={`flex-1 flex w-full max-w-full min-w-0 overflow-x-hidden ${isAuthOrMeetingPage ? '' : 'pt-14'}`}>
+        {user && !isAuthOrMeetingPage && <Sidebar />}
         <main
           className={`flex-1 min-w-0 flex flex-col justify-between overflow-x-hidden ${
-            isMessagesPage ? 'pb-0' : 'pb-16 lg:pb-0'
+            isMessagesPage || isAuthOrMeetingPage ? 'pb-0' : 'pb-16 lg:pb-0'
           } ${
             !user || isAuthOrMeetingPage ? '' : 'lg:pl-60 xl:pl-64'
           }`}
@@ -307,10 +314,10 @@ const AppContent: React.FC = () => {
               </Routes>
             </React.Suspense>
           </div>
-          {!isMessagesPage && <Footer />}
+          {!isMessagesPage && !isAuthOrMeetingPage && <Footer />}
         </main>
       </div>
-      <MobileBottomBar />
+      {!isAuthOrMeetingPage && <MobileBottomBar />}
       <CookieConsentBanner />
     </div>
   );

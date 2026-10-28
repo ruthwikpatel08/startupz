@@ -36,14 +36,14 @@ export const Avatar: React.FC<AvatarProps> = ({
     !src.includes('avataaars')
   );
 
-  const cleanName = (name || 'Startup Builder').trim();
+  const cleanName = (name || 'HookZ Builder').trim();
   const initials = cleanName
     .split(' ')
     .filter(Boolean)
     .map((n) => n[0])
     .join('')
     .substring(0, 2)
-    .toUpperCase() || 'SZ';
+    .toUpperCase() || 'HZ';
 
   const sizeCls = sizeClasses[size] || sizeClasses.md;
 

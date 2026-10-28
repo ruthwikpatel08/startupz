@@ -162,7 +162,7 @@ export const DSARPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F17] py-12 px-4 sm:px-6 lg:px-8 transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-[var(--bg-primary)] py-12 px-4 sm:px-6 lg:px-8 transition-colors">
       <SEO
         title="Data Subject Rights (DSAR) Portal — HookZ DPDP Act Compliance"
         description="Exercise your statutory rights under the Digital Personal Data Protection Act 2023: Access, Correction, Erasure, Consent Withdrawal, and Nomination."

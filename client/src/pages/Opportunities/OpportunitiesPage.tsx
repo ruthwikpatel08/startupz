@@ -10,6 +10,7 @@ import { SEO } from '../../components/common/SEO';
 import { ProblemCard } from '../../components/problems/ProblemCard';
 import { ProblemFilters } from '../../components/problems/ProblemFilters';
 import { ShareProblemModal } from '../../components/problems/ShareProblemModal';
+import { sanitizeExternalUrl } from '../../utils/urlSecurity';
 import {
   Briefcase,
   Search,
@@ -1054,7 +1055,7 @@ export const OpportunitiesPage: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenCreateModal}
-            className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-xl px-3.5 py-2 text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5 transition-colors"
+            className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-xl px-3.5 py-2 text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1.5 transition-colors"
           >
             <Plus size={14} /> Post Opportunity
           </button>
@@ -1102,7 +1103,7 @@ export const OpportunitiesPage: React.FC = () => {
                   }}
                   className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                     isSelected
-                      ? 'bg-[#50C878] text-white border border-[#50C878] shadow-xs'
+                      ? 'bg-brand-600 text-white border border-brand-600 shadow-xs'
                       : 'bg-white dark:bg-dark-900 border border-slate-200 dark:border-dark-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-dark-700'
                   }`}
                 >
@@ -1126,7 +1127,7 @@ export const OpportunitiesPage: React.FC = () => {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search roles, skills, startups..."
-                className="w-full h-10 pl-10 pr-3.5 text-sm rounded-lg bg-white dark:bg-[#0F1624] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors"
+                className="w-full h-10 pl-10 pr-3.5 text-sm rounded-lg bg-white dark:bg-[var(--bg-surface)] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors"
               />
             </div>
 
@@ -1134,7 +1135,7 @@ export const OpportunitiesPage: React.FC = () => {
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="w-full h-10 px-3 text-sm rounded-lg bg-white dark:bg-[#0F1624] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors cursor-pointer"
+                className="w-full h-10 px-3 text-sm rounded-lg bg-white dark:bg-[var(--bg-surface)] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors cursor-pointer"
               >
                 {roles.map((r) => (
                   <option key={r} value={r}>
@@ -1148,7 +1149,7 @@ export const OpportunitiesPage: React.FC = () => {
               <select
                 value={workplaceType}
                 onChange={(e) => setWorkplaceType(e.target.value)}
-                className="w-full h-10 px-3 text-sm rounded-lg bg-white dark:bg-[#0F1624] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors cursor-pointer"
+                className="w-full h-10 px-3 text-sm rounded-lg bg-white dark:bg-[var(--bg-surface)] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors cursor-pointer"
               >
                 {workplaces.map((w) => (
                   <option key={w} value={w}>
@@ -1162,7 +1163,7 @@ export const OpportunitiesPage: React.FC = () => {
               <select
                 value={commitment}
                 onChange={(e) => setCommitment(e.target.value)}
-                className="w-full h-10 px-3 text-sm rounded-lg bg-white dark:bg-[#0F1624] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors cursor-pointer"
+                className="w-full h-10 px-3 text-sm rounded-lg bg-white dark:bg-[var(--bg-surface)] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition-colors cursor-pointer"
               >
                 {commitments.map((c) => (
                   <option key={c} value={c}>
@@ -2263,7 +2264,7 @@ export const OpportunitiesPage: React.FC = () => {
                         <div className="flex items-center gap-1.5 text-xs">
                           <span className="text-slate-500 font-medium">Portfolio / Resume:</span>
                           <a
-                            href={app.resumeUrl}
+                            href={sanitizeExternalUrl(app.resumeUrl)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-brand-600 dark:text-brand-400 hover:underline font-semibold inline-flex items-center gap-1"

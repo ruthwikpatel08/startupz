@@ -10,6 +10,7 @@ import { Modal } from '../../components/common/Modal';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { Avatar } from '../../components/common/Avatar';
 import { SEO } from '../../components/common/SEO';
+import { sanitizeExternalUrl } from '../../utils/urlSecurity';
 import {
   GraduationCap,
   Search,
@@ -322,7 +323,7 @@ export const MentorsPage: React.FC = () => {
                           <VerificationBadge badge="Verified Mentor" isVerified={mentor.isVerified} size="sm" />
                           {mentor.website && (
                             <a
-                              href={mentor.website}
+                              href={sanitizeExternalUrl(mentor.website)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-slate-400 hover:text-brand-600 transition-colors p-0.5 rounded"

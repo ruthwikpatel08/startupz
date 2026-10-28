@@ -97,3 +97,52 @@ export const authSyncLimiter = createRateLimiter({
   message: 'Too many authentication sync requests. Please slow down.',
   keyGenerator: (req) => `auth:sync:${getClientIp(req)}`,
 });
+
+// 20 post creations per 10 minutes per user
+export const postCreationLimiter = createRateLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 20,
+  message: 'You are creating posts too quickly. Please wait a few minutes.',
+  keyGenerator: (req) => `post:create:${req.user?.id || getClientIp(req)}`,
+});
+
+// 15 proposals per 10 minutes per user
+export const proposalLimiter = createRateLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 15,
+  message: 'You have submitted too many proposals recently. Please slow down.',
+  keyGenerator: (req) => `proposal:submit:${req.user?.id || getClientIp(req)}`,
+});
+
+// 30 messages per minute per user
+export const messagingLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: 'You are sending messages too quickly. Please wait a moment.',
+  keyGenerator: (req) => `message:send:${req.user?.id || getClientIp(req)}`,
+});
+
+// 20 connection requests per 10 minutes per user
+export const connectionLimiter = createRateLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 20,
+  message: 'Too many connection requests sent. Please try again later.',
+  keyGenerator: (req) => `connection:request:${req.user?.id || getClientIp(req)}`,
+});
+
+// 10 reports per hour per user
+export const reportLimiter = createRateLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  message: 'Too many reports submitted. Please wait before submitting another report.',
+  keyGenerator: (req) => `report:submit:${req.user?.id || getClientIp(req)}`,
+});
+
+// 10 AI Scout requests per 10 minutes per user
+export const aiScoutLimiter = createRateLimiter({
+  windowMs: 10 * 60 * 1000,
+  max: 10,
+  message: 'AI Scout query limit reached. Please wait a few minutes before querying again.',
+  keyGenerator: (req) => `ai:scout:${req.user?.id || getClientIp(req)}`,
+});
+

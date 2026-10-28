@@ -12,6 +12,7 @@ import { PrototypeCard } from '../../components/prototypes/PrototypeCard';
 import { CreatePrototypeModal } from '../../components/prototypes/CreatePrototypeModal';
 import { SEO } from '../../components/common/SEO';
 import { ShareModal, ShareItemData } from '../../components/common/ShareModal';
+import { sanitizeExternalUrl } from '../../utils/urlSecurity';
 import {
   Share2,
   Heart,
@@ -1480,8 +1481,8 @@ export const StartupFeedPage: React.FC = () => {
           onClick={() => handlePillarChange('ACHIEVEMENTS')}
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activePillar === 'ACHIEVEMENTS'
-              ? 'bg-[#50C878] text-white border-[#50C878] dark:bg-[#50C878] dark:text-white dark:border-[#50C878] shadow-xs font-semibold'
-              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+              ? 'bg-brand-600 text-white border-brand-600 dark:bg-brand-600 dark:text-white dark:border-brand-600 shadow-xs font-semibold'
+              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
           <Award size={15} className={`shrink-0 ${activePillar === 'ACHIEVEMENTS' ? 'text-white' : 'text-slate-400'}`} />
@@ -1496,8 +1497,8 @@ export const StartupFeedPage: React.FC = () => {
           onClick={() => handlePillarChange('IDEAS')}
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activePillar === 'IDEAS'
-              ? 'bg-[#50C878] text-white border-[#50C878] dark:bg-[#50C878] dark:text-white dark:border-[#50C878] shadow-xs font-semibold'
-              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+              ? 'bg-brand-600 text-white border-brand-600 dark:bg-brand-600 dark:text-white dark:border-brand-600 shadow-xs font-semibold'
+              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
           <Rocket size={15} className={`shrink-0 ${activePillar === 'IDEAS' ? 'text-white' : 'text-slate-400'}`} />
@@ -1512,8 +1513,8 @@ export const StartupFeedPage: React.FC = () => {
           onClick={() => handlePillarChange('PROTOTYPES')}
           className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
             activePillar === 'PROTOTYPES'
-              ? 'bg-[#50C878] text-white border-[#50C878] dark:bg-[#50C878] dark:text-white dark:border-[#50C878] shadow-xs font-semibold'
-              : 'bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
+              ? 'bg-brand-600 text-white border-brand-600 dark:bg-brand-600 dark:text-white dark:border-brand-600 shadow-xs font-semibold'
+              : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-white/[0.08] hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40 font-medium'
           }`}
         >
           <Boxes size={15} className={`shrink-0 ${activePillar === 'PROTOTYPES' ? 'text-white' : 'text-slate-400'}`} />
@@ -1695,7 +1696,7 @@ export const StartupFeedPage: React.FC = () => {
             className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
               filterType === item.id
                 ? 'bg-slate-900 text-white dark:bg-[#1E293B] dark:text-[#F8FAFC] shadow-xs'
-                : 'bg-white dark:bg-[#0F1624] border border-slate-200/80 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                : 'bg-white dark:bg-[var(--bg-surface)] border border-slate-200/80 dark:border-white/[0.08] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40'
             }`}
           >
             {item.label}
@@ -1900,7 +1901,7 @@ export const StartupFeedPage: React.FC = () => {
                   {post.links && (
                     <div className="pt-1.5">
                       <a
-                        href={post.links}
+                        href={sanitizeExternalUrl(post.links)}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 text-xs text-brand-600 dark:text-brand-400 hover:underline break-all"

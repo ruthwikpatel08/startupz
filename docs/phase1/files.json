@@ -1,0 +1,45 @@
+{
+  "1": [
+    "client/index.html",
+    "client/src/components/common/Avatar.tsx",
+    "client/src/components/common/Footer.tsx",
+    "client/src/components/common/Modal.tsx",
+    "client/src/components/common/Navbar.tsx",
+    "client/src/components/common/Sidebar.tsx",
+    "client/src/index.css",
+    "client/src/pages/Business/BusinessPage.tsx",
+    "client/src/pages/CoFounders/FindCoFounderPage.tsx",
+    "client/src/pages/Feed/StartupFeedPage.tsx",
+    "client/src/pages/LandingPage.tsx",
+    "client/src/pages/Legal/DSARPage.tsx",
+    "client/src/pages/Legal/PrivacyNoticePage.tsx",
+    "client/src/pages/Legal/TermsPage.tsx",
+    "client/src/pages/Opportunities/OpportunitiesPage.tsx",
+    "client/src/pages/Profile/ProfilePage.tsx",
+    "client/src/pages/Projects/ProjectsPage.tsx",
+    "client/src/pages/Startups/ExploreStartupsPage.tsx",
+    "client/tailwind.config.js"
+  ],
+  "2": [
+    "client/src/pages/PublicLandingPage.tsx",
+    "client/src/pages/PublicLandingPage.css"
+  ],
+  "3": [
+    "client/src/pages/Auth/AuthCallbackPage.tsx",
+    "client/src/pages/Auth/LoginPage.tsx",
+    "client/src/pages/Auth/RegisterPage.tsx",
+    "client/src/components/auth/AuthLayout.tsx",
+    "client/src/components/auth/AuthLayout.css"
+  ],
+  "4": [
+    "client/src/App.tsx",
+    "client/src/lib/supabase.ts",
+    "client/src/pages/Onboarding/OnboardingPage.tsx",
+    "client/src/pages/Onboarding/OnboardingPage.css",
+    "client/src/pages/Onboarding/questions.ts",
+    "supabase/migrations/015_onboarding_completion.sql",
+    "scripts/test-onboarding.mjs",
+    "scripts/test-onboarding-db.mjs",
+    "scripts/test-phase1-ui.cjs"
+  ]
+}

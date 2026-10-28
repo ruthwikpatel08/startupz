@@ -5,6 +5,7 @@ import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth, optionalAuth, isOwnerOrAdmin, isUserAdminCheck, getUserCandidateIds } from '../middleware/auth.js';
 import { supabaseAdmin } from '../supabase.js';
+import { postCreationLimiter, proposalLimiter } from '../middleware/rateLimiter.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -242,7 +243,7 @@ router.get('/', optionalAuth, async (req, res) => {
 });
 
 // POST /api/posts
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, postCreationLimiter, async (req, res) => {
   try {
     const {
       postType = 'UPDATE',
@@ -262,13 +263,31 @@ router.post('/', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Post content cannot be empty.' });
     }
 
+    let safeStartupId = null;
+    if (startupId) {
+      const startup = await prisma.startup.findFirst({
+        where: { id: startupId },
+        include: { members: true },
+      });
+      if (!startup) {
+        return res.status(404).json({ error: 'Specified startup not found.' });
+      }
+      const isFounder = startup.founderId === req.user.id;
+      const isMember = startup.members?.some((m) => m.userId === req.user.id);
+      const isAdmin = isUserAdminCheck(req.user);
+      if (!isFounder && !isMember && !isAdmin) {
+        return res.status(403).json({ error: 'You do not have permission to post on behalf of this startup.' });
+      }
+      safeStartupId = startup.id;
+    }
+
     const finalLinks = links || websiteUrl || null;
     const finalImages = images || mediaUrl || null;
 
     const post = await prisma.post.create({
       data: {
         authorId: req.user.id,
-        startupId: startupId || null,
+        startupId: safeStartupId,
         postType,
         title: title ? title.trim() : null,
         content: content.trim(),
@@ -295,7 +314,7 @@ router.post('/', requireAuth, async (req, res) => {
         await supabaseAdmin.from('posts').upsert({
           id: post.id,
           author_id: req.user.id,
-          startup_id: startupId || null,
+          startup_id: safeStartupId,
           post_type: postType,
           title: title ? title.trim() : null,
           content: content.trim(),
@@ -857,7 +876,7 @@ router.get('/:id/comments', optionalAuth, async (req, res) => {
 // ============================================================================
 
 // POST /api/posts/:id/proposals - Send a "Build Together" proposal to the uploader
-router.post('/:id/proposals', requireAuth, async (req, res) => {
+router.post('/:id/proposals', requireAuth, proposalLimiter, async (req, res) => {
   try {
     const { id: prototypeId } = req.params;
     const { aboutMe, contribution, contactInfo } = req.body;
@@ -983,6 +1002,24 @@ router.post('/:id/proposals', requireAuth, async (req, res) => {
 router.get('/:id/proposals', requireAuth, async (req, res) => {
   try {
     const { id: prototypeId } = req.params;
+
+    // Check ownership: caller must be author of prototype or admin
+    let post = await prisma.post.findUnique({
+      where: { id: prototypeId },
+      select: { id: true, authorId: true },
+    }).catch(() => null);
+    if (!post && supabaseAdmin) {
+      const { data } = await supabaseAdmin.from('posts').select('id, author_id').eq('id', prototypeId).maybeSingle();
+      if (data) post = { id: data.id, authorId: data.author_id };
+    }
+    if (post) {
+      const authorId = post.authorId || post.author_id;
+      const isAdmin = isUserAdminCheck(req.user);
+      if (authorId !== req.user.id && !isAdmin) {
+        return res.status(403).json({ error: 'You do not have permission to view proposals for this prototype.' });
+      }
+    }
+
     let proposals = [];
 
     if (supabaseAdmin) {
@@ -1075,6 +1112,38 @@ router.put('/proposals/:proposalId', requireAuth, async (req, res) => {
   try {
     const { proposalId } = req.params;
     const { status = 'ACCEPTED' } = req.body;
+
+    let proposalReceiverId = null;
+    let existingProposal = null;
+
+    if (supabaseAdmin) {
+      try {
+        const { data } = await supabaseAdmin
+          .from('prototype_proposals')
+          .select('*')
+          .eq('id', proposalId)
+          .maybeSingle();
+        if (data) {
+          existingProposal = data;
+          proposalReceiverId = data.receiver_id;
+        }
+      } catch {}
+    }
+
+    if (!existingProposal) {
+      const dbProp = await prisma.startupProposal.findUnique({ where: { id: proposalId } }).catch(() => null);
+      if (dbProp) {
+        existingProposal = dbProp;
+        proposalReceiverId = dbProp.receiverId;
+      }
+    }
+
+    if (existingProposal && proposalReceiverId) {
+      const isAdmin = isUserAdminCheck(req.user);
+      if (proposalReceiverId !== req.user.id && !isAdmin) {
+        return res.status(403).json({ error: 'You do not have permission to modify this proposal.' });
+      }
+    }
 
     let updated = null;
 

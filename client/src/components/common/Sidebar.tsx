@@ -52,12 +52,12 @@ export const Sidebar: React.FC = () => {
   const isOpportunitiesActive = location.pathname.startsWith('/opportunities');
 
   return (
-    <aside className="hidden lg:flex flex-col w-60 xl:w-64 shrink-0 border-r border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#0F1624] fixed left-0 top-14 bottom-0 h-[calc(100vh-3.5rem)] py-4 px-3 select-none z-30 transition-colors overflow-y-auto">
+    <aside className="hidden lg:flex flex-col w-60 xl:w-64 shrink-0 border-r border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[var(--bg-surface)] fixed left-0 top-14 bottom-0 h-[calc(100vh-3.5rem)] py-4 px-3 select-none z-30 transition-colors overflow-y-auto">
       
       {/* Primary 5 Tools Vertical Nav */}
       <div className="space-y-1.5">
         <div className="px-3.5 pb-2 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          Core Platform Tools
+          Your workspace
         </div>
 
         {/* 1) Home */}
@@ -133,7 +133,7 @@ export const Sidebar: React.FC = () => {
       <div className="mt-auto pt-4 border-t border-slate-100 dark:border-dark-800 space-y-2">
         <Link
           to="/projects"
-          className="w-full py-2.5 px-3.5 rounded-lg text-sm font-semibold text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 border border-[#34a1eb] shadow-subtle flex items-center justify-center gap-2 transition-colors"
+          className="w-full py-2.5 px-3.5 rounded-lg text-sm font-semibold text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 border border-[var(--brand-primary)] shadow-subtle flex items-center justify-center gap-2 transition-colors"
         >
           <Plus size={15} />
           <span>New Builder Project</span>

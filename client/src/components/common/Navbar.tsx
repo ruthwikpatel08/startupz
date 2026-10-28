@@ -184,7 +184,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-40 w-full bg-white dark:bg-[#0F1624] border-b border-slate-200/80 dark:border-white/[0.08] transition-colors">
+      <header className="fixed top-0 left-0 right-0 z-40 w-full bg-white dark:bg-[var(--bg-surface)] border-b border-slate-200/80 dark:border-white/[0.08] transition-colors">
         <div className="w-full px-2.5 sm:px-6 lg:px-6">
           <div className="flex items-center justify-between h-14 gap-2 sm:gap-4 w-full">
             
@@ -295,7 +295,7 @@ export const Navbar: React.FC = () => {
                   {/* Post Idea Action Button */}
                   <Link
                     to="/startups/create"
-                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 border border-[#34a1eb] shadow-subtle transition-colors"
+                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 border border-[var(--brand-primary)] shadow-subtle transition-colors"
                   >
                     <Plus size={13} />
                     <span>Post Idea</span>
@@ -411,6 +411,11 @@ export const Navbar: React.FC = () => {
                               <Settings size={14} className="text-slate-400" />
                               <span>Settings</span>
                             </Link>
+                            <button type="button" onClick={toggleTheme} aria-pressed={theme === 'dark'}
+                              className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-800">
+                              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+                              <span>{theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}</span>
+                            </button>
                           </div>
 
                           <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
@@ -670,7 +675,7 @@ export const Navbar: React.FC = () => {
                   <Link
                     to="/startups/create"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-md text-center py-1.5 text-xs font-semibold transition-colors"
+                    className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-md text-center py-1.5 text-xs font-semibold transition-colors"
                   >
                     + Post Idea
                   </Link>

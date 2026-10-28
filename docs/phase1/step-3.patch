@@ -1,0 +1,2135 @@
+--- a/client/src/pages/Auth/AuthCallbackPage.tsx
++++ b/client/src/pages/Auth/AuthCallbackPage.tsx
+@@ -1,972 +1,38 @@
+ import React, { useEffect, useState } from 'react';
+-import { useNavigate, useSearchParams } from 'react-router-dom';
+-import { supabase, upsertUserProfile, recordAuthProviderHint, fetchUserProfile, checkUsernameAvailability } from '../../lib/supabase';
+-import { api } from '../../services/api';
++import { Link, useNavigate, useSearchParams } from 'react-router-dom';
++import { LoaderCircle } from 'lucide-react';
++import { supabase, fetchUserProfile, mapSupabaseToAppUser, recordAuthProviderHint, getAuthErrorMessage } from '../../lib/supabase';
+ import { useAuth } from '../../context/AuthContext';
+-import {
+-  Rocket,
+-  AlertCircle,
+-  RefreshCw,
+-  Users,
+-  Megaphone,
+-  TrendingUp,
+-  Code,
+-  Palette,
+-  GraduationCap,
+-  Briefcase,
+-  Check,
+-  CheckCircle2,
+-  Sparkles,
+-  MapPin,
+-  AtSign,
+-  ArrowRight,
+-  User,
+-  FileText,
+-  CheckSquare,
+-  Square,
+-  Lock,
+-  Eye,
+-  EyeOff,
+-} from 'lucide-react';
+-import { UserRole } from '../../types';
+-
+-interface RoleCategoryOption {
+-  id: UserRole;
+-  label: string;
+-  icon: React.ElementType;
+-  desc: string;
+-  defaultHeadline: string;
+-}
++import { AuthLayout } from '../../components/auth/AuthLayout';
+ 
+ export const AuthCallbackPage: React.FC = () => {
+   const navigate = useNavigate();
+-  const [searchParams] = useSearchParams();
++  const [params] = useSearchParams();
+   const { updateUser } = useAuth();
+-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+-
+-  // New Google user setup state
+-  const [isNewUser, setIsNewUser] = useState(false);
+-  const [authUser, setAuthUser] = useState<any | null>(null);
+-  const [fullName, setFullName] = useState('');
+-  const [username, setUsername] = useState('');
+-  const [avatar, setAvatar] = useState('');
+-  const [selectedRole, setSelectedRole] = useState<UserRole>('STUDENT');
+-  const [customRoleDescription, setCustomRoleDescription] = useState('');
+-  const [headline, setHeadline] = useState('');
+-  const [location, setLocation] = useState('Remote');
+-  const [oneLineBio, setOneLineBio] = useState('');
+-  const [bio, setBio] = useState('');
+-  const [password, setPassword] = useState('');
+-  const [confirmPassword, setConfirmPassword] = useState('');
+-  const [showPassword, setShowPassword] = useState(false);
+-  const [openTo, setOpenTo] = useState<string[]>([
+-    'Co-Founder',
+-    'Startup Team',
+-    'Investment',
+-  ]);
+-  const [isSubmitting, setIsSubmitting] = useState(false);
+-
+-  // Live username uniqueness validation & suggestions state
+-  const [usernameStatus, setUsernameStatus] = useState<{
+-    checking: boolean;
+-    available: boolean | null;
+-    message: string | null;
+-    suggestions: string[];
+-  }>({
+-    checking: false,
+-    available: null,
+-    message: null,
+-    suggestions: [],
+-  });
+-
+-  const usernameCheckTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+-
+-  const triggerUsernameCheck = (candidate: string, targetUserId?: string) => {
+-    if (usernameCheckTimerRef.current) {
+-      clearTimeout(usernameCheckTimerRef.current);
+-    }
+-    const clean = candidate.trim().toLowerCase().replace(/^@/, '');
+-    if (!clean) {
+-      setUsernameStatus({ checking: false, available: null, message: null, suggestions: [] });
+-      return;
+-    }
+-    if (clean.length < 3) {
+-      setUsernameStatus({
+-        checking: false,
+-        available: false,
+-        message: 'Username must be at least 3 characters long.',
+-        suggestions: [],
+-      });
+-      return;
+-    }
+-    setUsernameStatus((prev) => ({ ...prev, checking: true }));
+-    usernameCheckTimerRef.current = setTimeout(async () => {
++  const [error, setError] = useState('');
++  useEffect(() => {
++    let active = true;
++    const complete = async () => {
+       try {
+-        const uid = targetUserId || authUser?.id;
+-        const res = await checkUsernameAvailability(clean, uid);
+-        setUsernameStatus({
+-          checking: false,
+-          available: res.available,
+-          message: res.message,
+-          suggestions: res.suggestions,
+-        });
+-      } catch {
+-        setUsernameStatus((prev) => ({ ...prev, checking: false }));
+-      }
+-    }, 300);
+-  };
+-
+-  const roleCategories: RoleCategoryOption[] = [
+-    {
+-      id: 'STUDENT',
+-      label: 'Student',
+-      icon: GraduationCap,
+-      desc: 'College/university student, student researcher & builder.',
+-      defaultHeadline: 'Student Builder & Campus Innovator',
+-    },
+-    {
+-      id: 'OTHER',
+-      label: 'Others',
+-      icon: Briefcase,
+-      desc: 'Operator, specialist, professional, ecosystem enthusiast.',
+-      defaultHeadline: 'Startup Operator & Ecosystem Member',
+-    },
+-    {
+-      id: 'FOUNDER',
+-      label: 'Founder',
+-      icon: Rocket,
+-      desc: 'Building a startup, looking for co-founders & capital.',
+-      defaultHeadline: 'Founder & Visionary | Startup Builder',
+-    },
+-    {
+-      id: 'COFOUNDER',
+-      label: 'Co-Founder',
+-      icon: Users,
+-      desc: 'Seeking a synergy partner or looking to join an early team.',
+-      defaultHeadline: 'Co-Founder | Technical & Product Partner',
+-    },
+-    {
+-      id: 'DEVELOPER',
+-      label: 'Developer / Engineer',
+-      icon: Code,
+-      desc: 'Software engineer, technical builder, AI engineer.',
+-      defaultHeadline: 'Software Engineer | Technical Builder',
+-    },
+-    {
+-      id: 'MARKETER',
+-      label: 'Marketer',
+-      icon: Megaphone,
+-      desc: 'Growth lead, performance marketer, GTM strategist.',
+-      defaultHeadline: 'Growth Marketer | Demand & Traction Lead',
+-    },
+-    {
+-      id: 'INVESTOR',
+-      label: 'Investor',
+-      icon: TrendingUp,
+-      desc: 'Angel investor, syndicate backer, or venture capitalist.',
+-      defaultHeadline: 'Angel Investor | Early-Stage Backer',
+-    },
+-    {
+-      id: 'MENTOR',
+-      label: 'Mentor / Advisor',
+-      icon: Sparkles,
+-      desc: 'Experienced advisor, startup mentor, executive coach.',
+-      defaultHeadline: 'Startup Mentor & Strategic Advisor',
+-    },
+-  ];
+-
+-  const openToOptions = [
+-    'Co-Founder',
+-    'Startup Team',
+-    'Investment',
+-    'Mentorship',
+-    'Advisory',
+-  ];
+-
+-  const toggleOpenTo = (option: string) => {
+-    setOpenTo((prev) =>
+-      prev.includes(option) ? prev.filter((o) => o !== option) : [...prev, option]
+-    );
+-  };
+-
+-  useEffect(() => {
+-    let isSubscribed = true;
+-
+-    const isUserExistingAccount = (_user: any, profile: any): boolean => {
+-      // 1. If the user's profile already has category/details confirmed (is_category_selected === true)
+-      if (profile?.is_category_selected === true) {
+-        return true;
+-      }
+-      // 2. If the profile already has non-empty custom bio or skills (previously filled profile)
+-      if (profile?.bio || profile?.skills || profile?.startup_interests) {
+-        return true;
+-      }
+-      return false;
++        const callbackError = params.get('error_description') || params.get('error');
++        if (callbackError) throw new Error(callbackError);
++        const { data: { session }, error } = await supabase.auth.getSession();
++        if (error) throw error;
++        if (!session) throw new Error('Your sign-in link expired. Please sign in again.');
++        const profile = await fetchUserProfile(session.user.id, true, session.user.email);
++        const user = mapSupabaseToAppUser(session.user, profile);
++        if (!active) return;
++        if (session.user.email) recordAuthProviderHint(session.user.email, session.user.app_metadata.provider === 'google' ? 'google' : 'email');
++        updateUser(user);
++        localStorage.removeItem('startupz_oauth_meta');
++        localStorage.removeItem('startupz_oauth_intent');
++        navigate(user.onboarding_completed === false ? '/onboarding' : '/', { replace: true });
++      } catch (error) { if (active) setError(getAuthErrorMessage(error)); }
+     };
+-
+-    const handleCallback = async () => {
+-      // 1. Check for error in query params (e.g. user denied consent)
+-      const errorParam = searchParams.get('error_description') || searchParams.get('error');
+-      if (errorParam) {
+-        if (isSubscribed) {
+-          setErrorMessage(errorParam.replace(/\+/g, ' '));
+-        }
+-        return;
+-      }
+-
+-      try {
+-        // 2. Obtain session from Supabase client
+-        const {
+-          data: { session },
+-          error: sessionError,
+-        } = await supabase.auth.getSession();
+-
+-        if (sessionError) {
+-          throw sessionError;
+-        }
+-
+-        if (session?.user) {
+-          const user = session.user;
+-
+-          // Record Google auth provider hint
+-          if (user.email) {
+-            recordAuthProviderHint(user.email, 'google');
+-          }
+-
+-          // Check if profile exists in public.profiles and has completed details
+-          const existingProfile = await fetchUserProfile(user.id);
+-
+-          // If this is an existing user who already completed setup, navigate immediately to dashboard
+-          if (isUserExistingAccount(user, existingProfile)) {
+-            if (isSubscribed) {
+-              navigate('/', { replace: true });
+-            }
+-            return;
+-          }
+-
+-          // Otherwise, they are a brand-new user signing up via Google! Prompt them for details:
+-          const userFullName =
+-            user.user_metadata?.full_name ||
+-            user.user_metadata?.name ||
+-            user.email?.split('@')[0] ||
+-            'Member';
+-
+-          const userAvatar =
+-            user.user_metadata?.avatar_url ||
+-            user.user_metadata?.picture ||
+-            '';
+-
+-          let initialRole: UserRole = 'STUDENT';
+-          let initialHeadline = '';
+-          let initialLocation = 'Remote';
+-          let initialCustomRole = '';
+-
+-          try {
+-            const rawMeta = localStorage.getItem('startupz_oauth_meta');
+-            if (rawMeta) {
+-              const meta = JSON.parse(rawMeta);
+-              if (meta.role) {
+-                if (meta.role.startsWith('Other:')) {
+-                  initialRole = 'OTHER';
+-                  initialCustomRole = meta.role.replace(/^Other:\s*/, '');
+-                } else {
+-                  initialRole = meta.role as UserRole;
+-                }
+-              }
+-              if (meta.headline) initialHeadline = meta.headline;
+-              if (meta.location) initialLocation = meta.location;
+-              if (meta.customRole) initialCustomRole = meta.customRole;
+-            }
+-          } catch {}
+-
+-          if (isSubscribed) {
+-            setAuthUser(user);
+-            setFullName(userFullName);
+-            const initUsername = (user.email?.split('@')[0] || 'user').toLowerCase().replace(/[^a-z0-9_]/g, '');
+-            setUsername(initUsername);
+-            triggerUsernameCheck(initUsername, user.id);
+-            setAvatar(userAvatar);
+-            setSelectedRole(initialRole);
+-            setCustomRoleDescription(initialCustomRole);
+-            setHeadline(initialHeadline);
+-            setLocation(initialLocation);
+-            setIsNewUser(true);
+-          }
+-          return;
+-        }
+-
+-        // If session not ready yet, listen for the SIGNED_IN event
+-        const {
+-          data: { subscription },
+-        } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+-          if (event === 'SIGNED_IN' && newSession?.user) {
+-            const user = newSession.user;
+-            if (user.email) {
+-              recordAuthProviderHint(user.email, 'google');
+-            }
+-
+-            const existing = await fetchUserProfile(user.id);
+-            if (isUserExistingAccount(user, existing)) {
+-              if (isSubscribed) {
+-                navigate('/', { replace: true });
+-              }
+-            } else {
+-              const userFullName =
+-                user.user_metadata?.full_name ||
+-                user.user_metadata?.name ||
+-                user.email?.split('@')[0] ||
+-                'Member';
+-
+-              const userAvatar =
+-                user.user_metadata?.avatar_url ||
+-                user.user_metadata?.picture ||
+-                '';
+-
+-              let initialRole: UserRole = 'STUDENT';
+-              let initialHeadline = '';
+-              let initialLocation = 'Remote';
+-              let initialCustomRole = '';
+-
+-              try {
+-                const rawMeta = localStorage.getItem('startupz_oauth_meta');
+-                if (rawMeta) {
+-                  const meta = JSON.parse(rawMeta);
+-                  if (meta.role) {
+-                    if (meta.role.startsWith('Other:')) {
+-                      initialRole = 'OTHER';
+-                      initialCustomRole = meta.role.replace(/^Other:\s*/, '');
+-                    } else {
+-                      initialRole = meta.role as UserRole;
+-                    }
+-                  }
+-                  if (meta.headline) initialHeadline = meta.headline;
+-                  if (meta.location) initialLocation = meta.location;
+-                  if (meta.customRole) initialCustomRole = meta.customRole;
+-                }
+-              } catch {}
+-
+-              if (isSubscribed) {
+-                setAuthUser(user);
+-                setFullName(userFullName);
+-                const initUsername = (user.email?.split('@')[0] || 'user').toLowerCase().replace(/[^a-z0-9_]/g, '');
+-                setUsername(initUsername);
+-                triggerUsernameCheck(initUsername, user.id);
+-                setAvatar(userAvatar);
+-                setSelectedRole(initialRole);
+-                setCustomRoleDescription(initialCustomRole);
+-                setHeadline(initialHeadline);
+-                setLocation(initialLocation);
+-                setIsNewUser(true);
+-              }
+-            }
+-          }
+-        });
+-
+-        // Timeout fallback if session doesn't arrive within 8 seconds
+-        const timer = setTimeout(() => {
+-          if (isSubscribed && !isNewUser) {
+-            setErrorMessage('Authentication timed out. Please try signing in again.');
+-          }
+-        }, 8000);
+-
+-        return () => {
+-          subscription.unsubscribe();
+-          clearTimeout(timer);
+-        };
+-      } catch (err: any) {
+-        if (isSubscribed) {
+-          setErrorMessage(err.message || 'Failed to complete authentication. Please try again.');
+-        }
+-      }
+-    };
+-
+-    handleCallback();
+-
+-    return () => {
+-      isSubscribed = false;
+-    };
+-  }, [navigate, searchParams]);
+-
+-  const handleRoleSelect = (roleId: UserRole) => {
+-    setSelectedRole(roleId);
+-  };
+-
+-  const handleCompleteSetup = async (e: React.FormEvent) => {
+-    e.preventDefault();
+-    if (!authUser) return;
+-
+-    setIsSubmitting(true);
+-    setErrorMessage(null);
+-
+-    try {
+-      const cleanUsername =
+-        username.trim().toLowerCase().replace(/[^a-z0-9_]/g, '') ||
+-        authUser.email?.split('@')[0] ||
+-        'user';
+-
+-      // Validate username availability and uniqueness before proceeding
+-      const availability = await checkUsernameAvailability(cleanUsername, authUser.id);
+-      if (!availability.available) {
+-        setErrorMessage(availability.message || 'This username is already taken. Please choose another username.');
+-        setUsernameStatus({
+-          checking: false,
+-          available: false,
+-          message: availability.message,
+-          suggestions: availability.suggestions,
+-        });
+-        setIsSubmitting(false);
+-        return;
+-      }
+-
+-      const cleanFullName = fullName.trim() || 'Member';
+-      const cleanCustomRole = customRoleDescription.trim();
+-      const finalPreferredRole =
+-        selectedRole === 'OTHER' && cleanCustomRole
+-          ? `Other: ${cleanCustomRole}`
+-          : selectedRole;
+-      const cleanHeadline = headline.trim();
+-      const cleanLocation = location.trim() || 'Remote';
+-      const cleanOneLineBio = oneLineBio.trim();
+-      const cleanBio = (bio || '').trim();
+-      const openToString =
+-        openTo.length > 0
+-          ? openTo.join(',')
+-          : 'Co-Founder,Startup Team,Investment';
+-
+-      // Validate password
+-      if (!password || password.length < 6) {
+-        setErrorMessage('Password must be at least 6 characters long.');
+-        setIsSubmitting(false);
+-        return;
+-      }
+-      if (password !== confirmPassword) {
+-        setErrorMessage('Passwords do not match. Please check and try again.');
+-        setIsSubmitting(false);
+-        return;
+-      }
+-
+-      // Update password in Supabase Auth
+-      try {
+-        await supabase.auth.updateUser({ password });
+-      } catch (passErr) {
+-        console.warn('Supabase auth password update notice:', passErr);
+-      }
+-
+-      // 1. Save profile to Supabase public.profiles
+-      await upsertUserProfile(authUser.id, {
+-        full_name: cleanFullName,
+-        username: cleanUsername,
+-        headline: cleanHeadline,
+-        one_line_bio: cleanOneLineBio,
+-        location: cleanLocation,
+-        bio: cleanBio,
+-        avatar,
+-        preferred_role: finalPreferredRole,
+-        is_category_selected: true,
+-        auth_provider: 'google',
+-        email: authUser.email || '',
+-        open_to: openToString,
+-        profile_completion: 75,
+-      });
+-
+-      // 2. Clear any temporary OAuth meta
+-      localStorage.removeItem('startupz_oauth_meta');
+-      localStorage.removeItem('startupz_oauth_intent');
+-
+-      // 3. Sync to backend API if available
+-      try {
+-        await api.syncAuth({
+-          id: authUser.id,
+-          email: authUser.email,
+-          fullName: cleanFullName,
+-          username: cleanUsername,
+-          role: selectedRole,
+-          headline: cleanHeadline,
+-          location: cleanLocation,
+-          bio: cleanBio,
+-          avatar,
+-          password,
+-        });
+-      } catch {
+-        // Backend offline fallback
+-      }
+-
+-      try {
+-        await api.setPassword(password);
+-      } catch {}
+-
+-      // 4. Update cached user in localStorage & AuthContext
+-      const appUser = {
+-        id: authUser.id,
+-        email: authUser.email || '',
+-        role: selectedRole,
+-        isVerified: true,
+-        verificationBadge: 'Verified via Google',
+-        profile: {
+-          id: authUser.id,
+-          userId: authUser.id,
+-          fullName: cleanFullName,
+-          username: cleanUsername,
+-          headline: cleanHeadline,
+-          oneLineBio: cleanOneLineBio,
+-          location: cleanLocation,
+-          bio: cleanBio,
+-          avatar,
+-          preferredRole: finalPreferredRole,
+-          openTo: openToString,
+-          isCategorySelected: true,
+-          profileCompletion: 75,
+-        },
+-      };
+-      localStorage.setItem('startupz_user', JSON.stringify(appUser));
+-      updateUser(appUser as any);
+-
+-      // 5. Navigate to home / dashboard
+-      navigate('/', { replace: true });
+-    } catch (err: any) {
+-      setErrorMessage(
+-        err.message || 'Failed to save your profile details. Please try again.'
+-      );
+-      setIsSubmitting(false);
+-    }
+-  };
+-
+-  if (errorMessage) {
+-    return (
+-      <div className="min-h-[75vh] flex items-center justify-center p-4">
+-        <div className="card-base max-w-md w-full p-8 text-center space-y-5">
+-          <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-lg flex items-center justify-center mx-auto border border-rose-200/60 dark:border-rose-900/40">
+-            <AlertCircle size={24} />
+-          </div>
+-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+-            Authentication Notice
+-          </h2>
+-          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+-            {errorMessage}
+-          </p>
+-          <div className="pt-2">
+-            <button
+-              onClick={() => navigate('/login')}
+-              className="btn-primary w-full py-2.5 px-4 text-sm"
+-            >
+-              Back to Sign In
+-            </button>
+-          </div>
+-        </div>
+-      </div>
+-    );
+-  }
+-
+-  // NEW USER COMPLETE DETAILS SETUP VIEW (LIKE JOIN NOW)
+-  if (isNewUser) {
+-    return (
+-      <div className="min-h-screen py-10 px-4 sm:px-6 lg:px-8 flex items-center justify-center bg-slate-50 dark:bg-dark-950">
+-        <div className="card-base max-w-3xl w-full p-6 sm:p-10 space-y-8 animate-in fade-in duration-200">
+-          {/* Welcome Header */}
+-          <div className="text-center space-y-3">
+-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-brand-50 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 border border-brand-200/60 dark:border-brand-900/40">
+-              <Sparkles size={12} className="text-brand-600 dark:text-brand-400" /> Welcome to HookZ
+-            </div>
+-
+-            <div className="flex flex-col items-center gap-3 pt-1">
+-              {avatar ? (
+-                <img
+-                  src={avatar}
+-                  alt={fullName}
+-                  className="w-16 h-16 rounded-full object-cover border-2 border-brand-500 shadow-xs"
+-                />
+-              ) : (
+-                <div className="w-16 h-16 rounded-full bg-brand-600 text-white flex items-center justify-center text-xl font-bold shadow-xs">
+-                  {fullName.charAt(0) || 'U'}
+-                </div>
+-              )}
+-              <div>
+-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+-                  Welcome, {fullName.split(' ')[0]}!
+-                </h1>
+-                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-lg mx-auto leading-relaxed">
+-                  Complete your startup identity below so we place you in the right directory and connect you with matching co-founders, builders, or investors.
+-                </p>
+-              </div>
+-            </div>
+-          </div>
+-
+-          <form onSubmit={handleCompleteSetup} className="space-y-6">
+-            {/* Step 1: Role Selection Grid */}
+-            <div className="space-y-2.5">
+-              <label className="block text-sm font-bold sm:font-extrabold uppercase tracking-wider text-slate-900 dark:text-white mb-2">
+-                1. I am joining as a <span className="text-rose-500">*</span>
+-              </label>
+-
+-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+-                {roleCategories.map((cat) => {
+-                  const Icon = cat.icon;
+-                  const isSelected = selectedRole === cat.id;
+-
+-                  return (
+-                    <button
+-                      key={cat.id}
+-                      type="button"
+-                      onClick={() => handleRoleSelect(cat.id)}
+-                      className={`p-3.5 rounded-lg border text-left transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+-                        isSelected
+-                          ? 'bg-brand-50/60 dark:bg-brand-950/30 border-brand-600 dark:border-brand-500 ring-1 ring-brand-500/30'
+-                          : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-750 hover:border-slate-300 dark:hover:border-dark-600'
+-                      }`}
+-                    >
+-                      <div className="flex items-center justify-between">
+-                        <span
+-                          className={`p-1.5 rounded-md ${
+-                            isSelected
+-                              ? 'bg-brand-600 text-white'
+-                              : 'bg-slate-100 dark:bg-dark-800 text-slate-700 dark:text-slate-300'
+-                          }`}
+-                        >
+-                          <Icon size={16} />
+-                        </span>
+-                        {isSelected && (
+-                          <span className="w-4 h-4 rounded-full bg-brand-600 text-white flex items-center justify-center">
+-                            <Check size={10} strokeWidth={3} />
+-                          </span>
+-                        )}
+-                      </div>
+-
+-                      <div>
+-                        <div className="font-semibold text-sm text-slate-900 dark:text-white">
+-                          {cat.label}
+-                        </div>
+-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">
+-                          {cat.desc}
+-                        </div>
+-                      </div>
+-                    </button>
+-                  );
+-                })}
+-              </div>
+-
+-              {/* Custom Role Input when 'OTHER' is selected */}
+-              {selectedRole === 'OTHER' && (
+-                <div className="mt-3 p-3.5 rounded-lg bg-brand-50/70 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-900/60 animate-fade-in space-y-1.5">
+-                  <div className="flex items-center justify-between">
+-                    <label className="block text-xs font-semibold text-brand-900 dark:text-brand-200">
+-                      Describe your role <span className="text-rose-500">*</span>
+-                    </label>
+-                    <span className="text-[10px] font-medium text-brand-600 dark:text-brand-400 bg-brand-100 dark:bg-brand-900/50 px-2 py-0.5 rounded">
+-                      Custom Role
+-                    </span>
+-                  </div>
+-                  <p className="text-[11px] text-slate-600 dark:text-slate-400">
+-                    What best describes you? e.g.{' '}
+-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+-                      Student
+-                    </span>
+-                    ,{' '}
+-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+-                      Salesman
+-                    </span>
+-                    , or{' '}
+-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+-                      Frontend Designer
+-                    </span>
+-                  </p>
+-                  <input
+-                    type="text"
+-                    required
+-                    value={customRoleDescription}
+-                    onChange={(e) => {
+-                      setCustomRoleDescription(e.target.value);
+-                    }}
+-                    placeholder="e.g. Student, Salesman, or Frontend Designer"
+-                    className="input-base w-full text-xs sm:text-sm py-2 bg-white dark:bg-dark-900 border-brand-300 dark:border-brand-800"
+-                  />
+-                </div>
+-              )}
+-            </div>
+-
+-            {/* Step 2: Details Inputs */}
+-            <div className="space-y-4 pt-2">
+-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+-                2. Confirm Your Profile Details <span className="text-rose-500">*</span>
+-              </label>
+-
+-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+-                <div>
+-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+-                    Full Name <span className="text-rose-500">*</span>
+-                  </label>
+-                  <div className="relative">
+-                    <User size={14} className="absolute left-3 top-2.5 text-slate-400" />
+-                    <input
+-                      type="text"
+-                      required
+-                      value={fullName}
+-                      onChange={(e) => setFullName(e.target.value)}
+-                      className="input-base w-full pl-9 text-xs sm:text-sm py-2"
+-                    />
+-                  </div>
+-                </div>
+-
+-                <div>
+-                  <div className="flex items-center justify-between mb-1">
+-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+-                      Username / Handle <span className="text-rose-500">*</span>
+-                    </label>
+-                    <span className="text-[10px] text-slate-400">Unique identifier</span>
+-                  </div>
+-                  <div className="relative">
+-                    <AtSign size={13} className="absolute left-3 top-2.5 text-slate-400" />
+-                    <input
+-                      type="text"
+-                      required
+-                      value={username}
+-                      onChange={(e) => {
+-                        const val = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '');
+-                        setUsername(val);
+-                        triggerUsernameCheck(val);
+-                      }}
+-                      placeholder="username"
+-                      className={`input-base w-full pl-8 pr-8 text-xs sm:text-sm py-2 ${
+-                        usernameStatus.available === false ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500' :
+-                        usernameStatus.available === true && username ? 'border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500' : ''
+-                      }`}
+-                    />
+-                    {usernameStatus.checking && (
+-                      <RefreshCw size={13} className="absolute right-3 top-2.5 text-slate-400 animate-spin" />
+-                    )}
+-                    {!usernameStatus.checking && usernameStatus.available === true && username && (
+-                      <CheckCircle2 size={14} className="absolute right-3 top-2.5 text-emerald-500" />
+-                    )}
+-                    {!usernameStatus.checking && usernameStatus.available === false && (
+-                      <AlertCircle size={14} className="absolute right-3 top-2.5 text-rose-500" />
+-                    )}
+-                  </div>
+-
+-                  {usernameStatus.available === false && (
+-                    <div className="mt-1.5 space-y-1.5">
+-                      <p className="text-[11px] font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1">
+-                        <AlertCircle size={11} className="shrink-0" />
+-                        {usernameStatus.message || 'This username is already taken. Please choose another username.'}
+-                      </p>
+-                      {usernameStatus.suggestions.length > 0 && (
+-                        <div className="p-2 rounded-lg bg-slate-50 dark:bg-dark-850 border border-slate-200 dark:border-dark-750">
+-                          <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+-                            Available suggestions (click to use):
+-                          </span>
+-                          <div className="flex flex-wrap gap-1">
+-                            {usernameStatus.suggestions.map((sug) => (
+-                              <button
+-                                key={sug}
+-                                type="button"
+-                                onClick={() => {
+-                                  setUsername(sug);
+-                                  triggerUsernameCheck(sug);
+-                                }}
+-                                className="px-2 py-0.5 rounded text-[11px] font-medium bg-white dark:bg-dark-800 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-900 hover:bg-brand-50 dark:hover:bg-brand-950 transition-colors cursor-pointer"
+-                              >
+-                                @{sug}
+-                              </button>
+-                            ))}
+-                          </div>
+-                        </div>
+-                      )}
+-                    </div>
+-                  )}
+-
+-                  {usernameStatus.available === true && username && (
+-                    <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+-                      <CheckCircle2 size={11} /> @{username} is available!
+-                    </p>
+-                  )}
+-                </div>
+-              </div>
+-
+-              {/* Account Password & Confirm Password */}
+-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+-                <div>
+-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+-                    Set Account Password <span className="text-rose-500">*</span>
+-                  </label>
+-                  <div className="relative">
+-                    <Lock size={13} className="absolute left-3 top-2.5 text-slate-400" />
+-                    <input
+-                      type={showPassword ? 'text' : 'password'}
+-                      required
+-                      value={password}
+-                      disabled={isSubmitting}
+-                      onChange={(e) => setPassword(e.target.value)}
+-                      placeholder="Min 6 characters"
+-                      className="input-base w-full pl-8 pr-10 text-xs sm:text-sm py-2"
+-                    />
+-                    <button
+-                      type="button"
+-                      onClick={() => setShowPassword(!showPassword)}
+-                      className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-0.5 cursor-pointer"
+-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+-                    >
+-                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+-                    </button>
+-                  </div>
+-                </div>
+-
+-                <div>
+-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+-                    Confirm Password <span className="text-rose-500">*</span>
+-                  </label>
+-                  <div className="relative">
+-                    <Lock size={13} className="absolute left-3 top-2.5 text-slate-400" />
+-                    <input
+-                      type={showPassword ? 'text' : 'password'}
+-                      required
+-                      value={confirmPassword}
+-                      disabled={isSubmitting}
+-                      onChange={(e) => setConfirmPassword(e.target.value)}
+-                      placeholder="Repeat password"
+-                      className="input-base w-full pl-8 text-xs sm:text-sm py-2"
+-                    />
+-                  </div>
+-                </div>
+-              </div>
+-
+-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+-                <div>
+-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+-                    Professional Headline <span className="text-slate-400 font-normal">(Optional)</span>
+-                  </label>
+-                  <input
+-                    type="text"
+-                    value={headline}
+-                    onChange={(e) => setHeadline(e.target.value)}
+-                    placeholder="e.g. AI Founder | Serial Builder"
+-                    className="input-base w-full text-xs sm:text-sm py-2"
+-                  />
+-                </div>
+-
+-                <div>
+-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+-                    Location <span className="text-slate-400 font-normal">(City or Remote)</span>
+-                  </label>
+-                  <div className="relative">
+-                    <MapPin size={13} className="absolute left-3 top-2.5 text-slate-400" />
+-                    <input
+-                      type="text"
+-                      value={location}
+-                      onChange={(e) => setLocation(e.target.value)}
+-                      placeholder="e.g. San Francisco / Remote"
+-                      className="input-base w-full pl-8 text-xs sm:text-sm py-2"
+-                    />
+-                  </div>
+-                </div>
+-              </div>
+-
+-              <div>
+-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
+-                  <span>Describe Yourself in One Line <span className="text-slate-400 font-normal">(One-Line Tagline)</span></span>
+-                  <span className="text-[10px] text-brand-600 dark:text-brand-400 font-medium">Displayed on profile cards</span>
+-                  <span className="text-[10px] text-slate-400 font-mono">
+-                    {oneLineBio.length}/160
+-                  </span>
+-                </label>
+-                <div className="relative">
+-                  <FileText size={13} className="absolute left-3 top-2.5 text-slate-400" />
+-                  <input
+-                    type="text"
+-                    maxLength={160}
+-                    value={oneLineBio}
+-                    onChange={(e) => setOneLineBio(e.target.value)}
+-                    placeholder="e.g. AI Founder & Full-Stack Architect building scalable GTM tools"
+-                    className="input-base w-full pl-8 text-xs sm:text-sm py-2"
+-                  />
+-                </div>
+-              </div>
+-
+-              <div>
+-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+-                  About & Bio <span className="text-slate-400 font-normal">(Optional detailed summary)</span>
+-                </label>
+-                <textarea
+-                  rows={2}
+-                  value={bio}
+-                  onChange={(e) => setBio(e.target.value)}
+-                  placeholder="Tell the community about your background, startup vision, and what you're building..."
+-                  className="input-base w-full px-3 py-2 text-xs sm:text-sm resize-none"
+-                />
+-              </div>
+-
+-              {/* Open To Collaboration */}
+-              <div className="space-y-2">
+-                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+-                  Open to Opportunities
+-                </label>
+-                <div className="flex flex-wrap gap-2">
+-                  {openToOptions.map((opt) => {
+-                    const isChecked = openTo.includes(opt);
+-                    return (
+-                      <button
+-                        key={opt}
+-                        type="button"
+-                        onClick={() => toggleOpenTo(opt)}
+-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors cursor-pointer ${
+-                          isChecked
+-                            ? 'bg-brand-50 dark:bg-brand-950/50 border-brand-500 text-brand-700 dark:text-brand-300'
+-                            : 'bg-white dark:bg-dark-900 border-slate-200 dark:border-dark-800 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+-                        }`}
+-                      >
+-                        {isChecked ? (
+-                          <CheckSquare size={13} className="text-brand-600" />
+-                        ) : (
+-                          <Square size={13} className="text-slate-400" />
+-                        )}
+-                        <span>{opt}</span>
+-                      </button>
+-                    );
+-                  })}
+-                </div>
+-              </div>
+-            </div>
+-
+-            {/* Submit Action */}
+-            <div className="pt-4 border-t border-slate-100 dark:border-dark-800">
+-              <button
+-                type="submit"
+-                disabled={isSubmitting}
+-                className="btn-primary w-full py-2.5 px-4 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+-              >
+-                {isSubmitting ? (
+-                  <>
+-                    <RefreshCw size={15} className="animate-spin" />
+-                    <span>Saving Profile & Entering HookZ...</span>
+-                  </>
+-                ) : (
+-                  <>
+-                    <span>Complete Profile & Enter HookZ</span>
+-                    <ArrowRight size={15} />
+-                  </>
+-                )}
+-              </button>
+-            </div>
+-          </form>
+-        </div>
+-      </div>
+-    );
+-  }
+-
+-  // DEFAULT CONNECTING LOADER
+-  return (
+-    <div className="min-h-[75vh] flex items-center justify-center p-4">
+-      <div className="card-base max-w-md w-full p-8 text-center space-y-4">
+-        <div className="w-12 h-12 bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 rounded-lg flex items-center justify-center mx-auto border border-brand-100 dark:border-brand-900/40">
+-          <Rocket size={22} className="animate-pulse" />
+-        </div>
+-        <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+-          Connecting to HookZ...
+-        </h2>
+-        <p className="text-xs text-slate-500 dark:text-slate-400">
+-          Verifying your Google session and preparing your profile.
+-        </p>
+-        <div className="flex justify-center pt-2">
+-          <RefreshCw size={20} className="text-brand-600 animate-spin" />
+-        </div>
+-      </div>
+-    </div>
+-  );
++    complete();
++    return () => { active = false; };
++  }, [navigate, params, updateUser]);
++  return <AuthLayout title={error ? 'Let’s try that again.' : 'You’re almost in.'} subtitle="Connecting you to your HookZ account.">
++    {error ? <><p className="auth-alert" role="alert">{error}</p><Link className="btn-primary w-full" to="/login">Back to Sign In</Link></> : <div role="status" className="auth-status"><LoaderCircle className="animate-spin mx-auto mb-4 text-brand-600" size={28} />Verifying your session…</div>}
++  </AuthLayout>;
+ };
+--- a/client/src/pages/Auth/LoginPage.tsx
++++ b/client/src/pages/Auth/LoginPage.tsx
+@@ -1,365 +1,61 @@
+-import React, { useState, useEffect } from 'react';
+-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+-import { supabase, getAuthErrorMessage, recordAuthProviderHint, resolveEmailOrUsername, upsertUserProfile, invalidateUserProfileCache } from '../../lib/supabase';
++import React, { useState } from 'react';
++import { Link, Navigate, useSearchParams } from 'react-router-dom';
++import { ArrowRight, Eye, EyeOff } from 'lucide-react';
++import { supabase, getAuthErrorMessage, resolveEmailOrUsername } from '../../lib/supabase';
+ import { useAuth } from '../../context/AuthContext';
+-import { Rocket, Lock, Mail, ArrowRight, Sparkles, Eye, EyeOff, CheckCircle2, AlertCircle, RefreshCw, UserCheck } from 'lucide-react';
+ import { SEO } from '../../components/common/SEO';
++import { AuthLayout, GoogleButton } from '../../components/auth/AuthLayout';
+ 
+ export const LoginPage: React.FC = () => {
+-  const navigate = useNavigate();
+-  const [searchParams] = useSearchParams();
+-  const isDeletedNotice = searchParams.get('deleted') === 'true';
+   const { user, loginWithPasswordOrUsername } = useAuth();
+-
+-  useEffect(() => {
+-    if (user) {
+-      navigate('/', { replace: true });
+-    }
+-  }, [user, navigate]);
+-
++  const [params] = useSearchParams();
+   const [identifier, setIdentifier] = useState('');
+   const [password, setPassword] = useState('');
+   const [showPassword, setShowPassword] = useState(false);
+-  const [loading, setLoading] = useState(false);
+-  const [error, setError] = useState<string | null>(null);
+-  const [resendSuccess, setResendSuccess] = useState(false);
+-  const [resending, setResending] = useState(false);
+-  const [googleLoading, setGoogleLoading] = useState(false);
++  const [busy, setBusy] = useState<'email' | 'google' | 'resend' | null>(null);
++  const [error, setError] = useState('');
++  const [notice, setNotice] = useState('');
++  if (user) return <Navigate to={user.onboarding_completed === false ? '/onboarding' : '/'} replace />;
+ 
+-  // Real Supabase Google OAuth Flow
+-  const handleGoogleSignInClick = async () => {
+-    setGoogleLoading(true);
+-    setError(null);
++  const google = async () => {
++    setBusy('google'); setError('');
+     try {
+       localStorage.setItem('startupz_oauth_intent', 'login');
+-    } catch {}
+-
++      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth/callback`, queryParams: { prompt: 'select_account', access_type: 'offline' } } });
++      if (error) throw error;
++    } catch (error) { setError(getAuthErrorMessage(error)); setBusy(null); }
++  };
++  const submit = async (event: React.FormEvent) => {
++    event.preventDefault(); if (busy) return;
++    setBusy('email'); setError(''); setNotice('');
++    try { await loginWithPasswordOrUsername(identifier.trim(), password); }
++    catch (error) { setError(getAuthErrorMessage(error, identifier.trim())); }
++    finally { setBusy(null); }
++  };
++  const resend = async () => {
++    setBusy('resend'); setError('');
+     try {
+-      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+-        provider: 'google',
+-        options: {
+-          redirectTo: `${window.location.origin}/auth/callback`,
+-          queryParams: {
+-            prompt: 'select_account',
+-            access_type: 'offline',
+-          },
+-        },
+-      });
+-
+-      if (oauthError) {
+-        setGoogleLoading(false);
+-        setError('Google Sign-In is currently unavailable. Please enter your email and password below.');
+-        return;
+-      }
+-
+-      if (data?.url) {
+-        window.location.href = data.url;
+-      } else {
+-        setGoogleLoading(false);
+-      }
+-    } catch (err: any) {
+-      setGoogleLoading(false);
+-      setError(err?.message || 'Google Sign-In error. Please sign in with your email and password.');
+-    }
++      const email = await resolveEmailOrUsername(identifier.trim());
++      if (!email) throw new Error('Enter your email address to resend the confirmation link.');
++      const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
++      if (error) throw error;
++      setNotice('Confirmation email sent. Check your inbox.');
++    } catch (error) { setError(getAuthErrorMessage(error)); }
++    finally { setBusy(null); }
+   };
+ 
+-  // Sign In with Email, Gmail, or Username and Password
+-  const handleSubmit = async (e: React.FormEvent) => {
+-    e.preventDefault();
+-    setGoogleLoading(false);
+-    setLoading(true);
+-    setError(null);
+-    setResendSuccess(false);
+-
+-    const cleanIdentifier = identifier.trim();
+-    if (!cleanIdentifier) {
+-      setError('Please enter your Gmail, username, or email address.');
+-      setLoading(false);
+-      return;
+-    }
+-
+-    if (!password) {
+-      setError('Please enter your password to proceed.');
+-      setLoading(false);
+-      return;
+-    }
+-
+-    try {
+-      await loginWithPasswordOrUsername(cleanIdentifier, password);
+-      navigate('/');
+-    } catch (err: any) {
+-      console.warn('Sign-in error:', err);
+-      const friendlyMessage = getAuthErrorMessage(err, cleanIdentifier);
+-      if (
+-        friendlyMessage.toLowerCase().includes('invalid login credentials') ||
+-        friendlyMessage.toLowerCase().includes('not found') ||
+-        friendlyMessage.toLowerCase().includes('no user')
+-      ) {
+-        setError('Account not found in our data. Please sign up to create your account.');
+-      } else {
+-        setError(friendlyMessage);
+-      }
+-    } finally {
+-      setLoading(false);
+-    }
+-  };
+-
+-  // Resend email verification link via Supabase Auth
+-  const handleResendVerification = async () => {
+-    const targetEmail = await resolveEmailOrUsername(identifier.trim());
+-    if (!targetEmail) {
+-      setError('Please enter your email or Gmail in the field below to resend the confirmation link.');
+-      return;
+-    }
+-    setResending(true);
+-    setResendSuccess(false);
+-    try {
+-      const { error: resendErr } = await supabase.auth.resend({
+-        type: 'signup',
+-        email: targetEmail,
+-      });
+-      if (resendErr) {
+-        setError(getAuthErrorMessage(resendErr, targetEmail));
+-      } else {
+-        setResendSuccess(true);
+-        setError(null);
+-      }
+-    } catch (err: any) {
+-      setError(getAuthErrorMessage(err, targetEmail));
+-    } finally {
+-      setResending(false);
+-    }
+-  };
+-
+-  const isEmailUnconfirmed = error?.includes('verify your email') || error?.includes('verification link');
+-
+-  return (
+-    <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-indigo-50/30 via-white to-slate-50 dark:from-dark-900 dark:via-dark-900 dark:to-dark-950">
+-      <SEO title="Sign In | HookZ" noindex={true} />
+-      <div className="max-w-md w-full">
+-        
+-        {/* Main Card */}
+-        <div className="card-base p-8 sm:p-9 shadow-subtle border border-slate-200 dark:border-slate-800 rounded-2xl bg-white dark:bg-dark-900">
+-          
+-          {/* Top Logo & Header */}
+-          <div className="text-center mb-6">
+-            <Link to="/" className="inline-flex items-center justify-center mb-3 group">
+-              <img
+-                src="/logo-icon.png"
+-                alt="HookZ"
+-                className="w-12 h-12 object-contain group-hover:scale-105 transition-transform"
+-              />
+-            </Link>
+-            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+-              Welcome back to Hook<span className="text-brand-600">Z</span>
+-            </h1>
+-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+-              Sign in to connect with teammates, hackathons, and projects
+-            </p>
+-          </div>
+-
+-          {/* Continue With Google Button */}
+-          <button
+-            type="button"
+-            onClick={handleGoogleSignInClick}
+-            disabled={googleLoading || loading}
+-            className="w-full inline-flex items-center justify-center gap-3 py-2.5 px-4 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-dark-850 hover:bg-slate-50 dark:hover:bg-dark-800 border border-slate-300 dark:border-slate-700 rounded-lg shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+-          >
+-            {googleLoading ? (
+-              <>
+-                <RefreshCw size={15} className="animate-spin text-brand-600" />
+-                <span>Redirecting to Google...</span>
+-              </>
+-            ) : (
+-              <>
+-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+-                  <path
+-                    fill="#4285F4"
+-                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+-                  />
+-                  <path
+-                    fill="#34A853"
+-                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.39 7.33 24 12 24z"
+-                  />
+-                  <path
+-                    fill="#FBBC05"
+-                    d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.17 0 9.98 0 12s.45 3.83 1.25 5.42l4.03-3.15z"
+-                  />
+-                  <path
+-                    fill="#EA4335"
+-                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.27 2.61 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+-                  />
+-                </svg>
+-                <span>Continue with Google</span>
+-              </>
+-            )}
+-          </button>
+-
+-          {/* Clean Divider ("OR") */}
+-          <div className="relative my-5">
+-            <div className="absolute inset-0 flex items-center">
+-              <div className="w-full border-t border-slate-200 dark:border-dark-800" />
+-            </div>
+-            <div className="relative flex justify-center text-xs uppercase">
+-              <span className="bg-white dark:bg-dark-900 px-3 text-slate-400 font-semibold tracking-wider text-[11px]">
+-                OR
+-              </span>
+-            </div>
+-          </div>
+-
+-          <form onSubmit={handleSubmit} className="space-y-4">
+-            {isDeletedNotice && (
+-              <div className="p-3 text-xs rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 space-y-1">
+-                <div className="flex items-center gap-2 font-semibold">
+-                  <CheckCircle2 size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+-                  <span>Account Permanently Deleted</span>
+-                </div>
+-                <p className="text-[11px] leading-relaxed text-emerald-700 dark:text-emerald-300 pl-6">
+-                  All your profile data, connections, messages, and listings have been permanently wiped from HookZ. If you log in again, you will be registered as a brand new user.
+-                </p>
+-              </div>
+-            )}
+-
+-            {error && (
+-              <div className="p-3 text-xs rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 space-y-2">
+-                <div className="flex items-start gap-2">
+-                  <AlertCircle size={15} className="shrink-0 text-rose-500 mt-0.5" />
+-                  <span className="font-medium leading-relaxed">{error}</span>
+-                </div>
+-
+-                <div className="pt-2 border-t border-rose-200/60 dark:border-rose-900/60 space-y-1 text-[11px]">
+-                  {isEmailUnconfirmed && (
+-                    <div className="flex items-center justify-between flex-wrap gap-2">
+-                      <span className="text-slate-600 dark:text-slate-400">
+-                        Email not confirmed?
+-                      </span>
+-                      <button
+-                        type="button"
+-                        disabled={resending}
+-                        onClick={handleResendVerification}
+-                        className="font-medium text-brand-600 dark:text-brand-400 hover:underline cursor-pointer disabled:opacity-50"
+-                      >
+-                        {resending ? 'Sending...' : 'Resend verification email'}
+-                      </button>
+-                    </div>
+-                  )}
+-
+-                  <div className="flex items-center justify-between flex-wrap gap-2">
+-                    <span className="text-slate-600 dark:text-slate-400">
+-                      Forgot your password?
+-                    </span>
+-                    <Link
+-                      to="/forgot-password"
+-                      className="font-medium text-brand-600 dark:text-brand-400 hover:underline"
+-                    >
+-                      Reset password →
+-                    </Link>
+-                  </div>
+-                </div>
+-              </div>
+-            )}
+-
+-            {resendSuccess && (
+-              <div className="p-2.5 text-xs rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 flex items-center gap-2">
+-                <CheckCircle2 size={15} className="shrink-0 text-emerald-500" />
+-                <span>Verification email sent! Please check your inbox.</span>
+-              </div>
+-            )}
+-
+-            <div>
+-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+-                Email, Gmail, or Username
+-              </label>
+-              <div className="relative">
+-                <Mail size={15} className="absolute left-3 top-2.5 text-slate-400" />
+-                <input
+-                  type="text"
+-                  required
+-                  value={identifier}
+-                  disabled={loading}
+-                  onChange={(e) => setIdentifier(e.target.value)}
+-                  placeholder="name@gmail.com, yourname, or email"
+-                  className="input-base w-full pl-9 pr-3 py-2 text-xs disabled:opacity-60"
+-                />
+-              </div>
+-            </div>
+-
+-            <div>
+-              <div className="flex items-center justify-between mb-1.5">
+-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+-                  Password
+-                </label>
+-                <Link
+-                  to="/forgot-password"
+-                  className="text-xs text-brand-600 dark:text-brand-400 hover:underline font-medium"
+-                >
+-                  Forgot Password?
+-                </Link>
+-              </div>
+-              <div className="relative">
+-                <Lock size={15} className="absolute left-3 top-2.5 text-slate-400" />
+-                <input
+-                  type={showPassword ? 'text' : 'password'}
+-                  required
+-                  value={password}
+-                  disabled={loading}
+-                  onChange={(e) => setPassword(e.target.value)}
+-                  placeholder="••••••••"
+-                  className="input-base w-full pl-9 pr-9 py-2 text-xs disabled:opacity-60"
+-                />
+-                <button
+-                  type="button"
+-                  onClick={() => setShowPassword(!showPassword)}
+-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer"
+-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+-                >
+-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+-                </button>
+-              </div>
+-            </div>
+-
+-            <button
+-              type="submit"
+-              disabled={loading}
+-              className="btn-primary w-full py-2.5 text-xs font-semibold inline-flex items-center justify-center gap-1.5 disabled:opacity-50 mt-2 shadow-sm cursor-pointer"
+-            >
+-              {loading ? (
+-                <>
+-                  <RefreshCw size={14} className="animate-spin" />
+-                  <span>Signing in...</span>
+-                </>
+-              ) : (
+-                <>
+-                  <span>Sign In</span>
+-                  <ArrowRight size={14} />
+-                </>
+-              )}
+-            </button>
+-
+-            <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center pt-2 leading-relaxed">
+-              By signing in, you acknowledge that your personal data is processed pursuant to our{' '}
+-              <Link to="/privacy" target="_blank" className="text-brand-600 dark:text-brand-400 font-semibold hover:underline">
+-                Privacy Notice
+-              </Link>{' '}
+-              and{' '}
+-              <Link to="/terms" target="_blank" className="text-brand-600 dark:text-brand-400 font-semibold hover:underline">
+-                Terms of Service
+-              </Link>{' '}
+-              under the DPDP Act 2023.
+-            </p>
+-          </form>
+-
+-          <div className="mt-6 pt-5 border-t border-slate-100 dark:border-dark-800 text-center">
+-            <p className="text-xs text-slate-600 dark:text-slate-400">
+-              Don't have an account?{' '}
+-              <Link to="/register" className="font-bold text-brand-600 dark:text-brand-400 hover:underline">
+-                Sign up
+-              </Link>
+-            </p>
+-          </div>
+-        </div>
+-
+-      </div>
+-    </div>
+-  );
++  return <AuthLayout title="Good to see you again." subtitle="Your people, projects, and next big idea are waiting.">
++    <SEO title="Sign In | HookZ" noindex />
++    <GoogleButton onClick={google} disabled={!!busy} loading={busy === 'google'} />
++    <div className="auth-divider">OR</div>
++    {params.get('deleted') === 'true' && <p className="auth-status" role="status">Your account has been deleted.</p>}
++    {error && <div className="auth-alert" role="alert">{error}{/verify your email|verification link|confirm/i.test(error) && <button type="button" onClick={resend} disabled={!!busy}>Resend confirmation email</button>}</div>}
++    {notice && <p className="auth-status" role="status">{notice}</p>}
++    <form className="auth-form" onSubmit={submit}>
++      <div><label htmlFor="login-email">Email or username</label><input id="login-email" className="input-base" autoComplete="username" required value={identifier} onChange={e => setIdentifier(e.target.value)} placeholder="you@college.edu" disabled={!!busy} /></div>
++      <div><div className="auth-field-heading"><label htmlFor="login-password">Password</label><Link to="/forgot-password">Forgot Password?</Link></div><div className="auth-password"><input id="login-password" className="input-base" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="Your password" disabled={!!busy} /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></div></div>
++      <button className="btn-primary" disabled={!!busy}>{busy === 'email' ? 'Signing in…' : 'Sign In'}<ArrowRight size={16} /></button>
++    </form>
++    <p className="auth-switch">Don't have an account? <Link to="/register">Sign up</Link></p>
++  </AuthLayout>;
+ };
+--- a/client/src/pages/Auth/RegisterPage.tsx
++++ b/client/src/pages/Auth/RegisterPage.tsx
+@@ -1,621 +1,72 @@
+-import React, { useState, useEffect } from 'react';
+-import { Link, useNavigate } from 'react-router-dom';
+-import { supabase, upsertUserProfile, recordAuthProviderHint, getAuthErrorMessage } from '../../lib/supabase';
++import React, { useState } from 'react';
++import { Link, Navigate } from 'react-router-dom';
++import { ArrowRight, Eye, EyeOff, MailCheck } from 'lucide-react';
++import { supabase, getAuthErrorMessage, recordAuthProviderHint } from '../../lib/supabase';
+ import { useAuth } from '../../context/AuthContext';
+-import {
+-  User,
+-  Mail,
+-  Lock,
+-  Briefcase,
+-  MapPin,
+-  ArrowRight,
+-  Eye,
+-  EyeOff,
+-  CheckCircle2,
+-  AlertCircle,
+-  RefreshCw,
+-  MailCheck,
+-} from 'lucide-react';
+-import { UserRole } from '../../types';
+ import { SEO } from '../../components/common/SEO';
++import { AuthLayout, GoogleButton } from '../../components/auth/AuthLayout';
+ 
+ export const RegisterPage: React.FC = () => {
+-  const navigate = useNavigate();
+   const { user } = useAuth();
+-
+-  useEffect(() => {
+-    if (user) {
+-      navigate('/', { replace: true });
+-    }
+-  }, [user, navigate]);
+-
+-  const [fullName, setFullName] = useState('');
+   const [email, setEmail] = useState('');
+   const [password, setPassword] = useState('');
+   const [confirmPassword, setConfirmPassword] = useState('');
+   const [showPassword, setShowPassword] = useState(false);
+-  const [role, setRole] = useState<UserRole>('STUDENT');
+-  const [headline, setHeadline] = useState('');
+-  const [customRoleDescription, setCustomRoleDescription] = useState('');
+-  const [location, setLocation] = useState('');
+-  const [loading, setLoading] = useState(false);
+-  const [googleLoading, setGoogleLoading] = useState(false);
+-  const [error, setError] = useState<string | null>(null);
+-
+-  // DPDP Explicit Consent State (un-ticked by default)
+-  const [agreeTermsAndPrivacy, setAgreeTermsAndPrivacy] = useState(false);
+-  const [agreeMarketing, setAgreeMarketing] = useState(false);
+-
+-  // Email confirmation state
++  const [agree, setAgree] = useState(false);
++  const [busy, setBusy] = useState<'email' | 'google' | 'resend' | null>(null);
++  const [error, setError] = useState('');
+   const [verificationRequired, setVerificationRequired] = useState(false);
+-  const [resendSuccess, setResendSuccess] = useState(false);
+-  const [resending, setResending] = useState(false);
+-
+-  const profileTypes: { label: string; value: UserRole; desc: string }[] = [
+-    { label: 'Student', value: 'STUDENT', desc: 'College/university student & builder' },
+-    { label: 'Developer', value: 'DEVELOPER', desc: 'Software, AI & full-stack builder' },
+-    { label: 'Founder', value: 'FOUNDER', desc: 'Working on a startup project' },
+-    { label: 'Co-Founder', value: 'COFOUNDER', desc: 'Looking to join a student team' },
+-    { label: 'Marketer', value: 'MARKETER', desc: 'Growth, design & GTM enthusiast' },
+-    { label: 'Mentor', value: 'MENTOR', desc: 'Advisor & student coach' },
+-    { label: 'Investor', value: 'INVESTOR', desc: 'Angel / student venture scout' },
+-    { label: 'Other', value: 'OTHER', desc: 'Specialist or custom role' },
+-  ];
+-
+-  // Continue with Google
+-  const handleGoogleSignUp = async () => {
+-    setGoogleLoading(true);
+-    setError(null);
+-
++  const [notice, setNotice] = useState('');
++  if (user) return <Navigate to={user.onboarding_completed === false ? '/onboarding' : '/'} replace />;
++  const google = async () => {
++    if (!agree) { setError('Please agree to the Terms and Privacy Notice to create your account.'); return; }
++    setBusy('google'); setError('');
+     try {
+-      const cleanCustomRole = customRoleDescription.trim();
+-      const finalRole = role === 'OTHER' && cleanCustomRole ? `Other: ${cleanCustomRole}` : role;
+-      const finalHeadline = headline.trim();
+-
+-      // Save preliminary role & headline so the OAuth callback can populate the profile
+-      const oauthMeta = {
+-        role: finalRole,
+-        headline: finalHeadline,
+-        location: location.trim() || 'Remote',
+-        customRole: cleanCustomRole || undefined,
+-      };
+-      localStorage.setItem('startupz_oauth_meta', JSON.stringify(oauthMeta));
++      localStorage.removeItem('startupz_oauth_meta');
+       localStorage.setItem('startupz_oauth_intent', 'signup');
+-
+-      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+-        provider: 'google',
+-        options: {
+-          redirectTo: `${window.location.origin}/auth/callback`,
+-          queryParams: {
+-            prompt: 'select_account',
+-            access_type: 'offline',
+-          },
+-        },
+-      });
+-
+-      if (oauthError) {
+-        setGoogleLoading(false);
+-        setError('Google Sign-In is unavailable. Please fill in your details below to create your account.');
+-        return;
+-      }
+-
+-      if (data?.url) {
+-        window.location.href = data.url;
+-      } else {
+-        setGoogleLoading(false);
+-      }
+-    } catch (err: any) {
+-      setGoogleLoading(false);
+-      setError(err?.message || 'Google Sign-In error. Please register using the form below.');
+-    }
++      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth/callback`, queryParams: { prompt: 'select_account', access_type: 'offline' } } });
++      if (error) throw error;
++    } catch (error) { setError(getAuthErrorMessage(error)); setBusy(null); }
+   };
+-
+-  // Sign up with Email + Password
+-  const handleSubmit = async (e: React.FormEvent) => {
+-    e.preventDefault();
+-    setError(null);
+-
+-    // Form validations
+-    if (!agreeTermsAndPrivacy) {
+-      setError('You must read and agree to the Terms of Service and Privacy Notice to create an account under the DPDP Act 2023.');
+-      return;
+-    }
+-    if (password.length < 6) {
+-      setError('Password must be at least 6 characters long.');
+-      return;
+-    }
+-    if (password !== confirmPassword) {
+-      setError('Passwords do not match. Please check and try again.');
+-      return;
+-    }
+-
+-    setLoading(true);
+-    const normalizedEmail = email.trim().toLowerCase();
+-    const trimmedName = fullName.trim();
+-    const cleanCustomRole = customRoleDescription.trim();
+-    const finalRole = role === 'OTHER' && cleanCustomRole ? `Other: ${cleanCustomRole}` : role;
+-    const finalHeadline = headline.trim();
+-    const finalLocation = location.trim() || 'Remote';
+-
+-    // Log explicit consent asynchronously to backend
+-    fetch('/api/consent', {
+-      method: 'POST',
+-      headers: { 'Content-Type': 'application/json' },
+-      body: JSON.stringify({
+-        userEmail: normalizedEmail,
+-        purpose: 'TERMS_AND_PRIVACY_NOTICE',
+-        consentVersion: '1.0',
+-        status: 'GRANTED',
+-        details: 'User accepted Terms and Privacy Notice during registration under DPDP Act 2023',
+-      }),
+-    }).catch(() => null);
+-
+-    if (agreeMarketing) {
+-      fetch('/api/consent', {
+-        method: 'POST',
+-        headers: { 'Content-Type': 'application/json' },
+-        body: JSON.stringify({
+-          userEmail: normalizedEmail,
+-          purpose: 'MARKETING_COMMUNICATIONS',
+-          consentVersion: '1.0',
+-          status: 'GRANTED',
+-          details: 'User consented to hackathon announcements and platform opportunities',
+-        }),
+-      }).catch(() => null);
+-    }
+-
++  const submit = async (event: React.FormEvent) => {
++    event.preventDefault(); if (busy) return;
++    setError('');
++    if (!agree) { setError('Please agree to the Terms and Privacy Notice.'); return; }
++    if (password !== confirmPassword) { setError('Passwords do not match. Please try again.'); return; }
++    setBusy('email');
+     try {
+-      const { data, error: signUpError } = await supabase.auth.signUp({
+-        email: normalizedEmail,
+-        password,
+-        options: {
+-          data: {
+-            full_name: trimmedName,
+-            role: finalRole,
+-            headline: finalHeadline,
+-            location: finalLocation,
+-            custom_role: cleanCustomRole || undefined,
+-          },
+-        },
+-      });
+-
+-      if (signUpError) {
+-        throw signUpError;
+-      }
+-
+-      // Check if user session was immediately returned or email confirmation is required
+-      if (data.session && data.user) {
+-        recordAuthProviderHint(normalizedEmail, 'email');
+-
+-        await upsertUserProfile(data.user.id, {
+-          full_name: trimmedName,
+-          headline: finalHeadline,
+-          location: finalLocation,
+-          preferred_role: finalRole,
+-          auth_provider: 'email',
+-          email: normalizedEmail,
+-          avatar: undefined,
+-          open_to: 'Hackathons,Project Teams,Networking',
+-          profile_completion: 65,
+-        });
+-
+-        navigate('/');
+-      } else if (data.user) {
+-        recordAuthProviderHint(normalizedEmail, 'email');
+-        setVerificationRequired(true);
+-      }
+-    } catch (err: any) {
+-      console.warn('Supabase Auth signUp error:', err);
+-      setError(getAuthErrorMessage(err, normalizedEmail));
+-    } finally {
+-      setLoading(false);
+-    }
++      const normalizedEmail = email.trim().toLowerCase();
++      const { data, error } = await supabase.auth.signUp({ email: normalizedEmail, password, options: { emailRedirectTo: `${window.location.origin}/auth/callback`, data: { onboarding_completed: false, terms_accepted: true } } });
++      if (error) throw error;
++      recordAuthProviderHint(normalizedEmail, 'email');
++      if (!data.session) setVerificationRequired(true);
++    } catch (error) { setError(getAuthErrorMessage(error, email)); }
++    finally { setBusy(null); }
+   };
+-
+-  // Resend confirmation link
+-  const handleResendVerification = async () => {
+-    setResending(true);
+-    setResendSuccess(false);
++  const resend = async () => {
++    setBusy('resend'); setError(''); setNotice('');
+     try {
+-      const { error: resendErr } = await supabase.auth.resend({
+-        type: 'signup',
+-        email: email.trim().toLowerCase(),
+-      });
+-      if (resendErr) {
+-        setError(getAuthErrorMessage(resendErr));
+-      } else {
+-        setResendSuccess(true);
+-      }
+-    } catch (err: any) {
+-      setError(getAuthErrorMessage(err));
+-    } finally {
+-      setResending(false);
+-    }
++      const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim().toLowerCase(), options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
++      if (error) throw error;
++      setNotice('A fresh confirmation link is on its way.');
++    } catch (error) { setError(getAuthErrorMessage(error)); }
++    finally { setBusy(null); }
+   };
+-
+-  // Verification Screen if email confirmation is required
+-  if (verificationRequired) {
+-    return (
+-      <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
+-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-70" />
+-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xl shadow-slate-200/50 max-w-md w-full p-6 sm:p-8 text-center space-y-5">
+-          <div className="w-12 h-12 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center mx-auto border border-brand-100">
+-            <MailCheck size={24} />
+-          </div>
+-
+-          <div className="space-y-1.5">
+-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+-              Check your email
+-            </h2>
+-            <p className="text-xs text-slate-500">
+-              We sent a verification link to:
+-            </p>
+-            <p className="text-xs font-semibold text-slate-900 font-mono bg-slate-50 py-2 px-3 rounded-lg border border-slate-200">
+-              {email}
+-            </p>
+-          </div>
+-
+-          <p className="text-xs text-slate-600 leading-relaxed">
+-            Click the link in the verification email to activate your HookZ account and get started.
+-          </p>
+-
+-          {resendSuccess && (
+-            <div className="p-3 text-xs rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-2 text-left">
+-              <CheckCircle2 size={16} className="shrink-0 text-emerald-500" />
+-              <span>Verification email resent successfully!</span>
+-            </div>
+-          )}
+-
+-          <div className="pt-2 space-y-2.5">
+-            <button
+-              type="button"
+-              disabled={resending}
+-              onClick={handleResendVerification}
+-              className="w-full py-2.5 px-4 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all disabled:opacity-50"
+-            >
+-              {resending ? 'Sending...' : 'Resend verification email'}
+-            </button>
+-
+-            <Link
+-              to="/login"
+-              className="w-full py-2.5 px-4 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl block text-center transition-all shadow-sm"
+-            >
+-              Back to Sign In
+-            </Link>
+-          </div>
+-        </div>
+-      </div>
+-    );
+-  }
+-
+-  return (
+-    <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative">
+-      <SEO title="Create an Account | HookZ" noindex={true} />
+-      {/* Subtle landing-page style background pattern */}
+-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-70" />
+-
+-      <div className="max-w-xl w-full">
+-        {/* Header */}
+-        <div className="text-center mb-6">
+-          <Link to="/" className="inline-flex items-center gap-2 mb-4 group">
+-            <div className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center shadow-sm shadow-brand-500/20 group-hover:scale-105 transition-transform">
+-              <span className="font-extrabold text-lg tracking-tighter">H</span>
+-            </div>
+-            <span className="text-2xl font-black tracking-tight text-slate-900">
+-              Hook<span className="text-brand-600">Z</span>
+-            </span>
+-          </Link>
+-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+-            Create your HookZ account
+-          </h1>
+-          <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+-            Find hackathon teammates, showcase projects, and connect with fellow student builders
+-          </p>
+-        </div>
+-
+-        {/* Card Form */}
+-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xl shadow-slate-200/50 p-6 sm:p-8">
+-          {/* Continue with Google */}
+-          <button
+-            type="button"
+-            onClick={handleGoogleSignUp}
+-            disabled={googleLoading || loading}
+-            className="w-full inline-flex items-center justify-center gap-3 py-2.5 px-4 text-sm font-semibold rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-xs disabled:opacity-50"
+-          >
+-            {googleLoading ? (
+-              <>
+-                <RefreshCw size={16} className="animate-spin text-brand-600" />
+-                <span>Redirecting to Google...</span>
+-              </>
+-            ) : (
+-              <>
+-                <svg className="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24">
+-                  <path
+-                    fill="#4285F4"
+-                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+-                  />
+-                  <path
+-                    fill="#34A853"
+-                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.27 21.39 7.33 24 12 24z"
+-                  />
+-                  <path
+-                    fill="#FBBC05"
+-                    d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.17 0 9.98 0 12s.45 3.83 1.25 5.42l4.03-3.15z"
+-                  />
+-                  <path
+-                    fill="#EA4335"
+-                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.27 2.61 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+-                  />
+-                </svg>
+-                <span>Continue with Google</span>
+-              </>
+-            )}
+-          </button>
+-
+-          {/* Divider */}
+-          <div className="relative my-6">
+-            <div className="absolute inset-0 flex items-center">
+-              <div className="w-full border-t border-slate-200" />
+-            </div>
+-            <div className="relative flex justify-center text-xs uppercase">
+-              <span className="bg-white px-3 text-slate-400 font-semibold tracking-wider text-[11px]">
+-                OR
+-              </span>
+-            </div>
+-          </div>
+-
+-          <form onSubmit={handleSubmit} className="space-y-4">
+-            {error && (
+-              <div className="p-3 text-xs rounded-xl bg-rose-50 text-rose-700 border border-rose-200 flex items-start gap-2">
+-                <AlertCircle size={16} className="shrink-0 text-rose-500 mt-0.5" />
+-                <span className="font-medium leading-relaxed">{error}</span>
+-              </div>
+-            )}
+-
+-            {/* Profile Ecosystem Role */}
+-            <div>
+-              <label className="block text-xs font-semibold text-slate-700 tracking-wide mb-2">
+-                I am joining as a <span className="text-rose-500">*</span>
+-              </label>
+-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+-                {profileTypes.map((t) => (
+-                  <button
+-                    key={t.value}
+-                    type="button"
+-                    onClick={() => setRole(t.value)}
+-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+-                      role === t.value
+-                        ? 'border-brand-600 bg-brand-50/70 text-brand-700 ring-2 ring-brand-500/20 font-semibold'
+-                        : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+-                    }`}
+-                  >
+-                    <div className="text-xs font-semibold">
+-                      {t.label}
+-                    </div>
+-                    <div className="text-[10px] text-slate-500 truncate mt-0.5">
+-                      {t.desc}
+-                    </div>
+-                  </button>
+-                ))}
+-              </div>
+-
+-              {/* Custom Role Description for 'OTHER' */}
+-              {role === 'OTHER' && (
+-                <div className="mt-3 p-3.5 rounded-xl bg-brand-50/60 border border-brand-200 space-y-1.5 animate-fadeIn">
+-                  <div className="flex items-center justify-between">
+-                    <label className="block text-xs font-semibold text-brand-900">
+-                      Describe your role <span className="text-rose-500">*</span>
+-                    </label>
+-                    <span className="text-[10px] font-semibold text-brand-600 bg-brand-100 px-2 py-0.5 rounded-md">
+-                      Custom Role
+-                    </span>
+-                  </div>
+-                  <p className="text-[11px] text-slate-600">
+-                    What best describes you? e.g. <span className="font-semibold text-slate-800">Student Designer</span>, <span className="font-semibold text-slate-800">Researcher</span>, or <span className="font-semibold text-slate-800">Product Manager</span>
+-                  </p>
+-                  <div className="relative">
+-                    <Briefcase size={15} className="absolute left-3.5 top-3 text-brand-600" />
+-                    <input
+-                      type="text"
+-                      required={role === 'OTHER'}
+-                      value={customRoleDescription}
+-                      disabled={loading}
+-                      onChange={(e) => {
+-                        setCustomRoleDescription(e.target.value);
+-                      }}
+-                      placeholder="Enter your role (e.g. Student Designer, Researcher)"
+-                      className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-white border border-brand-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 text-slate-900 placeholder:text-slate-400"
+-                    />
+-                  </div>
+-                </div>
+-              )}
+-            </div>
+-
+-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+-              <div>
+-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+-                  Full Name <span className="text-rose-500">*</span>
+-                </label>
+-                <div className="relative">
+-                  <User size={15} className="absolute left-3.5 top-3 text-slate-400" />
+-                  <input
+-                    type="text"
+-                    required
+-                    value={fullName}
+-                    disabled={loading}
+-                    onChange={(e) => setFullName(e.target.value)}
+-                    placeholder="Alex Vance"
+-                    className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-all text-slate-900 placeholder:text-slate-400 disabled:opacity-60"
+-                  />
+-                </div>
+-              </div>
+-
+-              <div>
+-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+-                  Email Address <span className="text-rose-500">*</span>
+-                </label>
+-                <div className="relative">
+-                  <Mail size={15} className="absolute left-3.5 top-3 text-slate-400" />
+-                  <input
+-                    type="email"
+-                    required
+-                    value={email}
+-                    disabled={loading}
+-                    onChange={(e) => setEmail(e.target.value)}
+-                    placeholder="alex@college.edu"
+-                    className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-all text-slate-900 placeholder:text-slate-400 disabled:opacity-60"
+-                  />
+-                </div>
+-              </div>
+-            </div>
+-
+-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+-              <div>
+-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+-                  Password <span className="text-rose-500">*</span>
+-                </label>
+-                <div className="relative">
+-                  <Lock size={15} className="absolute left-3.5 top-3 text-slate-400" />
+-                  <input
+-                    type={showPassword ? 'text' : 'password'}
+-                    required
+-                    value={password}
+-                    disabled={loading}
+-                    onChange={(e) => setPassword(e.target.value)}
+-                    placeholder="Min 6 characters"
+-                    className="w-full pl-10 pr-10 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-all text-slate-900 placeholder:text-slate-400 disabled:opacity-60"
+-                  />
+-                  <button
+-                    type="button"
+-                    onClick={() => setShowPassword(!showPassword)}
+-                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 p-0.5"
+-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+-                  >
+-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+-                  </button>
+-                </div>
+-              </div>
+-
+-              <div>
+-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+-                  Confirm Password <span className="text-rose-500">*</span>
+-                </label>
+-                <div className="relative">
+-                  <Lock size={15} className="absolute left-3.5 top-3 text-slate-400" />
+-                  <input
+-                    type={showPassword ? 'text' : 'password'}
+-                    required
+-                    value={confirmPassword}
+-                    disabled={loading}
+-                    onChange={(e) => setConfirmPassword(e.target.value)}
+-                    placeholder="Repeat password"
+-                    className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-all text-slate-900 placeholder:text-slate-400 disabled:opacity-60"
+-                  />
+-                </div>
+-              </div>
+-            </div>
+-
+-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+-              <div>
+-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+-                  Headline <span className="text-slate-400 font-normal">(Optional)</span>
+-                </label>
+-                <div className="relative">
+-                  <Briefcase size={15} className="absolute left-3.5 top-3 text-slate-400" />
+-                  <input
+-                    type="text"
+-                    value={headline}
+-                    disabled={loading}
+-                    onChange={(e) => setHeadline(e.target.value)}
+-                    placeholder="e.g. CS Sophomore | Full Stack Dev"
+-                    className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-all text-slate-900 placeholder:text-slate-400 disabled:opacity-60"
+-                  />
+-                </div>
+-              </div>
+-
+-              <div>
+-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+-                  Location <span className="text-slate-400 font-normal">(Optional)</span>
+-                </label>
+-                <div className="relative">
+-                  <MapPin size={15} className="absolute left-3.5 top-3 text-slate-400" />
+-                  <input
+-                    type="text"
+-                    value={location}
+-                    disabled={loading}
+-                    onChange={(e) => setLocation(e.target.value)}
+-                    placeholder="e.g. Stanford, CA / Remote"
+-                    className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 transition-all text-slate-900 placeholder:text-slate-400 disabled:opacity-60"
+-                  />
+-                </div>
+-              </div>
+-            </div>
+-
+-            {/* Explicit Purpose-Specific Consent Checkboxes (DPDP Act 2023 Compliance) */}
+-            <div className="pt-2 pb-1 space-y-2.5 text-xs text-slate-600 border-t border-slate-100">
+-              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+-                <input
+-                  type="checkbox"
+-                  required
+-                  checked={agreeTermsAndPrivacy}
+-                  onChange={(e) => setAgreeTermsAndPrivacy(e.target.checked)}
+-                  className="mt-0.5 rounded-sm border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer shrink-0"
+-                />
+-                <span className="leading-relaxed">
+-                  I have read and agree to the{' '}
+-                  <Link to="/terms" target="_blank" className="font-semibold text-brand-600 hover:underline">
+-                    Terms of Service
+-                  </Link>{' '}
+-                  and{' '}
+-                  <Link to="/privacy" target="_blank" className="font-semibold text-brand-600 hover:underline">
+-                    Privacy Notice
+-                  </Link>
+-                  , and give explicit consent for HookZ to process my digital personal data for account creation and platform services under the DPDP Act 2023. <span className="text-rose-500 font-bold">*</span>
+-                </span>
+-              </label>
+-
+-              <label className="flex items-start gap-2.5 cursor-pointer select-none text-slate-500">
+-                <input
+-                  type="checkbox"
+-                  checked={agreeMarketing}
+-                  onChange={(e) => setAgreeMarketing(e.target.checked)}
+-                  className="mt-0.5 rounded-sm border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer shrink-0"
+-                />
+-                <span className="leading-relaxed text-[11px]">
+-                  (Optional) I consent to receiving communications regarding relevant hackathons, startup opportunities, and builder announcements.
+-                </span>
+-              </label>
+-            </div>
+-
+-            <button
+-              type="submit"
+-              disabled={loading || !agreeTermsAndPrivacy}
+-              className="w-full py-2.5 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-sm hover:shadow-md transition-all inline-flex items-center justify-center gap-2 disabled:opacity-50 mt-2 cursor-pointer"
+-            >
+-              {loading ? (
+-                <>
+-                  <RefreshCw size={15} className="animate-spin" />
+-                  <span>Creating Account...</span>
+-                </>
+-              ) : (
+-                <>
+-                  <span>Create HookZ Account</span>
+-                  <ArrowRight size={15} />
+-                </>
+-              )}
+-            </button>
+-          </form>
+-
+-          <div className="mt-6 pt-5 border-t border-slate-100 text-center">
+-            <p className="text-xs text-slate-500">
+-              Already have an account?{' '}
+-              <Link to="/login" className="font-semibold text-brand-600 hover:text-brand-700 hover:underline">
+-                Sign in here
+-              </Link>
+-            </p>
+-          </div>
+-        </div>
+-      </div>
+-    </div>
+-  );
++  return <AuthLayout title={verificationRequired ? 'Check your inbox.' : 'Your people are here.'} subtitle={verificationRequired ? 'One quick confirmation, then let’s meet your next team.' : 'Create your free account. Find teammates. Make something real.'}>
++    <SEO title="Join Free | HookZ" noindex />
++    {verificationRequired ? <div className="auth-status"><MailCheck size={32} className="mx-auto mb-4 text-brand-600" /><p>Open the confirmation link sent to <strong>{email}</strong>. You'll create your profile after confirming.</p><button className="mt-5" type="button" onClick={resend} disabled={!!busy}>{busy ? 'Sending…' : 'Resend confirmation email'}</button></div> : <>
++      <GoogleButton onClick={google} disabled={!!busy} loading={busy === 'google'} />
++      <div className="auth-divider">OR</div>
++      <form className="auth-form" onSubmit={submit}>
++        <div><label htmlFor="signup-email">Email</label><input id="signup-email" className="input-base" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@college.edu" disabled={!!busy} /></div>
++        <div><label htmlFor="signup-password">Password</label><div className="auth-password"><input id="signup-password" className="input-base" type={showPassword ? 'text' : 'password'} autoComplete="new-password" minLength={6} required value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" disabled={!!busy} /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></div></div>
++        <div><label htmlFor="signup-confirm">Confirm password</label><input id="signup-confirm" className="input-base" type={showPassword ? 'text' : 'password'} autoComplete="new-password" minLength={6} required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Once more, just to be sure" disabled={!!busy} /></div>
++        <label className="auth-consent"><input type="checkbox" required checked={agree} onChange={e => setAgree(e.target.checked)} disabled={!!busy} /><span>I agree to the <Link to="/terms" target="_blank" rel="noopener">Terms of Service</Link> and <Link to="/privacy" target="_blank" rel="noopener">Privacy Notice</Link>.</span></label>
++        <button className="btn-primary" disabled={!!busy}>{busy === 'email' ? 'Creating your account…' : 'Create Account'}<ArrowRight size={16} /></button>
++      </form>
++    </>}
++    {error && <div className="auth-alert mt-4" role="alert">{error}</div>}
++    {notice && <p className="auth-status" role="status">{notice}</p>}
++    <p className="auth-switch">Already have an account? <Link to="/login">Sign in</Link></p>
++  </AuthLayout>;
+ };
+--- a/client/src/components/auth/AuthLayout.tsx
++++ b/client/src/components/auth/AuthLayout.tsx
+@@ -0,0 +1,25 @@
++import React from 'react';
++import { Link } from 'react-router-dom';
++import { ArrowLeft, LoaderCircle } from 'lucide-react';
++import logoIcon from '../../assets/logo-icon.png';
++import './AuthLayout.css';
++
++export const AuthLayout: React.FC<{ title: string; subtitle: string; children: React.ReactNode }> = ({ title, subtitle, children }) => (
++  <div className="auth-stage">
++    <Link to="/" className="auth-back"><ArrowLeft size={15} /> Back to HookZ</Link>
++    <div className="auth-orbit" aria-hidden="true" />
++    <div className="auth-card">
++      <Link to="/" className="brand-wordmark"><img src={logoIcon} alt="" />HookZ</Link>
++      <div className="auth-heading"><span className="auth-kicker">YOUR NEXT CHAPTER STARTS HERE</span><h1>{title}</h1><p>{subtitle}</p></div>
++      {children}
++    </div>
++    <p className="auth-caption">A little curiosity. A great team. Something worth building.</p>
++  </div>
++);
++
++export const GoogleButton: React.FC<{ onClick: () => void; disabled: boolean; loading: boolean }> = ({ onClick, disabled, loading }) => (
++  <button className="btn-secondary auth-google" type="button" onClick={onClick} disabled={disabled}>
++    {loading ? <LoaderCircle size={18} className="animate-spin" /> : <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.7-2.4 3.5v3h3.9c2.3-2.1 3.5-5.1 3.5-8.7z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9L16 18c-1.1.7-2.4 1.1-4 1.1-3.1 0-5.8-2.1-6.7-4.9H1.2v3.2C3.3 21.3 7.3 24 12 24z"/><path fill="#FBBC05" d="M5.3 14.2a7.3 7.3 0 010-4.4V6.6H1.2a12 12 0 000 10.8z"/><path fill="#EA4335" d="M12 4.9c1.8 0 3.3.6 4.6 1.8L20 3.3A11.5 11.5 0 0012 0C7.3 0 3.3 2.7 1.2 6.6l4.1 3.2C6.2 7 8.9 4.9 12 4.9z"/></svg>}
++    {loading ? 'Connecting to Google…' : 'Continue with Google'}
++  </button>
++);
+--- a/client/src/components/auth/AuthLayout.css
++++ b/client/src/components/auth/AuthLayout.css
+@@ -0,0 +1,8 @@
++.auth-stage { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 90px 20px 40px; background: radial-gradient(ellipse at 15% 15%, color-mix(in srgb, var(--brand-primary) 8%, transparent), transparent 40%), radial-gradient(ellipse at 90% 80%, #b6d96512, transparent 45%), var(--bg-primary); position: relative; isolation: isolate; }
++.auth-stage::before { content: ''; position: absolute; inset: 0; z-index: -2; background-image: linear-gradient(var(--border-subtle) 1px, transparent 1px), linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px); background-size: 70px 70px; opacity: .35; mask-image: radial-gradient(ellipse, transparent 20%, black); pointer-events: none; }
++.auth-back { position: absolute; top: 28px; left: 32px; display: inline-flex; gap: 8px; align-items: center; font-size: 12px; color: var(--text-secondary); }
++.auth-orbit { position: absolute; width: min(650px, 90%); aspect-ratio: 1; border: 1px solid var(--border-subtle); border-radius: 50%; z-index: -1; transform: rotate(-20deg) scaleY(.8); pointer-events: none; }
++.auth-card { width: 100%; max-width: 440px; padding: 36px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 24px; box-shadow: var(--shadow-lg); animation: fadeIn .4s var(--ease-out); }
++.auth-card > .brand-wordmark { display: flex; justify-content: center; }.auth-heading { text-align: center; margin: 28px 0; }.auth-kicker { font-size: 8px; font-weight: 700; color: var(--brand-primary); letter-spacing: .16em; }.auth-heading h1 { font-size: 32px; line-height: 1.1; margin: 10px 0; }.auth-heading p { font-size: 12px; line-height: 1.7; color: var(--text-secondary); max-width: 290px; margin-inline: auto; }.auth-google { width: 100%; min-height: 46px; font-size: 13px; }.auth-divider { display: flex; align-items: center; gap: 14px; color: var(--text-muted); font-size: 9px; letter-spacing: .12em; margin: 24px 0; }.auth-divider::before, .auth-divider::after { content: ''; height: 1px; flex: 1; background: var(--border-subtle); }
++.auth-form { display: grid; gap: 18px; }.auth-form label:not(.auth-consent) { display: block; font-size: 12px; font-weight: 600; margin-bottom: 8px; }.auth-form input:not([type=checkbox]) { min-height: 46px; }.auth-password { position: relative; }.auth-password input { padding-right: 48px; }.auth-password button { position: absolute; top: 0; right: 2px; height: 46px; width: 42px; display: grid; place-items: center; color: var(--text-muted); border-radius: 10px; }.auth-field-heading { display: flex; justify-content: space-between; align-items: baseline; }.auth-field-heading a { font-size: 11px; color: var(--brand-primary); }.auth-form > .btn-primary { min-height: 48px; margin-top: 2px; font-size: 13px; }.auth-consent { display: flex; align-items: start; gap: 10px; font-size: 11px; line-height: 1.7; color: var(--text-secondary); }.auth-consent input { width: 16px; height: 16px; flex-shrink: 0; margin-top: 3px; accent-color: #7047eb; }.auth-consent a { text-decoration: underline; text-underline-offset: 3px; color: var(--brand-primary); }.auth-switch { border-top: 1px solid var(--border-subtle); text-align: center; margin-top: 24px; padding-top: 22px; font-size: 12px; color: var(--text-secondary); }.auth-switch a { color: var(--brand-primary); font-weight: 600; }.auth-caption { font-size: 10px; color: var(--text-muted); text-align: center; margin-top: 26px; }.auth-alert { border: 1px solid #c1345040; background: #c134500a; color: var(--status-error); border-radius: 10px; padding: 12px; font-size: 12px; line-height: 1.6; margin-bottom: 16px; }.dark .auth-alert { color: #ff9aae; }.auth-status { color: var(--text-secondary); font-size: 12px; line-height: 1.8; text-align: center; margin-bottom: 18px; }.auth-status button { color: var(--brand-primary); text-decoration: underline; }.auth-alert button { display: block; text-decoration: underline; margin-top: 8px; }.auth-help { font-size: 10px; margin-top: 7px; color: var(--text-muted); }
++@media (max-width: 480px) { .auth-stage { padding: 76px 16px 32px; }.auth-card { padding: 28px 24px; border-radius: 20px; }.auth-back { top: 24px; left: 20px; }.auth-heading h1 { font-size: 30px; } }

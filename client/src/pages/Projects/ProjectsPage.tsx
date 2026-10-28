@@ -1922,7 +1922,7 @@ export const ProjectsPage: React.FC = () => {
             }
             setCreateModalOpen(true);
           }}
-          className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg !py-2.5 !px-5 whitespace-nowrap self-start md:self-auto cursor-pointer inline-flex items-center gap-2 font-semibold shadow-xs transition-colors"
+          className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg !py-2.5 !px-5 whitespace-nowrap self-start md:self-auto cursor-pointer inline-flex items-center gap-2 font-semibold shadow-xs transition-colors"
         >
           <Plus size={16} />
           <span>Create Project</span>
@@ -1990,7 +1990,7 @@ export const ProjectsPage: React.FC = () => {
           </p>
           <button
             onClick={() => setCreateModalOpen(true)}
-            className="border border-[#34a1eb] text-[#34a1eb] bg-transparent hover:bg-[#34a1eb]/10 rounded-lg !text-xs !py-1.5 !px-3 inline-flex items-center gap-1 font-semibold transition-colors cursor-pointer"
+            className="border border-[var(--brand-primary)] text-[var(--brand-primary)] bg-transparent hover:bg-brand-50 dark:hover:bg-brand-950/40 rounded-lg !text-xs !py-1.5 !px-3 inline-flex items-center gap-1 font-semibold transition-colors cursor-pointer"
           >
             <Plus size={13} /> Post First Project
           </button>
@@ -2421,7 +2421,7 @@ export const ProjectsPage: React.FC = () => {
                       className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer shrink-0 ${
                         savedProjectIds.has(project.id)
                           ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-800 dark:border-slate-700'
-                          : 'bg-white dark:bg-[#0F1624] text-slate-600 border-slate-200/80 dark:border-white/[0.08] dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50'
+                          : 'bg-white dark:bg-[var(--bg-surface)] text-slate-600 border-slate-200/80 dark:border-white/[0.08] dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50'
                       }`}
                       title={savedProjectIds.has(project.id) ? 'Remove from Saved' : 'Save Project'}
                     >
@@ -2439,7 +2439,7 @@ export const ProjectsPage: React.FC = () => {
                           type: 'project',
                         })
                       }
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#0F1624] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 transition-colors cursor-pointer shrink-0"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[var(--bg-surface)] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 transition-colors cursor-pointer shrink-0"
                       title="Share project with connections"
                     >
                       <Share2 size={12} />

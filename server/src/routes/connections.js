@@ -2,6 +2,7 @@ import express from 'express';
 import { prisma } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { supabaseAdmin } from '../supabase.js';
+import { connectionLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
@@ -98,7 +99,7 @@ router.get('/pending', requireAuth, async (req, res) => {
 });
 
 // POST /api/connections
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, connectionLimiter, async (req, res) => {
   try {
     let { receiverId, note, receiverEmail, receiverName, receiverRole } = req.body;
 

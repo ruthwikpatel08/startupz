@@ -31,7 +31,7 @@ export const Footer: React.FC = () => {
               </span>
             </Link>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm">
-              The dedicated professional network connecting founders, talent, mentors, and investors in one structured ecosystem.
+              Find your hackathon teammates, build something together, and share work you're proud of. Made for student builders.
             </p>
             <div className="flex items-center gap-3 text-slate-400">
               <a href="https://twitter.com" target="_blank" rel="noreferrer" className="hover:text-brand-600 transition-colors" aria-label="Twitter"><Globe size={15} /></a>
