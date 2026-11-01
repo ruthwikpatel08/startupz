@@ -293,10 +293,11 @@ export const ProjectsPage: React.FC = () => {
 
   const [projects, setProjects] = useState<BuilderProject[]>(() => {
     try {
-      const isPurged = localStorage.getItem('startupz_projects_purged_clean_v3');
+      const isPurged = localStorage.getItem('startupz_projects_purged_clean_v4');
       if (!isPurged) {
         localStorage.removeItem('startupz_builder_projects');
-        localStorage.setItem('startupz_projects_purged_clean_v3', 'true');
+        localStorage.removeItem('startupz_projects');
+        localStorage.setItem('startupz_projects_purged_clean_v4', 'true');
         return [];
       }
       const stored = localStorage.getItem('startupz_builder_projects');

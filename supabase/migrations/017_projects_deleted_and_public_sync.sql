@@ -38,3 +38,4 @@ BEGIN
     CREATE POLICY "Creators can delete projects" ON projects FOR DELETE TO authenticated USING (true);
   END IF;
 END $$;
+
