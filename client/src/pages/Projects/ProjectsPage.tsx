@@ -178,7 +178,10 @@ export const isUserCreatorOfProject = (project: BuilderProject | null | undefine
   ).trim().toLowerCase();
 
   const userIds = new Set<string>();
-  if (currentUser.id) userIds.add(String(currentUser.id).trim().toLowerCase());
+  if (currentUser.id) {
+    userIds.add(String(currentUser.id).trim().toLowerCase());
+    getCandidateIdsForUser(currentUser.id).forEach((id) => userIds.add(String(id).trim().toLowerCase()));
+  }
   if (currentUser.profile?.id) userIds.add(String(currentUser.profile.id).trim().toLowerCase());
   if (currentUser.profile?.userId) userIds.add(String(currentUser.profile.userId).trim().toLowerCase());
   if (currentUser._id) userIds.add(String(currentUser._id).trim().toLowerCase());
@@ -188,6 +191,8 @@ export const isUserCreatorOfProject = (project: BuilderProject | null | undefine
   const creatorEmail = String((project.creator as any)?.email || '').trim().toLowerCase();
   const currentEmail = String(currentUser.email || '').trim().toLowerCase();
   if (creatorEmail && currentEmail && creatorEmail === currentEmail) return true;
+
+  if (isCurrentUserMatch(project.creator, currentUser)) return true;
 
   return false;
 };
@@ -666,7 +671,15 @@ export const ProjectsPage: React.FC = () => {
       .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => {
         handleRemoteProjectDelete(payload);
       })
-      .on('broadcast', { event: 'project_updated' }, () => {
+      .on('broadcast', { event: 'project_updated' }, ({ payload }: any) => {
+        if (payload?.id && payload?.visibility) {
+          const syncedVis: 'PUBLIC' | 'PRIVATE' = String(payload.visibility).trim().toUpperCase() === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC';
+          setProjects((prev) => {
+            const next = prev.map((p) => (p.id === payload.id ? { ...p, visibility: syncedVis } : p));
+            saveProjects(next);
+            return next;
+          });
+        }
         clearApiCache();
         fetchServerProjects();
       })
@@ -677,7 +690,15 @@ export const ProjectsPage: React.FC = () => {
       .on('broadcast', { event: 'entity_deleted' }, ({ payload }) => {
         handleRemoteProjectDelete(payload);
       })
-      .on('broadcast', { event: 'project_updated' }, () => {
+      .on('broadcast', { event: 'project_updated' }, ({ payload }: any) => {
+        if (payload?.id && payload?.visibility) {
+          const syncedVis: 'PUBLIC' | 'PRIVATE' = String(payload.visibility).trim().toUpperCase() === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC';
+          setProjects((prev) => {
+            const next = prev.map((p) => (p.id === payload.id ? { ...p, visibility: syncedVis } : p));
+            saveProjects(next);
+            return next;
+          });
+        }
         clearApiCache();
         fetchServerProjects();
       })
@@ -1098,7 +1119,7 @@ export const ProjectsPage: React.FC = () => {
         if (action === 'ACCEPT') {
           syncProjectGroup(updatedProj);
           const allFilled = nextRoles.every((r) => r.status === 'ASSIGNED');
-          if (allFilled && p.visibility === 'PUBLIC') {
+          if (allFilled && String(p.visibility || 'PUBLIC').trim().toUpperCase() === 'PUBLIC') {
             triggeredCompletion = true;
             completedProject = updatedProj;
           }
@@ -1635,7 +1656,7 @@ export const ProjectsPage: React.FC = () => {
         syncProjectGroup(updatedProj);
 
         const allFilled = nextRoles.every((r) => r.status === 'ASSIGNED');
-        if (allFilled && p.visibility === 'PUBLIC') {
+        if (allFilled && String(p.visibility || 'PUBLIC').trim().toUpperCase() === 'PUBLIC') {
           triggeredCompletion = true;
           completedProject = updatedProj;
         }
@@ -1771,12 +1792,14 @@ export const ProjectsPage: React.FC = () => {
   };
 
   const handleToggleVisibility = async (projectId: string, newVis: 'PUBLIC' | 'PRIVATE') => {
-    // 1. Optimistically update local state & localStorage
-    const updated = projects.map((p) => (p.id === projectId ? { ...p, visibility: newVis } : p));
-    setProjects(updated);
-    saveProjects(updated);
+    // 1. Optimistically update local state & localStorage immediately
+    setProjects((prev) => {
+      const next = prev.map((p) => (p.id === projectId ? { ...p, visibility: newVis } : p));
+      saveProjects(next);
+      return next;
+    });
 
-    // 2. Direct Supabase update for immediate database persistence across mobile and desktop
+    // 2. Direct Supabase update for immediate cloud database persistence
     try {
       await supabase
         .from('projects')
@@ -1786,18 +1809,24 @@ export const ProjectsPage: React.FC = () => {
       console.warn('Supabase visibility update notice:', sbErr);
     }
 
-    // 3. Server API update (authoritative dual-layer update in Supabase + PostgreSQL)
+    // 3. Authoritative server API update in dual-layer backend (Supabase + PostgreSQL)
     try {
+      clearApiCache();
       const res = await api.updateProject(projectId, { visibility: newVis });
       if (res && res.project) {
-        setProjects((prev) => prev.map((p) => (p.id === projectId ? { ...p, visibility: res.project.visibility } : p)));
-        saveProjects(projects.map((p) => (p.id === projectId ? { ...p, visibility: res.project.visibility } : p)));
+        const effectiveVis: 'PUBLIC' | 'PRIVATE' = String(res.project.visibility || newVis).trim().toUpperCase() === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC';
+        setProjects((prev) => {
+          const next = prev.map((p) => (p.id === projectId ? { ...p, visibility: effectiveVis } : p));
+          saveProjects(next);
+          return next;
+        });
       }
     } catch (apiErr: any) {
       console.warn('Server visibility update notice:', apiErr);
     }
 
-    // 4. Broadcast update across all open tabs, windows, and devices so other accounts sync immediately
+    // 4. Broadcast update across all open tabs, windows, and devices AFTER database writes finish
+    clearApiCache();
     try {
       ['global-projects-sync-channel', 'global-data-sync-broadcast'].forEach((ch) => {
         supabase.channel(ch).send({
@@ -2042,7 +2071,18 @@ export const ProjectsPage: React.FC = () => {
           {filteredProjects.map((project) => {
             const isCreator = isUserCreatorOfProject(project, user);
             const leadRole = project.roles.find((r) => (r.roleName || '').toLowerCase().includes('lead') || (r as any).isLead);
-            const isProjectLead = Boolean(user && (isCurrentUserMatch(leadRole?.assignedTo, user) || isCreator));
+            const isUserAdmin = Boolean(
+              user && (
+                user.isAdmin ||
+                user.role === 'ADMIN' ||
+                ['ruthwikpatel08@gmail.com', 'ruthwik9595@gmail.com', 'gokulvamshi@hookz.in', 'gokulvamshi@gmail.com', 'admin@startupz.com'].includes((user.email || '').toLowerCase().trim()) ||
+                ['ruthwikpatel08', 'ruthwik', 'gokulvamshi'].includes((user.profile?.username || '').toLowerCase().trim()) ||
+                (user.email && user.email.toLowerCase().includes('ruthwik')) ||
+                (user.id && ['c3e1a001-8888-4444-9999-000000000001', 'b669157c-4d30-42f4-a8bf-4e27dc425e00', 'ruthwikpatel08'].includes(String(user.id).toLowerCase()))
+              )
+            );
+            const isProjectLead = Boolean(user && (isCurrentUserMatch(leadRole?.assignedTo, user) || isCreator || isUserAdmin));
+            const isPublic = String(project.visibility || 'PUBLIC').trim().toUpperCase() === 'PUBLIC';
             const isAcceptedMember = Boolean(
               user &&
               Array.isArray(project.roles) &&
@@ -2098,13 +2138,13 @@ export const ProjectsPage: React.FC = () => {
                         {/* Visibility Badge */}
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border shrink-0 ${
-                            project.visibility === 'PUBLIC'
+                            isPublic
                               ? 'bg-[var(--bg-soft)] text-[var(--text-secondary)] border-[var(--border-subtle)]'
                               : 'bg-[var(--bg-soft)] text-[var(--text-muted)] border-[var(--border-subtle)]'
                           }`}
                         >
-                          {project.visibility === 'PUBLIC' ? <Globe size={10} className="text-emerald-500" /> : <Lock size={10} />}
-                          <span>{project.visibility === 'PUBLIC' ? 'Public' : 'Private'}</span>
+                          {isPublic ? <Globe size={10} className="text-emerald-500" /> : <Lock size={10} />}
+                          <span>{isPublic ? 'Public' : 'Private'}</span>
                         </span>
 
                         {/* Total Members Count Badge */}
@@ -2120,11 +2160,11 @@ export const ProjectsPage: React.FC = () => {
                         {isProjectLead && (
                           <button
                             type="button"
-                            onClick={() => handleToggleVisibility(project.id, project.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC')}
+                            onClick={() => handleToggleVisibility(project.id, isPublic ? 'PRIVATE' : 'PUBLIC')}
                             className="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] underline ml-0.5 shrink-0 cursor-pointer transition-colors"
                             title="Click to toggle visibility"
                           >
-                            Switch to {project.visibility === 'PUBLIC' ? 'Private' : 'Public'}
+                            Switch to {isPublic ? 'Private' : 'Public'}
                           </button>
                         )}
                       </div>

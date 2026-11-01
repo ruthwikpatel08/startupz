@@ -317,6 +317,7 @@ export async function saveProjectToSupabase(project) {
   if (supabaseAdmin) {
     try {
       await supabaseAdmin.from('projects').upsert(payload, { onConflict: 'id' });
+      await supabaseAdmin.from('projects').update({ visibility: payload.visibility, updated_at: payload.updated_at }).eq('id', payload.id);
     } catch (err) {
       console.warn('saveProjectToSupabase error:', err.message);
     }
@@ -355,6 +356,10 @@ export async function saveProjectToSupabase(project) {
       payload.stage, payload.visibility, JSON.stringify(payload.creator),
       JSON.stringify(payload.roles), JSON.stringify(payload.tags), payload.github_url,
       payload.demo_url, new Date(payload.created_at), new Date(payload.updated_at)
+    );
+    await prisma.$executeRawUnsafe(
+      'UPDATE projects SET visibility = $1, updated_at = NOW() WHERE id = $2',
+      payload.visibility, payload.id
     );
   } catch (err) {
     // Projects table may not exist yet or connection in flux
@@ -511,7 +516,8 @@ router.get('/:id', optionalAuth, async (req, res) => {
       return res.status(404).json({ error: 'Project not found.' });
     }
 
-    if (project.visibility === 'PRIVATE' && !isProjectMemberOrCreator(project, req.user)) {
+    const isPrivate = String(project.visibility || 'PUBLIC').trim().toUpperCase() === 'PRIVATE';
+    if (isPrivate && !isProjectMemberOrCreator(project, req.user)) {
       return res.status(403).json({ error: 'This project is private.' });
     }
 
@@ -611,11 +617,28 @@ router.post('/', requireAuth, async (req, res) => {
 const handleUpdateProject = async (req, res) => {
   try {
     const { id } = req.params;
-    const { all, project: existing } = await getOrFetchProject(id);
-    const idx = all.findIndex((p) => p.id === id);
+    let { all, project: existing } = await getOrFetchProject(id);
+    let idx = all.findIndex((p) => p.id === id);
 
     if (!existing || idx === -1) {
+      if (supabaseAdmin) {
+        try {
+          const { data } = await supabaseAdmin.from('projects').select('*').eq('id', id).maybeSingle();
+          if (data) {
+            existing = mapDbProjectRow(data);
+            all = deduplicateProjectsList([existing, ...all]);
+            idx = all.findIndex((p) => p.id === id);
+          }
+        } catch {}
+      }
+    }
+
+    if (!existing) {
       return res.status(404).json({ error: 'Project not found.' });
+    }
+    if (idx === -1) {
+      all.push(existing);
+      idx = all.length - 1;
     }
 
     if (!isProjectLeadOrCreator(existing, req.user)) {
@@ -1467,10 +1490,12 @@ export function isProjectLeadOrCreator(project, user) {
   if (user.isAdmin || isUserAdminCheck(user)) return true;
 
   const userIds = new Set(
-    [user.id, user.profile?.id, user.profile?.userId, user._id]
-      .filter(Boolean)
-      .map((id) => String(id).trim().toLowerCase())
+    getUserCandidateIds(user).map((id) => String(id).trim().toLowerCase())
   );
+  if (user.id) userIds.add(String(user.id).trim().toLowerCase());
+  if (user.profile?.id) userIds.add(String(user.profile.id).trim().toLowerCase());
+  if (user.profile?.userId) userIds.add(String(user.profile.userId).trim().toLowerCase());
+  if (user._id) userIds.add(String(user._id).trim().toLowerCase());
 
   const creatorId = String(
     project.creator?.userId ||
@@ -1504,6 +1529,13 @@ export function isProjectLeadOrCreator(project, user) {
   const userEmail = (user.email || '').toLowerCase().trim();
   const creatorEmail = (project.creator?.email || '').toLowerCase().trim();
   if (userEmail && creatorEmail && userEmail === creatorEmail) return true;
+
+  const userName = (user.profile?.fullName || user.fullName || '').toLowerCase().trim();
+  const creatorName = (project.creator?.fullName || project.creator?.name || '').toLowerCase().trim();
+  const ignoredNames = new Set(['builder', 'connection', 'project lead', 'member', 'user', 'undefined', 'null']);
+  if (userName && creatorName && !ignoredNames.has(userName) && !ignoredNames.has(creatorName) && userName === creatorName) {
+    return true;
+  }
 
   return false;
 }
