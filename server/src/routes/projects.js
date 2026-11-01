@@ -15,34 +15,85 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_FILE = path.resolve(__dirname, '../../data/projects.json');
 const MESSAGES_FILE = path.resolve(__dirname, '../../data/project_messages.json');
 const DELETED_PROJECTS_FILE = path.resolve(__dirname, '../../data/deleted_projects.json');
+const REAL_DELETED_PROJECTS_FILE = path.resolve(__dirname, '../realData/deletedProjects.json');
 
 // Persistent deleted projects tracking across all accounts & devices
 function loadDeletedProjects() {
+  const result = new Set();
+  try {
+    if (fs.existsSync(REAL_DELETED_PROJECTS_FILE)) {
+      const raw = fs.readFileSync(REAL_DELETED_PROJECTS_FILE, 'utf8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        parsed.forEach((id) => id && result.add(String(id)));
+      }
+    }
+  } catch (err) {
+    console.warn('Error reading deletedProjects.json:', err.message);
+  }
+
   try {
     if (fs.existsSync(DELETED_PROJECTS_FILE)) {
       const raw = fs.readFileSync(DELETED_PROJECTS_FILE, 'utf8');
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return new Set(parsed);
+      if (Array.isArray(parsed)) {
+        parsed.forEach((id) => id && result.add(String(id)));
+      }
     }
   } catch (err) {
     console.warn('Error reading deleted_projects.json:', err.message);
   }
-  return new Set();
+  return result;
 }
 
 function saveDeletedProjects(set) {
   try {
-    const dir = path.dirname(DELETED_PROJECTS_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    const arr = Array.from(set);
+    const realDir = path.dirname(REAL_DELETED_PROJECTS_FILE);
+    if (!fs.existsSync(realDir)) {
+      fs.mkdirSync(realDir, { recursive: true });
     }
-    fs.writeFileSync(DELETED_PROJECTS_FILE, JSON.stringify(Array.from(set), null, 2), 'utf8');
+    fs.writeFileSync(REAL_DELETED_PROJECTS_FILE, JSON.stringify(arr, null, 2), 'utf8');
+
+    const dataDir = path.dirname(DELETED_PROJECTS_FILE);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    fs.writeFileSync(DELETED_PROJECTS_FILE, JSON.stringify(arr, null, 2), 'utf8');
   } catch (err) {
     console.error('Error writing deleted_projects.json:', err.message);
   }
 }
 
-const deletedProjectIds = loadDeletedProjects();
+export const deletedProjectIds = loadDeletedProjects();
+
+// Ensure deleted_projects table exists in PostgreSQL and load any DB-persisted deletions
+async function syncDeletedProjectsWithDb() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS deleted_projects (
+        id TEXT PRIMARY KEY,
+        deleted_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    const rows = await prisma.$queryRawUnsafe('SELECT id FROM deleted_projects');
+    if (Array.isArray(rows)) {
+      let changed = false;
+      for (const r of rows) {
+        if (r && r.id && !deletedProjectIds.has(String(r.id))) {
+          deletedProjectIds.add(String(r.id));
+          changed = true;
+        }
+      }
+      if (changed) {
+        saveDeletedProjects(deletedProjectIds);
+      }
+    }
+  } catch (e) {
+    // Database connection or table existence probe notice
+  }
+}
+syncDeletedProjectsWithDb().catch(() => {});
 
 // In-memory cache synced with disk and Supabase
 let cachedProjects = [];
@@ -217,6 +268,9 @@ function mapDbProjectRow(row) {
     try { tags = JSON.parse(tags); } catch {}
   }
 
+  const rawVis = String(row.visibility || 'PUBLIC').trim().toUpperCase();
+  const visibility = rawVis === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC';
+
   return {
     id: row.id,
     title: row.title,
@@ -226,7 +280,7 @@ function mapDbProjectRow(row) {
     solutionApproach: row.solution_approach || '',
     detailedDescription: row.detailed_description || '',
     stage: row.stage || 'Ideation',
-    visibility: row.visibility || 'PUBLIC',
+    visibility,
     creator: creator || { userId: row.creator_id, fullName: 'Builder' },
     roles: Array.isArray(roles) ? roles : [],
     tags: Array.isArray(tags) ? tags : [],
@@ -249,7 +303,7 @@ export async function saveProjectToSupabase(project) {
     solution_approach: project.solutionApproach || '',
     detailed_description: project.detailedDescription || '',
     stage: project.stage || 'Ideation',
-    visibility: project.visibility === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC',
+    visibility: String(project.visibility || 'PUBLIC').trim().toUpperCase() === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC',
     creator: project.creator || {},
     roles: Array.isArray(project.roles) ? project.roles : [],
     tags: Array.isArray(project.tags) ? project.tags : [],
@@ -313,6 +367,7 @@ export async function deleteProjectFromSupabase(projectId) {
     try {
       await supabaseAdmin.from('projects').delete().eq('id', projectId);
       await deleteProjectMessagesFromSupabase(projectId);
+      await supabaseAdmin.from('deleted_projects').upsert({ id: projectId }, { onConflict: 'id' });
     } catch (err) {
       console.warn('deleteProjectFromSupabase error:', err.message);
     }
@@ -320,10 +375,20 @@ export async function deleteProjectFromSupabase(projectId) {
   try {
     await prisma.$executeRawUnsafe('DELETE FROM projects WHERE id = $1', projectId);
     await prisma.$executeRawUnsafe('DELETE FROM project_messages WHERE project_id = $1', projectId);
+    await prisma.$executeRawUnsafe('INSERT INTO deleted_projects (id) VALUES ($1) ON CONFLICT (id) DO NOTHING', projectId);
   } catch {}
 }
 
 export async function fetchProjectsFromSupabase() {
+  try {
+    const deletedDbRows = await prisma.$queryRawUnsafe('SELECT id FROM deleted_projects').catch(() => []);
+    if (Array.isArray(deletedDbRows)) {
+      for (const r of deletedDbRows) {
+        if (r && r.id) deletedProjectIds.add(String(r.id));
+      }
+    }
+  } catch {}
+
   // 1. Try Supabase Admin HTTP API if configured
   if (supabaseAdmin) {
     try {
@@ -362,7 +427,8 @@ cachedProjects = readProjects();
 
 fetchProjectsFromSupabase().then((supaList) => {
   if (Array.isArray(supaList) && supaList.length > 0) {
-    cachedProjects = supaList.filter((p) => p && p.id && !deletedProjectIds.has(p.id));
+    const localDisk = readProjects();
+    cachedProjects = deduplicateProjectsList([...supaList, ...localDisk]).filter((p) => p && p.id && !deletedProjectIds.has(p.id));
     writeProjects(cachedProjects);
   }
 }).catch(() => {});
@@ -380,8 +446,9 @@ export async function getOrFetchProject(id) {
     return { all: getAllProjectsList(), project: null };
   }
   const supaList = await fetchProjectsFromSupabase();
+  const localDisk = readProjects();
   if (Array.isArray(supaList) && supaList.length > 0) {
-    cachedProjects = deduplicateProjectsList(supaList.filter((p) => p && p.id && !deletedProjectIds.has(p.id)));
+    cachedProjects = deduplicateProjectsList([...supaList, ...cachedProjects, ...localDisk]).filter((p) => p && p.id && !deletedProjectIds.has(p.id));
     writeProjects(cachedProjects);
     const project = cachedProjects.find((p) => p.id === id);
     if (project) return { all: cachedProjects, project };
@@ -402,23 +469,26 @@ router.get('/', optionalAuth, async (req, res) => {
     let all = [];
 
     // Always fetch latest authoritative projects from database (Supabase + Prisma direct)
-    const supaList = await fetchProjectsFromSupabase();
-    if (Array.isArray(supaList) && supaList.length > 0) {
-      all = deduplicateProjectsList(supaList.filter((p) => p && p.id && !deletedProjectIds.has(p.id)));
-      cachedProjects = all;
-      writeProjects(all);
-    } else {
-      all = getAllProjectsList();
-    }
+    const supaList = await fetchProjectsFromSupabase().catch(() => []);
+    const localDisk = readProjects();
 
-    all = all.filter((p) => p && p.id && !deletedProjectIds.has(p.id));
+    // Merge database projects with in-memory & local disk projects so newly created local projects are never wiped
+    all = deduplicateProjectsList([
+      ...(Array.isArray(supaList) ? supaList : []),
+      ...cachedProjects,
+      ...localDisk,
+    ]).filter((p) => p && p.id && !deletedProjectIds.has(p.id));
+
+    cachedProjects = all;
+    writeProjects(all);
 
     const filtered = all.filter((p) => {
       // 1. Admin sees ALL projects across the platform (both public and private)
       if (isUserAdminCheck(req.user)) return true;
 
       // 2. Public projects: visible to all members and visitors across the platform
-      if (p.visibility === 'PUBLIC') return true;
+      const vis = String(p.visibility || 'PUBLIC').trim().toUpperCase();
+      if (vis === 'PUBLIC') return true;
 
       // 3. Private projects: strictly visible ONLY to creator, lead, or assigned/invited team members
       return isProjectMemberOrCreator(p, req.user);
@@ -496,12 +566,13 @@ router.post('/', requireAuth, async (req, res) => {
       solutionApproach: (solutionApproach || '').trim(),
       detailedDescription: (detailedDescription || '').trim(),
       stage,
-      visibility: visibility === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC',
+      visibility: String(visibility).trim().toUpperCase() === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC',
       creator: {
         userId: req.user.id,
         fullName: creatorName,
         avatar: req.user.profile?.avatar || null,
         role: req.user.profile?.headline || 'Project Lead',
+        email: req.user.email || undefined,
       },
       roles: Array.isArray(roles) && roles.length > 0 ? roles : [
         {
@@ -513,6 +584,7 @@ router.post('/', requireAuth, async (req, res) => {
             userId: req.user.id,
             fullName: creatorName,
             avatar: req.user.profile?.avatar || null,
+            email: req.user.email || undefined,
           },
         },
       ],
@@ -641,23 +713,14 @@ router.delete('/:id', requireAuth, async (req, res) => {
       const creatorEmail = String(project.creator?.email || '').trim().toLowerCase();
       const userEmail = String(req.user.email || '').trim().toLowerCase();
 
-      const ruthwikIds = ['c3e1a001-8888-4444-9999-000000000001', 'b669157c-4d30-42f4-a8bf-4e27dc425e00', 'ruthwikpatel08'];
-      const gokulIds = ['c3e1a001-8888-4444-9999-000000000002', '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba', 'gokulvamshi'];
-
-      const isRuthwikMatch = creatorId && ruthwikIds.includes(creatorId) && Array.from(userIds).some((uid) => ruthwikIds.includes(uid));
-      const isGokulMatch = creatorId && gokulIds.includes(creatorId) && Array.from(userIds).some((uid) => gokulIds.includes(uid));
-
-      const isUploadedUser = Boolean(
-        req.user.isAdmin ||
+      const isAdmin = Boolean(req.user.isAdmin || req.user.role === 'ADMIN' || isUserAdminCheck(req.user));
+      const isCreator = Boolean(
         (creatorId && userIds.has(creatorId)) ||
-        isRuthwikMatch ||
-        isGokulMatch ||
-        (creatorEmail && userEmail && creatorEmail === userEmail) ||
-        isProjectLeadOrCreator(project, req.user)
+        (creatorEmail && userEmail && creatorEmail === userEmail)
       );
 
-      if (!isUploadedUser) {
-        return res.status(403).json({ error: 'Only the user who uploaded this project can delete it.' });
+      if (!isAdmin && !isCreator) {
+        return res.status(403).json({ error: 'Only the user who posted this project or an admin can delete it.' });
       }
     }
 

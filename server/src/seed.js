@@ -8,6 +8,7 @@ import { realOpportunities } from './realData/opportunities.js';
 import { realFailedStartups } from './realData/failedStartups.js';
 import { demoAccounts } from './realData/demoAccounts.js';
 import { initialProjects } from './realData/initialProjects.js';
+import { deletedProjectIds } from './routes/projects.js';
 
 export async function main() {
   console.log('🌱 Starting verified HookZ real data & ecosystem seed...');
@@ -434,7 +435,14 @@ export async function main() {
 
   // 9. SEED BUILDER PROJECTS (Preserving existing projects without data loss)
   try {
+    const deletedDbRows = await prisma.$queryRawUnsafe('SELECT id FROM deleted_projects').catch(() => []);
+    const allDeletedIds = new Set([
+      ...Array.from(deletedProjectIds || []),
+      ...(Array.isArray(deletedDbRows) ? deletedDbRows.map((r) => String(r.id)) : []),
+    ]);
+
     for (const proj of initialProjects) {
+      if (!proj || !proj.id || allDeletedIds.has(proj.id)) continue;
       await prisma.$executeRawUnsafe(`
         INSERT INTO projects (
           id, creator_id, title, idea_summary, tagline, problem_solved,
@@ -454,7 +462,7 @@ export async function main() {
         new Date(proj.createdAt || Date.now()), new Date()
       );
     }
-    console.log(`✅ Verified ${initialProjects.length} builder projects in database.`);
+    console.log(`✅ Verified builder projects in database (excluding deleted).`);
   } catch (err) {
     console.log('ℹ️ Projects table check during seed:', err.message);
   }

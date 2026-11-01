@@ -183,13 +183,6 @@ export const isUserCreatorOfProject = (project: BuilderProject | null | undefine
   if (currentUser.profile?.userId) userIds.add(String(currentUser.profile.userId).trim().toLowerCase());
   if (currentUser._id) userIds.add(String(currentUser._id).trim().toLowerCase());
 
-  // Well-known admin / owner aliases
-  const ruthwikIds = ['c3e1a001-8888-4444-9999-000000000001', 'b669157c-4d30-42f4-a8bf-4e27dc425e00', 'ruthwikpatel08'];
-  const gokulIds = ['c3e1a001-8888-4444-9999-000000000002', '601c5fb3-a83e-4592-a74a-42a9b4fbe3ba', 'gokulvamshi'];
-
-  if (Array.from(userIds).some((id) => ruthwikIds.includes(id) || gokulIds.includes(id))) return true;
-  if (currentUser.email && (currentUser.email.toLowerCase().includes('ruthwik') || currentUser.email.toLowerCase().includes('gokul'))) return true;
-
   if (creatorId && userIds.has(creatorId)) return true;
 
   const creatorEmail = String((project.creator as any)?.email || '').trim().toLowerCase();
@@ -315,7 +308,7 @@ export const ProjectsPage: React.FC = () => {
             (p: any) =>
               p &&
               !deletedIds.has(p.id) &&
-              !['proj-1', 'proj-2', 'proj-3'].includes(p.id) &&
+              !['proj-1', 'proj-2', 'proj-3', 'proj-1792682406796-uwaja'].includes(p.id) &&
               !['creator-1', 'creator-2', 'creator-3'].includes(p?.creator?.userId)
           );
           return deduplicateProjectsList(cleaned);
@@ -534,7 +527,7 @@ export const ProjectsPage: React.FC = () => {
                 solutionApproach: row.solution_approach || '',
                 detailedDescription: row.detailed_description || '',
                 stage: row.stage || 'Ideation',
-                visibility: row.visibility || 'PUBLIC',
+                visibility: String(row.visibility || 'PUBLIC').trim().toUpperCase() === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC',
                 creator: row.creator || { userId: row.creator_id, fullName: 'Builder' },
                 roles: Array.isArray(row.roles) ? row.roles : [],
                 tags: Array.isArray(row.tags) ? row.tags : [],
@@ -1288,13 +1281,23 @@ export const ProjectsPage: React.FC = () => {
 
     // 4. Server API delete
     try {
-      await api.deleteProject(projectId);
+      const res = await api.deleteProject(projectId);
+      if (res && Array.isArray(res.deletedProjectIds)) {
+        res.deletedProjectIds.forEach((dId: string) => recordDeletedProjectId(dId));
+      }
     } catch (apiErr) {
       console.warn('Server project delete notice:', apiErr);
     }
 
     // 5. Broadcast deletion to all other connected devices & tabs (mobile <-> laptop)
     broadcastEntityDeleted('PROJECT', projectId);
+    try {
+      supabase.channel('global-projects-sync-channel').send({
+        type: 'broadcast',
+        event: 'entity_deleted',
+        payload: { entityType: 'PROJECT', id: projectId },
+      }).catch(() => null);
+    } catch {}
 
     showToast('Project deleted successfully.');
   };
@@ -1322,6 +1325,7 @@ export const ProjectsPage: React.FC = () => {
     setIsSubmittingProject(true);
 
     try {
+      clearApiCache();
       const creatorName = user.profile?.fullName || user.email?.split('@')[0] || 'Builder';
       const payload = {
         title: newTitle.trim(),
@@ -1343,6 +1347,7 @@ export const ProjectsPage: React.FC = () => {
               userId: user.id,
               fullName: creatorName,
               avatar: user.profile?.avatar || null,
+              email: user.email || undefined,
             },
           },
           ...rolesList.map((rName, idx) => ({
@@ -1370,9 +1375,30 @@ export const ProjectsPage: React.FC = () => {
           fullName: creatorName,
           avatar: user.profile?.avatar || null,
           role: user.profile?.headline || 'Project Lead',
+          email: user.email || undefined,
         },
-        createdAt: 'Just now',
+        createdAt: new Date().toISOString(),
       } as BuilderProject);
+
+      try {
+        await supabase.from('projects').upsert({
+          id: newProject.id,
+          creator_id: user.id,
+          title: newProject.title,
+          idea_summary: newProject.ideaSummary || '',
+          tagline: newProject.tagline || '',
+          problem_solved: newProject.problemSolved || '',
+          solution_approach: newProject.solutionApproach || '',
+          detailed_description: newProject.detailedDescription || '',
+          stage: newProject.stage,
+          visibility: newProject.visibility,
+          creator: newProject.creator,
+          roles: newProject.roles,
+          tags: newProject.tags,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+      } catch {}
 
       const nextList = [newProject, ...projects.filter((p) => p.id !== newProject.id)];
       const seenIds = new Set<string>();
@@ -1384,6 +1410,22 @@ export const ProjectsPage: React.FC = () => {
 
       saveProjects(deduplicated);
       syncProjectGroup(newProject);
+
+      // Broadcast real-time update to all other users immediately
+      clearApiCache();
+      window.dispatchEvent(new CustomEvent('startupz_projects_updated'));
+      try {
+        supabase.channel('global-projects-sync-channel').send({
+          type: 'broadcast',
+          event: 'project_updated',
+          payload: { projectId: newProject.id },
+        }).catch(() => null);
+        supabase.channel('global-data-sync-broadcast').send({
+          type: 'broadcast',
+          event: 'project_updated',
+          payload: { projectId: newProject.id },
+        }).catch(() => null);
+      } catch {}
 
       setCreateModalOpen(false);
       showToast(`Project "${newProject.title}" created! Team chat group initialized in Messages.`);
@@ -1788,7 +1830,8 @@ export const ProjectsPage: React.FC = () => {
 
   const filteredProjects = projects.filter((p) => {
     // Visibility check: Private projects only visible to creator, lead, assigned team members, or admin
-    if (p.visibility === 'PRIVATE') {
+    const vis = String(p.visibility || 'PUBLIC').trim().toUpperCase();
+    if (vis === 'PRIVATE') {
       if (!user) return false;
       const isUserAdmin = Boolean(
         user.isAdmin ||
