@@ -65,12 +65,18 @@ const startup={id:'theme-startup',name:'Campus Collective',oneLineDescription:'S
     assert.equal(await feed.getByRole('button',{name:/Downvote idea/}).count(),1);
     assert.equal(await feed.getByRole('link',{name:/Explore Live Website/}).getAttribute('href'),'https://example.com/campus');
     for(const card of await feed.locator('[id^="post-"]').all())assert.equal(await card.evaluate(el=>el.scrollWidth<=el.clientWidth),true,'Post contents fit');
-    const format=feed.getByRole('combobox',{name:'Filter feed by format'});
+    await page.route('**/api/connections',route=>route.fulfill({json:{connections:[{user:{id:people[0].user_id}}]}}));
+    await page.reload({waitUntil:'networkidle'});
+    await feed.locator('#post-feed-private').waitFor();
+    await page.unroute('**/api/connections');
+    await page.reload({waitUntil:'networkidle'});
+    assert.equal(await feed.locator('#post-feed-private').count(),0,'Non-connections cannot see private posts');
+    const format=feed.getByRole('group',{name:'Filter feed by format'});
     for(const [value,ids] of [['IDEA',['post-feed-idea']],['PROTOTYPE',['post-feed-prototype']],['UPDATE',['post-theme-post']]]) {
-     await format.selectOption(value);
+     await format.getByRole('button',{name:({IDEA:'Ideas',PROTOTYPE:'Prototypes',UPDATE:'Updates'})[value],exact:true}).click();
      assert.deepEqual(await feed.locator('[id^="post-"]').evaluateAll(els=>els.map(el=>el.id)),ids);
     }
-    await format.selectOption('ALL');
+    await format.getByRole('button',{name:'All posts',exact:true}).click();
     await snap('feed');
     await page.screenshot({path:output+'/preview-'+width+'-'+theme+'.png'});
     const idea=feed.locator('#post-feed-idea');
@@ -88,6 +94,7 @@ const startup={id:'theme-startup',name:'Campus Collective',oneLineDescription:'S
     await feed.getByRole('button',{name:'Connections Only',exact:true}).click();
     await feed.getByRole('button',{name:'Publish',exact:true}).click();
     await feed.locator('#post-published-2').waitFor();
+    assert.equal(await feed.locator('#post-published-2 h3').count(),0,'Audience marker is not a headline');
     assert.equal(published[1].postType,'EXECUTION');assert.equal(published[1].visibility,'CONNECTIONS');
     await feed.getByRole('button',{name:'Show a prototype',exact:true}).click();
     await page.getByRole('dialog',{name:'Share a Working Prototype / Sample'}).waitFor();

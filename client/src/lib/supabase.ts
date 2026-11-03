@@ -1018,14 +1018,14 @@ export async function fetchUserConnections(userId: string, forceRefresh = false)
         }
       }
 
-      // Fallback to backend only if Supabase request encountered an error (offline / network failure)
-      if (hadSupabaseError && connectionList.length === 0) {
+      // Merge backend-only accepted relationships for the signed-in user.
+      if ((await supabase.auth.getSession()).data.session?.user.id === lookupId) {
         try {
           const apiConns = await api.getConnections().catch(() => null);
           if (apiConns && Array.isArray(apiConns.connections)) {
             apiConns.connections.forEach((conn: any) => {
               const otherId = conn.userId || conn.user?.id || (conn.senderId === lookupId ? conn.receiverId : conn.senderId);
-              if (otherId && otherId !== lookupId && !locallyRemoved.has(conn.connectionId || '') && !locallyRemoved.has(otherId)) {
+              if (otherId && otherId !== lookupId && !statusMap.has(otherId) && (!conn.status || conn.status === 'ACCEPTED') && !locallyRemoved.has(conn.connectionId || '') && !locallyRemoved.has(otherId)) {
                 connectedIds.add(otherId);
                 statusMap.set(otherId, 'ACCEPTED');
                 connInfoMap.set(otherId, {

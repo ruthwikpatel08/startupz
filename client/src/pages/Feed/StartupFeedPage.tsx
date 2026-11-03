@@ -14,6 +14,7 @@ import { SEO } from '../../components/common/SEO';
 import { ShareModal, ShareItemData } from '../../components/common/ShareModal';
 import { sanitizeExternalUrl } from '../../utils/urlSecurity';
 import './StartupFeedPage.css';
+import { postDisplayTitle } from '../../utils/postDisplayTitle';
 import {
   Share2,
   Heart,
@@ -119,14 +120,15 @@ export const StartupFeedPage: React.FC = () => {
     }
     const loadConnections = async () => {
       try {
-        const data = await fetchUserConnections(user.id);
+        const data = await fetchUserConnections(user.id, true);
         setConnectedUserIds(data.connectedIds);
       } catch {}
     };
     loadConnections();
     const handleUpdate = () => loadConnections();
     window.addEventListener('connections_updated', handleUpdate);
-    return () => window.removeEventListener('connections_updated', handleUpdate);
+    window.addEventListener('focus', handleUpdate);
+    return () => { window.removeEventListener('connections_updated', handleUpdate); window.removeEventListener('focus', handleUpdate); };
   }, [user?.id]);
 
   // Reddit/Hacker News style idea post votes tracking: postId -> 'up' | 'down' | null
@@ -1383,15 +1385,11 @@ export const StartupFeedPage: React.FC = () => {
 
       <div className="feed-stream-heading">
         <h2>From the community</h2>
-        <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-          Show
-          <select aria-label="Filter feed by format" value={feedFormat} onChange={(event) => setFeedFormat(event.target.value)} className="input-base px-2 py-2 text-xs">
-            <option value="ALL">All posts</option>
-            <option value="IDEA">Ideas</option>
-            <option value="PROTOTYPE">Prototypes</option>
-            <option value="UPDATE">Updates</option>
-          </select>
-        </label>
+        <div className="feed-format-options" role="group" aria-label="Filter feed by format">
+          {[['ALL', 'All posts'], ['IDEA', 'Ideas'], ['PROTOTYPE', 'Prototypes'], ['UPDATE', 'Updates']].map(([value, label]) => (
+            <button key={value} type="button" aria-pressed={feedFormat === value} onClick={() => setFeedFormat(value)}>{label}</button>
+          ))}
+        </div>
       </div>
       {loading ? (
         <div className="space-y-4">
@@ -1503,9 +1501,9 @@ export const StartupFeedPage: React.FC = () => {
 
                 {/* Post Body */}
                 <div className="space-y-2 min-w-0 break-words">
-                  {post.title && (
+                  {postDisplayTitle(post.title) && (
                     <h3 className="font-semibold text-base text-[var(--text-primary)] break-words">
-                      {post.title}
+                      {postDisplayTitle(post.title)}
                     </h3>
                   )}
                   <div>

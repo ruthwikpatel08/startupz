@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { postDisplayTitle } from '../../utils/postDisplayTitle';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
@@ -433,7 +434,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
         {/* 2. Prototype Title */}
         <div>
           <h3 className="text-base sm:text-lg font-extrabold text-[var(--text-primary)]  tracking-tight">
-            {post.title || 'Untitled Prototype'}
+            {postDisplayTitle(post.title) || 'Untitled Prototype'}
           </h3>
         </div>
 

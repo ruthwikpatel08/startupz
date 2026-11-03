@@ -1,5 +1,14 @@
 # Validation journal
 
+## 2026-11-03 — Connections audience repair and format buttons
+
+- Connection lookup previously ignored backend-only accepted relationships when Supabase returned successfully with no rows. Merge the signed-in user's accepted backend relationships, honoring explicit Supabase states; refresh the feed's connections on focus and connection changes.
+- Hide legacy audience metadata in feed/profile/prototype headings, retaining storage compatibility. Replace dropdown with accessible side-by-side pressed-state buttons.
+- API applies audience filtering before pagination and checks direct comment/action routes. POST honors the visibility payload. Migration 018 adds restrictive database SELECT policies for posts and their comments/likes.
+- `node scripts/test-post-audience.mjs`: PASS owner, both connection directions, pending/rejected, stranger, anonymous, comments/likes, backend-only relationships and migration idempotency using isolated PGlite PostgreSQL.
+- `node scripts/test-product-theme.cjs --feed`: six viewport/theme PASS results, including backend-only accepted connection visibility, non-connection exclusion, hidden marker-only headline, each format button and existing posting/actions. Mobile screenshot inspected.
+- Client production build passed (2118 modules); server syntax and diff checks passed. No live accounts were used. Migration 018 is prepared and tested but NOT applied to the live database; backend/frontend deployment and migration application are required for the live fix.
+
 ## 2026-11-03 — Unified feed and AI Scout
 
 - Replaced separate feed categories with one newest-first timeline. Removed legacy category labels and filters, retained existing idea voting, prototype demos, audience controls and publishing paths.

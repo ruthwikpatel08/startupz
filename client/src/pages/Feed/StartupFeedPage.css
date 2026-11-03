@@ -18,6 +18,15 @@
 .feed-stream-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 26px 2px 14px; }
 .hookz-feed .feed-stream-heading h2 { font-size: 13px; font-weight: 700; }
 .feed-stream-heading > span { color: var(--text-muted); font-size: 11px; }
+.feed-stream-heading { flex-wrap: wrap; }
+.feed-format-options { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--border-subtle); background: var(--bg-surface); border-radius: 14px; }
+.feed-format-options button { padding: 9px 12px; border-radius: 10px; font-size: 12px; font-weight: 650; color: var(--text-secondary); transition: background .2s, color .2s; }
+.feed-format-options button:hover { background: var(--brand-soft); color: var(--brand-primary); }
+.feed-format-options button[aria-pressed=true] { background: var(--brand-primary); color: var(--bg-surface); box-shadow: 0 2px 8px #7047eb25; }
+@media (max-width: 639px) {
+  .feed-format-options { width: 100%; }
+  .feed-format-options button { flex: 1; padding: 9px 4px; font-size: 11px; }
+}
 .hookz-feed .feed-post { box-shadow: 0 3px 18px #201d3204; transition: border-color .2s, box-shadow .2s; }
 .hookz-feed .feed-post:hover { border-color: color-mix(in srgb, var(--brand-primary) 24%, var(--border-subtle)); box-shadow: 0 6px 24px #201d3208; }
 .feed-type-idea { background: var(--brand-soft); color: var(--brand-primary); border-color: var(--border-subtle); }

@@ -1,3 +1,4 @@
+import { privatePost, postAudienceAuthors, postAudienceWhere } from '../utils/postAudience.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -42,7 +43,8 @@ router.get('/', optionalAuth, async (req, res) => {
     const limitNum = parseInt(limit, 10);
     const skip = (pageNum - 1) * limitNum;
 
-    const where = {};
+    const audience = await postAudienceAuthors(getUserCandidateIds(req.user), prisma, supabaseAdmin);
+    const where = { AND: [postAudienceWhere(audience)] };
     if (deletedPostIds.size > 0) {
       where.id = { notIn: Array.from(deletedPostIds) };
     }
@@ -281,6 +283,9 @@ router.post('/', requireAuth, postCreationLimiter, async (req, res) => {
       safeStartupId = startup.id;
     }
 
+    const storedTitle = req.body.visibility === 'CONNECTIONS'
+      ? '[Connections Only] ' + (title || '').replace(/^\s*\[Connections Only\]\s*/i, '').trim()
+      : (title ? title.trim() : null);
     const finalLinks = links || websiteUrl || null;
     const finalImages = images || mediaUrl || null;
 
@@ -289,7 +294,7 @@ router.post('/', requireAuth, postCreationLimiter, async (req, res) => {
         authorId: req.user.id,
         startupId: safeStartupId,
         postType,
-        title: title ? title.trim() : null,
+        title: storedTitle,
         content: content.trim(),
         images: finalImages,
         links: finalLinks,
@@ -316,7 +321,7 @@ router.post('/', requireAuth, postCreationLimiter, async (req, res) => {
           author_id: req.user.id,
           startup_id: safeStartupId,
           post_type: postType,
-          title: title ? title.trim() : null,
+          title: storedTitle,
           content: content.trim(),
           images: finalImages,
           links: finalLinks,
@@ -353,6 +358,20 @@ router.post('/', requireAuth, postCreationLimiter, async (req, res) => {
   }
 });
 
+
+// Apply the same audience rule to direct post actions and comment reads.
+router.use('/:id/:action', optionalAuth, async (req, res, next) => {
+  if (!['like', 'vote', 'comments', 'proposals'].includes(req.params.action)) return next();
+  try {
+    const post = await ensurePostInPrisma(req.params.id);
+    if (!post) return res.status(404).json({ error: 'Post not found.' });
+    if (privatePost(post)) {
+      const authors = await postAudienceAuthors(getUserCandidateIds(req.user), prisma, supabaseAdmin);
+      if (!authors.has(post.authorId)) return res.status(404).json({ error: 'Post not found.' });
+    }
+    next();
+  } catch { res.status(503).json({ error: 'Unable to verify post access.' }); }
+});
 
 // Helper to ensure a post exists in Prisma (syncing from Supabase if needed)
 async function ensurePostInPrisma(postId) {

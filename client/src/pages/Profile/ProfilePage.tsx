@@ -1,3 +1,4 @@
+import { postDisplayTitle } from '../../utils/postDisplayTitle';
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -2040,9 +2041,9 @@ export const ProfilePage: React.FC = () => {
                     )}
                   </div>
 
-                  {post.title && (
+                  {postDisplayTitle(post.title) && (
                     <h3 className="font-bold text-sm text-[var(--text-primary)] break-words">
-                      {post.title}
+                      {postDisplayTitle(post.title)}
                     </h3>
                   )}
 
