@@ -34,3 +34,23 @@
   .hookz-product main > div > .max-w-7xl { padding-top: 24px; }
   .product-home > section:first-of-type { padding-top: 24px; }
 }
+/* Scout stays recognizable at rest; interaction brings the gradient to life. */
+.hookz-product .ai-scout-trigger.btn-primary {
+  background-image: linear-gradient(115deg, #6638dd, #8359f4 35%, #4565cf 65%, #6638dd);
+  background-size: 250% 100%;
+  background-position: 0% 50%;
+  transition: background-position .65s ease, box-shadow .25s ease, transform .25s ease;
+}
+.hookz-product .ai-scout-trigger.btn-primary:is(:hover, :focus-visible) {
+  background-position: 100% 50%;
+  box-shadow: 0 4px 18px #7047eb40, inset 0 1px 0 #ffffff40;
+  transform: translateY(-1px);
+}
+.ai-scout-trigger svg { transition: transform .5s ease; }
+.ai-scout-trigger:is(:hover, :focus-visible) svg { transform: rotate(-15deg) scale(1.15); }
+.hookz-product .ai-scout-trigger.btn-primary:active { transform: scale(.97); }
+@media (prefers-reduced-motion: reduce) {
+  .hookz-product .ai-scout-trigger.btn-primary, .ai-scout-trigger svg,
+  .hookz-product .ai-scout-trigger.btn-primary:is(:hover, :focus-visible, :active),
+  .ai-scout-trigger:is(:hover, :focus-visible) svg { transition: none; transform: none; }
+}

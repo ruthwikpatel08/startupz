@@ -369,7 +369,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
         className="card-base p-4 sm:p-5 border border-[var(--border-subtle)]  bg-[var(--bg-surface)]  rounded-2xl shadow-xs hover:shadow-card transition-all space-y-4"
       >
         {/* 1. Header: Author profile & Prototype badge */}
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
             {(() => {
               const displayAvatar = (isAuthor && user?.profile?.avatar !== undefined) ? user.profile.avatar : author?.profile?.avatar;
@@ -398,7 +398,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
                         <VerificationBadge badge={author.verificationBadge} size="sm" />
                       )}
                       <span className="text-[var(--text-muted)]  text-xs">•</span>
-                      <span className="text-xs text-[var(--text-muted)] ">{timeFormatted}</span>
+                      <span className="text-xs text-[var(--text-muted)] whitespace-nowrap">{timeFormatted}</span>
                     </div>
                     <div className="text-xs text-[var(--text-muted)]  truncate">
                       {displayHeadline}
@@ -413,7 +413,7 @@ export const PrototypeCard: React.FC<PrototypeCardProps> = ({
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-950/50 dark:to-blue-950/50 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800 shadow-2xs">
               <Boxes size={12} className="text-cyan-600 dark:text-cyan-400" />
-              <span>Prototype Sample</span>
+              <span>Prototype</span>
             </span>
 
             {/* Author Delete option */}

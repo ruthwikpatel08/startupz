@@ -1960,7 +1960,7 @@ export const ProfilePage: React.FC = () => {
                   : 'bg-[var(--bg-soft)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
               }`}
             >
-              🌟 Describes ({executionsCount})
+              🌟 Updates ({executionsCount})
             </button>
             <button
               type="button"

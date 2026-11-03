@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { api, clearApiCache } from '../../services/api';
 import { supabase, fetchUserConnections, broadcastEntityDeleted, resolveUserIdToUUID, isUUID, getDeletedEntityIds, recordDeletedEntityId } from '../../lib/supabase';
-import { Post, Startup, Problem } from '../../types';
-import { VerificationBadge, RoleBadge } from '../../components/common/Badge';
+import { Post } from '../../types';
+import { VerificationBadge } from '../../components/common/Badge';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ConnectModal } from '../../components/common/ConnectModal';
 import { ReportModal } from '../../components/common/ReportModal';
@@ -13,6 +13,7 @@ import { CreatePrototypeModal } from '../../components/prototypes/CreatePrototyp
 import { SEO } from '../../components/common/SEO';
 import { ShareModal, ShareItemData } from '../../components/common/ShareModal';
 import { sanitizeExternalUrl } from '../../utils/urlSecurity';
+import './StartupFeedPage.css';
 import {
   Share2,
   Heart,
@@ -23,19 +24,10 @@ import {
   Send,
   Sparkles,
   Rocket,
-  Plus,
-  Briefcase,
-  TrendingUp,
-  HelpCircle,
-  Award,
   Link as LinkIcon,
-  Image as ImageIcon,
-  Check,
-  MoreVertical,
   Flag,
   UserPlus,
   Globe,
-  Flame,
   ArrowRight,
   Trash2,
   CheckCircle2,
@@ -85,30 +77,13 @@ export const StartupFeedPage: React.FC = () => {
   const location = useLocation();
   const [highlightedPostId, setHighlightedPostId] = useState<string | null>(null);
 
-  const tabParam = searchParams.get('pillar') || searchParams.get('tab');
-  const [activePillar, setActivePillar] = useState<'ACHIEVEMENTS' | 'IDEAS' | 'PROTOTYPES'>(() => {
-    const p = (tabParam || '').toUpperCase();
-    if (p === 'IDEAS' || p === 'PROTOTYPES') return p;
-    return 'ACHIEVEMENTS';
-  });
   const [posts, setPosts] = useState<Post[]>([]);
+  const [feedFormat, setFeedFormat] = useState('ALL');
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState('ALL');
   const [createPrototypeModalOpen, setCreatePrototypeModalOpen] = useState(false);
 
-  // Strict classification sets: Ideas, Executions, and Prototypes NEVER mix
+  // Legacy idea formats retain voting in the mixed timeline.
   const IDEA_POST_TYPES = new Set(['IDEA', 'COFOUNDER', 'ADVICE', 'HIRING']);
-  const ACHIEVEMENT_POST_TYPES = new Set([
-    'EXECUTION',
-    'ACHIEVEMENT',
-    'DRAWBACK',
-    'DRAWBACKS',
-    'LAUNCH',
-    'EXPERIENCE',
-    'FUNDING',
-    'MILESTONE',
-  ]);
-
   // Post composer state
   const [composerOpen, setComposerOpen] = useState(false);
   const [postType, setPostType] = useState('EXECUTION');
@@ -170,22 +145,6 @@ export const StartupFeedPage: React.FC = () => {
       setUserVotes({});
     }
   }, [user?.id]);
-
-  const handlePillarChange = (pillar: 'ACHIEVEMENTS' | 'IDEAS' | 'PROTOTYPES') => {
-    setActivePillar(pillar);
-    setFilterType('ALL');
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set('pillar', pillar);
-    navigate({ search: newParams.toString() }, { replace: true });
-    if (pillar === 'ACHIEVEMENTS') {
-      setPostType('EXECUTION');
-    } else if (pillar === 'IDEAS') {
-      setPostType('IDEA');
-    } else if (pillar === 'PROTOTYPES') {
-      setPostType('PROTOTYPE');
-    }
-  };
-
 
   const [successToast, setSuccessToast] = useState<string | null>(null);
   const [errorToast, setErrorToast] = useState<string | null>(null);
@@ -451,20 +410,6 @@ export const StartupFeedPage: React.FC = () => {
     if (!rawTarget) return;
 
     if (posts.length > 0) {
-      const targetPost = posts.find((p) => p.id === rawTarget);
-      if (targetPost) {
-        const rawType = (targetPost.postType || 'UPDATE').toUpperCase();
-        if (rawType === 'PROTOTYPE' || targetPost.content?.startsWith('{"isPrototype"')) {
-          setActivePillar('PROTOTYPES');
-        } else if (IDEA_POST_TYPES.has(rawType)) {
-          setActivePillar('IDEAS');
-        } else {
-          setActivePillar('ACHIEVEMENTS');
-        }
-        setFilterType('ALL');
-      }
-
-
       const scrollToTarget = () => {
         const el = document.getElementById(`post-${rawTarget}`);
         if (el) {
@@ -591,7 +536,7 @@ export const StartupFeedPage: React.FC = () => {
       const senderUuid = isUUID(user.id) ? user.id : await resolveUserIdToUUID(user.id);
       if (!authorUuid || authorUuid === senderUuid) return;
 
-      const notifLink = `/feed?pillar=${activePillar}&postId=${targetPost.id}#post-${targetPost.id}`;
+      const notifLink = `/feed?postId=${targetPost.id}#post-${targetPost.id}`;
 
       if (type === 'POST_DOWNVOTE') {
         await supabase
@@ -623,7 +568,9 @@ export const StartupFeedPage: React.FC = () => {
   };
 
   const filteredPosts = posts.filter((p) => {
-    const rawType = (p.postType || (p as any).post_type || 'UPDATE').toUpperCase();
+    if (feedFormat === 'PROTOTYPE' && !isPrototypePost(p)) return false;
+    if (feedFormat === 'IDEA' && (isPrototypePost(p) || !IDEA_POST_TYPES.has((p.postType || '').toUpperCase()))) return false;
+    if (feedFormat === 'UPDATE' && (isPrototypePost(p) || IDEA_POST_TYPES.has((p.postType || '').toUpperCase()))) return false;
     const isMine = isMyPost(p);
 
     // If post is marked for connections only, ensure only author or connections can see it
@@ -634,80 +581,8 @@ export const StartupFeedPage: React.FC = () => {
       if (!isMine && !isConnection) return false;
     }
 
-    const isProtoPost = isPrototypePost(p);
-
-    if (activePillar === 'ACHIEVEMENTS') {
-      if (isProtoPost) return false;
-      // Exclude ALL ideas/cofounder/advice/hiring
-      if (IDEA_POST_TYPES.has(rawType)) {
-        return false;
-      }
-      if (filterType === 'MY_SHARES' || filterType === 'MY_ACHIEVEMENTS') {
-        return isMine;
-      }
-      if (filterType === 'EXECUTION' || filterType === 'ACHIEVEMENT') {
-        return rawType === 'EXECUTION' || rawType === 'ACHIEVEMENT';
-      }
-      if (filterType === 'DRAWBACK' || filterType === 'DRAWBACKS') {
-        return rawType === 'DRAWBACK' || rawType === 'DRAWBACKS';
-      }
-      if (filterType === 'LAUNCH') {
-        return rawType === 'LAUNCH';
-      }
-      if (filterType === 'EXPERIENCE') {
-        return rawType === 'EXPERIENCE';
-      }
-      if (filterType !== 'ALL') {
-        return rawType === filterType;
-      }
-      return (
-        ACHIEVEMENT_POST_TYPES.has(rawType) ||
-        rawType === 'UPDATE' ||
-        !IDEA_POST_TYPES.has(rawType)
-      );
-    }
-
-    if (activePillar === 'IDEAS') {
-      if (isProtoPost) return false;
-      // Exclude ALL achievements/experiences/launches/funding
-      if (ACHIEVEMENT_POST_TYPES.has(rawType)) {
-        return false;
-      }
-      if (filterType === 'MY_IDEAS') {
-        return isMine;
-      }
-      if (filterType !== 'ALL') {
-        return rawType === filterType;
-      }
-      return (
-        IDEA_POST_TYPES.has(rawType) ||
-        rawType === 'UPDATE'
-      );
-    }
-
-    if (activePillar === 'PROTOTYPES') {
-      if (!isProtoPost) return false;
-
-      if (filterType === 'MY_PROTOTYPES') {
-        return isMine;
-      }
-      if (filterType === 'WEBSITES') {
-        return Boolean(p.websiteUrl || (p as any).website_url || p.links || (typeof p.content === 'string' && p.content.includes('"websiteUrl"')));
-      }
-      if (filterType === 'VIDEOS') {
-        return (
-          p.mediaType === 'video' ||
-          (p as any).media_type === 'video' ||
-          (typeof p.content === 'string' && p.content.includes('"mediaType":"video"')) ||
-          (typeof p.images === 'string' && (p.images.endsWith('.mp4') || p.images.endsWith('.webm') || p.images.endsWith('.mov')))
-        );
-      }
-      return true;
-    }
-
     return true;
-  });
-
+  }).sort((a, b) => (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0));
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -720,9 +595,7 @@ export const StartupFeedPage: React.FC = () => {
       return;
     }
 
-    const finalPostType = activePillar === 'IDEAS'
-      ? (IDEA_POST_TYPES.has(postType) ? postType : 'IDEA')
-      : (ACHIEVEMENT_POST_TYPES.has(postType) || postType === 'UPDATE' ? postType : 'EXECUTION');
+    const finalPostType = postType === 'IDEA' ? 'IDEA' : 'EXECUTION';
 
     setSubmittingPost(true);
     setComposerError(null);
@@ -1347,118 +1220,22 @@ export const StartupFeedPage: React.FC = () => {
     };
   }, []);
 
-  const mySharesCount = posts.filter((p) => {
-    const rawType = (p.postType || (p as any).post_type || 'UPDATE').toUpperCase();
-    const isProtoPost = isPrototypePost(p);
-    return isMyPost(p) && !isProtoPost && !IDEA_POST_TYPES.has(rawType);
-  }).length;
-
-  const myIdeasCount = posts.filter((p) => {
-    const rawType = (p.postType || (p as any).post_type || 'UPDATE').toUpperCase();
-    const isProtoPost = isPrototypePost(p);
-    return isMyPost(p) && !isProtoPost && !ACHIEVEMENT_POST_TYPES.has(rawType) && (IDEA_POST_TYPES.has(rawType) || rawType === 'UPDATE');
-  }).length;
-
-  const myPrototypesCount = posts.filter((p) => {
-    return isMyPost(p) && isPrototypePost(p);
-  }).length;
-
-  const executionFilters = [
-    { id: 'ALL', label: 'All Describes' },
-    { id: 'MY_SHARES', label: user ? `My Shares (${mySharesCount})` : 'My Shares' },
-    { id: 'EXECUTION', label: 'Describes' },
-    { id: 'DRAWBACK', label: 'Drawbacks' },
-    { id: 'LAUNCH', label: 'Product Launch' },
-    { id: 'EXPERIENCE', label: 'Experience' },
-  ];
-
-  const ideaFilters = [
-    { id: 'ALL', label: 'All Ideas' },
-    { id: 'MY_IDEAS', label: user ? `My Ideas (${myIdeasCount})` : 'My Ideas' },
-    { id: 'IDEA', label: 'Ideas' },
-    { id: 'ADVICE', label: 'Advice' },
-    { id: 'HIRING', label: 'Hiring' },
-  ];
-
-  const prototypeFilters = [
-    { id: 'ALL', label: 'All Prototypes' },
-    { id: 'MY_PROTOTYPES', label: user ? `My Prototypes (${myPrototypesCount})` : 'My Prototypes' },
-    { id: 'WEBSITES', label: 'Live Websites' },
-    { id: 'VIDEOS', label: 'Demo Videos' },
-  ];
-
-  const executionComposerTypes = [
-    { id: 'EXECUTION', label: 'Describes' },
-    { id: 'DRAWBACK', label: 'Drawbacks' },
-    { id: 'LAUNCH', label: 'Product Launch' },
-    { id: 'EXPERIENCE', label: 'Experience' },
-  ];
-
-  const ideaComposerTypes = [
-    { id: 'IDEA', label: 'Idea' },
-    { id: 'COFOUNDER', label: 'Co-Founder' },
-    { id: 'ADVICE', label: 'Advice' },
-    { id: 'HIRING', label: 'Hiring Talent' },
-  ];
-
-  const postTypes = [
-    { key: 'ALL', label: 'All Updates' },
-    { key: 'EXECUTION', label: 'Describes' },
-    { key: 'DRAWBACK', label: 'Drawbacks' },
-    { key: 'LAUNCH', label: 'Product Launch' },
-    { key: 'EXPERIENCE', label: 'Experiences' },
-    { key: 'IDEA', label: 'Ideas' },
-    { key: 'UPDATE', label: 'Updates' },
-    { key: 'COFOUNDER', label: 'Co-Founder' },
-    { key: 'HIRING', label: 'Hiring' },
-    { key: 'FUNDING', label: 'Funding' },
-    { key: 'ADVICE', label: 'Advice' },
-  ];
-
-  const getPostTypeBadge = (type: string) => {
-    switch ((type || '').toUpperCase()) {
-      case 'EXECUTION':
-      case 'ACHIEVEMENT':
-        return 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800';
-      case 'DRAWBACK':
-      case 'DRAWBACKS':
-        return 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800';
-      case 'IDEA':
-        return 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800';
-      case 'EXPERIENCE':
-        return 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800';
-      case 'LAUNCH':
-        return 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800';
-      case 'COFOUNDER':
-        return 'bg-[var(--brand-soft)] text-[var(--brand-primary)] border-[var(--border-subtle)]';
-      case 'HIRING':
-        return 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800';
-      case 'FUNDING':
-        return 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800';
-      case 'ADVICE':
-        return 'bg-[var(--brand-soft)] text-[var(--brand-primary)] border-[var(--border-subtle)]';
-      default:
-        return 'bg-[var(--bg-soft)] text-[var(--text-secondary)] border-[var(--border-subtle)]';
-    }
-  };
-
-  const formatPostTypeLabel = (type: string) => {
-    const upper = (type || '').toUpperCase();
-    if (upper === 'ACHIEVEMENT' || upper === 'EXECUTION') return 'DESCRIBES';
-    if (upper === 'DRAWBACK' || upper === 'DRAWBACKS') return 'DRAWBACKS';
-    if (upper === 'LAUNCH') return 'PRODUCT LAUNCH';
-    return type || 'UPDATE';
-  };
+  const getPostTypeBadge = (type: string) => IDEA_POST_TYPES.has((type || '').toUpperCase()) ? 'feed-type-idea' : 'feed-type-update';
+  const formatPostTypeLabel = (type: string) => IDEA_POST_TYPES.has((type || '').toUpperCase()) ? 'Idea' : 'Update';
 
   return (
-    <div className="w-full max-w-full px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6 min-w-0 overflow-x-hidden">
+    <div className="hookz-feed">
       <SEO
-        title="Startup Feed — Describes, Ideas & Updates | HookZ"
-        description="Follow real-time startup describes, drawbacks, breakthrough ideas, problem solutions, and founder updates across the HookZ ecosystem."
+        title="Feed — Ideas, progress & people | HookZ"
+        description="Discover student ideas, try fresh prototypes, and share what you are building with the HookZ community."
         canonicalPath="/feed"
         breadcrumbs={[{ name: 'Feed', path: '/feed' }]}
       />
-      <h1 className="sr-only">Startup Feed — Real-Time Describes, Ideas & Updates | HookZ</h1>
+      <header className="feed-heading">
+        <span className="feed-eyebrow"><span /> YOUR BUILDER CIRCLE</span>
+        <h1>Ideas meet <span>momentum.</span></h1>
+        <p>Something you made. Something you learned. Something worth building together.</p>
+      </header>
       {/* Toast notifications */}
       {successToast && (
         <div className="fixed top-18 right-6 z-50 p-4 rounded-xl bg-emerald-600 text-white shadow-modal text-xs font-semibold flex items-center gap-2.5 animate-in fade-in slide-in-from-top-3 max-w-md">
@@ -1473,61 +1250,10 @@ export const StartupFeedPage: React.FC = () => {
         </div>
       )}
 
-      {/* 3 Core Pillars Header (Fixed on mobile view, no sliding) */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-2.5 w-full">
-        {/* 1. Describes */}
-        <button
-          type="button"
-          onClick={() => handlePillarChange('ACHIEVEMENTS')}
-          className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
-            activePillar === 'ACHIEVEMENTS'
-              ? 'bg-brand-600 text-white border-brand-600 dark:bg-brand-600 dark:text-white dark:border-brand-600 shadow-xs font-semibold'
-              : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] font-medium'
-          }`}
-        >
-          <Award size={15} className={`shrink-0 ${activePillar === 'ACHIEVEMENTS' ? 'text-white' : 'text-[var(--text-muted)]'}`} />
-          <span className="text-xs sm:text-[13px] truncate">
-            Describes
-          </span>
-        </button>
-
-        {/* 2. Ideas */}
-        <button
-          type="button"
-          onClick={() => handlePillarChange('IDEAS')}
-          className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
-            activePillar === 'IDEAS'
-              ? 'bg-brand-600 text-white border-brand-600 dark:bg-brand-600 dark:text-white dark:border-brand-600 shadow-xs font-semibold'
-              : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] font-medium'
-          }`}
-        >
-          <Rocket size={15} className={`shrink-0 ${activePillar === 'IDEAS' ? 'text-white' : 'text-[var(--text-muted)]'}`} />
-          <span className="text-xs sm:text-[13px] truncate">
-            Ideas
-          </span>
-        </button>
-
-        {/* 3. Prototypes */}
-        <button
-          type="button"
-          onClick={() => handlePillarChange('PROTOTYPES')}
-          className={`py-2 px-2.5 sm:py-2.5 sm:px-3.5 rounded-lg border text-center transition-all cursor-pointer flex items-center justify-center gap-2 ${
-            activePillar === 'PROTOTYPES'
-              ? 'bg-brand-600 text-white border-brand-600 dark:bg-brand-600 dark:text-white dark:border-brand-600 shadow-xs font-semibold'
-              : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)] font-medium'
-          }`}
-        >
-          <Boxes size={15} className={`shrink-0 ${activePillar === 'PROTOTYPES' ? 'text-white' : 'text-[var(--text-muted)]'}`} />
-          <span className="text-xs sm:text-[13px] truncate">
-            Prototypes
-          </span>
-        </button>
-      </div>
-
-
-      {/* Post Composer Card */}
+      <div className="feed-layout">
+      <section className="feed-timeline" aria-label="Community feed">
       {user && (
-        <div className="card-base p-4 sm:p-5 transition-colors">
+        <div className="card-base feed-composer p-4 sm:p-5">
           <div className="flex items-center gap-3">
             <Avatar
               src={user.profile?.avatar}
@@ -1535,44 +1261,23 @@ export const StartupFeedPage: React.FC = () => {
               size="md"
               className="!w-9 !h-9"
             />
-            {activePillar === 'PROTOTYPES' ? (
-              <div className="flex items-center justify-between w-full">
-                <button
-                  type="button"
-                  onClick={() => setCreatePrototypeModalOpen(true)}
-                  className="flex-1 text-left px-3.5 py-2 rounded-md bg-cyan-50/70 dark:bg-cyan-950/30 hover:bg-cyan-100/70 dark:hover:bg-cyan-950/50 text-cyan-800 dark:text-cyan-200 text-xs font-semibold border border-cyan-200/80 dark:border-cyan-800/80 transition-colors flex items-center justify-between gap-2"
-                >
-                  <span className="flex items-center gap-2">
-                    <Boxes size={14} className="text-cyan-600 dark:text-cyan-400" />
-                    <span>Share what you built (sample website, MVP, or video &lt;60s)...</span>
-                  </span>
-                  <span className="btn-primary py-1 px-2.5 text-[11px] rounded-lg shrink-0">
-                    + Post Prototype
-                  </span>
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setComposerOpen(!composerOpen)}
-                className="flex-1 text-left px-3.5 py-2 rounded-md bg-[var(--bg-primary)] hover:bg-[var(--bg-soft)] text-[var(--text-muted)] text-xs font-normal border border-[var(--border-subtle)] transition-colors"
-              >
-                {activePillar === 'ACHIEVEMENTS'
-                  ? 'Share what you describe, drawback, product launch, or experience...'
-                  : 'Share a startup idea, early concept, or seek co-founders...'}
-              </button>
-            )}
+            <button type="button" aria-expanded={composerOpen} onClick={() => setComposerOpen(!composerOpen)} className="feed-composer-prompt">What are you working on?</button>
           </div>
-
-          {composerOpen && activePillar !== 'PROTOTYPES' && (
+          <div className="feed-compose-options" aria-label="Create a post">
+            <button type="button" onClick={() => { setPostType('EXECUTION'); setComposerOpen(true); }}><MessageSquare size={18} /><span>Share an update</span></button>
+            <button type="button" onClick={() => { setPostType('IDEA'); setComposerOpen(true); }}><Sparkles size={18} /><span>Test an idea</span></button>
+            <button type="button" onClick={() => setCreatePrototypeModalOpen(true)}><Boxes size={18} /><span>Show a prototype</span></button>
+          </div>
+          {composerOpen && (
             <form onSubmit={handleCreatePost} className="mt-4 pt-4 border-t border-[var(--border-subtle)] space-y-3">
               <div className="space-y-1.5">
-                <span className="text-xs font-medium text-[var(--text-muted)]">Post Category:</span>
+                <span className="text-xs font-medium text-[var(--text-muted)]">Post format:</span>
                 <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-1 px-1">
-                  {(activePillar === 'ACHIEVEMENTS' ? executionComposerTypes : ideaComposerTypes).map((t) => (
+                  {[{ id: 'EXECUTION', label: 'Update' }, { id: 'IDEA', label: 'Idea' }].map((t) => (
                     <button
                       key={t.id}
                       type="button"
-                      onClick={() => setPostType(t.id)}
+                      onClick={() => setPostType(t.id)} aria-pressed={postType === t.id}
                       className={`px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
                         postType === t.id
                           ? 'bg-brand-600 text-white shadow-sm'
@@ -1589,11 +1294,8 @@ export const StartupFeedPage: React.FC = () => {
                 type="text"
                 value={postTitle}
                 onChange={(e) => setPostTitle(e.target.value)}
-                placeholder={
-                  activePillar === 'ACHIEVEMENTS'
-                    ? 'Describe or experience headline (optional)'
-                    : 'Startup idea title or concept name (optional)'
-                }
+                aria-label="Post title"
+                placeholder="Give it a headline (optional)"
                 className="input-base w-full px-3 py-2 text-xs"
               />
 
@@ -1601,11 +1303,8 @@ export const StartupFeedPage: React.FC = () => {
                 required
                 value={postContent}
                 onChange={(e) => setPostContent(e.target.value)}
-                placeholder={
-                  activePillar === 'ACHIEVEMENTS'
-                    ? 'Describe your progress, metrics reached, drawbacks encountered, lessons learned, or new product features...'
-                    : 'Describe your startup idea, problem it solves, target users, or co-founder criteria...'
-                }
+                aria-label="Post content"
+                placeholder={postType === 'IDEA' ? 'What is the idea, who is it for, and what feedback would help?' : 'Share a small win, a work in progress, or something you learned…'}
                 rows={4}
                 className="input-base w-full px-3 py-2 text-xs resize-none"
               />
@@ -1614,6 +1313,7 @@ export const StartupFeedPage: React.FC = () => {
                 <LinkIcon size={14} className="text-[var(--text-muted)] shrink-0" />
                 <input
                   type="url"
+                  aria-label="External link"
                   value={postLinks}
                   onChange={(e) => setPostLinks(e.target.value)}
                   placeholder="External link (e.g. demo URL, announcement blog, deck)"
@@ -1681,118 +1381,52 @@ export const StartupFeedPage: React.FC = () => {
         </div>
       )}
 
-      {/* Sub-Category Filter Chips Bar */}
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
-        {(activePillar === 'ACHIEVEMENTS'
-          ? executionFilters
-          : activePillar === 'IDEAS'
-          ? ideaFilters
-          : prototypeFilters
-        ).map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setFilterType(item.id)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all shrink-0 cursor-pointer ${
-              filterType === item.id
-                ? 'bg-[var(--text-primary)] text-[var(--bg-surface)] shadow-xs'
-                : 'bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-primary)]'
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
+      <div className="feed-stream-heading">
+        <h2>From the community</h2>
+        <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+          Show
+          <select aria-label="Filter feed by format" value={feedFormat} onChange={(event) => setFeedFormat(event.target.value)} className="input-base px-2 py-2 text-xs">
+            <option value="ALL">All posts</option>
+            <option value="IDEA">Ideas</option>
+            <option value="PROTOTYPE">Prototypes</option>
+            <option value="UPDATE">Updates</option>
+          </select>
+        </label>
       </div>
-
-      {/* Feed Stream */}
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((n) => (
             <div key={n} className="h-44 rounded-lg bg-[var(--bg-soft)] border border-[var(--border-subtle)] animate-pulse" />
           ))}
         </div>
-      ) : activePillar === 'PROTOTYPES' ? (
-        filteredPosts.length === 0 ? (
-          <EmptyState
-            icon={Boxes}
-            title={
-              filterType === 'MY_PROTOTYPES'
-                ? "You haven't posted any prototypes yet"
-                : "No Prototypes Found"
-            }
-            description="Founders and builders can showcase early samples, websites, or video demos under 60 seconds."
-            actionLabel="Post a Prototype"
-            onAction={() => setCreatePrototypeModalOpen(true)}
-          />
-        ) : (
-          <div className="space-y-4">
-            {filteredPosts.map((post) => (
-              <PrototypeCard
-                key={post.id}
-                post={post}
-                onDelete={handleDeletePost}
-              />
-            ))}
-          </div>
-        )
       ) : filteredPosts.length === 0 ? (
-        <EmptyState
-          icon={Share2}
-          title={
-            filterType === 'MY_SHARES' || filterType === 'MY_ACHIEVEMENTS'
-              ? "You haven't posted any describes yet"
-              : filterType === 'MY_IDEAS'
-              ? "You haven't posted any startup ideas yet"
-              : activePillar === 'ACHIEVEMENTS'
-              ? "No describes published yet"
-              : "No idea posts found"
-          }
-          description={
-            filterType === 'MY_SHARES' || filterType === 'MY_ACHIEVEMENTS'
-              ? "Share your describes, drawbacks, product launches, or experiences with the community."
-              : filterType === 'MY_IDEAS'
-              ? "Publish a new startup concept or problem to gather feedback and find builders."
-              : activePillar === 'ACHIEVEMENTS'
-              ? "Be the first to share what you describe, drawback, or product launch."
-              : "Share an early idea, concept proposal, or seek co-founders to build together."
-          }
-          actionLabel={activePillar === 'ACHIEVEMENTS' ? "Share Describes" : "Post an Idea"}
-          onAction={() => setComposerOpen(true)}
-        />
+        <EmptyState icon={Sparkles} title={feedFormat === 'ALL' ? 'Every great thing starts with a first post.' : 'No posts in this format yet.'}
+          description="Share an idea, a small win, or a prototype. Give someone something to build on."
+          actionLabel={user ? 'Start a conversation' : 'Join the community'}
+          onAction={() => user ? setComposerOpen(true) : navigate('/signup')} />
       ) : (
         <div className="space-y-4">
 
           {filteredPosts.map((post) => {
+            if (isPrototypePost(post)) return <PrototypeCard key={post.id} post={post} onDelete={handleDeletePost} />;
             const isMe = isMyPost(post);
             const author = post.author;
             const authorAvatar = (isMe && user?.profile?.avatar !== undefined) ? user.profile.avatar : author?.profile?.avatar;
-            const authorName = (isMe && user?.profile?.fullName) || author?.profile?.fullName || author?.email || 'Founder';
+            const authorName = (isMe && user?.profile?.fullName) || author?.profile?.fullName || author?.email || 'Builder';
             const authorHeadline = (isMe && user?.profile?.headline) || author?.profile?.headline || author?.role;
             const isCommentsOpen = !!expandedComments[post.id];
 
-            const isIdeaPost =
-              activePillar === 'IDEAS' ||
-              (post.postType || '').toUpperCase() === 'IDEA' ||
-              (activePillar !== 'ACHIEVEMENTS' && IDEA_POST_TYPES.has((post.postType || '').toUpperCase()));
+            const isIdeaPost = IDEA_POST_TYPES.has((post.postType || '').toUpperCase());
 
             const currentVote = userVotes[post.id] !== undefined
               ? userVotes[post.id]
               : (post.isLiked ? 'up' : null);
 
-            const netScore = post.likesCount || 0;
-
-            let scoreColorClass = 'text-[var(--text-secondary)] font-medium';
-            if (currentVote === 'up' || (currentVote === null && netScore > 0)) {
-              scoreColorClass = 'text-emerald-600 dark:text-emerald-400 font-bold';
-            } else if (currentVote === 'down' || (currentVote === null && netScore < 0)) {
-              scoreColorClass = 'text-rose-600 dark:text-rose-400 font-bold';
-            }
-
             return (
               <div
                 key={post.id}
                 id={`post-${post.id}`}
-                className={`card-base p-5 sm:p-6 transition-all duration-500 space-y-4 min-w-0 overflow-hidden break-words ${
+                className={`card-base feed-post p-5 sm:p-6 transition-all duration-500 space-y-4 min-w-0 overflow-hidden break-words ${
                   highlightedPostId === post.id
                     ? 'ring-4 ring-brand-500 ring-offset-2 dark:ring-offset-dark-900 shadow-2xl scale-[1.01] bg-[var(--brand-soft)]'
                     : ''
@@ -1877,7 +1511,7 @@ export const StartupFeedPage: React.FC = () => {
                   <div>
                     <p
                       className={`text-sm text-[var(--text-secondary)] whitespace-pre-line leading-relaxed break-words ${
-                        expandedPostContent[post.id] ? '' : 'line-clamp-2 sm:line-clamp-3'
+                        expandedPostContent[post.id] || !(post.content && (post.content.length > 120 || post.content.split('\n').length > 2)) ? '' : 'line-clamp-2 sm:line-clamp-3'
                       }`}
                     >
                       {post.content}
@@ -1893,7 +1527,7 @@ export const StartupFeedPage: React.FC = () => {
                         }
                         className="text-xs font-semibold text-[var(--brand-primary)] hover:underline pt-1 cursor-pointer inline-flex items-center gap-0.5"
                       >
-                        {expandedPostContent[post.id] ? 'Show less' : '...more'}
+                        {expandedPostContent[post.id] ? 'Show less' : 'Read more'}
                       </button>
                     )}
                   </div>
@@ -1914,7 +1548,7 @@ export const StartupFeedPage: React.FC = () => {
                 </div>
 
                 {/* Post Actions Bar */}
-                <div className="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs text-[var(--text-muted)]">
+                <div className="feed-post-actions pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between text-xs text-[var(--text-muted)]">
                   <div className="flex items-center gap-3 sm:gap-4">
                     {/* Reaction: Upvote / Downvote Pill for Ideas, Heart for other feeds */}
                     {isIdeaPost ? (
@@ -1971,7 +1605,7 @@ export const StartupFeedPage: React.FC = () => {
                       /* Default Heart reaction button for Executions / other feeds */
                       <button
                         type="button"
-                        onClick={() => handleLikePost(post.id)}
+                        onClick={() => handleLikePost(post.id)} aria-label={post.isLiked ? "Unlike post" : "Like post"} aria-pressed={!!post.isLiked}
                         className={`flex items-center gap-1.5 font-medium transition-colors cursor-pointer ${
                           post.isLiked
                             ? 'text-rose-600 dark:text-rose-400'
@@ -1985,7 +1619,7 @@ export const StartupFeedPage: React.FC = () => {
 
                     {/* Comments Toggle */}
                     <button
-                      onClick={() => handleToggleComments(post.id)}
+                      onClick={() => handleToggleComments(post.id)} aria-label="Comments" aria-expanded={isCommentsOpen}
                       className="flex items-center gap-1.5 font-medium hover:text-[var(--brand-primary)] transition-colors"
                     >
                       <MessageSquare size={15} />
@@ -1994,7 +1628,7 @@ export const StartupFeedPage: React.FC = () => {
 
                     {/* Save Button */}
                     <button
-                      onClick={() => handleToggleSave(post.id)}
+                      onClick={() => handleToggleSave(post.id)} aria-label={post.isSaved ? "Unsave post" : "Save post"} aria-pressed={!!post.isSaved}
                       className={`flex items-center gap-1.5 font-medium transition-colors ${
                         post.isSaved
                           ? 'text-[var(--brand-primary)]'
@@ -2097,6 +1731,24 @@ export const StartupFeedPage: React.FC = () => {
         </div>
       )}
 
+      {!loading && filteredPosts.length > 0 && <p className="feed-end"><CheckCircle2 size={16} /> You've reached the latest posts.</p>}
+      </section>
+      <aside className="feed-sidebar" aria-label="Keep building">
+        <div className="feed-sidebar-note">
+          <span className="feed-note-icon"><Sparkles size={24} /></span>
+          <span className="feed-eyebrow">BETTER TOGETHER</span>
+          <h2>Great things start with a hello.</h2>
+          <p>Ask a thoughtful question. Try someone's demo. Help an idea take its next step.</p>
+          <Link to="/" className="btn-primary">Meet the builders <ArrowRight size={16} /></Link>
+        </div>
+        <div className="feed-explore">
+          <h2>Keep your momentum</h2>
+          <Link to="/projects"><Boxes size={19} /><span><strong>Find your next project</strong><small>Build something with a team</small></span><ArrowRight size={15} /></Link>
+          <Link to="/opportunities"><Rocket size={19} /><span><strong>Find your next opportunity</strong><small>Make room for what's next</small></span><ArrowRight size={15} /></Link>
+        </div>
+        <p className="feed-sidebar-footer">A little feedback goes a long way.</p>
+      </aside>
+      </div>
       {/* Connect Modal */}
       <ConnectModal
         isOpen={!!connectUser}

@@ -239,7 +239,7 @@ export const Navbar: React.FC = () => {
               {!isAuthPage && (
                 <button
                   onClick={() => setAiScoutOpen(true)}
-                  className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-xs font-semibold btn-primary transition-colors shrink-0 cursor-pointer shadow-xs"
+                  className="ai-scout-trigger flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-xs font-semibold btn-primary transition-colors shrink-0 cursor-pointer shadow-xs"
                   title="AI People Finder Bot"
                 >
                   <Sparkles size={13} className="text-white" />
@@ -543,7 +543,7 @@ export const Navbar: React.FC = () => {
                     setMobileMenuOpen(false);
                     setAiScoutOpen(true);
                   }}
-                  className="w-full flex items-center justify-center gap-2 p-2.5 rounded-lg text-xs font-semibold btn-primary shadow-xs"
+                  className="ai-scout-trigger w-full flex items-center justify-center gap-2 p-2.5 rounded-lg text-xs font-semibold btn-primary shadow-xs"
                 >
                   <Sparkles size={15} className="text-white" />
                   <span>AI - Scout Finder</span>
