@@ -309,13 +309,14 @@ export const Navbar: React.FC = () => {
                   </button>
 
                   {/* Admin Quick Link */}
-                  {user.isAdmin && (
+                  {(user.isAdmin || (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))) && (
                     <Link
-                      to="/admin"
-                      title="Admin Moderation Portal"
-                      className="p-1.5 rounded-md text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 transition-colors"
+                      to="/admin?tab=opportunities"
+                      title="Admin Moderation & Opportunities Portal"
+                      className="p-1.5 rounded-md text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 transition-colors inline-flex items-center gap-1 text-xs font-semibold"
                     >
                       <Shield size={16} />
+                      <span className="hidden md:inline">Admin</span>
                     </Link>
                   )}
 

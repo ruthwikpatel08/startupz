@@ -11,6 +11,9 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import startupRoutes from './routes/startups.js';
 import opportunityRoutes from './routes/opportunities.js';
+import worldwideOpportunitiesRoutes from './routes/worldwideOpportunities.js';
+import { initStorage } from './services/opportunities/storage.js';
+import { startOpportunitiesScheduler } from './services/opportunities/scheduler.js';
 import connectionRoutes from './routes/connections.js';
 import investorRoutes from './routes/investors.js';
 import mentorRoutes from './routes/mentors.js';
@@ -260,6 +263,7 @@ app.post('/api/health/purge-demo-data', async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/startups', startupRoutes);
+app.use('/api/opportunities/worldwide', worldwideOpportunitiesRoutes);
 app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/connections', connectionRoutes);
 app.use('/api/investors', investorRoutes);
@@ -429,5 +433,11 @@ if (isServerEntry && process.env.NODE_ENV !== 'test') {
     } else {
       console.log('ℹ️ [WeeklyProblems] Postponed weekly refresh check until schema tables are verified.');
     }
+    // Initialize HookZ Worldwide Opportunities Discovery System
+    initStorage().then(() => {
+      startOpportunitiesScheduler();
+    }).catch(err => {
+      console.warn('[WorldwideOpps] Initialization notice:', err.message);
+    });
   });
 }

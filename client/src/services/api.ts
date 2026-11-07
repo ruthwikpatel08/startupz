@@ -5,6 +5,10 @@ import {
 } from '../data/fallbackProblems';
 
 const getApiBase = (): string => {
+  // If running locally in browser (localhost / 127.0.0.1), ALWAYS use the local backend proxy (/api)
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return '/api';
+  }
   let envUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
   if (envUrl) {
     envUrl = envUrl.split(/\s+/)[0];
@@ -39,6 +43,11 @@ function buildQuery(params?: any): string {
 
 export function isDemoRecord(item: any): boolean {
   if (!item) return false;
+
+  // Worldwide Opportunities must NEVER be filtered as demo records
+  if (item.source_id || item.external_event_id || item.registration_url) {
+    return false;
+  }
 
   // Posts created by users must NEVER be filtered unless author explicitly matches a seed demo email
   if (item.authorId || item.author) {
@@ -560,5 +569,86 @@ export const api = {
     request<any>('/problems/categorize-ai', { method: 'POST', body: JSON.stringify(payload) }),
   discoverAIProblems: (topic?: string) =>
     request<{ problems: any[] }>('/problems/discover-ai', { method: 'POST', body: JSON.stringify({ topic }) }),
+
+  // HOOKZ WORLDWIDE OPPORTUNITIES & EVENTS
+  getWorldwideOpportunities: (params?: any) =>
+    request<{
+      opportunities: WorldwideOpportunity[];
+      pagination: { total: number; page: number; limit: number; totalPages: number };
+      metrics: {
+        totalActive: number;
+        totalOnline: number;
+        totalFree: number;
+        countriesCount: number;
+        availableCategories: string[];
+        availableModes: string[];
+      };
+    }>(`/opportunities/worldwide${buildQuery(params)}`),
+  getWorldwideOpportunityById: (id: string) =>
+    request<WorldwideOpportunity>(`/opportunities/worldwide/${id}`),
+  getOpportunitySources: () =>
+    request<OpportunitySource[]>('/opportunities/worldwide/sources'),
+  syncWorldwideOpportunities: (payload?: { sourceId?: string; force?: boolean }) =>
+    request<any>('/opportunities/worldwide/sync', { method: 'POST', body: JSON.stringify(payload || {}) }),
+  createWorldwideOpportunity: (payload: any) =>
+    request<WorldwideOpportunity>('/opportunities/worldwide', { method: 'POST', body: JSON.stringify(payload) }),
+  updateWorldwideOpportunity: (id: string, payload: any) =>
+    request<WorldwideOpportunity>(`/opportunities/worldwide/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  deleteWorldwideOpportunity: (id: string) =>
+    request<any>(`/opportunities/worldwide/${id}`, { method: 'DELETE' }),
+  updateOpportunitySource: (id: string, payload: any) =>
+    request<OpportunitySource>(`/opportunities/worldwide/admin/sources/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
 };
+
+export interface WorldwideOpportunity {
+  id: string;
+  source_id: string;
+  external_event_id: string;
+  title: string;
+  organizer_name: string;
+  organizer_logo_url: string | null;
+  logo_source_url: string | null;
+  logo_permission_status: string;
+  description_summary: string;
+  category: string;
+  subcategory: string | null;
+  country: string;
+  city: string | null;
+  location: string;
+  participation_mode: 'ONLINE' | 'OFFLINE' | 'HYBRID';
+  start_date: string | null;
+  end_date: string | null;
+  registration_open_date: string | null;
+  registration_deadline: string | null;
+  registration_url: string;
+  original_source_url: string;
+  price_type: 'FREE' | 'PAID';
+  price_amount: number;
+  currency: string;
+  certificate_available: boolean;
+  eligibility: string;
+  skills_required: string[];
+  status: string;
+  last_verified_at: string;
+  last_source_update_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OpportunitySource {
+  id: string;
+  name: string;
+  website: string;
+  endpoint: string | null;
+  collection_method: string;
+  requires_api_key: boolean;
+  permission_status: string;
+  attribution: string | null;
+  sync_frequency_minutes: number;
+  status: string;
+  last_successful_sync: string | null;
+  last_sync_error: string | null;
+  total_collected: number;
+  supports_cancellation: boolean;
+}
 
