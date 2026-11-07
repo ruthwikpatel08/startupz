@@ -36,7 +36,13 @@ function getAuthHeader(): Record<string, string> {
 function buildQuery(params?: any): string {
   if (!params) return '';
   if (typeof params === 'string') return params.startsWith('?') ? params : `?${params}`;
-  const qs = new URLSearchParams(params).toString();
+  const cleanParams: Record<string, string> = {};
+  for (const [key, val] of Object.entries(params)) {
+    if (val !== undefined && val !== null && val !== '' && val !== 'undefined' && val !== 'null') {
+      cleanParams[key] = String(val);
+    }
+  }
+  const qs = new URLSearchParams(cleanParams).toString();
   return qs ? `?${qs}` : '';
 }
 

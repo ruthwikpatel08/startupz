@@ -103,15 +103,17 @@ export const OpportunitiesPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.getWorldwideOpportunities({
-        search: searchQuery || undefined,
-        category: selectedCategory !== 'ALL' ? selectedCategory : undefined,
-        mode: selectedMode !== 'ALL' ? selectedMode : undefined,
-        country: selectedCountry !== 'ALL' ? selectedCountry : undefined,
-        price: selectedPrice !== 'ALL' ? selectedPrice : undefined,
+      const queryParams: Record<string, string> = {
         sort: sortBy,
-        limit: 50,
-      });
+        limit: '50',
+      };
+      if (searchQuery && searchQuery.trim()) queryParams.search = searchQuery.trim();
+      if (selectedCategory && selectedCategory !== 'ALL') queryParams.category = selectedCategory;
+      if (selectedMode && selectedMode !== 'ALL') queryParams.mode = selectedMode;
+      if (selectedCountry && selectedCountry !== 'ALL') queryParams.country = selectedCountry;
+      if (selectedPrice && selectedPrice !== 'ALL') queryParams.price = selectedPrice;
+
+      const res = await api.getWorldwideOpportunities(queryParams);
 
       if (res && Array.isArray(res.opportunities)) {
         setOpportunities(res.opportunities);

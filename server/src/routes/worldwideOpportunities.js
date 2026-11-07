@@ -59,39 +59,39 @@ router.get('/', optionalAuth, async (req, res) => {
     }
 
     // 2. Keyword Search (title, organizer, description, skills, location, country)
-    if (search && typeof search === 'string' && search.trim()) {
-      const q = search.trim().toLowerCase();
+    const cleanSearch = (search && typeof search === 'string' && search.trim() && search !== 'undefined' && search !== 'null') ? search.trim().toLowerCase() : null;
+    if (cleanSearch) {
       allOpps = allOpps.filter(o => {
         return (
-          (o.title && o.title.toLowerCase().includes(q)) ||
-          (o.organizer_name && o.organizer_name.toLowerCase().includes(q)) ||
-          (o.description_summary && o.description_summary.toLowerCase().includes(q)) ||
-          (o.location && o.location.toLowerCase().includes(q)) ||
-          (o.country && o.country.toLowerCase().includes(q)) ||
-          (o.city && o.city.toLowerCase().includes(q)) ||
-          (Array.isArray(o.skills_required) && o.skills_required.some(s => s.toLowerCase().includes(q)))
+          (o.title && o.title.toLowerCase().includes(cleanSearch)) ||
+          (o.organizer_name && o.organizer_name.toLowerCase().includes(cleanSearch)) ||
+          (o.description_summary && o.description_summary.toLowerCase().includes(cleanSearch)) ||
+          (o.location && o.location.toLowerCase().includes(cleanSearch)) ||
+          (o.country && o.country.toLowerCase().includes(cleanSearch)) ||
+          (o.city && o.city.toLowerCase().includes(cleanSearch)) ||
+          (Array.isArray(o.skills_required) && o.skills_required.some(s => s.toLowerCase().includes(cleanSearch)))
         );
       });
     }
 
     // 3. Category Filter
-    if (category && category !== 'ALL') {
+    if (category && category !== 'ALL' && category !== 'undefined' && category !== 'null') {
       allOpps = allOpps.filter(o => o.category === category);
     }
 
     // 4. Participation Mode Filter (ONLINE, OFFLINE, HYBRID)
-    if (mode && mode !== 'ALL') {
+    if (mode && mode !== 'ALL' && mode !== 'undefined' && mode !== 'null') {
       allOpps = allOpps.filter(o => o.participation_mode === mode.toUpperCase());
     }
 
     // 5. Country Filter
-    if (country && country !== 'ALL') {
+    if (country && country !== 'ALL' && country !== 'undefined' && country !== 'null') {
       const cLower = country.toLowerCase().trim();
       allOpps = allOpps.filter(o => (o.country || '').toLowerCase().trim() === cLower);
     }
 
     // 6. Price Filter (FREE vs PAID)
-    if (price && price !== 'ALL') {
+    if (price && price !== 'ALL' && price !== 'undefined' && price !== 'null') {
       allOpps = allOpps.filter(o => o.price_type === price.toUpperCase());
     }
 
