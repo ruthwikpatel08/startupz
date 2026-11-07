@@ -8,6 +8,8 @@
   --bg-primary: #f7f7fb;
   --bg-surface: #ffffff;
   --bg-soft: #eeedf5;
+  --card-bg: #ffffff;
+  --card-hover: #eeedf5;
   --text-primary: #201d32;
   --text-secondary: #555168;
   --text-muted: #716c83;
@@ -51,6 +53,8 @@
   --bg-primary: #121019;
   --bg-surface: #1b1825;
   --bg-soft: #262132;
+  --card-bg: #1b1825;
+  --card-hover: #262132;
   --text-primary: #f4f1fc;
   --text-secondary: #c2bcd2;
   --text-muted: #a29ab6;

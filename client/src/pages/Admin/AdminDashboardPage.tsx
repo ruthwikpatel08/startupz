@@ -816,8 +816,8 @@ export const AdminDashboardPage: React.FC = () => {
 
           {/* Add Opportunity Modal */}
           {showAddOppModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-              <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl bg-[var(--card-bg)] border border-[var(--border-subtle)] p-6 space-y-4 shadow-2xl">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in" onClick={() => setShowAddOppModal(false)}>
+              <div className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#1b1825] bg-[var(--card-bg)] border border-[var(--border-subtle)] p-6 space-y-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between pb-3 border-b border-[var(--border-subtle)]">
                   <h3 className="text-base font-bold text-[var(--text-primary)]">
                     Curate / Add Opportunity

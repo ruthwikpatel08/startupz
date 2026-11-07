@@ -25,10 +25,6 @@ if (!fs.existsSync(DATA_DIR)) {
   } catch {}
 }
 
-let cachedOpportunities = [];
-let cachedSources = [];
-let isInitialized = false;
-
 // Helpers for reading/writing local files safely
 function readJsonFile(filePath, fallback = []) {
   try {
@@ -52,6 +48,19 @@ function writeJsonFile(filePath, data) {
     console.warn(`[OpportunitiesStorage] Error writing ${path.basename(filePath)}:`, err.message);
   }
 }
+
+let cachedSources = (() => {
+  const loaded = readJsonFile(SOURCES_FILE, []);
+  return loaded.length > 0 ? loaded : [...INITIAL_SOURCE_REGISTRY];
+})();
+
+let cachedOpportunities = (() => {
+  const loaded = readJsonFile(OPPS_FILE, []);
+  const initial = loaded.length > 0 ? loaded : [...INITIAL_WORLDWIDE_OPPORTUNITIES];
+  return initial.map(o => normalizeOpportunity(o) || o);
+})();
+
+let isInitialized = false;
 
 /**
  * Initializes database tables in PostgreSQL if connected.
